@@ -11,6 +11,7 @@ use App\Models\Task;
 use App\Models\TaskAttachment;
 use App\Models\User;
 use App\Services\DateParser;
+use Carbon\Carbon;
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\GuzzleException;
 use Illuminate\Console\Command;
@@ -70,7 +71,7 @@ class TodoistImport extends Command
 
         // Initialize HTTP clients
         $this->todoistClient = new Client([
-            'base_uri' => 'https://api.todoist.com/rest/v2/',
+            'base_uri' => 'https://api.todoist.com/api/v1/',
             'headers' => [
                 'Authorization' => 'Bearer ' . $todoistKey,
                 'Content-Type' => 'application/json',
@@ -133,13 +134,44 @@ class TodoistImport extends Command
         return $user;
     }
 
+    /**
+     * Fetch all results from a paginated Todoist API v1 endpoint.
+     *
+     * API v1 returns { "results": [...], "next_cursor": "string"|null }
+     * and supports cursor/limit query parameters.
+     */
+    private function fetchAllPaginated(string $endpoint, array $query = []): array
+    {
+        $allResults = [];
+        $cursor = null;
+
+        do {
+            $params = array_merge($query, ['limit' => 200]);
+            if ($cursor) {
+                $params['cursor'] = $cursor;
+            }
+
+            $response = $this->todoistClient->get($endpoint, [
+                'query' => $params,
+            ]);
+
+            $body = json_decode($response->getBody()->getContents(), true);
+
+            $results = $body['results'] ?? [];
+            $allResults = array_merge($allResults, $results);
+
+            $cursor = $body['next_cursor'] ?? null;
+        } while ($cursor);
+
+        return $allResults;
+    }
+
     private function importLabels(): void
     {
         $this->info('Fetching labels from Todoist...');
 
         try {
-            $response = $this->todoistClient->get('labels');
-            $labels = json_decode($response->getBody()->getContents(), true);
+            $labels = $this->fetchAllPaginated('labels');
 
             $this->info('Found ' . count($labels) . ' labels');
 
@@ -200,8 +232,7 @@ class TodoistImport extends Command
         $this->info('Fetching projects from Todoist...');
 
         try {
-            $response = $this->todoistClient->get('projects');
-            $projects = json_decode($response->getBody()->getContents(), true);
+            $projects = $this->fetchAllPaginated('projects');
 
             $this->info('Found ' . count($projects) . ' projects');
 
@@ -220,6 +251,40 @@ class TodoistImport extends Command
     private function importProject(array $todoistProject, int $current, int $total): void
     {
         $name = $todoistProject['name'];
+        $isTodoistInbox = !empty($todoistProject['inbox_project']);
+
+        // If this is the Todoist Inbox, map it to the user's Task Fiend inbox project
+        if ($isTodoistInbox) {
+            $inboxProject = Project::where('user_id', $this->user->id)
+                ->where('is_inbox', true)
+                ->first();
+
+            if ($inboxProject) {
+                $this->projectIdMap[$todoistProject['id']] = $inboxProject->id;
+                $this->info("Mapped Todoist Inbox to existing inbox project '{$inboxProject->name}' ({$current}/{$total} projects)");
+                return;
+            }
+
+            // No inbox project exists yet — create one
+            try {
+                $inboxProject = Project::create([
+                    'name' => $this->user->name . "'s Inbox",
+                    'description' => 'Personal inbox for quick task capture',
+                    'user_id' => $this->user->id,
+                    'status' => 'incomplete',
+                    'is_inbox' => true,
+                ]);
+
+                $this->projectIdMap[$todoistProject['id']] = $inboxProject->id;
+                $this->projectsImported++;
+                $this->info("Created inbox project '{$inboxProject->name}' for Todoist Inbox ({$current}/{$total} projects)");
+                return;
+            } catch (\Exception $e) {
+                $this->error("Failed to create inbox project: " . $e->getMessage());
+                $this->errors++;
+                return;
+            }
+        }
 
         // Check for duplicate project (by name, global uniqueness)
         $existingProject = Project::where('name', $name)
@@ -261,8 +326,7 @@ class TodoistImport extends Command
         $this->info('Fetching tasks from Todoist...');
 
         try {
-            $response = $this->todoistClient->get('tasks');
-            $tasks = json_decode($response->getBody()->getContents(), true);
+            $tasks = $this->fetchAllPaginated('tasks');
 
             $this->info('Found ' . count($tasks) . ' tasks');
 
@@ -339,25 +403,33 @@ class TodoistImport extends Command
         if (!empty($todoistTask['due'])) {
             $due = $todoistTask['due'];
 
-            // Parse date (format: YYYY-MM-DD or YYYY-MM-DDTHH:MM:SS)
-            if (!empty($due['date'])) {
-                $dateTime = \DateTime::createFromFormat('Y-m-d', $due['date']);
-                if (!$dateTime) {
-                    $dateTime = \DateTime::createFromFormat(\DateTime::ISO8601, $due['date']);
+            // Parse date — prefer the datetime field (has time info), fall back to date field
+            // API v1 due.date is YYYY-MM-DD, due.datetime is full ISO 8601
+            if (!empty($due['datetime'])) {
+                try {
+                    $parsed = Carbon::parse($due['datetime']);
+                    $date = $parsed->format('Y-m-d');
+                    $time = $parsed->format('H:i:s');
+                } catch (\Exception $e) {
+                    Log::warning('Failed to parse due.datetime', [
+                        'task_name' => $name,
+                        'datetime' => $due['datetime'],
+                    ]);
                 }
-
-                if ($dateTime) {
-                    $date = $dateTime->format('Y-m-d');
-
-                    // Check if time is included
-                    if (!empty($due['datetime'])) {
-                        $time = $dateTime->format('H:i:s');
-                    }
+            } elseif (!empty($due['date'])) {
+                try {
+                    $parsed = Carbon::parse($due['date']);
+                    $date = $parsed->format('Y-m-d');
+                } catch (\Exception $e) {
+                    Log::warning('Failed to parse due.date', [
+                        'task_name' => $name,
+                        'date' => $due['date'],
+                    ]);
                 }
             }
 
             // Parse recurrence pattern
-            if (!empty($due['string'])) {
+            if (!empty($due['is_recurring']) && !empty($due['string'])) {
                 $recurrencePattern = $this->convertTodoistRecurrence($due['string'], $name);
             }
         }
@@ -474,11 +546,7 @@ class TodoistImport extends Command
         // Fetch comments for each task
         foreach ($this->taskIdMap as $todoistTaskId => $taskFiendTaskId) {
             try {
-                $response = $this->todoistClient->get('comments', [
-                    'query' => ['task_id' => $todoistTaskId],
-                ]);
-
-                $comments = json_decode($response->getBody()->getContents(), true);
+                $comments = $this->fetchAllPaginated('comments', ['task_id' => $todoistTaskId]);
 
                 foreach ($comments as $todoistComment) {
                     $this->importComment($todoistComment, $taskFiendTaskId);
@@ -559,10 +627,9 @@ class TodoistImport extends Command
 
     private function importTaskAttachments(string $todoistTaskId, Task $task): void
     {
-        // Fetch attachments for this task from Todoist
-        // Note: Todoist API v2 doesn't have a direct endpoint for task attachments
+        // Todoist API doesn't have a direct endpoint for task attachments
         // Attachments in Todoist are typically added via comments
-        // So we'll skip this for now - attachments will be imported via comments
+        // So we'll skip this - attachments will be imported via comments
     }
 
     private function convertTodoistColor(?string $todoistColor): string
