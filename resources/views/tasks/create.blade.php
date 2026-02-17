@@ -7,7 +7,7 @@
 
     <div class="py-12">
         <div class="max-w-3xl mx-auto sm:px-6 lg:px-8">
-            <div class="bg-[#002200] overflow-hidden shadow-sm sm:rounded-lg border border-gray-700">
+            <div class="bg-[#003300] overflow-hidden shadow-sm sm:rounded-lg border border-gray-700">
                 <div class="p-6" x-data="taskCreator(@js($projects), @js($tags))">
                     <form method="POST" action="{{ route('tasks.store') }}" @submit="prepareSubmit">
                         @csrf
@@ -34,7 +34,7 @@
                                  class="absolute z-10 mt-1 w-full bg-gray-700 border border-gray-600 rounded-md shadow-lg max-h-60 overflow-auto">
                                 <template x-if="autocompleteType === 'project'">
                                     <div>
-                                        <div class="px-3 py-2 text-xs font-semibold text-gray-400 bg-[#002200] border-b border-gray-600">Projects</div>
+                                        <div class="px-3 py-2 text-xs font-semibold text-gray-400 bg-[#003300] border-b border-gray-600">Projects</div>
                                         <template x-for="(project, index) in filteredProjects" :key="project.id">
                                             <div class="px-2 py-1 hover:bg-gray-600 cursor-pointer text-sm text-gray-300"
                                                  @click.prevent="selectAutocomplete(project.name)"
@@ -50,7 +50,7 @@
 
                                 <template x-if="autocompleteType === 'tag'">
                                     <div>
-                                        <div class="px-3 py-2 text-xs font-semibold text-gray-400 bg-[#002200] border-b border-gray-600">Tags</div>
+                                        <div class="px-3 py-2 text-xs font-semibold text-gray-400 bg-[#003300] border-b border-gray-600">Tags</div>
                                         <template x-for="(tag, index) in filteredTags" :key="tag.id">
                                             <div class="px-2 py-1 hover:bg-gray-600 cursor-pointer text-sm flex items-center"
                                                  @click.prevent="selectAutocomplete(tag.tag_name)"

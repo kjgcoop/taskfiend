@@ -19,7 +19,7 @@
                 </a>
             </div>
             <!-- Import Template Form -->
-            <div x-show="showImportForm" x-cloak class="bg-[#002200] border border-gray-700 p-6 rounded-lg shadow">
+            <div x-show="showImportForm" x-cloak class="bg-[#003300] border border-gray-700 p-6 rounded-lg shadow">
                 <h3 class="text-lg font-semibold text-gray-100 mb-4">Import Project Template</h3>
                 <form action="{{ route('projects.import-template') }}" method="POST" enctype="multipart/form-data" @submit="if(!projectName) { alert('Please enter a project name'); return false; }">
                     @csrf
@@ -28,7 +28,7 @@
                             <label class="block text-sm font-medium text-gray-300 mb-2">Template File</label>
                             <input type="file" name="template_file" accept=".zip" required
                                    @change="templateFile = $event.target.files[0]; if(!projectName && templateFile) { projectName = templateFile.name.replace(/\.zip$/, '').replace(/^taskfiend_template_/, '').replace(/_\d{4}-\d{2}-\d{2}$/, ''); }"
-                                   class="block w-full text-sm text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-gray-700 file:text-gray-100 hover:file:bg-gray-600 bg-gray-900 border border-gray-600 rounded-md">
+                                   class="block w-full text-sm text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-gray-700 file:text-gray-100 hover:file:bg-gray-600 bg-[#001100] border border-gray-600 rounded-md">
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-gray-300 mb-2">Project Name</label>
@@ -50,7 +50,7 @@
 
             <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                 @forelse($projects as $project)
-                    <div class="bg-[#002200] border border-gray-700 p-6 rounded-lg shadow hover:shadow-md transition cursor-pointer"
+                    <div class="bg-[#003300] border border-gray-700 p-6 rounded-lg shadow hover:shadow-md transition cursor-pointer"
                          onclick="window.location='{{ route('projects.show', $project) }}'">
                         <h3 class="font-semibold text-lg text-gray-100">{{ $project->name }}</h3>
                         @if($project->description)
@@ -67,7 +67,7 @@
                         </div>
                     </div>
                 @empty
-                    <div class="col-span-full bg-[#002200] border border-gray-700 p-8 rounded-lg text-center text-gray-500">
+                    <div class="col-span-full bg-[#003300] border border-gray-700 p-8 rounded-lg text-center text-gray-500">
                         No projects yet. Create your first project!
                     </div>
                 @endforelse
