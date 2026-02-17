@@ -21,7 +21,9 @@ use Illuminate\Support\Facades\Storage;
 
 class TodoistImport extends Command
 {
-    protected $signature = 'todoist:import {--api-key= : Task Fiend API key (tfk_...)}';
+    protected $signature = 'todoist:import
+        {--taskfiend-api-key= : Task Fiend API key (tfk_...)}
+        {--todoist-api-key= : Todoist API key (overrides TODOIST_KEY env var)}';
 
     protected $description = 'Import data from Todoist into Task Fiend';
 
@@ -47,11 +49,11 @@ class TodoistImport extends Command
 
     public function handle()
     {
-        // Validate API key
-        $apiKey = $this->option('api-key');
+        // Validate Task Fiend API key
+        $apiKey = $this->option('taskfiend-api-key');
         if (!$apiKey) {
-            $this->error('Missing required --api-key option');
-            $this->info('Usage: php artisan todoist:import --api-key=tfk_xxxxx');
+            $this->error('Missing required --taskfiend-api-key option');
+            $this->info('Usage: php artisan todoist:import --taskfiend-api-key=tfk_xxxxx --todoist-api-key=YOUR_TODOIST_KEY');
             return 1;
         }
 
@@ -62,10 +64,10 @@ class TodoistImport extends Command
         }
         $this->user = $user;
 
-        // Check for Todoist API key
-        $todoistKey = env('TODOIST_KEY');
+        // Check for Todoist API key (CLI argument takes precedence over env var)
+        $todoistKey = $this->option('todoist-api-key') ?: env('TODOIST_KEY');
         if (!$todoistKey) {
-            $this->error('TODOIST_KEY not found in environment variables');
+            $this->error('Todoist API key not provided. Use --todoist-api-key or set TODOIST_KEY in .env');
             return 1;
         }
 
