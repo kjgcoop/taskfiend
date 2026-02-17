@@ -2,7 +2,7 @@
     <x-slot name="header">
         <div class="flex justify-between items-center">
             <h2 class="font-semibold text-xl text-gray-100 leading-tight">
-                {{ __('Calendar') }} - {{ $startDate->format('F Y') }}
+                {{ __('By Date') }} - {{ $startDate->format('F Y') }}
             </h2>
             <div class="flex gap-2">
                 <a href="{{ route('calendar', ['month' => $month == 1 ? 12 : $month - 1, 'year' => $month == 1 ? $year - 1 : $year]) }}" class="px-3 py-2 bg-gray-700 text-gray-300 rounded hover:bg-gray-600">
