@@ -13,6 +13,45 @@
         @csrf
     </form>
 
+    <!-- Profile Image -->
+    <div class="mt-6 flex items-center gap-6">
+        <div class="flex-shrink-0">
+            @if($user->profile_image)
+                <img src="{{ route('profile.image.show', $user) }}"
+                     alt="Profile photo"
+                     class="w-20 h-20 rounded-full object-cover border-2 border-gray-600">
+            @else
+                @php
+                    $avatarColors = ['bg-blue-500', 'bg-green-500', 'bg-yellow-500', 'bg-purple-500', 'bg-pink-500', 'bg-indigo-500', 'bg-red-500', 'bg-teal-500'];
+                    $colorClass = $avatarColors[$user->id % count($avatarColors)];
+                @endphp
+                <div class="w-20 h-20 rounded-full {{ $colorClass }} flex items-center justify-center text-2xl font-bold text-white">
+                    {{ strtoupper(substr($user->name, 0, 1)) }}
+                </div>
+            @endif
+        </div>
+        <div class="space-y-2">
+            <form method="post" action="{{ route('profile.image.update') }}" enctype="multipart/form-data" class="flex items-center gap-3">
+                @csrf
+                <label class="cursor-pointer px-4 py-2 bg-gray-700 border border-gray-600 rounded-md text-sm text-gray-300 hover:bg-gray-600 transition">
+                    {{ __('Choose Photo') }}
+                    <input type="file" name="profile_image" accept="image/*" class="hidden"
+                           onchange="this.closest('form').submit()">
+                </label>
+            </form>
+            @if($user->profile_image)
+                <form method="post" action="{{ route('profile.image.destroy') }}">
+                    @csrf
+                    @method('delete')
+                    <button type="submit" class="text-sm text-red-400 hover:text-red-300 transition">
+                        {{ __('Remove photo') }}
+                    </button>
+                </form>
+            @endif
+            <x-input-error class="mt-1" :messages="$errors->get('profile_image')" />
+        </div>
+    </div>
+
     <form method="post" action="{{ route('profile.update') }}" class="mt-6 space-y-6">
         @csrf
         @method('patch')

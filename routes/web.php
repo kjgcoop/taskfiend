@@ -51,7 +51,10 @@ Route::middleware('auth')->group(function () {
 
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
+    Route::post('/profile/image', [ProfileController::class, 'updateImage'])->name('profile.image.update');
+    Route::delete('/profile/image', [ProfileController::class, 'destroyImage'])->name('profile.image.destroy');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+    Route::get('/profile-image/{user}', [ProfileController::class, 'showImage'])->name('profile.image.show');
 
     Route::get('/export', [DataExportController::class, 'exportAll'])->name('export.all');
     Route::post('/import', [DataExportController::class, 'importAll'])->name('import.all');
