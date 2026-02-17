@@ -524,9 +524,13 @@ class TodoistImport extends Command
         // Try to parse Todoist recurrence string into Task Fiend format
         // Todoist uses natural language like "every day", "every Monday", "every 2 weeks"
 
+        // Strip Todoist's strict recurrence marker "!" (e.g., "every! month" → "every month")
+        $cleaned = preg_replace('/\bevery!\s*/i', 'every ', $todoistRecurrence);
+        $cleaned = trim($cleaned);
+
         // Use DateParser to attempt conversion
         try {
-            $parsed = $this->dateParser->parseTaskInput($todoistRecurrence);
+            $parsed = $this->dateParser->parseTaskInput($cleaned);
 
             if (!empty($parsed['recurrence_pattern'])) {
                 return $parsed['recurrence_pattern'];
