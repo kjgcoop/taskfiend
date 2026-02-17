@@ -17,22 +17,16 @@
 
     <div class="py-12">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
-            @if($overdueCount > 0 || $undatedCount > 0)
-                <div class="flex gap-3 mb-4">
-                    @if($overdueCount > 0)
-                        <a href="{{ route('overdue') }}" class="inline-flex items-center gap-2 px-4 py-2 bg-red-900 border border-red-700 rounded-md text-sm text-red-200 hover:bg-red-800 transition">
-                            Overdue
-                            <span class="inline-flex items-center justify-center px-2 py-0.5 text-xs font-bold bg-red-700 text-red-100 rounded-full">{{ $overdueCount }}</span>
-                        </a>
-                    @endif
-                    @if($undatedCount > 0)
-                        <a href="{{ route('undated') }}" class="inline-flex items-center gap-2 px-4 py-2 bg-yellow-900 border border-yellow-700 rounded-md text-sm text-yellow-200 hover:bg-yellow-800 transition">
-                            No Date
-                            <span class="inline-flex items-center justify-center px-2 py-0.5 text-xs font-bold bg-yellow-700 text-yellow-100 rounded-full">{{ $undatedCount }}</span>
-                        </a>
-                    @endif
-                </div>
-            @endif
+            <div class="flex gap-3 mb-4">
+                <a href="{{ route('overdue') }}" class="inline-flex items-center gap-2 px-4 py-2 {{ $overdueCount > 0 ? 'bg-red-900 border-red-700 text-red-200 hover:bg-red-800' : 'bg-gray-800 border-gray-600 text-gray-400 hover:bg-gray-700' }} border rounded-md text-sm transition">
+                    Overdue
+                    <span class="inline-flex items-center justify-center px-2 py-0.5 text-xs font-bold {{ $overdueCount > 0 ? 'bg-red-700 text-red-100' : 'bg-gray-700 text-gray-400' }} rounded-full">{{ $overdueCount }}</span>
+                </a>
+                <a href="{{ route('undated') }}" class="inline-flex items-center gap-2 px-4 py-2 {{ $undatedCount > 0 ? 'bg-yellow-900 border-yellow-700 text-yellow-200 hover:bg-yellow-800' : 'bg-gray-800 border-gray-600 text-gray-400 hover:bg-gray-700' }} border rounded-md text-sm transition">
+                    No Date
+                    <span class="inline-flex items-center justify-center px-2 py-0.5 text-xs font-bold {{ $undatedCount > 0 ? 'bg-yellow-700 text-yellow-100' : 'bg-gray-700 text-gray-400' }} rounded-full">{{ $undatedCount }}</span>
+                </a>
+            </div>
             <div class="bg-gray-800 border border-gray-700 overflow-hidden shadow-sm sm:rounded-lg">
                 <div class="p-6">
                     <div class="grid grid-cols-7 gap-2">
