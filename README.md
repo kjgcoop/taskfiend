@@ -27,6 +27,18 @@ A user who is disabled is unable to log in, but their tasks remain present. If t
 
 An invalidated API key cannot be re-validated.
 
+#### Importing from Todoist
+See TODOIST_IMPORT_SPEC.md
+
+#### Purging User Data
+The idea is to keep data even after users go away, but I needed this for testing the Todoist import:
+`php artisan user:purge [email address] --force`
+
+#### Move Overdue Tasks to Today
+I only want to do this in dev, so this is run at the command line:
+`php artisan tasks:move-overdue`
+
+
 ### Adding Other Pages
 I created this functionality so somebody can put up their own Privacy Policy, Terms of Service, documentation or whatever.
 
@@ -39,10 +51,3 @@ To add a new page:
 
 If you add documentation, please consider contributing it back to this project. If it's something you/your users need documented, there's probably somebody else out there who could also use it.
 
-### Purging User Data
-The idea is to keep data even after users go away, but I needed this for testing the Todoist import:
-`php artisan user:purge [email address] --force`
-
-### Move Overdue Tasks to Today
-I only want to do this in dev, so this is run at the command line:
-`php artisan tasks:move-overdue`
