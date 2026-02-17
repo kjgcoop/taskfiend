@@ -20,12 +20,9 @@ class DashboardController extends Controller
             })
             ->where('status', '!=', 'archived')
             ->where('status', '!=', 'done')
-            ->where(function ($q) {
-                $q->where('date', today()->format('Y-m-d'))
-                  ->orWhereNull('date'); // Show tasks without dates in Today view
-            })
+            ->where('date', today()->format('Y-m-d'))
             ->with(['creator', 'project', 'tags', 'assignees', 'attachments', 'comments'])
-            ->orderByRaw('date IS NULL, date ASC, time IS NULL, time ASC')
+            ->orderByRaw('time IS NULL, time ASC')
             ->get();
 
         return view('dashboard.today', compact('tasks'));
