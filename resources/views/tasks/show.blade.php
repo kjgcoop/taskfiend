@@ -268,11 +268,8 @@
                 <div class="mt-4">
                     <span class="text-sm font-medium text-gray-500">Description</span>
                     <div @click="startEdit('description')" x-show="!editing.description" class="mt-1 cursor-pointer hover:bg-gray-700 p-2 rounded min-h-[40px]">
-                        @if($task->description)
-                            <p class="text-gray-300">{{ $task->description }}</p>
-                        @else
-                            <p class="text-gray-400 italic">Click to add description</p>
-                        @endif
+                        <div class="markdown-body" x-show="fields.description" x-html="fields.description ? marked.parse(fields.description) : ''"></div>
+                        <p x-show="!fields.description" class="text-gray-400 italic">Click to add description</p>
                     </div>
                     <div x-show="editing.description" class="mt-1">
                         <textarea x-model="fields.description" rows="3"
@@ -570,6 +567,44 @@
     </div>
 
     @push('scripts')
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <style>
+        .markdown-body { color: #d1d5db; }
+        .markdown-body h1, .markdown-body h2, .markdown-body h3,
+        .markdown-body h4, .markdown-body h5, .markdown-body h6 {
+            color: #f3f4f6; font-weight: 600; margin-top: 1em; margin-bottom: 0.5em; line-height: 1.25;
+        }
+        .markdown-body h1 { font-size: 1.5em; }
+        .markdown-body h2 { font-size: 1.25em; }
+        .markdown-body h3 { font-size: 1.125em; }
+        .markdown-body p { margin-bottom: 0.75em; }
+        .markdown-body p:last-child { margin-bottom: 0; }
+        .markdown-body ul, .markdown-body ol { margin-left: 1.5em; margin-bottom: 0.75em; }
+        .markdown-body ul { list-style-type: disc; }
+        .markdown-body ol { list-style-type: decimal; }
+        .markdown-body li { margin-bottom: 0.25em; }
+        .markdown-body code {
+            background-color: #374151; color: #d1d5db;
+            padding: 0.15em 0.4em; border-radius: 0.25em;
+            font-size: 0.875em; font-family: ui-monospace, monospace;
+        }
+        .markdown-body pre {
+            background-color: #1f2937; padding: 0.75em 1em; border-radius: 0.375em;
+            overflow-x: auto; margin-bottom: 0.75em; border: 1px solid #374151;
+        }
+        .markdown-body pre code { background-color: transparent; padding: 0; font-size: 0.875em; }
+        .markdown-body blockquote {
+            border-left: 3px solid #4b5563; padding-left: 1em;
+            color: #9ca3af; margin-bottom: 0.75em; font-style: italic;
+        }
+        .markdown-body a { color: #60a5fa; text-decoration: underline; }
+        .markdown-body a:hover { color: #93c5fd; }
+        .markdown-body hr { border: none; border-top: 1px solid #4b5563; margin: 1em 0; }
+        .markdown-body strong { color: #f3f4f6; font-weight: 600; }
+        .markdown-body table { border-collapse: collapse; width: 100%; margin-bottom: 0.75em; }
+        .markdown-body th, .markdown-body td { border: 1px solid #4b5563; padding: 0.5em 0.75em; text-align: left; }
+        .markdown-body th { background-color: #374151; color: #f3f4f6; font-weight: 600; }
+    </style>
     <script>
         function taskEditor(taskId) {
             return {
