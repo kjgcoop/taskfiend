@@ -2,10 +2,31 @@
 
 @pushOnce('scripts')
 <script>
+    document.addEventListener('alpine:init', () => {
+        Alpine.store('taskCount', {
+            total: 0,
+            visible: 0,
+            filtered: false,
+            ready: false
+        });
+    });
+
     window.taskFilter = function () {
         return {
             query: '',
             noResults: false,
+            init() {
+                this.$nextTick(() => {
+                    const container = this.$refs.taskContainer;
+                    if (container) {
+                        const total = container.querySelectorAll('[data-filterable]').length;
+                        Alpine.store('taskCount').total = total;
+                        Alpine.store('taskCount').visible = total;
+                        Alpine.store('taskCount').filtered = false;
+                        Alpine.store('taskCount').ready = true;
+                    }
+                });
+            },
             filterTasks() {
                 const container = this.$refs.taskContainer;
                 const tasks = container.querySelectorAll('[data-filterable]');
@@ -14,6 +35,8 @@
                 if (!query) {
                     tasks.forEach(el => el.style.display = '');
                     this.noResults = false;
+                    Alpine.store('taskCount').visible = tasks.length;
+                    Alpine.store('taskCount').filtered = false;
                     return;
                 }
 
@@ -71,6 +94,8 @@
                 });
 
                 this.noResults = visibleCount === 0 && tasks.length > 0;
+                Alpine.store('taskCount').visible = visibleCount;
+                Alpine.store('taskCount').filtered = true;
             }
         }
     };

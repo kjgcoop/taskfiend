@@ -61,7 +61,9 @@
             <!-- Project Tasks -->
             <div class="bg-gray-800 border border-gray-700 overflow-hidden shadow-sm sm:rounded-lg p-6" x-data="taskFilter()">
                 <div class="flex justify-between items-center mb-4">
-                    <h3 class="text-lg font-semibold text-gray-100">Tasks</h3>
+                    <h3 class="text-lg font-semibold text-gray-100">Tasks
+                        <span class="text-sm text-gray-500 font-normal" x-text="$store.taskCount.ready ? ($store.taskCount.filtered ? 'showing ' + $store.taskCount.visible + ' of ' + $store.taskCount.total : $store.taskCount.total) : ''"></span>
+                    </h3>
                     <a href="{{ route('tasks.create') }}?project_id={{ $project->id }}" class="text-sm text-blue-400 hover:underline">
                         Add Task
                     </a>
