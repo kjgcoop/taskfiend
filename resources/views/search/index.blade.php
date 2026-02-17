@@ -136,6 +136,7 @@
                         <input type="text"
                                x-model="query"
                                x-on:input="filterTasks()"
+                               x-on:keydown.escape="clearFilter()"
                                placeholder="Filter results... (# project, @ tag)"
                                class="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-md text-gray-100 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                     </div>

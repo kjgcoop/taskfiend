@@ -27,6 +27,12 @@
                     }
                 });
             },
+            clearFilter() {
+                if (this.query) {
+                    this.query = '';
+                    this.filterTasks();
+                }
+            },
             filterTasks() {
                 const container = this.$refs.taskContainer;
                 const tasks = container.querySelectorAll('[data-filterable]');
