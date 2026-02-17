@@ -10,7 +10,16 @@ class TagController extends Controller
 {
     public function index()
     {
-        $tags = Tag::withCount('tasks')
+        $userId = Auth::id();
+
+        $tags = Tag::withCount(['tasks' => function ($query) use ($userId) {
+                $query->where(function ($q) use ($userId) {
+                    $q->where('creator_id', $userId)
+                      ->orWhereHas('assignees', function ($query) use ($userId) {
+                          $query->where('users.id', $userId);
+                      });
+                });
+            }])
             ->orderByRaw('LOWER(tag_name)')
             ->get();
 
