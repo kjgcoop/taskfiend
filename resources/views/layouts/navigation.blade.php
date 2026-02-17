@@ -18,6 +18,9 @@
                     <x-nav-link :href="route('overdue')" :active="request()->routeIs('overdue')">
                         {{ __('Overdue') }}
                     </x-nav-link>
+                    <x-nav-link :href="route('undated')" :active="request()->routeIs('undated')">
+                        {{ __('Undated') }}
+                    </x-nav-link>
                     <x-nav-link :href="route('inbox')" :active="request()->routeIs('inbox')">
                         {{ __('Inbox') }}
                     </x-nav-link>
@@ -122,6 +125,9 @@
             </x-responsive-nav-link>
             <x-responsive-nav-link :href="route('overdue')" :active="request()->routeIs('overdue')">
                 {{ __('Overdue') }}
+            </x-responsive-nav-link>
+            <x-responsive-nav-link :href="route('undated')" :active="request()->routeIs('undated')">
+                {{ __('Undated') }}
             </x-responsive-nav-link>
             <x-responsive-nav-link :href="route('inbox')" :active="request()->routeIs('inbox')">
                 {{ __('Inbox') }}

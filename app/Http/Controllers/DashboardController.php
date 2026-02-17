@@ -81,6 +81,25 @@ class DashboardController extends Controller
         return view('dashboard.overdue', compact('tasks'));
     }
 
+    public function undated()
+    {
+        $tasks = Task::query()
+            ->where(function ($q) {
+                $q->where('creator_id', Auth::id())
+                  ->orWhereHas('assignees', function ($query) {
+                      $query->where('users.id', Auth::id());
+                  });
+            })
+            ->where('status', '!=', 'archived')
+            ->where('status', '!=', 'done')
+            ->whereNull('date')
+            ->with(['creator', 'project', 'tags', 'assignees', 'attachments', 'comments'])
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        return view('dashboard.undated', compact('tasks'));
+    }
+
     public function calendar(Request $request)
     {
         $month = $request->input('month', now()->month);
@@ -107,7 +126,32 @@ class DashboardController extends Controller
                 return $task->date instanceof \Carbon\Carbon ? $task->date->format('Y-m-d') : $task->date;
             });
 
-        return view('dashboard.calendar', compact('tasks', 'month', 'year', 'startDate'));
+        $overdueCount = Task::query()
+            ->where(function ($q) {
+                $q->where('creator_id', Auth::id())
+                  ->orWhereHas('assignees', function ($query) {
+                      $query->where('users.id', Auth::id());
+                  });
+            })
+            ->where('status', '!=', 'archived')
+            ->where('status', '!=', 'done')
+            ->whereNotNull('date')
+            ->where('date', '<', today()->format('Y-m-d'))
+            ->count();
+
+        $undatedCount = Task::query()
+            ->where(function ($q) {
+                $q->where('creator_id', Auth::id())
+                  ->orWhereHas('assignees', function ($query) {
+                      $query->where('users.id', Auth::id());
+                  });
+            })
+            ->where('status', '!=', 'archived')
+            ->where('status', '!=', 'done')
+            ->whereNull('date')
+            ->count();
+
+        return view('dashboard.calendar', compact('tasks', 'month', 'year', 'startDate', 'overdueCount', 'undatedCount'));
     }
 
     public function day(Request $request)
