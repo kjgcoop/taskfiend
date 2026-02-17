@@ -8,6 +8,10 @@ class DateParser
 {
     public function parseTaskInput(string $input): array
     {
+        // Strip Todoist-style strict recurrence marker "!" (e.g., "every! month" → "every month")
+        $input = preg_replace('/\bevery!\s*/i', 'every ', $input);
+        $input = trim($input);
+
         $result = [
             'name' => $input,
             'date' => null,
