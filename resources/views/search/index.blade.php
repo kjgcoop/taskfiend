@@ -130,7 +130,7 @@
                 <div class="bg-gray-800 border border-gray-700 overflow-hidden shadow-sm sm:rounded-lg p-6" x-data="taskFilter()">
                     <h3 class="text-lg font-semibold text-gray-100 mb-4">
                         Search Results
-                        <span class="text-sm font-normal text-gray-500">({{ $tasks->count() }} found)</span>
+                        <span class="text-sm font-normal text-gray-500" x-data x-text="$store.taskCount.ready ? ($store.taskCount.filtered ? '(showing ' + $store.taskCount.visible + ' of ' + $store.taskCount.total + ' found)' : '(' + $store.taskCount.total + ' found)') : '({{ $tasks->count() }} found)'">({{ $tasks->count() }} found)</span>
                     </h3>
                     <div class="mb-4">
                         <input type="text"
