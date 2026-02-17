@@ -113,6 +113,10 @@
                                                @change="pickDate($event.target.value)"
                                                class="absolute inset-0 opacity-0 w-full h-full cursor-pointer">
                                     </div>
+                                    <button x-show="dateText || resolvedDate" @click="clearDate()" type="button"
+                                            class="px-3 py-1 bg-gray-700 text-red-400 text-sm rounded hover:bg-gray-600 flex-shrink-0">
+                                        Clear
+                                    </button>
                                 </div>
                                 <input type="hidden" name="date" :value="resolvedDate || dateText">
                                 <div x-show="datePreview" class="mt-1 text-xs text-green-400" x-text="datePreview"></div>
@@ -310,6 +314,13 @@
                     this.dateText = d.toLocaleDateString('en-US', options);
                     this.resolvedDate = value;
                     this.datePreview = this.dateText;
+                    this.dateError = '';
+                },
+
+                clearDate() {
+                    this.dateText = '';
+                    this.resolvedDate = '';
+                    this.datePreview = '';
                     this.dateError = '';
                 },
             };
