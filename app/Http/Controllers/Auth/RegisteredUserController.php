@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Models\Project;
 use App\Models\User;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\RedirectResponse;
@@ -39,6 +40,15 @@ class RegisteredUserController extends Controller
             'name' => $request->name,
             'email' => $request->email,
             'password' => Hash::make($request->password),
+        ]);
+
+        // Create Inbox project for the new user
+        Project::create([
+            'name' => $user->name . "'s Inbox",
+            'description' => 'Personal inbox for quick task capture',
+            'user_id' => $user->id,
+            'status' => 'incomplete',
+            'is_inbox' => true,
         ]);
 
         event(new Registered($user));
