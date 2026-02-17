@@ -73,22 +73,15 @@
                             @if(Auth::user()->profile_image)
                                 <img src="{{ route('profile.image.show', Auth::user()) }}"
                                      alt="{{ Auth::user()->name }}"
-                                     class="w-7 h-7 rounded-full object-cover me-2">
+                                     class="w-8 h-8 rounded-full object-cover">
                             @else
                                 @php
                                     $navAvatarColors = ['bg-blue-500', 'bg-green-500', 'bg-yellow-500', 'bg-purple-500', 'bg-pink-500', 'bg-indigo-500', 'bg-red-500', 'bg-teal-500'];
                                 @endphp
-                                <div class="w-7 h-7 rounded-full {{ $navAvatarColors[Auth::user()->id % count($navAvatarColors)] }} flex items-center justify-center text-xs font-bold text-white me-2">
+                                <div class="w-8 h-8 rounded-full {{ $navAvatarColors[Auth::user()->id % count($navAvatarColors)] }} flex items-center justify-center text-sm font-bold text-white">
                                     {{ strtoupper(substr(Auth::user()->name, 0, 1)) }}
                                 </div>
                             @endif
-                            <div>{{ Auth::user()->name }}</div>
-
-                            <div class="ms-1">
-                                <svg class="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
-                                    <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
-                                </svg>
-                            </div>
                         </button>
                     </x-slot>
 
