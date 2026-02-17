@@ -8,7 +8,7 @@
         <title>{{ config('app.name', 'Laravel') }}</title>
 
         <!-- Favicon -->
-        <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+        <link rel="icon" type="image/svg+xml" href="{{ config('app.env') !== 'production' ? '/favicon-dev.svg' : '/favicon.svg' }}">
         <link rel="icon" type="image/x-icon" href="/favicon.ico">
 
         <!-- Fonts -->
@@ -21,9 +21,10 @@
     <body class="font-sans antialiased bg-black text-gray-100">
         <div class="min-h-screen bg-black">
             @if(config('app.env') !== 'production')
-                <div class="sticky top-0 z-50 bg-red-600 text-white text-center text-xs font-bold tracking-widest py-1 uppercase">
+                <div class="fixed top-0 left-0 right-0 z-50 bg-red-600 text-white text-center text-xs font-bold tracking-widest py-1 uppercase">
                     {{ config('app.env') }} environment
                 </div>
+                <div class="h-6"></div>
             @endif
 
             @include('layouts.navigation')
