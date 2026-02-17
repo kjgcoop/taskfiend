@@ -181,7 +181,6 @@
                                     @keydown.enter="saveField('project_id')"
                                     @keydown.escape="cancelEdit('project_id')"
                                     class="w-full rounded-md bg-gray-700 border-gray-600 text-gray-100 placeholder-gray-500 shadow-sm focus:border-blue-500 focus:ring-blue-500">
-                                <option value="">No Project (Inbox)</option>
                                 @foreach($projects as $project)
                                     <option value="{{ $project->id }}">{{ $project->name }}</option>
                                 @endforeach
@@ -543,7 +542,7 @@
                     status: @js($task->status),
                     date: @js($task->date ?? ''),
                     time: @js($task->time ?? ''),
-                    project_id: @js($task->project_id ?? ''),
+                    project_id: @js($task->project_id ?? $inboxProjectId),
                     recurrence_pattern: @js($task->recurrence_pattern ?? ''),
                     tag_ids: @js($task->tags->pluck('id')->toArray()),
                     assignee_ids: @js($task->assignees->pluck('id')->toArray()),

@@ -126,7 +126,6 @@
                                     name="project_id"
                                     id="project_id"
                                     class="w-full rounded-md bg-gray-700 border-gray-600 text-gray-100 shadow-sm focus:border-blue-500 focus:ring-blue-500">
-                                <option value="">No Project (Inbox)</option>
                                 @foreach($projects as $project)
                                     <option value="{{ $project->id }}">{{ $project->name }}</option>
                                 @endforeach
