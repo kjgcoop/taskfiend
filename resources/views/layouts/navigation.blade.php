@@ -70,13 +70,18 @@
                 <x-dropdown align="right" width="48">
                     <x-slot name="trigger">
                         <button class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-gray-300 bg-gray-800 hover:text-gray-100 focus:outline-none transition ease-in-out duration-150">
-                            <div>{{ Auth::user()->name }}</div>
-
-                            <div class="ms-1">
-                                <svg class="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
-                                    <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
-                                </svg>
-                            </div>
+                            @if(Auth::user()->profile_image)
+                                <img src="{{ route('profile.image.show', Auth::user()) }}"
+                                     alt="{{ Auth::user()->name }}"
+                                     class="w-8 h-8 rounded-full object-cover">
+                            @else
+                                @php
+                                    $navAvatarColors = ['bg-blue-500', 'bg-green-500', 'bg-yellow-500', 'bg-purple-500', 'bg-pink-500', 'bg-indigo-500', 'bg-red-500', 'bg-teal-500'];
+                                @endphp
+                                <div class="w-8 h-8 rounded-full {{ $navAvatarColors[Auth::user()->id % count($navAvatarColors)] }} flex items-center justify-center text-sm font-bold text-white">
+                                    {{ strtoupper(substr(Auth::user()->name, 0, 1)) }}
+                                </div>
+                            @endif
                         </button>
                     </x-slot>
 
@@ -162,9 +167,23 @@
 
         <!-- Responsive Settings Options -->
         <div class="pt-4 pb-1 border-t border-gray-700">
-            <div class="px-4">
-                <div class="font-medium text-base text-gray-100">{{ Auth::user()->name }}</div>
-                <div class="font-medium text-sm text-gray-400">{{ Auth::user()->email }}</div>
+            <div class="px-4 flex items-center gap-3">
+                @if(Auth::user()->profile_image)
+                    <img src="{{ route('profile.image.show', Auth::user()) }}"
+                         alt="{{ Auth::user()->name }}"
+                         class="w-10 h-10 rounded-full object-cover flex-shrink-0">
+                @else
+                    @php
+                        $mobileAvatarColors = ['bg-blue-500', 'bg-green-500', 'bg-yellow-500', 'bg-purple-500', 'bg-pink-500', 'bg-indigo-500', 'bg-red-500', 'bg-teal-500'];
+                    @endphp
+                    <div class="w-10 h-10 rounded-full {{ $mobileAvatarColors[Auth::user()->id % count($mobileAvatarColors)] }} flex items-center justify-center text-sm font-bold text-white flex-shrink-0">
+                        {{ strtoupper(substr(Auth::user()->name, 0, 1)) }}
+                    </div>
+                @endif
+                <div>
+                    <div class="font-medium text-base text-gray-100">{{ Auth::user()->name }}</div>
+                    <div class="font-medium text-sm text-gray-400">{{ Auth::user()->email }}</div>
+                </div>
             </div>
 
             <div class="mt-3 space-y-1">
