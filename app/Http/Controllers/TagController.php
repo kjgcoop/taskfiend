@@ -11,7 +11,7 @@ class TagController extends Controller
     public function index()
     {
         $tags = Tag::withCount('tasks')
-            ->orderBy('tag_name')
+            ->orderByRaw('LOWER(tag_name)')
             ->get();
 
         return view('tags.index', compact('tags'));

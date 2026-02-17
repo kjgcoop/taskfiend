@@ -21,10 +21,10 @@ class SearchController extends Controller
             })
             ->where('status', '!=', 'archived')
             ->where('is_inbox', false)
-            ->orderBy('name')
+            ->orderByRaw('LOWER(name)')
             ->get();
 
-        $tags = Tag::orderBy('tag_name')->get();
+        $tags = Tag::orderByRaw('LOWER(tag_name)')->get();
 
         $query = Task::query()
             ->where(function ($q) {

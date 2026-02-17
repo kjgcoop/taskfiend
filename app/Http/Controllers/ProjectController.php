@@ -27,7 +27,7 @@ class ProjectController extends Controller
 
         $projects = $query->withCount('tasks')
             ->with('creator')
-            ->orderBy('name')
+            ->orderByRaw('LOWER(name)')
             ->get();
 
         return view('projects.index', compact('projects'));
@@ -36,7 +36,7 @@ class ProjectController extends Controller
     public function create()
     {
         $users = User::where('email_enabled_at', null)
-            ->orderBy('name')
+            ->orderByRaw('LOWER(name)')
             ->get();
 
         return view('projects.create', compact('users'));
@@ -124,7 +124,7 @@ class ProjectController extends Controller
         }
 
         $users = User::where('email_enabled_at', null)
-            ->orderBy('name')
+            ->orderByRaw('LOWER(name)')
             ->get();
 
         return view('projects.edit', compact('project', 'users'));

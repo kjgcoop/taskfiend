@@ -49,10 +49,10 @@ class TaskController extends Controller
                 $query->where('users.id', Auth::id());
             })
             ->where('status', '!=', 'archived')
-            ->orderBy('name')
+            ->orderByRaw('LOWER(name)')
             ->get();
 
-        $tags = Tag::orderBy('tag_name')->get();
+        $tags = Tag::orderByRaw('LOWER(tag_name)')->get();
         $users = User::whereNull('email_enabled_at')->get();
 
         $preselectedProjectId = $request->query('project_id');
@@ -78,7 +78,7 @@ class TaskController extends Controller
             })
             ->where('status', '=', 'incomplete')
             ->with('parent') // For depth calculation
-            ->orderBy('name')
+            ->orderByRaw('LOWER(name)')
             ->get();
 
         return view('tasks.create', compact(
@@ -202,10 +202,10 @@ class TaskController extends Controller
                 $query->where('users.id', Auth::id());
             })
             ->where('status', '!=', 'archived')
-            ->orderBy('name')
+            ->orderByRaw('LOWER(name)')
             ->get();
 
-        $tags = Tag::orderBy('tag_name')->get();
+        $tags = Tag::orderByRaw('LOWER(tag_name)')->get();
         $users = User::whereNull('email_enabled_at')->get();
 
         // Calculate next due date for recurring tasks
@@ -231,7 +231,7 @@ class TaskController extends Controller
             ->whereNotIn('id', $excludeIds)
             ->where('status', '!=', 'archived')
             ->with('parent') // For depth calculation
-            ->orderBy('name')
+            ->orderByRaw('LOWER(name)')
             ->get();
 
         return view('tasks.show', compact('task', 'projects', 'tags', 'users', 'nextDueDate', 'availableParents'));
@@ -246,10 +246,10 @@ class TaskController extends Controller
                 $query->where('users.id', Auth::id());
             })
             ->where('status', '!=', 'archived')
-            ->orderBy('name')
+            ->orderByRaw('LOWER(name)')
             ->get();
 
-        $tags = Tag::orderBy('tag_name')->get();
+        $tags = Tag::orderByRaw('LOWER(tag_name)')->get();
         $users = User::whereNull('email_enabled_at')->get();
 
         // Get available parent tasks (exclude self and descendants to prevent cycles)
@@ -264,7 +264,7 @@ class TaskController extends Controller
             ->whereNotIn('id', $excludeIds)
             ->where('status', '!=', 'archived')
             ->with('parent') // For depth calculation
-            ->orderBy('name')
+            ->orderByRaw('LOWER(name)')
             ->get();
 
         return view('tasks.edit', compact('task', 'projects', 'tags', 'users', 'availableParents'));
