@@ -55,7 +55,9 @@ class TaskController extends Controller
         $tags = Tag::orderByRaw('LOWER(tag_name)')->get();
         $users = User::whereNull('email_enabled_at')->get();
 
-        $preselectedProjectId = $request->query('project_id');
+        // Default to user's Inbox project if no project preselected
+        $inboxProject = Project::where('user_id', Auth::id())->where('is_inbox', true)->first();
+        $preselectedProjectId = $request->query('project_id') ?? ($inboxProject ? $inboxProject->id : null);
         $preselectedDate = $request->query('date');
 
         // Handle parent task preselection
@@ -207,6 +209,7 @@ class TaskController extends Controller
 
         $tags = Tag::orderByRaw('LOWER(tag_name)')->get();
         $users = User::whereNull('email_enabled_at')->get();
+        $inboxProjectId = Project::where('user_id', Auth::id())->where('is_inbox', true)->value('id');
 
         // Calculate next due date for recurring tasks
         $nextDueDate = null;
@@ -234,7 +237,7 @@ class TaskController extends Controller
             ->orderByRaw('LOWER(name)')
             ->get();
 
-        return view('tasks.show', compact('task', 'projects', 'tags', 'users', 'nextDueDate', 'availableParents'));
+        return view('tasks.show', compact('task', 'projects', 'tags', 'users', 'nextDueDate', 'availableParents', 'inboxProjectId'));
     }
 
     public function edit(Task $task)
@@ -251,6 +254,7 @@ class TaskController extends Controller
 
         $tags = Tag::orderByRaw('LOWER(tag_name)')->get();
         $users = User::whereNull('email_enabled_at')->get();
+        $inboxProjectId = Project::where('user_id', Auth::id())->where('is_inbox', true)->value('id');
 
         // Get available parent tasks (exclude self and descendants to prevent cycles)
         $excludeIds = $task->getAllDescendants()->pluck('id')->push($task->id);
@@ -267,7 +271,7 @@ class TaskController extends Controller
             ->orderByRaw('LOWER(name)')
             ->get();
 
-        return view('tasks.edit', compact('task', 'projects', 'tags', 'users', 'availableParents'));
+        return view('tasks.edit', compact('task', 'projects', 'tags', 'users', 'availableParents', 'inboxProjectId'));
     }
 
     public function update(Request $request, Task $task)

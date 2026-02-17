@@ -71,9 +71,8 @@
                             <label for="project_id" class="block text-sm font-medium text-gray-300 mb-2">Project</label>
                             <select name="project_id" id="project_id"
                                     class="w-full rounded-md bg-gray-700 border-gray-600 text-gray-100 placeholder-gray-500 shadow-sm focus:border-blue-500 focus:ring-blue-500">
-                                <option value="">No Project (Inbox)</option>
                                 @foreach($projects as $project)
-                                    <option value="{{ $project->id }}" {{ old('project_id', $task->project_id) == $project->id ? 'selected' : '' }}>
+                                    <option value="{{ $project->id }}" {{ old('project_id', $task->project_id ?? $inboxProjectId) == $project->id ? 'selected' : '' }}>
                                         {{ $project->name }}
                                     </option>
                                 @endforeach
