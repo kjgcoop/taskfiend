@@ -31,7 +31,12 @@
 
             $marginLeft = $depth * 24; // 24px per level
         @endphp
-        <div class="bg-gray-800 p-4 rounded-lg shadow hover:shadow-md transition border border-gray-700" style="margin-left: {{ $marginLeft }}px;">
+        <div class="bg-gray-800 p-4 rounded-lg shadow hover:shadow-md transition border border-gray-700"
+             data-filterable
+             data-task-name="{{ strtolower($task->name) }}"
+             data-project="{{ strtolower($task->project?->name ?? '') }}"
+             data-tags="{{ strtolower($task->tags->pluck('tag_name')->join('|')) }}"
+             style="margin-left: {{ $marginLeft }}px;">
             <div class="flex items-start gap-4">
                 <!-- Complete Circle -->
                 <form method="POST" action="{{ route('tasks.update', $task) }}" onclick="event.stopPropagation()">
