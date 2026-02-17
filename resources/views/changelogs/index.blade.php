@@ -38,7 +38,7 @@
                     </div>
                     <x-change :changes="$tag->changeLogs" />
                 @else
-                    <x-change :changes="Auth::user()->changeLogs" />
+                    <x-change :changes="$changeLogs" />
                 @endif
 
             </div>
