@@ -360,6 +360,15 @@ class DataExportController extends Controller
                     'project_id' => $taskData['project_id'],
                     'creator_id' => $taskData['creator_id'],
                 ]);
+
+                // Log task creation
+                $task->changeLogs()->create([
+                    'date' => now(),
+                    'user_id' => $user->id,
+                    'entity_type' => 'tasks',
+                    'entity_id' => $task->id,
+                    'description' => $user->name . ' created task via data import',
+                ]);
             }
 
             // Sync tags
@@ -709,6 +718,15 @@ class DataExportController extends Controller
                 'recurrence_pattern' => $taskData['recurrence_pattern'],
                 'project_id' => $project->id,
                 'creator_id' => $user->id,
+            ]);
+
+            // Log task creation
+            $task->changeLogs()->create([
+                'date' => now(),
+                'user_id' => $user->id,
+                'entity_type' => 'tasks',
+                'entity_id' => $task->id,
+                'description' => $user->name . ' created task via template import',
             ]);
 
             // Attach tags

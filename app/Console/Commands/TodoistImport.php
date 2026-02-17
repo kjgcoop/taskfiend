@@ -491,6 +491,15 @@ class TodoistImport extends Command
                 }
             }
 
+            // Log task creation
+            $task->changeLogs()->create([
+                'date' => now(),
+                'user_id' => $this->user->id,
+                'entity_type' => 'tasks',
+                'entity_id' => $task->id,
+                'description' => $this->user->name . ' created task via Todoist import',
+            ]);
+
             $this->taskIdMap[$todoistTask['id']] = $task->id;
 
             // Import task attachments (fetch separately from Todoist)
