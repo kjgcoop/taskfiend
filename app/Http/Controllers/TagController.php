@@ -18,7 +18,9 @@ class TagController extends Controller
                       ->orWhereHas('assignees', function ($query) use ($userId) {
                           $query->where('users.id', $userId);
                       });
-                });
+                })
+                ->where('status', '!=', 'archived')
+                ->where('status', '!=', 'done');
             }])
             ->orderByRaw('LOWER(tag_name)')
             ->get();
