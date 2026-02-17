@@ -185,6 +185,7 @@
                 resolvedDate: initialDate || '',
                 datePreview: '',
                 dateError: '',
+                taskCount: null,
 
                 init() {
                     if (this.resolvedDate && /^\d{4}-\d{2}-\d{2}$/.test(this.resolvedDate)) {
@@ -195,12 +196,19 @@
                     }
                 },
 
+                formatPreview(formatted, count) {
+                    if (count === null) return formatted;
+                    const label = count === 1 ? '1 task' : `${count} tasks`;
+                    return `${formatted} (${label})`;
+                },
+
                 async previewDate() {
                     const input = this.dateText.trim();
                     if (!input) {
                         this.datePreview = '';
                         this.dateError = '';
                         this.resolvedDate = '';
+                        this.taskCount = null;
                         return;
                     }
 
@@ -217,28 +225,48 @@
 
                         const data = await response.json();
                         if (data.success) {
-                            this.datePreview = data.formatted;
+                            this.taskCount = data.taskCount ?? null;
+                            this.datePreview = this.formatPreview(data.formatted, this.taskCount);
                             this.dateError = '';
                             this.resolvedDate = data.date;
                         } else {
                             this.datePreview = '';
                             this.dateError = 'Could not parse this date';
                             this.resolvedDate = '';
+                            this.taskCount = null;
                         }
                     } catch (e) {
                         this.datePreview = '';
                         this.dateError = '';
+                        this.taskCount = null;
                     }
                 },
 
-                pickDate(value) {
+                async pickDate(value) {
                     if (!value) return;
                     const d = new Date(value + 'T12:00:00');
                     const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
                     this.dateText = d.toLocaleDateString('en-US', options);
                     this.resolvedDate = value;
-                    this.datePreview = this.dateText;
                     this.dateError = '';
+
+                    try {
+                        const response = await fetch('{{ route("tasks.parseDate") }}', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                                'Accept': 'application/json',
+                            },
+                            body: JSON.stringify({ input: value }),
+                        });
+                        const data = await response.json();
+                        this.taskCount = data.success ? (data.taskCount ?? null) : null;
+                    } catch (e) {
+                        this.taskCount = null;
+                    }
+
+                    this.datePreview = this.formatPreview(this.dateText, this.taskCount);
                 },
 
                 clearDate() {
@@ -246,6 +274,7 @@
                     this.resolvedDate = '';
                     this.datePreview = '';
                     this.dateError = '';
+                    this.taskCount = null;
                 },
             };
         }

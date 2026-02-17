@@ -586,10 +586,22 @@ class TaskController extends Controller
         $result = $this->resolveNaturalDate($input);
 
         if ($result) {
+            $dateStr = $result->format('Y-m-d');
+            $taskCount = Task::where(function ($q) {
+                    $q->where('creator_id', Auth::id())
+                      ->orWhereHas('assignees', function ($query) {
+                          $query->where('user_id', Auth::id());
+                      });
+                })
+                ->where('date', $dateStr)
+                ->where('status', 'incomplete')
+                ->count();
+
             return response()->json([
                 'success' => true,
-                'date' => $result->format('Y-m-d'),
+                'date' => $dateStr,
                 'formatted' => $result->format('l, F j, Y'),
+                'taskCount' => $taskCount,
             ]);
         }
 
