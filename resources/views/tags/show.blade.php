@@ -15,7 +15,7 @@
     <div class="py-12">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-6">
             <!-- Tag Details -->
-            <div class="bg-black border border-gray-700 overflow-hidden shadow-sm sm:rounded-lg p-6">
+            <div class="bg-[#202020] border border-gray-700 overflow-hidden shadow-sm sm:rounded-lg p-6">
                 <div class="flex items-center gap-4">
                     <div class="w-16 h-16 rounded-lg" style="background-color: {{ $tag->color }}"></div>
                     <div>
@@ -26,7 +26,7 @@
             </div>
 
             <!-- Tagged Tasks -->
-            <div class="bg-black border border-gray-700 overflow-hidden shadow-sm sm:rounded-lg p-6" x-data="taskFilter()">
+            <div class="bg-[#202020] border border-gray-700 overflow-hidden shadow-sm sm:rounded-lg p-6" x-data="taskFilter()">
                 <h3 class="text-lg font-semibold text-gray-100 mb-4">Tagged Tasks
                     <span class="text-sm text-gray-500 font-normal" x-text="$store.taskCount.ready ? ($store.taskCount.filtered ? 'showing ' + $store.taskCount.visible + ' of ' + $store.taskCount.total : $store.taskCount.total) : ''"></span>
                 </h3>
@@ -41,7 +41,7 @@
                 <div x-ref="taskContainer">
                     <x-task-list :tasks="$tasks" />
                 </div>
-                <div x-show="noResults" x-cloak class="bg-black p-8 rounded-lg text-center text-gray-400 border border-gray-700">
+                <div x-show="noResults" x-cloak class="bg-[#202020] p-8 rounded-lg text-center text-gray-400 border border-gray-700">
                     No tasks match your filter.
                 </div>
             </div>
