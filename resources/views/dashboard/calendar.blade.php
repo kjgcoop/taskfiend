@@ -45,9 +45,14 @@
                                     $dateKey = $date->format('Y-m-d');
                                     $dayTasks = $tasks->get($dateKey) ?? collect();
                                 @endphp
-                                <a href="{{ route('day', ['date' => $dateKey]) }}" class="font-semibold text-sm mb-1 text-gray-300 hover:text-blue-400 hover:underline inline-block">
-                                    {{ $date->day }}
-                                </a>
+                                <div class="flex items-center justify-between mb-1">
+                                    <a href="{{ route('day', ['date' => $dateKey]) }}" class="font-semibold text-sm text-gray-300 hover:text-blue-400 hover:underline">
+                                        {{ $date->day }}
+                                    </a>
+                                    @if($dayTasks->count() > 0)
+                                        <span class="inline-flex items-center justify-center min-w-5 h-5 px-1 text-xs font-medium bg-blue-900 text-blue-300 rounded-full">{{ $dayTasks->count() }}</span>
+                                    @endif
+                                </div>
                                 <div class="space-y-1 overflow-hidden">
                                     @foreach($dayTasks->take(3) as $task)
                                         <a href="{{ route('tasks.show', $task) }}" class="block text-xs p-1 bg-blue-900 text-blue-200 rounded truncate hover:bg-blue-800">
