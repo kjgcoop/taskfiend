@@ -50,7 +50,7 @@
                                         {{ $date->day }}
                                     </a>
                                     @if($dayTasks->count() > 0)
-                                        <span class="inline-flex items-center justify-center min-w-5 h-5 px-1 text-xs font-medium bg-blue-900 text-blue-300 rounded-full">{{ $dayTasks->count() }}</span>
+                                        <span class="font-thin italic text-[10px] text-gray-500">{{ $dayTasks->count() }}</span>
                                     @endif
                                 </div>
                                 <div class="space-y-1 overflow-hidden">
