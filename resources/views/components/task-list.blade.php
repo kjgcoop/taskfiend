@@ -139,7 +139,7 @@
 
             $marginLeft = $depth * 24; // 24px per level
         @endphp
-        <div class="bg-[#0a1a0a] p-4 rounded-lg shadow hover:shadow-md transition border border-gray-700"
+        <div class="bg-black p-4 rounded-lg shadow hover:shadow-md transition border border-gray-700"
              data-filterable
              data-task-name="{{ strtolower($task->name) }}"
              data-project="{{ strtolower($task->project?->name ?? '') }}"
@@ -293,7 +293,7 @@
             <x-task-list :tasks="$task->children" :depth="$depth + 1" />
         @endif
     @empty
-        <div class="bg-[#0a1a0a] p-8 rounded-lg text-center text-gray-400 border border-gray-700">
+        <div class="bg-black p-8 rounded-lg text-center text-gray-400 border border-gray-700">
             No tasks found.
         </div>
     @endforelse

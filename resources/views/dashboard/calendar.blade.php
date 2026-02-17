@@ -18,16 +18,16 @@
     <div class="py-12">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
             <div class="flex gap-3 mb-4">
-                <a href="{{ route('overdue') }}" class="inline-flex items-center gap-2 px-4 py-2 bg-[#0a1a0a] border border-gray-600 text-gray-400 hover:bg-gray-700 rounded-md text-sm transition">
+                <a href="{{ route('overdue') }}" class="inline-flex items-center gap-2 px-4 py-2 bg-black border border-gray-600 text-gray-400 hover:bg-gray-700 rounded-md text-sm transition">
                     Overdue
                     <span class="inline-flex items-center justify-center px-2 py-0.5 text-xs font-bold bg-gray-700 text-gray-400 rounded-full">{{ $overdueCount }}</span>
                 </a>
-                <a href="{{ route('undated') }}" class="inline-flex items-center gap-2 px-4 py-2 bg-[#0a1a0a] border border-gray-600 text-gray-400 hover:bg-gray-700 rounded-md text-sm transition">
+                <a href="{{ route('undated') }}" class="inline-flex items-center gap-2 px-4 py-2 bg-black border border-gray-600 text-gray-400 hover:bg-gray-700 rounded-md text-sm transition">
                     No Date
                     <span class="inline-flex items-center justify-center px-2 py-0.5 text-xs font-bold bg-gray-700 text-gray-400 rounded-full">{{ $undatedCount }}</span>
                 </a>
             </div>
-            <div class="bg-[#0a1a0a] border border-gray-700 overflow-hidden shadow-sm sm:rounded-lg">
+            <div class="bg-black border border-gray-700 overflow-hidden shadow-sm sm:rounded-lg">
                 <div class="p-6">
                     <div class="grid grid-cols-7 gap-2">
                         @foreach(['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'] as $day)
@@ -40,7 +40,7 @@
                         @endphp
 
                         @for($i = 0; $i < 42; $i++)
-                            <div class="border border-gray-600 rounded p-2 min-h-24 {{ $date->month != $month ? 'bg-[#050f05] text-gray-500' : 'bg-[#0a1a0a]' }}">
+                            <div class="border border-gray-600 rounded p-2 min-h-24 {{ $date->month != $month ? 'bg-black text-gray-500' : 'bg-black' }}">
                                 @php
                                     $dateKey = $date->format('Y-m-d');
                                     $dayTasks = $tasks->get($dateKey) ?? collect();

@@ -7,7 +7,7 @@
 
     <div class="py-12">
         <div class="max-w-3xl mx-auto sm:px-6 lg:px-8">
-            <div class="bg-[#0a1a0a] border border-gray-700 overflow-hidden shadow-sm sm:rounded-lg">
+            <div class="bg-black border border-gray-700 overflow-hidden shadow-sm sm:rounded-lg">
                 <div class="p-6">
                     <form method="POST" action="{{ route('tasks.update', $task) }}">
                         @csrf

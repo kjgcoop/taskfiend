@@ -20,7 +20,7 @@
     <div class="py-12">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-6">
             <!-- Project Details -->
-            <div class="bg-[#0a1a0a] border border-gray-700 overflow-hidden shadow-sm sm:rounded-lg p-6">
+            <div class="bg-black border border-gray-700 overflow-hidden shadow-sm sm:rounded-lg p-6">
                 <div class="grid grid-cols-2 gap-4">
                     <div>
                         <span class="text-sm font-medium text-gray-500">Status</span>
@@ -59,7 +59,7 @@
             </div>
 
             <!-- Project Tasks -->
-            <div class="bg-[#0a1a0a] border border-gray-700 overflow-hidden shadow-sm sm:rounded-lg p-6" x-data="taskFilter()">
+            <div class="bg-black border border-gray-700 overflow-hidden shadow-sm sm:rounded-lg p-6" x-data="taskFilter()">
                 <div class="flex justify-between items-center mb-4">
                     <h3 class="text-lg font-semibold text-gray-100">Tasks
                         <span class="text-sm text-gray-500 font-normal" x-text="$store.taskCount.ready ? ($store.taskCount.filtered ? 'showing ' + $store.taskCount.visible + ' of ' + $store.taskCount.total : $store.taskCount.total) : ''"></span>
@@ -79,7 +79,7 @@
                 <div x-ref="taskContainer">
                     <x-task-list :tasks="$tasks" />
                 </div>
-                <div x-show="noResults" x-cloak class="bg-[#0a1a0a] p-8 rounded-lg text-center text-gray-400 border border-gray-700">
+                <div x-show="noResults" x-cloak class="bg-black p-8 rounded-lg text-center text-gray-400 border border-gray-700">
                     No tasks match your filter.
                 </div>
             </div>
