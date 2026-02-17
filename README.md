@@ -38,3 +38,9 @@ To add a new page:
 3. The code will turn the Markdown into HTML and spit out the contents. 
 
 If you add documentation, please consider contributing it back to this project. If it's something you/your users need documented, there's probably somebody else out there who could also use it.
+
+### Purging User Data
+The idea is to keep data even after users go away, but I needed this for testing the Todoist import:
+`php artisan user:purge [email address] --force`
+
+
