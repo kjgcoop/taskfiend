@@ -134,7 +134,7 @@ class TaskController extends Controller
         }
 
         // Auto-parse date and recurrence from task name if not explicitly provided
-        if (!$date && !$recurrencePattern) {
+        if (!$recurrencePattern) {
             // Check for unrecognized recurrence patterns first
             $unrecognizedError = $dateParser->detectUnrecognizedPattern($taskName);
             if ($unrecognizedError) {
@@ -143,8 +143,11 @@ class TaskController extends Controller
 
             $parsed = $dateParser->parseTaskInput($taskName);
             $taskName = $parsed['name'];
-            $date = $parsed['date'];
-            $time = $parsed['time'];
+            // Only auto-fill date/time from task name if not explicitly provided
+            if (!$date) {
+                $date = $parsed['date'];
+                $time = $parsed['time'];
+            }
             $recurrencePattern = $parsed['recurrence_pattern'];
         }
 
