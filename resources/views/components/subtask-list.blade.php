@@ -51,18 +51,18 @@
                             <h4 class="font-medium text-gray-200 truncate">{{ $task->name }}</h4>
                         </a>
                         @if($task->assignees->count() > 0)
-                            <div class="flex-shrink-0 flex -space-x-1">
+                            <div class="flex-shrink-0 flex space-x-1">
                                 @php
                                     $avatarColors = ['bg-blue-500', 'bg-green-500', 'bg-yellow-500', 'bg-purple-500', 'bg-pink-500', 'bg-indigo-500', 'bg-red-500', 'bg-teal-500'];
                                 @endphp
                                 @foreach($task->assignees->take(3) as $assignee)
-                                    <div class="w-5 h-5 rounded-full {{ $avatarColors[$assignee->id % count($avatarColors)] }} flex items-center justify-center text-[10px] font-bold text-white ring-1 ring-gray-700"
+                                    <div class="w-6 h-6 rounded-full {{ $avatarColors[$assignee->id % count($avatarColors)] }} flex items-center justify-center text-[10px] font-bold text-white shadow-sm"
                                          title="{{ $assignee->name }}">
                                         {{ strtoupper(substr($assignee->name, 0, 1)) }}
                                     </div>
                                 @endforeach
                                 @if($task->assignees->count() > 3)
-                                    <div class="w-5 h-5 rounded-full bg-gray-600 flex items-center justify-center text-[10px] font-medium text-gray-300 ring-1 ring-gray-700"
+                                    <div class="w-6 h-6 rounded-full bg-gray-600 flex items-center justify-center text-[10px] font-medium text-gray-300 shadow-sm"
                                          title="{{ $task->assignees->count() - 3 }} more">
                                         +{{ $task->assignees->count() - 3 }}
                                     </div>
