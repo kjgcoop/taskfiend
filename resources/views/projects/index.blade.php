@@ -19,7 +19,7 @@
                 </a>
             </div>
             <!-- Import Template Form -->
-            <div x-show="showImportForm" x-cloak class="bg-gray-800 border border-gray-700 p-6 rounded-lg shadow">
+            <div x-show="showImportForm" x-cloak class="bg-[#002200] border border-gray-700 p-6 rounded-lg shadow">
                 <h3 class="text-lg font-semibold text-gray-100 mb-4">Import Project Template</h3>
                 <form action="{{ route('projects.import-template') }}" method="POST" enctype="multipart/form-data" @submit="if(!projectName) { alert('Please enter a project name'); return false; }">
                     @csrf
@@ -50,7 +50,7 @@
 
             <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                 @forelse($projects as $project)
-                    <div class="bg-gray-800 border border-gray-700 p-6 rounded-lg shadow hover:shadow-md transition cursor-pointer"
+                    <div class="bg-[#002200] border border-gray-700 p-6 rounded-lg shadow hover:shadow-md transition cursor-pointer"
                          onclick="window.location='{{ route('projects.show', $project) }}'">
                         <h3 class="font-semibold text-lg text-gray-100">{{ $project->name }}</h3>
                         @if($project->description)
@@ -67,7 +67,7 @@
                         </div>
                     </div>
                 @empty
-                    <div class="col-span-full bg-gray-800 border border-gray-700 p-8 rounded-lg text-center text-gray-500">
+                    <div class="col-span-full bg-[#002200] border border-gray-700 p-8 rounded-lg text-center text-gray-500">
                         No projects yet. Create your first project!
                     </div>
                 @endforelse

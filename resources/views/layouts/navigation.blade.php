@@ -1,4 +1,4 @@
-<nav x-data="{ open: false }" class="bg-gray-800 border-b border-gray-700">
+<nav x-data="{ open: false }" class="bg-[#002200] border-b border-gray-700">
     <!-- Primary Navigation Menu -->
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex justify-between h-16">
@@ -69,7 +69,7 @@
             <div class="hidden sm:flex sm:items-center sm:ms-6">
                 <x-dropdown align="right" width="48">
                     <x-slot name="trigger">
-                        <button class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-gray-300 bg-gray-800 hover:text-gray-100 focus:outline-none transition ease-in-out duration-150">
+                        <button class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-gray-300 bg-[#002200] hover:text-gray-100 focus:outline-none transition ease-in-out duration-150">
                             @if(Auth::user()->profile_image)
                                 <img src="{{ route('profile.image.show', Auth::user()) }}"
                                      alt="{{ Auth::user()->name }}"
