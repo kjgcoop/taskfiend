@@ -43,4 +43,6 @@ If you add documentation, please consider contributing it back to this project. 
 The idea is to keep data even after users go away, but I needed this for testing the Todoist import:
 `php artisan user:purge [email address] --force`
 
-
+### Move Overdue Tasks to Today
+I only want to do this in dev, so this is run at the command line:
+`php artisan tasks:move-overdue`
