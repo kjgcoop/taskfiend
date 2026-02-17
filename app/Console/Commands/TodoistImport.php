@@ -70,7 +70,7 @@ class TodoistImport extends Command
 
         // Initialize HTTP clients
         $this->todoistClient = new Client([
-            'base_uri' => 'https://api.todoist.com/rest/v2/',
+            'base_uri' => 'https://api.todoist.com/api/v1/',
             'headers' => [
                 'Authorization' => 'Bearer ' . $todoistKey,
                 'Content-Type' => 'application/json',
@@ -133,13 +133,44 @@ class TodoistImport extends Command
         return $user;
     }
 
+    /**
+     * Fetch all results from a paginated Todoist API v1 endpoint.
+     *
+     * API v1 returns { "results": [...], "next_cursor": "string"|null }
+     * and supports cursor/limit query parameters.
+     */
+    private function fetchAllPaginated(string $endpoint, array $query = []): array
+    {
+        $allResults = [];
+        $cursor = null;
+
+        do {
+            $params = array_merge($query, ['limit' => 200]);
+            if ($cursor) {
+                $params['cursor'] = $cursor;
+            }
+
+            $response = $this->todoistClient->get($endpoint, [
+                'query' => $params,
+            ]);
+
+            $body = json_decode($response->getBody()->getContents(), true);
+
+            $results = $body['results'] ?? [];
+            $allResults = array_merge($allResults, $results);
+
+            $cursor = $body['next_cursor'] ?? null;
+        } while ($cursor);
+
+        return $allResults;
+    }
+
     private function importLabels(): void
     {
         $this->info('Fetching labels from Todoist...');
 
         try {
-            $response = $this->todoistClient->get('labels');
-            $labels = json_decode($response->getBody()->getContents(), true);
+            $labels = $this->fetchAllPaginated('labels');
 
             $this->info('Found ' . count($labels) . ' labels');
 
@@ -200,8 +231,7 @@ class TodoistImport extends Command
         $this->info('Fetching projects from Todoist...');
 
         try {
-            $response = $this->todoistClient->get('projects');
-            $projects = json_decode($response->getBody()->getContents(), true);
+            $projects = $this->fetchAllPaginated('projects');
 
             $this->info('Found ' . count($projects) . ' projects');
 
@@ -261,8 +291,7 @@ class TodoistImport extends Command
         $this->info('Fetching tasks from Todoist...');
 
         try {
-            $response = $this->todoistClient->get('tasks');
-            $tasks = json_decode($response->getBody()->getContents(), true);
+            $tasks = $this->fetchAllPaginated('tasks');
 
             $this->info('Found ' . count($tasks) . ' tasks');
 
@@ -474,11 +503,7 @@ class TodoistImport extends Command
         // Fetch comments for each task
         foreach ($this->taskIdMap as $todoistTaskId => $taskFiendTaskId) {
             try {
-                $response = $this->todoistClient->get('comments', [
-                    'query' => ['task_id' => $todoistTaskId],
-                ]);
-
-                $comments = json_decode($response->getBody()->getContents(), true);
+                $comments = $this->fetchAllPaginated('comments', ['task_id' => $todoistTaskId]);
 
                 foreach ($comments as $todoistComment) {
                     $this->importComment($todoistComment, $taskFiendTaskId);
@@ -559,10 +584,9 @@ class TodoistImport extends Command
 
     private function importTaskAttachments(string $todoistTaskId, Task $task): void
     {
-        // Fetch attachments for this task from Todoist
-        // Note: Todoist API v2 doesn't have a direct endpoint for task attachments
+        // Todoist API doesn't have a direct endpoint for task attachments
         // Attachments in Todoist are typically added via comments
-        // So we'll skip this for now - attachments will be imported via comments
+        // So we'll skip this - attachments will be imported via comments
     }
 
     private function convertTodoistColor(?string $todoistColor): string

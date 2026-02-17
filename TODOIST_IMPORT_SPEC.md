@@ -163,7 +163,7 @@ Use Laravel's `Log` facade for all logging.
 - **HTTP Client**: Guzzle (use Laravel conventions)
 - **API Integration**: Task Fiend REST API (not direct database access)
 - **Logging**: Laravel `Log` facade (not custom logger)
-- **Todoist API**: REST API v2 (`https://api.todoist.com/rest/v2/`)
+- **Todoist API**: API v1 (`https://api.todoist.com/api/v1/`)
 
 ### Code Style
 - Follow Laravel conventions throughout
@@ -181,19 +181,25 @@ Note: The reference package uses custom logger and UniformTask objects that shou
 
 ## Todoist API Endpoints Needed
 
-Based on reference code and Todoist API v2 docs:
+Based on Todoist API v1 docs (unified API replacing REST v2):
 
 ```
-GET /rest/v2/projects           # Get all projects
-GET /rest/v2/tasks              # Get all tasks (with filters)
-GET /rest/v2/labels             # Get all labels
-GET /rest/v2/comments           # Get comments (by task or project)
+GET /api/v1/projects            # Get all projects (paginated)
+GET /api/v1/tasks               # Get all tasks (paginated, with filters)
+GET /api/v1/labels              # Get all labels (paginated)
+GET /api/v1/comments            # Get comments (paginated, by task or project)
 ```
 
 Headers:
 ```
 Authorization: Bearer {TODOIST_KEY}
 ```
+
+### Pagination
+All list endpoints use cursor-based pagination:
+- **Request params**: `cursor` (string, optional), `limit` (integer 0-200, default 50)
+- **Response format**: `{ "results": [...], "next_cursor": "string"|null }`
+- Loop until `next_cursor` is null to fetch all results
 
 ## Task Fiend API Endpoints Needed
 
@@ -293,7 +299,7 @@ Once implemented, consider:
 - Tags: Global, reused if exists
 - Subtasks: Imported in second pass after parents
 - Recurrence: Converted via DateParser, logged if unparseable
-- Attachments: Comment attachments only (Todoist API v2 doesn't expose task attachments separately)
+- Attachments: Comment attachments only (Todoist API doesn't expose task attachments separately)
 
 **Important Behaviors**:
 - All imported items are assigned to the user identified by the API key
@@ -305,7 +311,7 @@ Once implemented, consider:
 
 ### Known Limitations
 
-1. **Task Attachments**: Todoist API v2 doesn't expose task attachments via a separate endpoint. Attachments are imported via comments only.
+1. **Task Attachments**: Todoist API doesn't expose task attachments via a separate endpoint. Attachments are imported via comments only.
 
 2. **Subprojects**: Task Fiend doesn't support nested projects. All Todoist projects are imported as top-level projects.
 
