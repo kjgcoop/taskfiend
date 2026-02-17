@@ -15,14 +15,11 @@
                     <x-nav-link :href="route('today')" :active="request()->routeIs('today') || request()->routeIs('dashboard')">
                         {{ __('Today') }}
                     </x-nav-link>
-                    <x-nav-link :href="route('overdue')" :active="request()->routeIs('overdue')">
-                        {{ __('Overdue') }}
-                    </x-nav-link>
                     <x-nav-link :href="route('inbox')" :active="request()->routeIs('inbox')">
                         {{ __('Inbox') }}
                     </x-nav-link>
-                    <x-nav-link :href="route('calendar')" :active="request()->routeIs('calendar')">
-                        {{ __('Calendar') }}
+                    <x-nav-link :href="route('calendar')" :active="request()->routeIs('calendar') || request()->routeIs('overdue') || request()->routeIs('undated')">
+                        {{ __('By Date') }}
                     </x-nav-link>
                     <x-nav-link :href="route('search')" :active="request()->routeIs('search')">
                         {{ __('Search') }}
@@ -120,14 +117,11 @@
             <x-responsive-nav-link :href="route('today')" :active="request()->routeIs('today') || request()->routeIs('dashboard')">
                 {{ __('Today') }}
             </x-responsive-nav-link>
-            <x-responsive-nav-link :href="route('overdue')" :active="request()->routeIs('overdue')">
-                {{ __('Overdue') }}
-            </x-responsive-nav-link>
             <x-responsive-nav-link :href="route('inbox')" :active="request()->routeIs('inbox')">
                 {{ __('Inbox') }}
             </x-responsive-nav-link>
-            <x-responsive-nav-link :href="route('calendar')" :active="request()->routeIs('calendar')">
-                {{ __('Calendar') }}
+            <x-responsive-nav-link :href="route('calendar')" :active="request()->routeIs('calendar') || request()->routeIs('overdue') || request()->routeIs('undated')">
+                {{ __('By Date') }}
             </x-responsive-nav-link>
             <x-responsive-nav-link :href="route('search')" :active="request()->routeIs('search')">
                 {{ __('Search') }}

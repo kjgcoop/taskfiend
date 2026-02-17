@@ -2,7 +2,7 @@
     <x-slot name="header">
         <div class="flex justify-between items-center">
             <h2 class="font-semibold text-xl text-gray-100 leading-tight">
-                {{ __('Calendar') }} - {{ $startDate->format('F Y') }}
+                {{ __('By Date') }} - {{ $startDate->format('F Y') }}
             </h2>
             <div class="flex gap-2">
                 <a href="{{ route('calendar', ['month' => $month == 1 ? 12 : $month - 1, 'year' => $month == 1 ? $year - 1 : $year]) }}" class="px-3 py-2 bg-gray-700 text-gray-300 rounded hover:bg-gray-600">
@@ -17,6 +17,16 @@
 
     <div class="py-12">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
+            <div class="flex gap-3 mb-4">
+                <a href="{{ route('overdue') }}" class="inline-flex items-center gap-2 px-4 py-2 {{ $overdueCount > 0 ? 'bg-red-900 border-red-700 text-red-200 hover:bg-red-800' : 'bg-gray-800 border-gray-600 text-gray-400 hover:bg-gray-700' }} border rounded-md text-sm transition">
+                    Overdue
+                    <span class="inline-flex items-center justify-center px-2 py-0.5 text-xs font-bold {{ $overdueCount > 0 ? 'bg-red-700 text-red-100' : 'bg-gray-700 text-gray-400' }} rounded-full">{{ $overdueCount }}</span>
+                </a>
+                <a href="{{ route('undated') }}" class="inline-flex items-center gap-2 px-4 py-2 {{ $undatedCount > 0 ? 'bg-yellow-900 border-yellow-700 text-yellow-200 hover:bg-yellow-800' : 'bg-gray-800 border-gray-600 text-gray-400 hover:bg-gray-700' }} border rounded-md text-sm transition">
+                    No Date
+                    <span class="inline-flex items-center justify-center px-2 py-0.5 text-xs font-bold {{ $undatedCount > 0 ? 'bg-yellow-700 text-yellow-100' : 'bg-gray-700 text-gray-400' }} rounded-full">{{ $undatedCount }}</span>
+                </a>
+            </div>
             <div class="bg-gray-800 border border-gray-700 overflow-hidden shadow-sm sm:rounded-lg">
                 <div class="p-6">
                     <div class="grid grid-cols-7 gap-2">
