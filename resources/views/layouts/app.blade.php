@@ -21,7 +21,7 @@
     <body class="font-sans antialiased bg-black text-gray-100">
         <div class="min-h-screen bg-black">
             @if(config('app.env') !== 'production')
-                <div class="bg-red-600 text-white text-center text-xs font-bold tracking-widest py-1 uppercase">
+                <div class="sticky top-0 z-50 bg-red-600 text-white text-center text-xs font-bold tracking-widest py-1 uppercase">
                     {{ config('app.env') }} environment
                 </div>
             @endif
