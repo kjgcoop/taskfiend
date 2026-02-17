@@ -127,12 +127,24 @@
 
             <!-- Search Results -->
             @if(request()->hasAny(['q', 'tag_ids', 'project_id']))
-                <div class="bg-gray-800 border border-gray-700 overflow-hidden shadow-sm sm:rounded-lg p-6">
+                <div class="bg-gray-800 border border-gray-700 overflow-hidden shadow-sm sm:rounded-lg p-6" x-data="taskFilter()">
                     <h3 class="text-lg font-semibold text-gray-100 mb-4">
                         Search Results
                         <span class="text-sm font-normal text-gray-500">({{ $tasks->count() }} found)</span>
                     </h3>
-                    <x-task-list :tasks="$tasks" />
+                    <div class="mb-4">
+                        <input type="text"
+                               x-model="query"
+                               @input="filterTasks()"
+                               placeholder="Filter results... (# project, @ tag)"
+                               class="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-md text-gray-100 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                    </div>
+                    <div x-ref="taskContainer">
+                        <x-task-list :tasks="$tasks" />
+                    </div>
+                    <div x-show="noResults" x-cloak class="bg-gray-800 p-8 rounded-lg text-center text-gray-400 border border-gray-700">
+                        No tasks match your filter.
+                    </div>
                 </div>
             @endif
         </div>
