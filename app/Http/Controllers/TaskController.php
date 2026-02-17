@@ -49,6 +49,7 @@ class TaskController extends Controller
                 $query->where('users.id', Auth::id());
             })
             ->where('status', '!=', 'archived')
+            ->orderBy('name')
             ->get();
 
         $tags = Tag::orderBy('tag_name')->get();
@@ -201,6 +202,7 @@ class TaskController extends Controller
                 $query->where('users.id', Auth::id());
             })
             ->where('status', '!=', 'archived')
+            ->orderBy('name')
             ->get();
 
         $tags = Tag::orderBy('tag_name')->get();
@@ -244,6 +246,7 @@ class TaskController extends Controller
                 $query->where('users.id', Auth::id());
             })
             ->where('status', '!=', 'archived')
+            ->orderBy('name')
             ->get();
 
         $tags = Tag::orderBy('tag_name')->get();
