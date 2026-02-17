@@ -1,4 +1,4 @@
-@props(['tasks', 'depth' => 0])
+@props(['tasks', 'depth' => 0, 'hideDate' => false])
 
 @pushOnce('scripts')
 <script>
@@ -216,7 +216,11 @@
                         <p class="text-sm text-gray-400 mt-1">{{ Str::limit($task->description, 100) }}</p>
                     @endif
                     <div class="flex items-center gap-3 mt-2 text-xs text-gray-500">
-                        @if($task->date)
+                        @if($hideDate)
+                            @if($task->time)
+                                <span class="text-gray-400">{{ \Carbon\Carbon::parse($task->time)->format('g:i A') }}</span>
+                            @endif
+                        @elseif($task->date)
                             <span>
                                 {{ \Carbon\Carbon::parse($task->date)->format('l, F j, Y') }}
                                 @if($task->time)
@@ -290,7 +294,7 @@
 
         <!-- Recursively render subtasks -->
         @if($task->children->count() > 0)
-            <x-task-list :tasks="$task->children" :depth="$depth + 1" />
+            <x-task-list :tasks="$task->children" :depth="$depth + 1" :hide-date="$hideDate" />
         @endif
     @empty
         <div class="bg-[#202020] p-8 rounded-lg text-center text-gray-400 border border-gray-700">
