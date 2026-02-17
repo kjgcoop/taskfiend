@@ -28,6 +28,7 @@ Route::middleware('auth')->group(function () {
 
     Route::resource('tasks', TaskController::class);
     Route::post('/tasks/{task}/update-field', [TaskController::class, 'updateField'])->name('tasks.updateField');
+    Route::post('/tasks/parse-date', [TaskController::class, 'parseDate'])->name('tasks.parseDate');
 
     Route::resource('projects', ProjectController::class);
     Route::resource('tags', TagController::class);

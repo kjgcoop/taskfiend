@@ -117,7 +117,7 @@
                     <!-- Date -->
                     <div>
                         <span class="text-sm font-medium text-gray-500">Date</span>
-                        <div @click="startEdit('date')" x-show="!editing.date" class="mt-1 cursor-pointer hover:bg-gray-700 p-2 rounded min-h-[40px]">
+                        <div @click="startEditDate()" x-show="!editing.date" class="mt-1 cursor-pointer hover:bg-gray-700 p-2 rounded min-h-[40px]">
                             @if($task->date)
                                 <p class="text-gray-300">{{ \Carbon\Carbon::parse($task->date)->format('l, F j, Y') }}</p>
                             @else
@@ -125,12 +125,34 @@
                             @endif
                         </div>
                         <div x-show="editing.date" class="mt-1">
-                            <input type="date" x-model="fields.date"
-                                   @keydown.enter="saveField('date')"
-                                   @keydown.escape="cancelEdit('date')"
-                                   class="w-full rounded-md bg-gray-700 border-gray-600 text-gray-100 placeholder-gray-500 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                            <div class="flex gap-2 items-start">
+                                <div class="flex-1">
+                                    <input type="text" x-model="dateText" x-ref="dateInput"
+                                           @input.debounce.300ms="previewDate()"
+                                           @keydown.enter="saveDateField()"
+                                           @keydown.escape="cancelEdit('date')"
+                                           placeholder="tomorrow, next friday, march 15, 3/15..."
+                                           class="w-full rounded-md bg-gray-700 border-gray-600 text-gray-100 placeholder-gray-500 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                                </div>
+                                <div class="relative flex-shrink-0">
+                                    <button @click="$refs.datePicker.showPicker()" type="button"
+                                            class="p-2 bg-gray-700 border border-gray-600 rounded-md hover:bg-gray-600 text-gray-400 hover:text-gray-200"
+                                            title="Open calendar">
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                  d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                                        </svg>
+                                    </button>
+                                    <input type="date" x-ref="datePicker"
+                                           @change="pickDate($event.target.value)"
+                                           class="absolute inset-0 opacity-0 w-full h-full cursor-pointer">
+                                </div>
+                            </div>
+                            <div x-show="datePreview" class="mt-1 text-xs text-green-400" x-text="datePreview"></div>
+                            <div x-show="dateError" class="mt-1 text-xs text-red-400" x-text="dateError"></div>
+                            <p class="mt-1 text-xs text-gray-500">Type a date or click the calendar icon. Accepts: tomorrow, next friday, march 15, 3/15, 2026-03-15</p>
                             <div class="flex gap-2 mt-2">
-                                <button @click="saveField('date')"
+                                <button @click="saveDateField()"
                                         class="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700">
                                     Save
                                 </button>
@@ -138,6 +160,12 @@
                                         class="px-3 py-1 bg-gray-700 text-gray-300 text-sm rounded hover:bg-gray-600">
                                     Cancel
                                 </button>
+                                @if($task->date)
+                                <button @click="clearDate()"
+                                        class="px-3 py-1 bg-gray-700 text-red-400 text-sm rounded hover:bg-gray-600">
+                                    Clear
+                                </button>
+                                @endif
                             </div>
                         </div>
                     </div>
@@ -560,6 +588,10 @@
                     assignee_ids: @js($task->assignees->pluck('id')->toArray()),
                 },
                 original: {},
+                dateText: @js($task->date ? \Carbon\Carbon::parse($task->date)->format('l, F j, Y') : ''),
+                datePreview: '',
+                dateError: '',
+                _datePreviewTimeout: null,
 
                 init() {
                     this.original = JSON.parse(JSON.stringify(this.fields));
@@ -569,13 +601,98 @@
                     this.editing[field] = true;
                 },
 
+                startEditDate() {
+                    this.editing.date = true;
+                    this.datePreview = '';
+                    this.dateError = '';
+                    this.$nextTick(() => {
+                        if (this.$refs.dateInput) {
+                            this.$refs.dateInput.focus();
+                            this.$refs.dateInput.select();
+                        }
+                    });
+                },
+
                 cancelEdit(field) {
                     this.editing[field] = false;
+                    if (field === 'date') {
+                        this.dateText = @js($task->date ? \Carbon\Carbon::parse($task->date)->format('l, F j, Y') : '');
+                        this.datePreview = '';
+                        this.dateError = '';
+                    }
                     this.resetField(field);
                 },
 
                 resetField(field) {
                     this.fields[field] = JSON.parse(JSON.stringify(this.original[field]));
+                },
+
+                async previewDate() {
+                    const input = this.dateText.trim();
+                    if (!input) {
+                        this.datePreview = '';
+                        this.dateError = '';
+                        return;
+                    }
+
+                    try {
+                        const response = await fetch('/tasks/parse-date', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                                'Accept': 'application/json',
+                            },
+                            body: JSON.stringify({ input: input }),
+                        });
+
+                        const data = await response.json();
+                        if (data.success) {
+                            this.datePreview = data.formatted;
+                            this.dateError = '';
+                            this.fields.date = data.date;
+                        } else {
+                            this.datePreview = '';
+                            this.dateError = 'Could not parse this date';
+                        }
+                    } catch (e) {
+                        this.datePreview = '';
+                        this.dateError = '';
+                    }
+                },
+
+                pickDate(value) {
+                    if (!value) return;
+                    // Convert Y-m-d to readable text for the input
+                    const d = new Date(value + 'T12:00:00');
+                    const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+                    this.dateText = d.toLocaleDateString('en-US', options);
+                    this.fields.date = value;
+                    this.datePreview = this.dateText;
+                    this.dateError = '';
+                },
+
+                async saveDateField() {
+                    const input = this.dateText.trim();
+                    if (!input) {
+                        this.fields.date = '';
+                        await this.saveField('date');
+                        return;
+                    }
+                    // previewDate() already stores the resolved Y-m-d in fields.date
+                    // If it hasn't resolved yet, send the raw text for server-side parsing
+                    if (!/^\d{4}-\d{2}-\d{2}$/.test(this.fields.date)) {
+                        this.fields.date = input;
+                    }
+                    await this.saveField('date');
+                },
+
+                async clearDate() {
+                    this.dateText = '';
+                    this.fields.date = '';
+                    this.datePreview = '';
+                    this.dateError = '';
+                    await this.saveField('date');
                 },
 
                 async saveField(field) {

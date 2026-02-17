@@ -95,7 +95,7 @@ class TaskController extends Controller
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'description' => 'nullable|string',
-            'date' => 'nullable|date_format:Y-m-d',
+            'date' => 'nullable|string|max:255',
             'time' => 'nullable|date_format:H:i',
             'project_id' => 'nullable|exists:projects,id',
             'parent_id' => 'nullable|exists:tasks,id',
@@ -125,6 +125,17 @@ class TaskController extends Controller
         $time = $validated['time'] ?? null;
         $recurrencePattern = $validated['recurrence_pattern'] ?? null;
         $recurrenceFloating = !empty($validated['recurrence_floating']);
+
+        // Parse natural language date if provided
+        if ($date && !preg_match('/^\d{4}-\d{2}-\d{2}$/', $date)) {
+            $parsedDate = $this->resolveNaturalDate($date);
+            if (!$parsedDate) {
+                return back()->withErrors([
+                    'date' => "Could not understand the date \"{$date}\". Try: tomorrow, next friday, march 15, 3/15, or 2026-03-15"
+                ])->withInput();
+            }
+            $date = $parsedDate->format('Y-m-d');
+        }
 
         $dateParser = new DateParser();
 
@@ -291,7 +302,7 @@ class TaskController extends Controller
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'description' => 'nullable|string',
-            'date' => 'nullable|date_format:Y-m-d',
+            'date' => 'nullable|string|max:255',
             'time' => 'nullable|date_format:H:i',
             'project_id' => 'nullable|exists:projects,id',
             'parent_id' => 'nullable|exists:tasks,id',
@@ -303,6 +314,17 @@ class TaskController extends Controller
             'assignee_ids' => 'nullable|array',
             'assignee_ids.*' => 'exists:users,id',
         ]);
+
+        // Parse natural language date if provided
+        if (!empty($validated['date']) && !preg_match('/^\d{4}-\d{2}-\d{2}$/', $validated['date'])) {
+            $parsedDate = $this->resolveNaturalDate($validated['date']);
+            if (!$parsedDate) {
+                return back()->withErrors([
+                    'date' => "Could not understand the date \"{$validated['date']}\". Try: tomorrow, next friday, march 15, 3/15, or 2026-03-15"
+                ])->withInput();
+            }
+            $validated['date'] = $parsedDate->format('Y-m-d');
+        }
 
         // Validate parent change (prevent circular references)
         if (isset($validated['parent_id'])) {
@@ -494,6 +516,15 @@ class TaskController extends Controller
             } else {
                 $value = $request->input('value');
 
+                // Parse natural language dates
+                if ($field === 'date' && $value) {
+                    $parsed = $this->resolveNaturalDate($value);
+                    if (!$parsed) {
+                        return response()->json(['success' => false, 'message' => "Could not parse date: \"{$value}\". Try formats like: tomorrow, next friday, march 15, 3/15, 2026-03-15"], 400);
+                    }
+                    $value = $parsed->format('Y-m-d');
+                }
+
                 if ($field === 'status') {
                     if (!in_array($value, ['incomplete', 'done', 'archived'])) {
                         return response()->json(['success' => false, 'message' => 'Invalid status'], 400);
@@ -537,6 +568,60 @@ class TaskController extends Controller
             return response()->json(['success' => true]);
         } catch (\Exception $e) {
             return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * Parse a natural language date string and return the resolved date.
+     * Used for live preview as the user types in the date field.
+     */
+    public function parseDate(Request $request)
+    {
+        $input = trim($request->input('input', ''));
+
+        if (empty($input)) {
+            return response()->json(['success' => false]);
+        }
+
+        $result = $this->resolveNaturalDate($input);
+
+        if ($result) {
+            return response()->json([
+                'success' => true,
+                'date' => $result->format('Y-m-d'),
+                'formatted' => $result->format('l, F j, Y'),
+            ]);
+        }
+
+        return response()->json(['success' => false]);
+    }
+
+    /**
+     * Attempt to parse a natural language date string into a Carbon date.
+     * Accepts: Y-m-d, m/d, m/d/y, "tomorrow", "next friday", "march 15", etc.
+     */
+    protected function resolveNaturalDate(string $input): ?Carbon
+    {
+        // Already in Y-m-d format
+        if (preg_match('/^\d{4}-\d{2}-\d{2}$/', $input)) {
+            try {
+                return Carbon::createFromFormat('Y-m-d', $input);
+            } catch (\Exception $e) {
+                return null;
+            }
+        }
+
+        // Try Carbon::parse which uses strtotime() internally
+        try {
+            $date = Carbon::parse($input);
+            // strtotime can return weird results for random strings - sanity check
+            // that the result is within a reasonable range (10 years)
+            if ($date->diffInYears(Carbon::now()) > 10) {
+                return null;
+            }
+            return $date;
+        } catch (\Exception $e) {
+            return null;
         }
     }
 
