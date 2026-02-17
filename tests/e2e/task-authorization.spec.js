@@ -248,7 +248,7 @@ test.describe('Task Authorization & Privacy', () => {
 
     // User 2 checks their today view
     await login(page, testUsers.user2.email);
-    await page.goto('/today');
+    await page.goto('/day');
 
     // Should not see User 1's task
     await expect(page.locator('text=User 1 Today Task')).not.toBeVisible();

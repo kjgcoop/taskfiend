@@ -17,8 +17,8 @@ Route::get('/other-links', [OtherLinksController::class, 'index'])->name('other.
 Route::get('/other-links/{title}', [OtherLinksController::class, 'show'])->name('other.links.link');
 
 Route::middleware('auth')->group(function () {
-    Route::get('/', [DashboardController::class, 'today'])->name('dashboard');
-    Route::get('/today', [DashboardController::class, 'today'])->name('today');
+    Route::get('/', [DashboardController::class, 'day'])->name('dashboard');
+    Route::get('/today', [DashboardController::class, 'day'])->name('today');
     Route::get('/overdue', [DashboardController::class, 'overdue'])->name('overdue');
     Route::get('/inbox', [DashboardController::class, 'inbox'])->name('inbox');
     Route::get('/undated', [DashboardController::class, 'undated'])->name('undated');

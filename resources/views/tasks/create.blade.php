@@ -238,7 +238,7 @@
                             <button type="submit" class="inline-flex items-center px-4 py-2 bg-blue-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-blue-700">
                                 Create Task
                             </button>
-                            <a href="{{ route('today') }}" class="text-sm text-gray-400 hover:text-gray-100">
+                            <a href="{{ route('day') }}" class="text-sm text-gray-400 hover:text-gray-100">
                                 Cancel
                             </a>
                         </div>

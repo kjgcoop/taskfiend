@@ -9,25 +9,6 @@ use Illuminate\Support\Facades\Auth;
 
 class DashboardController extends Controller
 {
-    public function today()
-    {
-        $tasks = Task::query()
-            ->where(function ($q) {
-                $q->where('creator_id', Auth::id())
-                  ->orWhereHas('assignees', function ($query) {
-                      $query->where('users.id', Auth::id());
-                  });
-            })
-            ->where('status', '!=', 'archived')
-            ->where('status', '!=', 'done')
-            ->where('date', today()->format('Y-m-d'))
-            ->with(['creator', 'project', 'tags', 'assignees', 'attachments', 'comments'])
-            ->orderByRaw('time IS NULL, time ASC')
-            ->get();
-
-        return view('dashboard.today', compact('tasks'));
-    }
-
     public function inbox()
     {
         // Get user's Inbox project

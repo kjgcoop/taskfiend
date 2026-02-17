@@ -17,7 +17,7 @@ export async function login(page, email, password = 'password123') {
   // Wait for navigation to complete (redirects to / which is the dashboard)
   await page.waitForURL(url => {
     const path = new URL(url).pathname;
-    return path === '/' || path.startsWith('/today') || path.startsWith('/dashboard') || path.startsWith('/tasks');
+    return path === '/' || path.startsWith('/today') || path.startsWith('/day') || path.startsWith('/dashboard') || path.startsWith('/tasks');
   });
 }
 
