@@ -28,7 +28,7 @@
     <div class="py-12" x-data="taskEditor({{ $task->id }})" x-init="console.log('Alpine initialized', editing, fields)">
         <div class="max-w-4xl mx-auto sm:px-6 lg:px-8 space-y-6">
             <!-- Task Details -->
-            <div class="bg-[#003300] border border-gray-700 overflow-hidden shadow-sm sm:rounded-lg p-6">
+            <div class="bg-[#0a1a0a] border border-gray-700 overflow-hidden shadow-sm sm:rounded-lg p-6">
                 <!-- Task Name -->
                 <div class="mb-4">
                     <span class="text-sm font-medium text-gray-500">Task Name</span>
@@ -328,7 +328,7 @@
                         @endif
                     </div>
                     <div x-show="editing.tag_ids" class="mt-1">
-                        <div class="space-y-2 mb-2 max-h-48 overflow-y-auto border border-gray-600 bg-[#001100] rounded p-3">
+                        <div class="space-y-2 mb-2 max-h-48 overflow-y-auto border border-gray-600 bg-[#050f05] rounded p-3">
                             @forelse($tags as $tag)
                                 <label class="flex items-center">
                                     <input type="checkbox" value="{{ $tag->id }}" x-model="fields.tag_ids"
@@ -364,7 +364,7 @@
                         </div>
                     </div>
                     <div x-show="editing.assignee_ids" class="mt-1">
-                        <div class="space-y-2 mb-2 max-h-48 overflow-y-auto border border-gray-600 bg-[#001100] rounded p-3">
+                        <div class="space-y-2 mb-2 max-h-48 overflow-y-auto border border-gray-600 bg-[#050f05] rounded p-3">
                             @foreach($users as $user)
                                 <label class="flex items-center">
                                     <input type="checkbox" value="{{ $user->id }}" x-model="fields.assignee_ids"
@@ -398,7 +398,7 @@
             </div>
 
             <!-- Subtasks -->
-            <div class="bg-[#003300] border border-gray-700 overflow-hidden shadow-sm sm:rounded-lg p-6">
+            <div class="bg-[#0a1a0a] border border-gray-700 overflow-hidden shadow-sm sm:rounded-lg p-6">
                 <div class="flex justify-between items-center mb-4">
                     <h3 class="text-lg font-semibold text-gray-100">
                         Subtasks
@@ -424,7 +424,7 @@
             </div>
 
             <!-- Attachments -->
-            <div class="bg-[#003300] border border-gray-700 overflow-hidden shadow-sm sm:rounded-lg p-6">
+            <div class="bg-[#0a1a0a] border border-gray-700 overflow-hidden shadow-sm sm:rounded-lg p-6">
                 <h3 class="text-lg font-semibold text-gray-100 mb-4">Attachments</h3>
                 @if($task->attachments->count() > 0)
                     <div class="space-y-2">
@@ -482,7 +482,7 @@
             </div>
 
             <!-- Comments -->
-            <div class="bg-[#003300] border border-gray-700 overflow-hidden shadow-sm sm:rounded-lg p-6">
+            <div class="bg-[#0a1a0a] border border-gray-700 overflow-hidden shadow-sm sm:rounded-lg p-6">
                 <h3 class="text-lg font-semibold text-gray-100 mb-4">Comments</h3>
                 <div class="space-y-4 mb-6">
                     @forelse($task->comments as $comment)
@@ -532,7 +532,7 @@
             </div>
 
             <!-- Change Log -->
-            <div class="bg-[#003300] border border-gray-700 overflow-hidden shadow-sm sm:rounded-lg p-6">
+            <div class="bg-[#0a1a0a] border border-gray-700 overflow-hidden shadow-sm sm:rounded-lg p-6">
                 <h3 class="text-lg font-semibold text-gray-100 mb-4">Change Log</h3>
                 <div class="space-y-4">
                     <x-change :changes="$task->changeLogs" />

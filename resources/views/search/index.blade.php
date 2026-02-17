@@ -8,7 +8,7 @@
     <div class="py-12">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-6">
             <!-- Search Form -->
-            <div class="bg-[#003300] border border-gray-700 overflow-hidden shadow-sm sm:rounded-lg p-6" x-data="searchFilter(@js($projects), @js($tags))">
+            <div class="bg-[#0a1a0a] border border-gray-700 overflow-hidden shadow-sm sm:rounded-lg p-6" x-data="searchFilter(@js($projects), @js($tags))">
                 <form method="GET" action="{{ route('search') }}" @submit="prepareSubmit">
                     <!-- Main Search Input -->
                     <div class="mb-4 relative">
@@ -32,7 +32,7 @@
                              class="absolute z-10 mt-1 w-full bg-gray-700 border border-gray-600 rounded-md shadow-lg max-h-60 overflow-auto">
                             <template x-if="autocompleteType === 'project'">
                                 <div>
-                                    <div class="px-3 py-2 text-xs font-semibold text-gray-400 bg-[#003300] border-b border-gray-600">Projects</div>
+                                    <div class="px-3 py-2 text-xs font-semibold text-gray-400 bg-[#0a1a0a] border-b border-gray-600">Projects</div>
                                     <div class="px-2 py-1 hover:bg-gray-600 cursor-pointer text-sm text-gray-300"
                                          @click.prevent="selectAutocomplete('inbox')"
                                          :class="{ 'bg-gray-600': autocompleteIndex === 0 }">
@@ -53,7 +53,7 @@
 
                             <template x-if="autocompleteType === 'tag'">
                                 <div>
-                                    <div class="px-3 py-2 text-xs font-semibold text-gray-400 bg-[#003300] border-b border-gray-600">Tags</div>
+                                    <div class="px-3 py-2 text-xs font-semibold text-gray-400 bg-[#0a1a0a] border-b border-gray-600">Tags</div>
                                     <template x-for="(tag, index) in filteredTags" :key="tag.id">
                                         <div class="px-2 py-1 hover:bg-gray-600 cursor-pointer text-sm flex items-center"
                                              @click.prevent="selectAutocomplete(tag.tag_name)"
@@ -127,7 +127,7 @@
 
             <!-- Search Results -->
             @if(request()->hasAny(['q', 'tag_ids', 'project_id']))
-                <div class="bg-[#003300] border border-gray-700 overflow-hidden shadow-sm sm:rounded-lg p-6" x-data="taskFilter()">
+                <div class="bg-[#0a1a0a] border border-gray-700 overflow-hidden shadow-sm sm:rounded-lg p-6" x-data="taskFilter()">
                     <h3 class="text-lg font-semibold text-gray-100 mb-4">
                         Search Results
                         <span class="text-sm font-normal text-gray-500" x-data x-text="$store.taskCount.ready ? ($store.taskCount.filtered ? '(showing ' + $store.taskCount.visible + ' of ' + $store.taskCount.total + ' found)' : '(' + $store.taskCount.total + ' found)') : '({{ $tasks->count() }} found)'">({{ $tasks->count() }} found)</span>
@@ -143,7 +143,7 @@
                     <div x-ref="taskContainer">
                         <x-task-list :tasks="$tasks" />
                     </div>
-                    <div x-show="noResults" x-cloak class="bg-[#003300] p-8 rounded-lg text-center text-gray-400 border border-gray-700">
+                    <div x-show="noResults" x-cloak class="bg-[#0a1a0a] p-8 rounded-lg text-center text-gray-400 border border-gray-700">
                         No tasks match your filter.
                     </div>
                 </div>
