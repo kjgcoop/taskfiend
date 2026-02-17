@@ -553,7 +553,7 @@ class TaskController extends Controller
             'user_id' => Auth::id(),
             'entity_type' => 'tasks',
             'entity_id' => $task->id,
-            'description' => Auth::user()->name . ' ' . $description,
+            'description' => $description,
         ]);
     }
 
@@ -649,7 +649,7 @@ class TaskController extends Controller
             'user_id' => Auth::id(),
             'entity_type' => 'tasks',
             'entity_id' => $newTask->id,
-            'description' => Auth::user()->name . ' created recurring task',
+            'description' => 'created recurring task',
         ]);
     }
 
@@ -700,7 +700,7 @@ class TaskController extends Controller
                 'user_id' => Auth::id(),
                 'entity_type' => 'tasks',
                 'entity_id' => $newSubtask->id,
-                'description' => Auth::user()->name . ' created subtask from recurring parent',
+                'description' => 'created subtask from recurring parent',
             ]);
 
             // Recursively copy this subtask's subtasks

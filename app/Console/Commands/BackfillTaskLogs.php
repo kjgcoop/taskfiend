@@ -34,7 +34,7 @@ class BackfillTaskLogs extends Command
                 'user_id' => $task->creator_id,
                 'entity_type' => 'tasks',
                 'entity_id' => $task->id,
-                'description' => $task->creator->name . ' created task',
+                'description' => 'created task',
             ]);
             $count++;
         }

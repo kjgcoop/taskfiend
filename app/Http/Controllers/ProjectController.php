@@ -202,7 +202,7 @@ class ProjectController extends Controller
             'user_id' => Auth::id(),
             'entity_type' => 'projects',
             'entity_id' => $project->id,
-            'description' => Auth::user()->name . ' ' . $description,
+            'description' => $description,
         ]);
     }
 }

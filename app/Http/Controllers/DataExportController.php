@@ -367,7 +367,7 @@ class DataExportController extends Controller
                     'user_id' => $user->id,
                     'entity_type' => 'tasks',
                     'entity_id' => $task->id,
-                    'description' => $user->name . ' created task via data import',
+                    'description' => 'created task via data import',
                 ]);
             }
 
@@ -726,7 +726,7 @@ class DataExportController extends Controller
                 'user_id' => $user->id,
                 'entity_type' => 'tasks',
                 'entity_id' => $task->id,
-                'description' => $user->name . ' created task via template import',
+                'description' => 'created task via template import',
             ]);
 
             // Attach tags

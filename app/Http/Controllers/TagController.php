@@ -129,7 +129,7 @@ class TagController extends Controller
             'user_id' => Auth::id(),
             'entity_type' => 'tags',
             'entity_id' => $tag->id,
-            'description' => Auth::user()->name . ' ' . $description,
+            'description' => $description,
         ]);
     }
 }

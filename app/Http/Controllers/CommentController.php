@@ -49,7 +49,7 @@ class CommentController extends Controller
             'user_id' => Auth::id(),
             'entity_type' => 'tasks',
             'entity_id' => $task->id,
-            'description' => Auth::user()->name . ' added a comment',
+            'description' => 'added a comment',
         ]);
 
         return redirect()->route('tasks.show', $task)
@@ -77,7 +77,7 @@ class CommentController extends Controller
             'user_id' => Auth::id(),
             'entity_type' => 'tasks',
             'entity_id' => $task->id,
-            'description' => Auth::user()->name . ' deleted a comment',
+            'description' => 'deleted a comment',
         ]);
 
         return redirect()->route('tasks.show', $task)

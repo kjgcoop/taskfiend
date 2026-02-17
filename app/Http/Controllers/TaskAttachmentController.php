@@ -42,7 +42,7 @@ class TaskAttachmentController extends Controller
             'user_id' => Auth::id(),
             'entity_type' => 'tasks',
             'entity_id' => $task->id,
-            'description' => Auth::user()->name . ' added an attachment',
+            'description' => 'added an attachment',
         ]);
 
         return redirect()->route('tasks.show', $task)
@@ -68,7 +68,7 @@ class TaskAttachmentController extends Controller
             'user_id' => Auth::id(),
             'entity_type' => 'tasks',
             'entity_id' => $task->id,
-            'description' => Auth::user()->name . ' deleted an attachment',
+            'description' => 'deleted an attachment',
         ]);
 
         return redirect()->route('tasks.show', $task)
