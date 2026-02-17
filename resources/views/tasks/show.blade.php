@@ -56,7 +56,7 @@
                 @if($task->recurrence_pattern && $task->status !== 'done' && $task->status !== 'archived')
                 <div class="mb-4 p-3 bg-purple-900 bg-opacity-20 border border-purple-500 rounded-lg">
                     <p class="text-sm text-purple-300">
-                        <span class="font-semibold">🔄 Recurring Task</span> ({{ $task->recurrence_pattern }})
+                        <span class="font-semibold">🔄 Recurring Task</span> ({{ $task->recurrence_pattern }}{{ $task->recurrence_floating ? ', floating' : '' }})
                     </p>
                     <p class="text-xs text-purple-400 mt-1">
                         <strong>Completing this instance:</strong> Marking this task as "done" will complete ONLY this instance
@@ -269,7 +269,13 @@
                     <span class="text-sm font-medium text-gray-500">Recurrence</span>
                     <div @click="startEdit('recurrence_pattern')" x-show="!editing.recurrence_pattern" class="mt-1 cursor-pointer hover:bg-gray-700 p-2 rounded min-h-[40px]">
                         @if($task->recurrence_pattern)
-                            <p class="text-purple-400 font-semibold">🔄 {{ $task->recurrence_pattern }}</p>
+                            <p class="text-purple-400 font-semibold">🔄 {{ $task->recurrence_pattern }}
+                                @if($task->recurrence_floating)
+                                    <span class="text-xs text-purple-300 font-normal ml-1">(floating — next date relative to completion)</span>
+                                @else
+                                    <span class="text-xs text-gray-500 font-normal ml-1">(fixed schedule)</span>
+                                @endif
+                            </p>
                             @if($nextDueDate && $task->status !== 'done')
                             <p class="text-xs text-gray-300 mt-1">Due date after the current: {{ $nextDueDate }}</p>
                             @endif
@@ -286,8 +292,13 @@
                                @keydown.enter="saveField('recurrence_pattern')"
                                @keydown.escape="cancelEdit('recurrence_pattern')"
                                class="w-full rounded-md bg-gray-700 border-gray-600 text-gray-100 placeholder-gray-500 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                        <label class="flex items-center mt-2 text-sm text-gray-400 cursor-pointer">
+                            <input type="checkbox" x-model="fields.recurrence_floating"
+                                   class="rounded bg-gray-700 border-gray-600 text-purple-500 focus:ring-purple-500 mr-2">
+                            Floating (next date relative to when completed, not the original due date)
+                        </label>
                         <div class="flex gap-2 mt-2">
-                            <button @click="saveField('recurrence_pattern')"
+                            <button @click="saveField('recurrence_pattern'); saveField('recurrence_floating')"
                                     class="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700">
                                 Save
                             </button>
@@ -544,6 +555,7 @@
                     time: @js($task->time ?? ''),
                     project_id: @js($task->project_id ?? $inboxProjectId),
                     recurrence_pattern: @js($task->recurrence_pattern ?? ''),
+                    recurrence_floating: @js((bool) $task->recurrence_floating),
                     tag_ids: @js($task->tags->pluck('id')->toArray()),
                     assignee_ids: @js($task->assignees->pluck('id')->toArray()),
                 },

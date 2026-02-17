@@ -401,6 +401,7 @@ class TodoistImport extends Command
         $date = null;
         $time = null;
         $recurrencePattern = null;
+        $recurrenceFloating = false;
 
         if (!empty($todoistTask['due'])) {
             $due = $todoistTask['due'];
@@ -432,6 +433,8 @@ class TodoistImport extends Command
 
             // Parse recurrence pattern
             if (!empty($due['is_recurring']) && !empty($due['string'])) {
+                // Detect Todoist floating recurrence ("every!" = relative to completion date)
+                $recurrenceFloating = (bool) preg_match('/\bevery!\s*/i', $due['string']);
                 $recurrencePattern = $this->convertTodoistRecurrence($due['string'], $name);
             }
         }
@@ -464,6 +467,7 @@ class TodoistImport extends Command
                 'date' => $date,
                 'time' => $time,
                 'recurrence_pattern' => $recurrencePattern,
+                'recurrence_floating' => $recurrenceFloating,
             ]);
 
             // Create assignment

@@ -8,7 +8,11 @@ class DateParser
 {
     public function parseTaskInput(string $input): array
     {
-        // Strip Todoist-style strict recurrence marker "!" (e.g., "every! month" → "every month")
+        // Detect Todoist-style floating recurrence marker "!" (e.g., "every! month")
+        // "every!" means floating (next date relative to completion), "every" means fixed
+        $recurrenceFloating = (bool) preg_match('/\bevery!\s*/i', $input);
+
+        // Normalize "every!" to "every " for pattern matching
         $input = preg_replace('/\bevery!\s*/i', 'every ', $input);
         $input = trim($input);
 
@@ -17,6 +21,7 @@ class DateParser
             'date' => null,
             'time' => null,
             'recurrence_pattern' => null,
+            'recurrence_floating' => false,
         ];
 
         $patterns = [
@@ -129,6 +134,11 @@ class DateParser
         $result['name'] = trim($result['name']);
         if (empty($result['name'])) {
             $result['name'] = $input;
+        }
+
+        // Set floating flag if "every!" was used and a recurrence pattern was found
+        if ($recurrenceFloating && $result['recurrence_pattern']) {
+            $result['recurrence_floating'] = true;
         }
 
         return $result;

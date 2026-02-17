@@ -19,6 +19,7 @@ class TaskApiController extends Controller
             'time' => 'nullable|date_format:H:i',
             'project_id' => 'nullable|exists:projects,id',
             'recurrence_pattern' => 'nullable|string',
+            'recurrence_floating' => 'nullable|boolean',
             'tag_ids' => 'nullable|array',
             'tag_ids.*' => 'exists:tags,id',
             'assignee_ids' => 'nullable|array',
@@ -31,6 +32,7 @@ class TaskApiController extends Controller
         $date = $validated['date'] ?? null;
         $time = $validated['time'] ?? null;
         $recurrencePattern = $validated['recurrence_pattern'] ?? null;
+        $recurrenceFloating = !empty($validated['recurrence_floating']);
 
         $dateParser = new DateParser();
 
@@ -60,6 +62,9 @@ class TaskApiController extends Controller
                 $time = $parsed['time'];
             }
             $recurrencePattern = $parsed['recurrence_pattern'];
+            if ($parsed['recurrence_floating']) {
+                $recurrenceFloating = true;
+            }
         }
 
         $task = Task::create([
@@ -69,6 +74,7 @@ class TaskApiController extends Controller
             'time' => $time,
             'project_id' => $validated['project_id'] ?? null,
             'recurrence_pattern' => $recurrencePattern,
+            'recurrence_floating' => $recurrenceFloating,
             'creator_id' => $user->id,
             'status' => 'incomplete',
         ]);

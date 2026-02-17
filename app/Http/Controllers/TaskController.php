@@ -100,6 +100,7 @@ class TaskController extends Controller
             'project_id' => 'nullable|exists:projects,id',
             'parent_id' => 'nullable|exists:tasks,id',
             'recurrence_pattern' => 'nullable|string',
+            'recurrence_floating' => 'nullable|boolean',
             'tag_ids' => 'nullable|array',
             'tag_ids.*' => 'exists:tags,id',
             'assignee_ids' => 'nullable|array',
@@ -123,6 +124,7 @@ class TaskController extends Controller
         $date = $validated['date'] ?? null;
         $time = $validated['time'] ?? null;
         $recurrencePattern = $validated['recurrence_pattern'] ?? null;
+        $recurrenceFloating = !empty($validated['recurrence_floating']);
 
         $dateParser = new DateParser();
 
@@ -149,6 +151,10 @@ class TaskController extends Controller
                 $time = $parsed['time'];
             }
             $recurrencePattern = $parsed['recurrence_pattern'];
+            // Pick up floating flag from "every!" syntax in task name
+            if ($parsed['recurrence_floating']) {
+                $recurrenceFloating = true;
+            }
         }
 
         // Auto-populate date from recurrence pattern if recurrence is set but date is not
@@ -167,6 +173,7 @@ class TaskController extends Controller
             'project_id' => $validated['project_id'] ?? null,
             'parent_id' => $validated['parent_id'] ?? null,
             'recurrence_pattern' => $recurrencePattern,
+            'recurrence_floating' => $recurrenceFloating,
             'creator_id' => Auth::id(),
             'status' => 'incomplete',
         ]);
@@ -289,6 +296,7 @@ class TaskController extends Controller
             'project_id' => 'nullable|exists:projects,id',
             'parent_id' => 'nullable|exists:tasks,id',
             'recurrence_pattern' => 'nullable|string',
+            'recurrence_floating' => 'nullable|boolean',
             'status' => 'in:incomplete,done,archived',
             'tag_ids' => 'nullable|array',
             'tag_ids.*' => 'exists:tags,id',
@@ -374,7 +382,7 @@ class TaskController extends Controller
         }
 
         $changes = [];
-        foreach (['name', 'description', 'date', 'time', 'project_id', 'parent_id', 'recurrence_pattern', 'status'] as $field) {
+        foreach (['name', 'description', 'date', 'time', 'project_id', 'parent_id', 'recurrence_pattern', 'recurrence_floating', 'status'] as $field) {
             if (isset($validated[$field]) && $task->$field != $validated[$field]) {
                 $changes[$field] = ['old' => $task->$field, 'new' => $validated[$field]];
                 $task->$field = $validated[$field];
@@ -427,7 +435,7 @@ class TaskController extends Controller
         $this->authorizeTaskAccess($task);
 
         $field = $request->input('field');
-        $allowedFields = ['name', 'description', 'status', 'date', 'time', 'project_id', 'parent_id', 'recurrence_pattern', 'tag_ids', 'assignee_ids'];
+        $allowedFields = ['name', 'description', 'status', 'date', 'time', 'project_id', 'parent_id', 'recurrence_pattern', 'recurrence_floating', 'tag_ids', 'assignee_ids'];
 
         if (!in_array($field, $allowedFields)) {
             return response()->json(['success' => false, 'message' => 'Invalid field'], 400);
@@ -597,7 +605,11 @@ class TaskController extends Controller
         }
 
         $dateParser = new DateParser();
-        $baseDate = $originalTask->date ? Carbon::parse($originalTask->date) : now();
+        // Floating recurrence: next date relative to today (when completed)
+        // Fixed recurrence: next date relative to the task's due date
+        $baseDate = $originalTask->recurrence_floating
+            ? Carbon::today()
+            : ($originalTask->date ? Carbon::parse($originalTask->date) : Carbon::today());
         $nextOccurrence = $dateParser->getNextOccurrence(
             $originalTask->recurrence_pattern,
             $baseDate
@@ -628,6 +640,7 @@ class TaskController extends Controller
             'project_id' => $originalTask->project_id,
             'parent_id' => null, // Recurring tasks are always root-level
             'recurrence_pattern' => $originalTask->recurrence_pattern,
+            'recurrence_floating' => $originalTask->recurrence_floating,
             'creator_id' => $originalTask->creator_id,
             'status' => 'incomplete',
         ]);

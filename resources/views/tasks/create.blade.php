@@ -115,9 +115,16 @@
                                    class="w-full rounded-md bg-gray-700 border-gray-600 text-gray-100 placeholder-gray-500 shadow-sm focus:border-blue-500 focus:ring-blue-500"
                                    value="{{ old('recurrence_pattern') }}"
                                    placeholder="e.g., daily, every Monday, weekdays">
-                            <p class="mt-1 text-xs text-gray-500">Leave blank to auto-detect from task name.</p>
-                            <p class="mt-1 text-xs text-gray-400">Supported: daily, every other day, weekdays, weekends, every Monday/Tuesday/etc., every other Wednesday, every 2 weeks, every 15th, every first Monday, yearly</p>
+                            <p class="mt-1 text-xs text-gray-500">Leave blank to auto-detect from task name. Use "every!" for floating (e.g., "every! 3 weeks").</p>
+                            <p class="mt-1 text-xs text-gray-400">Supported: daily, every other day, weekdays, weekends, weekly, monthly, every Monday/Tuesday/etc., every other Wednesday, every 2 weeks, every 3 months, every 15th, every first Monday, yearly</p>
                             @error('recurrence_pattern')<p class="mt-1 text-sm text-red-600">{{ $message }}</p>@enderror
+                            <label class="flex items-center mt-2 text-sm text-gray-400 cursor-pointer">
+                                <input type="hidden" name="recurrence_floating" value="0">
+                                <input type="checkbox" name="recurrence_floating" value="1"
+                                       {{ old('recurrence_floating') ? 'checked' : '' }}
+                                       class="rounded bg-gray-700 border-gray-600 text-purple-500 focus:ring-purple-500 mr-2">
+                                Floating (next date relative to when completed, not the original due date)
+                            </label>
                         </div>
 
                         <div class="mb-4">

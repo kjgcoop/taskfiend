@@ -20,14 +20,18 @@ class Task extends Model
         'project_id',
         'parent_id',
         'recurrence_pattern',
+        'recurrence_floating',
     ];
+
+    protected function casts(): array
+    {
+        return [
+            'recurrence_floating' => 'boolean',
+        ];
+    }
 
     protected $attributes = [
         'status' => 'incomplete',
-    ];
-
-    protected $casts = [
-        // Removed 'date' cast - we store it as a plain string in YYYY-MM-DD format
     ];
 
     public function creator(): BelongsTo
