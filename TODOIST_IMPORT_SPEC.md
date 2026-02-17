@@ -5,7 +5,7 @@ Laravel Artisan command to import data from Todoist into Task Fiend. This is a o
 
 ## Command Format
 ```bash
-php artisan todoist:import --api-key=tfk_xxxxx
+php artisan todoist:import --taskfiend-api-key=tfk_xxxxx --todoist-api-key=YOUR_TODOIST_KEY
 ```
 
 ## What to Import
@@ -40,8 +40,8 @@ php artisan todoist:import --api-key=tfk_xxxxx
 ## Detailed Requirements
 
 ### 1. Authentication
-- **Todoist API Token**: Read from `TODOIST_KEY` environment variable
-- **Task Fiend User**: Identified by API key passed as `--api-key` argument
+- **Todoist API Token**: Passed via `--todoist-api-key` CLI option (falls back to `TODOIST_KEY` environment variable if not provided)
+- **Task Fiend User**: Identified by API key passed as `--taskfiend-api-key` option
 - All imported items attributed to this user
 
 ### 2. Scope
@@ -230,8 +230,8 @@ Refer to `routes/api.php` and existing API controllers. May need to extend API t
    - Recurring patterns
    - Subtasks (once feature exists)
 4. Test error scenarios:
-   - Invalid API key
-   - Missing TODOIST_KEY
+   - Invalid Task Fiend API key
+   - Missing Todoist API key (neither CLI option nor env var)
    - Network failures
    - Invalid recurrence patterns
 
@@ -260,7 +260,7 @@ Once implemented, consider:
 ### Usage Instructions
 
 1. **Prerequisites**:
-   - Set `TODOIST_KEY` in your `.env` file with your Todoist API token
+   - Obtain your Todoist API token from [Todoist Settings > Integrations > Developer](https://todoist.com/app/settings/integrations/developer)
    - Create a Task Fiend user and generate an API key:
      ```bash
      php artisan user:create your@email.com "Your Name" password123
@@ -269,7 +269,13 @@ Once implemented, consider:
 
 2. **Run the import**:
    ```bash
-   php artisan todoist:import --api-key=tfk_xxxxx
+   php artisan todoist:import --taskfiend-api-key=tfk_xxxxx --todoist-api-key=YOUR_TODOIST_KEY
+   ```
+   Alternatively, the Todoist key can be set via the `TODOIST_KEY` environment variable (the CLI option takes precedence):
+   ```bash
+   # Using env var for the Todoist key
+   export TODOIST_KEY=YOUR_TODOIST_KEY
+   php artisan todoist:import --taskfiend-api-key=tfk_xxxxx
    ```
 
 3. **Monitor progress**:
