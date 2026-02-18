@@ -110,7 +110,56 @@ class ProjectController extends Controller
 
         $project->load(['creator', 'assignees', 'changeLogs.user']);
 
-        return view('projects.show', compact('project', 'tasks'));
+        $users = User::where('email_enabled_at', null)
+            ->orderByRaw('LOWER(name)')
+            ->get();
+
+        return view('projects.show', compact('project', 'tasks', 'users'));
+    }
+
+    public function updateField(Request $request, Project $project)
+    {
+        if ($project->user_id !== Auth::id()) {
+            return response()->json(['success' => false, 'message' => 'Only the project creator can edit it.'], 403);
+        }
+
+        if ($project->is_inbox) {
+            return response()->json(['success' => false, 'message' => 'Inbox projects cannot be edited.'], 403);
+        }
+
+        $field = $request->input('field');
+        $allowedFields = ['name', 'description', 'status', 'assignee_ids'];
+
+        if (!in_array($field, $allowedFields)) {
+            return response()->json(['success' => false, 'message' => 'Invalid field'], 400);
+        }
+
+        try {
+            if ($field === 'assignee_ids') {
+                $assigneeIds = $request->input('assignee_ids', []);
+                $project->assignees()->sync($assigneeIds);
+                $this->logChange($project, 'updated assignees');
+            } else {
+                $value = $request->input('value');
+
+                if ($field === 'status' && !in_array($value, ['incomplete', 'done', 'archived'])) {
+                    return response()->json(['success' => false, 'message' => 'Invalid status'], 400);
+                }
+
+                if ($field === 'name' && empty(trim($value))) {
+                    return response()->json(['success' => false, 'message' => 'Name cannot be empty'], 400);
+                }
+
+                $old = $project->$field;
+                $project->$field = $value;
+                $project->save();
+                $this->logChange($project, "changed {$field} from {$old} to {$value}");
+            }
+
+            return response()->json(['success' => true]);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => 'An error occurred'], 500);
+        }
     }
 
     public function edit(Project $project)

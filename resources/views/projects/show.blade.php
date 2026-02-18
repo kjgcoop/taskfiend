@@ -8,53 +8,181 @@
                 <a href="{{ route('projects.export-template', $project) }}" class="px-4 py-2 bg-gray-700 border border-gray-600 text-gray-100 rounded hover:bg-gray-600">
                     Export as Template
                 </a>
-                @if($project->user_id === Auth::id() && !$project->is_inbox)
-                    <a href="{{ route('projects.edit', $project) }}" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
-                        Edit
-                    </a>
-                @endif
             </div>
         </div>
     </x-slot>
 
-    <div class="py-12">
+    <div class="py-12" @if($project->user_id === Auth::id() && !$project->is_inbox) x-data="projectEditor({{ $project->id }})" @endif>
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-6">
             <!-- Project Details -->
             <div class="bg-[#202020] border border-gray-700 overflow-hidden shadow-sm sm:rounded-lg p-6">
-                <div class="grid grid-cols-2 gap-4">
-                    <div>
-                        <span class="text-sm font-medium text-gray-500">Status</span>
-                        <p class="mt-1">
-                            <span class="inline-block px-2 py-1 text-xs rounded
-                                @if($project->status === 'done') bg-green-100 text-green-800
-                                @elseif($project->status === 'archived') bg-gray-100 text-gray-800
-                                @else bg-blue-100 text-blue-800 @endif">
-                                {{ ucfirst($project->status) }}
-                            </span>
-                        </p>
-                    </div>
-                    <div>
-                        <span class="text-sm font-medium text-gray-500">Created By</span>
-                        <p class="mt-1 text-gray-300">{{ $project->creator->name }}</p>
-                    </div>
-                </div>
 
-                @if($project->description)
-                    <div class="mt-4">
-                        <span class="text-sm font-medium text-gray-500">Description</span>
-                        <p class="mt-1 text-gray-300">{{ $project->description }}</p>
-                    </div>
-                @endif
-
-                @if($project->assignees->count() > 0)
-                    <div class="mt-4">
-                        <span class="text-sm font-medium text-gray-500">Assigned To</span>
-                        <div class="mt-1 space-y-1">
-                            @foreach($project->assignees as $assignee)
-                                <p class="text-sm text-gray-300">{{ $assignee->name }}</p>
-                            @endforeach
+                @if($project->user_id === Auth::id() && !$project->is_inbox)
+                    <!-- Editable project name -->
+                    <div class="mb-4">
+                        <span class="text-sm font-medium text-gray-500">Project Name</span>
+                        <div @click="startEdit('name')" x-show="!editing.name" class="mt-1 cursor-pointer hover:bg-gray-700 p-2 rounded">
+                            <p class="text-lg font-semibold text-gray-100">{{ $project->name }}</p>
+                        </div>
+                        <div x-show="editing.name" class="mt-1">
+                            <input type="text" x-model="fields.name"
+                                   @keydown.enter="saveField('name')"
+                                   @keydown.escape="cancelEdit('name')"
+                                   class="w-full rounded-md bg-gray-700 border-gray-600 text-gray-100 placeholder-gray-500 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                            <div class="flex gap-2 mt-2">
+                                <button @click="saveField('name')"
+                                        class="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700">
+                                    Save
+                                </button>
+                                <button @click="cancelEdit('name')"
+                                        class="px-3 py-1 bg-gray-700 text-gray-300 text-sm rounded hover:bg-gray-600">
+                                    Cancel
+                                </button>
+                            </div>
                         </div>
                     </div>
+
+                    <div class="grid grid-cols-2 gap-4 mb-4">
+                        <!-- Status (editable) -->
+                        <div>
+                            <span class="text-sm font-medium text-gray-500">Status</span>
+                            <div @click="startEdit('status')" x-show="!editing.status" class="mt-1 cursor-pointer hover:bg-gray-700 p-2 rounded">
+                                <span class="inline-block px-2 py-1 text-xs rounded
+                                    @if($project->status === 'done') bg-green-100 text-green-800
+                                    @elseif($project->status === 'archived') bg-gray-100 text-gray-800
+                                    @else bg-blue-100 text-blue-800 @endif">
+                                    {{ ucfirst($project->status) }}
+                                </span>
+                            </div>
+                            <div x-show="editing.status" class="mt-1">
+                                <select x-model="fields.status"
+                                        @keydown.escape="cancelEdit('status')"
+                                        class="w-full rounded-md bg-gray-700 border-gray-600 text-gray-100 placeholder-gray-500 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                                    <option value="incomplete">Incomplete</option>
+                                    <option value="done">Done</option>
+                                    <option value="archived">Archived</option>
+                                </select>
+                                <div class="flex gap-2 mt-2">
+                                    <button @click="saveField('status')"
+                                            class="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700">
+                                        Save
+                                    </button>
+                                    <button @click="cancelEdit('status')"
+                                            class="px-3 py-1 bg-gray-700 text-gray-300 text-sm rounded hover:bg-gray-600">
+                                        Cancel
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Created By (read-only) -->
+                        <div>
+                            <span class="text-sm font-medium text-gray-500">Created By</span>
+                            <p class="mt-1 text-gray-300">{{ $project->creator->name }}</p>
+                        </div>
+                    </div>
+
+                    <!-- Description (editable) -->
+                    <div class="mt-4">
+                        <span class="text-sm font-medium text-gray-500">Description</span>
+                        <div @click="startEdit('description')" x-show="!editing.description" class="mt-1 cursor-pointer hover:bg-gray-700 p-2 rounded min-h-[40px]">
+                            <p x-show="fields.description" class="text-gray-300" x-text="fields.description"></p>
+                            <p x-show="!fields.description" class="text-gray-400 italic">Click to add description</p>
+                        </div>
+                        <div x-show="editing.description" class="mt-1">
+                            <textarea x-model="fields.description" rows="3"
+                                      @keydown.ctrl.enter="saveField('description')"
+                                      @keydown.escape="cancelEdit('description')"
+                                      class="w-full rounded-md bg-gray-700 border-gray-600 text-gray-100 placeholder-gray-500 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                                      placeholder="Add a description..."></textarea>
+                            <p class="mt-1 text-xs text-gray-500">Ctrl+Enter to save, Escape to cancel</p>
+                            <div class="flex gap-2 mt-2">
+                                <button @click="saveField('description')"
+                                        class="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700">
+                                    Save
+                                </button>
+                                <button @click="cancelEdit('description')"
+                                        class="px-3 py-1 bg-gray-700 text-gray-300 text-sm rounded hover:bg-gray-600">
+                                    Cancel
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Assignees (editable, creator only) -->
+                    <div class="mt-4">
+                        <span class="text-sm font-medium text-gray-500">Assigned To</span>
+                        <div @click="startEdit('assignee_ids')" x-show="!editing.assignee_ids" class="mt-1 cursor-pointer hover:bg-gray-700 p-2 rounded min-h-[40px]">
+                            @if($project->assignees->count() > 0)
+                                <div class="space-y-1">
+                                    @foreach($project->assignees as $assignee)
+                                        <p class="text-sm text-gray-300">{{ $assignee->name }}</p>
+                                    @endforeach
+                                </div>
+                            @else
+                                <p class="text-gray-400 italic">Click to add assignees</p>
+                            @endif
+                        </div>
+                        <div x-show="editing.assignee_ids" class="mt-1">
+                            <div class="space-y-2 mb-2 max-h-48 overflow-y-auto border border-gray-600 bg-[#101010] rounded p-3">
+                                @foreach($users as $user)
+                                    <label class="flex items-center">
+                                        <input type="checkbox" value="{{ $user->id }}" x-model="fields.assignee_ids"
+                                               class="rounded border-gray-600 bg-gray-700 text-blue-600 focus:ring-blue-500">
+                                        <span class="ml-2 text-sm text-gray-300">{{ $user->name }} ({{ $user->email }})</span>
+                                    </label>
+                                @endforeach
+                            </div>
+                            <div class="flex gap-2 mt-2">
+                                <button @click="saveField('assignee_ids')"
+                                        class="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700">
+                                    Save
+                                </button>
+                                <button @click="cancelEdit('assignee_ids')"
+                                        class="px-3 py-1 bg-gray-700 text-gray-300 text-sm rounded hover:bg-gray-600">
+                                    Cancel
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                @else
+                    {{-- Read-only view for non-creators --}}
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <span class="text-sm font-medium text-gray-500">Status</span>
+                            <p class="mt-1">
+                                <span class="inline-block px-2 py-1 text-xs rounded
+                                    @if($project->status === 'done') bg-green-100 text-green-800
+                                    @elseif($project->status === 'archived') bg-gray-100 text-gray-800
+                                    @else bg-blue-100 text-blue-800 @endif">
+                                    {{ ucfirst($project->status) }}
+                                </span>
+                            </p>
+                        </div>
+                        <div>
+                            <span class="text-sm font-medium text-gray-500">Created By</span>
+                            <p class="mt-1 text-gray-300">{{ $project->creator->name }}</p>
+                        </div>
+                    </div>
+
+                    @if($project->description)
+                        <div class="mt-4">
+                            <span class="text-sm font-medium text-gray-500">Description</span>
+                            <p class="mt-1 text-gray-300">{{ $project->description }}</p>
+                        </div>
+                    @endif
+
+                    @if($project->assignees->count() > 0)
+                        <div class="mt-4">
+                            <span class="text-sm font-medium text-gray-500">Assigned To</span>
+                            <div class="mt-1 space-y-1">
+                                @foreach($project->assignees as $assignee)
+                                    <p class="text-sm text-gray-300">{{ $assignee->name }}</p>
+                                @endforeach
+                            </div>
+                        </div>
+                    @endif
                 @endif
             </div>
 
@@ -85,4 +213,85 @@
             </div>
         </div>
     </div>
+
+    @if($project->user_id === Auth::id() && !$project->is_inbox)
+    @push('scripts')
+    <script>
+        function projectEditor(projectId) {
+            return {
+                projectId: projectId,
+                editing: {},
+                fields: {
+                    name: @js($project->name),
+                    description: @js($project->description ?? ''),
+                    status: @js($project->status),
+                    assignee_ids: @js($project->assignees->pluck('id')->toArray()),
+                },
+                original: {},
+
+                init() {
+                    this.original = JSON.parse(JSON.stringify(this.fields));
+                },
+
+                startEdit(field) {
+                    this.editing[field] = true;
+                    if (field === 'name') {
+                        this.$nextTick(() => {
+                            const input = this.$el.querySelector('input[x-model="fields.name"]');
+                            if (input) { input.focus(); input.select(); }
+                        });
+                    }
+                    if (field === 'description') {
+                        this.$nextTick(() => {
+                            const ta = this.$el.querySelector('textarea[x-model="fields.description"]');
+                            if (ta) ta.focus();
+                        });
+                    }
+                },
+
+                cancelEdit(field) {
+                    this.editing[field] = false;
+                    this.fields[field] = JSON.parse(JSON.stringify(this.original[field]));
+                },
+
+                async saveField(field) {
+                    try {
+                        const formData = new FormData();
+                        formData.append('_token', document.querySelector('meta[name="csrf-token"]').content);
+                        formData.append('field', field);
+
+                        if (Array.isArray(this.fields[field])) {
+                            this.fields[field].forEach(value => {
+                                formData.append(field + '[]', value);
+                            });
+                        } else {
+                            formData.append('value', this.fields[field]);
+                        }
+
+                        const response = await fetch(`/projects/${this.projectId}/update-field`, {
+                            method: 'POST',
+                            body: formData,
+                        });
+
+                        const data = await response.json();
+
+                        if (data.success) {
+                            this.original[field] = JSON.parse(JSON.stringify(this.fields[field]));
+                            this.editing[field] = false;
+                            window.location.reload();
+                        } else {
+                            alert('Error: ' + (data.message || 'Failed to update'));
+                            this.fields[field] = JSON.parse(JSON.stringify(this.original[field]));
+                        }
+                    } catch (error) {
+                        console.error('Error:', error);
+                        alert('An error occurred while saving');
+                        this.fields[field] = JSON.parse(JSON.stringify(this.original[field]));
+                    }
+                },
+            };
+        }
+    </script>
+    @endpush
+    @endif
 </x-app-layout>

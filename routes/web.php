@@ -31,6 +31,7 @@ Route::middleware('auth')->group(function () {
     Route::post('/tasks/parse-date', [TaskController::class, 'parseDate'])->name('tasks.parseDate');
 
     Route::resource('projects', ProjectController::class);
+    Route::post('/projects/{project}/update-field', [ProjectController::class, 'updateField'])->name('projects.updateField');
     Route::resource('tags', TagController::class);
     Route::post('/tags/quick-create', [TagController::class, 'quickStore'])->name('tags.quickStore');
 
