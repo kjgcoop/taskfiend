@@ -160,6 +160,9 @@
              style="margin-left: {{ $marginLeft }}px;">
             <div class="flex items-start gap-4">
                 <!-- Complete Circle -->
+                @if($task->status === 'done')
+                    <div class="mt-1 w-6 h-6 rounded-full bg-green-600 flex-shrink-0" title="Completed"></div>
+                @else
                 <form method="POST" action="{{ route('tasks.update', $task) }}" onclick="event.stopPropagation()">
                     @csrf
                     @method('PUT')
@@ -202,6 +205,7 @@
                             title="{{ $titleText }}">
                     </button>
                 </form>
+                @endif
 
                 <!-- Task Content -->
                 <div class="flex-1 cursor-pointer" onclick="window.location='{{ route('tasks.show', $task) }}'">
