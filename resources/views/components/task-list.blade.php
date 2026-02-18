@@ -251,6 +251,21 @@
                         @if($task->recurrence_pattern)
                             <span class="text-purple-400">{{ $task->recurrence_pattern }}</span>
                         @endif
+                        @if($task->description)
+                            <span class="flex items-center gap-1 text-gray-500" title="Has description">
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h10"></path>
+                                </svg>
+                            </span>
+                        @endif
+                        @if($task->comments->count() > 0)
+                            <span class="flex items-center gap-1 text-gray-500" title="{{ $task->comments->count() }} comment(s)">
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path>
+                                </svg>
+                                {{ $task->comments->count() }}
+                            </span>
+                        @endif
                     </div>
                     @if($task->tags->count() > 0)
                         <div class="flex gap-1 mt-2">
