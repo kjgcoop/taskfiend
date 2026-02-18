@@ -201,7 +201,9 @@ class TaskApiController extends Controller
 
         $tasks->each(function ($task) use ($inboxProjects) {
             if (!$task->project && isset($inboxProjects[$task->creator_id])) {
-                $task->setRelation('project', $inboxProjects[$task->creator_id]);
+                $inbox = $inboxProjects[$task->creator_id];
+                $task->project_id = $inbox->id;
+                $task->setRelation('project', $inbox);
             }
         });
     }
