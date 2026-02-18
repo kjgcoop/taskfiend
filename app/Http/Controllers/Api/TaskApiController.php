@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\Project;
 use App\Models\Task;
 use App\Services\DateParser;
 use Carbon\Carbon;
@@ -67,12 +68,18 @@ class TaskApiController extends Controller
             }
         }
 
+        $projectId = $validated['project_id'] ?? null;
+        if (!$projectId) {
+            $inbox = Project::where('user_id', $user->id)->where('is_inbox', true)->first();
+            $projectId = $inbox?->id;
+        }
+
         $task = Task::create([
             'name' => $taskName,
             'description' => $validated['description'] ?? null,
             'date' => $date,
             'time' => $time,
-            'project_id' => $validated['project_id'] ?? null,
+            'project_id' => $projectId,
             'recurrence_pattern' => $recurrencePattern,
             'recurrence_floating' => $recurrenceFloating,
             'creator_id' => $user->id,
@@ -131,6 +138,8 @@ class TaskApiController extends Controller
             ->orderBy('date')
             ->get();
 
+        $this->resolveNullProjects($tasks);
+
         return response()->json([
             'success' => true,
             'date' => $date,
@@ -164,10 +173,36 @@ class TaskApiController extends Controller
             ->orderBy('date')
             ->get();
 
+        $this->resolveNullProjects($tasks);
+
         return response()->json([
             'success' => true,
             'date' => $date,
             'tasks' => $tasks,
         ]);
+    }
+
+    /**
+     * For any tasks with a null project relation (project_id was null or project was deleted),
+     * resolve them to the task creator's Inbox project.
+     */
+    private function resolveNullProjects(\Illuminate\Support\Collection $tasks): void
+    {
+        $nullProjectCreatorIds = $tasks->filter(fn($t) => !$t->project)->pluck('creator_id')->unique();
+
+        if ($nullProjectCreatorIds->isEmpty()) {
+            return;
+        }
+
+        $inboxProjects = Project::whereIn('user_id', $nullProjectCreatorIds)
+            ->where('is_inbox', true)
+            ->get()
+            ->keyBy('user_id');
+
+        $tasks->each(function ($task) use ($inboxProjects) {
+            if (!$task->project && isset($inboxProjects[$task->creator_id])) {
+                $task->setRelation('project', $inboxProjects[$task->creator_id]);
+            }
+        });
     }
 }
