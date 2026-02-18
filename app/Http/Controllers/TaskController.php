@@ -209,6 +209,10 @@ class TaskController extends Controller
 
         $this->logChange($task, 'created task');
 
+        if ($request->boolean('quick_add')) {
+            return redirect()->back()->with('success', 'Task created.');
+        }
+
         return redirect()->route('tasks.show', $task)
             ->with('success', 'Task created successfully.');
     }
