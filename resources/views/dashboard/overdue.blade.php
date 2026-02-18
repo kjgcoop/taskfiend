@@ -13,14 +13,7 @@
 
     <div class="py-12">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8" x-data="taskFilter()">
-            <div class="mb-4">
-                <input type="text"
-                       x-model="query"
-                       x-on:input="filterTasks()"
-                       x-on:keydown.escape="clearFilter()"
-                       placeholder="Filter tasks... (# project, @ tag)"
-                       class="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-md text-gray-100 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-            </div>
+            <x-task-input-bar />
             <div x-ref="taskContainer">
                 <x-task-list :tasks="$tasks" />
             </div>

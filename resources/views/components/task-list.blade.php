@@ -15,6 +15,7 @@
         return {
             query: '',
             noResults: false,
+            mode: 'create',
             init() {
                 this.$nextTick(() => {
                     const container = this.$refs.taskContainer;
@@ -26,6 +27,18 @@
                         Alpine.store('taskCount').ready = true;
                     }
                 });
+            },
+            switchToFilter() {
+                this.mode = 'filter';
+                this.$nextTick(() => this.$refs.filterInput && this.$refs.filterInput.focus());
+            },
+            switchToCreate() {
+                this.mode = 'create';
+                if (this.query) {
+                    this.query = '';
+                    this.filterTasks();
+                }
+                this.$nextTick(() => this.$refs.createInput && this.$refs.createInput.focus());
             },
             clearFilter() {
                 if (this.query) {
