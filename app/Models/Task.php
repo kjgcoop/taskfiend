@@ -34,6 +34,11 @@ class Task extends Model
         'status' => 'incomplete',
     ];
 
+    public function setDescriptionAttribute(?string $value): void
+    {
+        $this->attributes['description'] = $value ?? '';
+    }
+
     public function creator(): BelongsTo
     {
         return $this->belongsTo(User::class, 'creator_id');
