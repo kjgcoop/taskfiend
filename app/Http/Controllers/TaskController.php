@@ -97,6 +97,7 @@ class TaskController extends Controller
             'description' => 'nullable|string',
             'date' => 'nullable|string|max:255',
             'time' => 'nullable|date_format:H:i',
+            'duration_minutes' => 'nullable|integer|min:1|max:1440',
             'project_id' => 'nullable|exists:projects,id',
             'parent_id' => 'nullable|exists:tasks,id',
             'recurrence_pattern' => 'nullable|string',
@@ -181,6 +182,7 @@ class TaskController extends Controller
             'description' => $validated['description'] ?? null,
             'date' => $date,
             'time' => $time,
+            'duration_minutes' => $validated['duration_minutes'] ?? null,
             'project_id' => $validated['project_id'] ?? null,
             'parent_id' => $validated['parent_id'] ?? null,
             'recurrence_pattern' => $recurrencePattern,
@@ -308,6 +310,7 @@ class TaskController extends Controller
             'description' => 'nullable|string',
             'date' => 'nullable|string|max:255',
             'time' => 'nullable|date_format:H:i',
+            'duration_minutes' => 'nullable|integer|min:1|max:1440',
             'project_id' => 'nullable|exists:projects,id',
             'parent_id' => 'nullable|exists:tasks,id',
             'recurrence_pattern' => 'nullable|string',
@@ -408,7 +411,7 @@ class TaskController extends Controller
         }
 
         $changes = [];
-        foreach (['name', 'description', 'date', 'time', 'project_id', 'parent_id', 'recurrence_pattern', 'recurrence_floating', 'status'] as $field) {
+        foreach (['name', 'description', 'date', 'time', 'duration_minutes', 'project_id', 'parent_id', 'recurrence_pattern', 'recurrence_floating', 'status'] as $field) {
             if (isset($validated[$field]) && $task->$field != $validated[$field]) {
                 $changes[$field] = ['old' => $task->$field, 'new' => $validated[$field]];
                 $task->$field = $validated[$field];
@@ -461,7 +464,7 @@ class TaskController extends Controller
         $this->authorizeTaskAccess($task);
 
         $field = $request->input('field');
-        $allowedFields = ['name', 'description', 'status', 'date', 'time', 'project_id', 'parent_id', 'recurrence_pattern', 'recurrence_floating', 'tag_ids', 'assignee_ids'];
+        $allowedFields = ['name', 'description', 'status', 'date', 'time', 'duration_minutes', 'project_id', 'parent_id', 'recurrence_pattern', 'recurrence_floating', 'tag_ids', 'assignee_ids'];
 
         if (!in_array($field, $allowedFields)) {
             return response()->json(['success' => false, 'message' => 'Invalid field'], 400);
@@ -738,6 +741,7 @@ class TaskController extends Controller
             'description' => $originalTask->description,
             'date' => $nextDate,
             'time' => $originalTask->time,
+            'duration_minutes' => $originalTask->duration_minutes,
             'project_id' => $originalTask->project_id,
             'parent_id' => null, // Recurring tasks are always root-level
             'recurrence_pattern' => $originalTask->recurrence_pattern,
@@ -789,6 +793,7 @@ class TaskController extends Controller
                 'description' => $originalSubtask->description,
                 'date' => $originalSubtask->date,
                 'time' => $originalSubtask->time,
+                'duration_minutes' => $originalSubtask->duration_minutes,
                 'project_id' => $originalSubtask->project_id,
                 'recurrence_pattern' => null, // Subtasks don't have their own recurrence
                 'parent_id' => $newTask->id,

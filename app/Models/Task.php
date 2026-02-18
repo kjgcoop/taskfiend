@@ -17,6 +17,7 @@ class Task extends Model
         'creator_id',
         'date',
         'time',
+        'duration_minutes',
         'project_id',
         'parent_id',
         'recurrence_pattern',
