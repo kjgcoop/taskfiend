@@ -50,19 +50,28 @@
 
             <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                 @forelse($projects as $project)
-                    <div class="bg-[#202020] border border-gray-700 p-6 rounded-lg shadow hover:shadow-md transition cursor-pointer"
-                         onclick="window.location='{{ route('projects.show', $project) }}'">
-                        <h3 class="font-semibold text-lg text-gray-100">{{ $project->name }}</h3>
-                        @if($project->description)
-                            <p class="text-sm text-gray-400 mt-2">{{ Str::limit($project->description, 100) }}</p>
+                    @php $hasBg = !empty($project->background_image); @endphp
+                    <div class="relative border border-gray-700 rounded-lg shadow hover:shadow-md transition cursor-pointer overflow-hidden {{ $hasBg ? 'min-h-[140px]' : 'bg-[#202020]' }}"
+                         onclick="window.location='{{ route('projects.show', $project) }}'"
+                         @if($hasBg)
+                         style="background-image: url('{{ route('projects.background', $project) }}'); background-size: cover; background-position: center;"
+                         @endif>
+                        @if($hasBg)
+                            <div class="absolute inset-0 bg-black/55"></div>
                         @endif
-                        <div class="flex items-center justify-between mt-4">
-                            <span class="text-sm text-gray-500">{{ $project->tasks_count }} tasks</span>
-                            <span class="inline-block px-2 py-1 text-xs rounded
-                                @if($project->status === 'done') bg-green-100 text-green-800
-                                @else bg-blue-100 text-blue-800 @endif">
-                                {{ ucfirst($project->status) }}
-                            </span>
+                        <div class="relative p-6">
+                            <h3 class="font-semibold text-lg {{ $hasBg ? 'text-white' : 'text-gray-100' }}">{{ $project->name }}</h3>
+                            @if($project->description)
+                                <p class="text-sm {{ $hasBg ? 'text-gray-200' : 'text-gray-400' }} mt-2">{{ Str::limit($project->description, 100) }}</p>
+                            @endif
+                            <div class="flex items-center justify-between mt-4">
+                                <span class="text-sm {{ $hasBg ? 'text-gray-300' : 'text-gray-500' }}">{{ $project->tasks_count }} tasks</span>
+                                <span class="inline-block px-2 py-1 text-xs rounded
+                                    @if($project->status === 'done') bg-green-100 text-green-800
+                                    @else bg-blue-100 text-blue-800 @endif">
+                                    {{ ucfirst($project->status) }}
+                                </span>
+                            </div>
                         </div>
                     </div>
                 @empty

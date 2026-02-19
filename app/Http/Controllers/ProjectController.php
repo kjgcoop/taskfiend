@@ -6,6 +6,7 @@ use App\Models\Project;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
 
 class ProjectController extends Controller
 {
@@ -191,6 +192,12 @@ class ProjectController extends Controller
             'status' => 'in:incomplete,done,archived',
             'assignee_ids' => 'nullable|array',
             'assignee_ids.*' => 'exists:users,id',
+            'background_image' => [
+                'nullable',
+                'file',
+                'mimetypes:image/jpeg,image/png,image/webp,image/gif,image/avif,image/heic,image/heif',
+                'max:20480',
+            ],
         ]);
 
         $changes = [];
@@ -199,6 +206,23 @@ class ProjectController extends Controller
                 $changes[$field] = ['old' => $project->$field, 'new' => $validated[$field]];
                 $project->$field = $validated[$field];
             }
+        }
+
+        // Handle background image removal
+        if ($request->boolean('remove_background') && $project->background_image) {
+            Storage::disk('private')->delete($project->background_image);
+            $project->background_image = null;
+            $changes['background_image'] = ['old' => 'image', 'new' => 'none'];
+        }
+
+        // Handle background image upload
+        if ($request->hasFile('background_image') && $request->file('background_image')->isValid()) {
+            if ($project->background_image) {
+                Storage::disk('private')->delete($project->background_image);
+            }
+            $path = $request->file('background_image')->store("project-backgrounds/{$project->id}", 'private');
+            $project->background_image = $path;
+            $changes['background_image'] = ['old' => 'previous', 'new' => 'new image'];
         }
 
         $project->save();
@@ -223,6 +247,23 @@ class ProjectController extends Controller
         }
 
         abort(403, 'Projects cannot be deleted. Please archive instead.');
+    }
+
+    public function showBackground(Project $project)
+    {
+        if (!$project->background_image) {
+            abort(404);
+        }
+
+        $disk = Storage::disk('private');
+
+        if (!$disk->exists($project->background_image)) {
+            abort(404);
+        }
+
+        return response($disk->get($project->background_image))
+            ->header('Content-Type', $disk->mimeType($project->background_image))
+            ->header('Cache-Control', 'private, max-age=86400');
     }
 
     protected function authorizeProjectAccess(Project $project)

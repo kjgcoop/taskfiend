@@ -12,6 +12,7 @@ class Project extends Model
     protected $fillable = [
         'name',
         'description',
+        'background_image',
         'user_id',
         'status',
         'is_inbox',
