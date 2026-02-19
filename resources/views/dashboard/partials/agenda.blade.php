@@ -25,18 +25,21 @@
         $gridEnd   = min(24, max($endHours->max() + 1, $gridEnd));
     }
 
-    $totalHours    = $gridEnd - $gridStart;
-    $gridHeightPx  = $totalHours * $hourHeightPx;
+    $totalHours   = $gridEnd - $gridStart;
+    $gridHeightPx = $totalHours * $hourHeightPx;
 
     // Current time for today indicator
-    $isToday       = $carbonDate->isToday();
-    $nowMinutes    = $isToday ? (Carbon::now()->hour * 60 + Carbon::now()->minute) : null;
-    $nowTopPx      = $isToday
-        ? (($nowMinutes - $gridStart * 60) / 60 * $hourHeightPx)
+    $isToday   = $carbonDate->isToday();
+    $nowTopPx  = $isToday
+        ? ((Carbon::now()->hour * 60 + Carbon::now()->minute - $gridStart * 60) / 60 * $hourHeightPx)
         : null;
 
-    // Helper: snap minutes to nearest 30
-    $snap = fn(int $m): int => (int) (round($m / 30) * 30);
+    // Helper: snap minutes to nearest 30; returns [snappedH, snappedM]
+    $snapTime = function (int $h, int $m) {
+        $snappedM = (int) (round($m / 30) * 30);
+        if ($snappedM === 60) { $h++; $snappedM = 0; }
+        return [$h, $snappedM];
+    };
 
     // Helper: 24h int to label e.g. 9 → "9 AM", 13 → "1 PM"
     $hourLabel = function (int $h): string {
@@ -44,6 +47,46 @@
         if ($h === 12) return '12 PM';
         return $h < 12 ? "{$h} AM" : ($h - 12) . ' PM';
     };
+
+    // ── Collision layout ──────────────────────────────────────────────────────
+    // Group tasks by snapped slot key, then assign colIndex / colCount so
+    // tasks sharing a slot are shown side-by-side rather than stacked.
+    $slotGroups = []; // "H:M" => [task, ...]
+    foreach ($timedTasks as $task) {
+        [$th, $tm] = array_map('intval', explode(':', $task->time));
+        [$sh, $sm] = $snapTime($th, $tm);
+        $key = "{$sh}:{$sm}";
+        $slotGroups[$key][] = $task;
+    }
+
+    $taskLayout = []; // taskId => [topPx, heightPx, colIndex, colCount]
+    foreach ($slotGroups as $key => $group) {
+        [$sh, $sm] = array_map('intval', explode(':', $key));
+        $colCount = count($group);
+        $topPx    = max(0, (($sh - $gridStart) * 60 + $sm) / 60 * $hourHeightPx);
+
+        foreach ($group as $colIndex => $task) {
+            [$th, $tm] = array_map('intval', explode(':', $task->time));
+            $displayDuration = max($task->duration_minutes ?? 30, 30);
+            $heightPx = max(20, ($displayDuration / 60) * $hourHeightPx);
+
+            $taskLayout[$task->id] = [
+                'topPx'    => $topPx,
+                'heightPx' => $heightPx,
+                'colIndex' => $colIndex,
+                'colCount' => $colCount,
+            ];
+        }
+    }
+    // ─────────────────────────────────────────────────────────────────────────
+
+    $blockColors = [
+        'bg-blue-700 hover:bg-blue-600 border-blue-500',
+        'bg-indigo-700 hover:bg-indigo-600 border-indigo-500',
+        'bg-violet-700 hover:bg-violet-600 border-violet-500',
+        'bg-teal-700 hover:bg-teal-600 border-teal-500',
+        'bg-cyan-700 hover:bg-cyan-600 border-cyan-500',
+    ];
 @endphp
 
 <div class="bg-[#181818] rounded-lg border border-gray-700 overflow-hidden">
@@ -105,55 +148,38 @@
             {{-- Task blocks --}}
             @foreach($timedTasks as $task)
                 @php
+                    $layout   = $taskLayout[$task->id];
+                    $topPx    = $layout['topPx'];
+                    $heightPx = $layout['heightPx'];
+                    $colIndex = $layout['colIndex'];
+                    $colCount = $layout['colCount'];
+
+                    // Horizontal slice: each column gets equal share of width
+                    $leftPct  = $colIndex / $colCount * 100;
+                    $widthPct = 100 / $colCount;
+
+                    // Time label (actual stored time, not snapped)
                     [$th, $tm] = array_map('intval', explode(':', $task->time));
-
-                    // Snap start time to nearest 30 minutes
-                    $snappedM = $snap($tm);
-                    $snappedH = $th;
-                    if ($snappedM === 60) { $snappedH++; $snappedM = 0; }
-
-                    // Display duration: minimum 30 min
-                    $displayDuration = max($task->duration_minutes ?? 30, 30);
-
-                    // Top offset in px
-                    $topPx = (($snappedH - $gridStart) * 60 + $snappedM) / 60 * $hourHeightPx;
-
-                    // Height in px
-                    $heightPx = ($displayDuration / 60) * $hourHeightPx;
-
-                    // Clamp to grid
-                    $topPx    = max(0, $topPx);
-                    $heightPx = max(20, $heightPx);
-
-                    // Time label for block (actual stored time, not snapped)
                     $amPm  = $th < 12 ? 'AM' : 'PM';
                     $h12   = $th % 12 ?: 12;
                     $mPad  = str_pad($tm, 2, '0', STR_PAD_LEFT);
                     $timeLabel = "{$h12}:{$mPad} {$amPm}";
                     if ($task->duration_minutes) {
                         $endMins = $th * 60 + $tm + $task->duration_minutes;
-                        $endH = intdiv($endMins, 60) % 24;
-                        $endM = $endMins % 60;
+                        $endH    = intdiv($endMins, 60) % 24;
+                        $endM    = $endMins % 60;
                         $endAmPm = $endH < 12 ? 'AM' : 'PM';
                         $endH12  = $endH % 12 ?: 12;
                         $endMPad = str_pad($endM, 2, '0', STR_PAD_LEFT);
                         $timeLabel .= " – {$endH12}:{$endMPad} {$endAmPm}";
                     }
 
-                    // Pick a block color based on project (cycle through a palette if no project)
-                    $blockColors = [
-                        'bg-blue-700 hover:bg-blue-600 border-blue-500',
-                        'bg-indigo-700 hover:bg-indigo-600 border-indigo-500',
-                        'bg-violet-700 hover:bg-violet-600 border-violet-500',
-                        'bg-teal-700 hover:bg-teal-600 border-teal-500',
-                        'bg-cyan-700 hover:bg-cyan-600 border-cyan-500',
-                    ];
                     $colorClass = $blockColors[$task->id % count($blockColors)];
                 @endphp
 
                 <a href="{{ route('tasks.show', $task) }}"
-                   class="absolute left-1 right-1 rounded border-l-2 text-white transition-colors overflow-hidden z-10 {{ $colorClass }}"
-                   style="top: {{ $topPx }}px; height: {{ $heightPx }}px;"
+                   class="absolute rounded border-l-2 text-white transition-colors overflow-hidden z-10 {{ $colorClass }}"
+                   style="top: {{ $topPx }}px; height: {{ $heightPx }}px; left: calc({{ $leftPct }}% + 2px); width: calc({{ $widthPct }}% - 4px);"
                    title="{{ $task->name }} ({{ $timeLabel }})">
                     <div class="px-2 py-1 h-full flex flex-col justify-start overflow-hidden">
                         <div class="text-xs font-semibold leading-tight truncate">{{ $task->name }}</div>
