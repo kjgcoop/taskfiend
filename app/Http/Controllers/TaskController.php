@@ -36,7 +36,7 @@ class TaskController extends Controller
         if ($request->has('project_id')) {
             $query->where('project_id', $request->project_id);
         } else {
-            $query->whereHas('project', fn($pq) => $pq->where('status', '!=', 'archived'));
+            $query->whereHas('project', fn($pq) => $pq->whereNotIn('status', ['archived', 'done']));
         }
 
         $tasks = $query->with(['creator', 'project', 'tags', 'assignees', 'attachments', 'comments'])
