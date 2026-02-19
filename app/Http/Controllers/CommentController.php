@@ -19,6 +19,11 @@ class CommentController extends Controller
             abort(403, 'You do not have access to comment on this task.');
         }
 
+        $task->loadMissing('project');
+        if ($task->project && in_array($task->project->status, ['done', 'archived'])) {
+            abort(403, 'Tasks in inactive projects cannot be modified.');
+        }
+
         $validated = $request->validate([
             'comment' => 'required|string',
             'attachment' => [
@@ -89,6 +94,11 @@ class CommentController extends Controller
 
         if ($task->creator_id !== Auth::id()) {
             abort(403, 'Only the task creator can delete comments.');
+        }
+
+        $task->loadMissing('project');
+        if ($task->project && in_array($task->project->status, ['done', 'archived'])) {
+            abort(403, 'Tasks in inactive projects cannot be modified.');
         }
 
         if ($comment->file_path) {

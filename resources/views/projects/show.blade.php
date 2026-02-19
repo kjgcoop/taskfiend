@@ -38,30 +38,37 @@
 
             <!-- Project Details -->
             <div class="bg-[#202020] border border-gray-700 overflow-hidden shadow-sm sm:rounded-lg p-6">
+                @php $isInactive = in_array($project->status, ['done', 'archived']); @endphp
 
                 @if($project->user_id === Auth::id() && !$project->is_inbox)
-                    <!-- Editable project name -->
+                    <!-- Project name -->
                     <div class="mb-4">
                         <span class="text-sm font-medium text-gray-500">Project Name</span>
-                        <div @click="startEdit('name')" x-show="!editing.name" class="mt-1 cursor-pointer hover:bg-gray-700 p-2 rounded">
-                            <p class="text-lg font-semibold text-gray-100">{{ $project->name }}</p>
-                        </div>
-                        <div x-show="editing.name" class="mt-1">
-                            <input type="text" x-model="fields.name"
-                                   @keydown.enter="saveField('name')"
-                                   @keydown.escape="cancelEdit('name')"
-                                   class="w-full rounded-md bg-gray-700 border-gray-600 text-gray-100 placeholder-gray-500 shadow-sm focus:border-blue-500 focus:ring-blue-500">
-                            <div class="flex gap-2 mt-2">
-                                <button @click="saveField('name')"
-                                        class="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700">
-                                    Save
-                                </button>
-                                <button @click="cancelEdit('name')"
-                                        class="px-3 py-1 bg-gray-700 text-gray-300 text-sm rounded hover:bg-gray-600">
-                                    Cancel
-                                </button>
+                        @if(!$isInactive)
+                            <div @click="startEdit('name')" x-show="!editing.name" class="mt-1 cursor-pointer hover:bg-gray-700 p-2 rounded">
+                                <p class="text-lg font-semibold text-gray-100">{{ $project->name }}</p>
                             </div>
-                        </div>
+                            <div x-show="editing.name" class="mt-1">
+                                <input type="text" x-model="fields.name"
+                                       @keydown.enter="saveField('name')"
+                                       @keydown.escape="cancelEdit('name')"
+                                       class="w-full rounded-md bg-gray-700 border-gray-600 text-gray-100 placeholder-gray-500 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                                <div class="flex gap-2 mt-2">
+                                    <button @click="saveField('name')"
+                                            class="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700">
+                                        Save
+                                    </button>
+                                    <button @click="cancelEdit('name')"
+                                            class="px-3 py-1 bg-gray-700 text-gray-300 text-sm rounded hover:bg-gray-600">
+                                        Cancel
+                                    </button>
+                                </div>
+                            </div>
+                        @else
+                            <div class="mt-1 p-2">
+                                <p class="text-lg font-semibold text-gray-100">{{ $project->name }}</p>
+                            </div>
+                        @endif
                     </div>
 
                     <div class="grid grid-cols-2 gap-4 mb-4">
@@ -104,71 +111,96 @@
                         </div>
                     </div>
 
-                    <!-- Description (editable) -->
+                    <!-- Description -->
                     <div class="mt-4">
                         <span class="text-sm font-medium text-gray-500">Description</span>
-                        <div @click="startEdit('description')" x-show="!editing.description" class="mt-1 cursor-pointer hover:bg-gray-700 p-2 rounded min-h-[40px]">
-                            <p x-show="fields.description" class="text-gray-300" x-text="fields.description"></p>
-                            <p x-show="!fields.description" class="text-gray-400 italic">Click to add description</p>
-                        </div>
-                        <div x-show="editing.description" class="mt-1">
-                            <textarea x-model="fields.description" rows="3"
-                                      @keydown.ctrl.enter="saveField('description')"
-                                      @keydown.escape="cancelEdit('description')"
-                                      class="w-full rounded-md bg-gray-700 border-gray-600 text-gray-100 placeholder-gray-500 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                                      placeholder="Add a description..."></textarea>
-                            <p class="mt-1 text-xs text-gray-500">Ctrl+Enter to save, Escape to cancel</p>
-                            <div class="flex gap-2 mt-2">
-                                <button @click="saveField('description')"
-                                        class="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700">
-                                    Save
-                                </button>
-                                <button @click="cancelEdit('description')"
-                                        class="px-3 py-1 bg-gray-700 text-gray-300 text-sm rounded hover:bg-gray-600">
-                                    Cancel
-                                </button>
+                        @if(!$isInactive)
+                            <div @click="startEdit('description')" x-show="!editing.description" class="mt-1 cursor-pointer hover:bg-gray-700 p-2 rounded min-h-[40px]">
+                                <p x-show="fields.description" class="text-gray-300" x-text="fields.description"></p>
+                                <p x-show="!fields.description" class="text-gray-400 italic">Click to add description</p>
                             </div>
-                        </div>
+                            <div x-show="editing.description" class="mt-1">
+                                <textarea x-model="fields.description" rows="3"
+                                          @keydown.ctrl.enter="saveField('description')"
+                                          @keydown.escape="cancelEdit('description')"
+                                          class="w-full rounded-md bg-gray-700 border-gray-600 text-gray-100 placeholder-gray-500 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                                          placeholder="Add a description..."></textarea>
+                                <p class="mt-1 text-xs text-gray-500">Ctrl+Enter to save, Escape to cancel</p>
+                                <div class="flex gap-2 mt-2">
+                                    <button @click="saveField('description')"
+                                            class="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700">
+                                        Save
+                                    </button>
+                                    <button @click="cancelEdit('description')"
+                                            class="px-3 py-1 bg-gray-700 text-gray-300 text-sm rounded hover:bg-gray-600">
+                                        Cancel
+                                    </button>
+                                </div>
+                            </div>
+                        @else
+                            <div class="mt-1 p-2 min-h-[40px]">
+                                @if($project->description)
+                                    <p class="text-gray-300">{{ $project->description }}</p>
+                                @else
+                                    <p class="text-gray-600 italic">No description</p>
+                                @endif
+                            </div>
+                        @endif
                     </div>
 
-                    <!-- Assignees (editable, creator only) -->
+                    <!-- Assignees -->
                     <div class="mt-4">
                         <span class="text-sm font-medium text-gray-500">Assigned To</span>
-                        <div @click="startEdit('assignee_ids')" x-show="!editing.assignee_ids" class="mt-1 cursor-pointer hover:bg-gray-700 p-2 rounded min-h-[40px]">
-                            @if($project->assignees->count() > 0)
-                                <div class="space-y-1">
-                                    @foreach($project->assignees as $assignee)
-                                        <p class="text-sm text-gray-300">{{ $assignee->name }}</p>
+                        @if(!$isInactive)
+                            <div @click="startEdit('assignee_ids')" x-show="!editing.assignee_ids" class="mt-1 cursor-pointer hover:bg-gray-700 p-2 rounded min-h-[40px]">
+                                @if($project->assignees->count() > 0)
+                                    <div class="space-y-1">
+                                        @foreach($project->assignees as $assignee)
+                                            <p class="text-sm text-gray-300">{{ $assignee->name }}</p>
+                                        @endforeach
+                                    </div>
+                                @else
+                                    <p class="text-gray-400 italic">Click to add assignees</p>
+                                @endif
+                            </div>
+                            <div x-show="editing.assignee_ids" class="mt-1">
+                                <div class="space-y-2 mb-2 max-h-48 overflow-y-auto border border-gray-600 bg-[#101010] rounded p-3">
+                                    @foreach($users as $user)
+                                        <label class="flex items-center">
+                                            <input type="checkbox" value="{{ $user->id }}" x-model="fields.assignee_ids"
+                                                   class="rounded border-gray-600 bg-gray-700 text-blue-600 focus:ring-blue-500">
+                                            <span class="ml-2 text-sm text-gray-300">{{ $user->name }} ({{ $user->email }})</span>
+                                        </label>
                                     @endforeach
                                 </div>
-                            @else
-                                <p class="text-gray-400 italic">Click to add assignees</p>
-                            @endif
-                        </div>
-                        <div x-show="editing.assignee_ids" class="mt-1">
-                            <div class="space-y-2 mb-2 max-h-48 overflow-y-auto border border-gray-600 bg-[#101010] rounded p-3">
-                                @foreach($users as $user)
-                                    <label class="flex items-center">
-                                        <input type="checkbox" value="{{ $user->id }}" x-model="fields.assignee_ids"
-                                               class="rounded border-gray-600 bg-gray-700 text-blue-600 focus:ring-blue-500">
-                                        <span class="ml-2 text-sm text-gray-300">{{ $user->name }} ({{ $user->email }})</span>
-                                    </label>
-                                @endforeach
+                                <div class="flex gap-2 mt-2">
+                                    <button @click="saveField('assignee_ids')"
+                                            class="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700">
+                                        Save
+                                    </button>
+                                    <button @click="cancelEdit('assignee_ids')"
+                                            class="px-3 py-1 bg-gray-700 text-gray-300 text-sm rounded hover:bg-gray-600">
+                                        Cancel
+                                    </button>
+                                </div>
                             </div>
-                            <div class="flex gap-2 mt-2">
-                                <button @click="saveField('assignee_ids')"
-                                        class="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700">
-                                    Save
-                                </button>
-                                <button @click="cancelEdit('assignee_ids')"
-                                        class="px-3 py-1 bg-gray-700 text-gray-300 text-sm rounded hover:bg-gray-600">
-                                    Cancel
-                                </button>
+                        @else
+                            <div class="mt-1 p-2 min-h-[40px]">
+                                @if($project->assignees->count() > 0)
+                                    <div class="space-y-1">
+                                        @foreach($project->assignees as $assignee)
+                                            <p class="text-sm text-gray-300">{{ $assignee->name }}</p>
+                                        @endforeach
+                                    </div>
+                                @else
+                                    <p class="text-gray-600 italic">No assignees</p>
+                                @endif
                             </div>
-                        </div>
+                        @endif
                     </div>
 
-                    <!-- Background Image -->
+                    <!-- Background Image (only editable when project is active) -->
+                    @if(!$isInactive)
                     <div class="mt-4" x-data="{ showUpload: false }">
                         <span class="text-sm font-medium text-gray-500">Background Image</span>
                         @if($project->background_image)
@@ -221,6 +253,7 @@
                             @error('background_image')<p class="mt-1 text-sm text-red-500">{{ $message }}</p>@enderror
                         </div>
                     </div>
+                    @endif {{-- !$isInactive --}}
 
                 @else
                     {{-- Read-only view for non-creators --}}
@@ -268,9 +301,11 @@
                     <h3 class="text-lg font-semibold text-gray-100">Tasks
                         <span class="text-sm text-gray-500 font-normal" x-text="$store.taskCount.ready ? ($store.taskCount.filtered ? 'showing ' + $store.taskCount.visible + ' of ' + $store.taskCount.total : $store.taskCount.total) : ''"></span>
                     </h3>
-                    <a href="{{ route('tasks.create') }}?project_id={{ $project->id }}" class="text-sm text-blue-400 hover:underline">
-                        Add Task
-                    </a>
+                    @if(!$isInactive)
+                        <a href="{{ route('tasks.create') }}?project_id={{ $project->id }}" class="text-sm text-blue-400 hover:underline">
+                            Add Task
+                        </a>
+                    @endif
                 </div>
                 <div class="mb-4">
                     <input type="text"
@@ -281,13 +316,13 @@
                            class="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-md text-gray-100 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                 </div>
                 <div x-ref="taskContainer">
-                    <x-task-list :tasks="$tasks" />
+                    <x-task-list :tasks="$tasks" :read-only="$isInactive" />
                 </div>
                 <div x-show="noResults" x-cloak class="bg-[#202020] p-8 rounded-lg text-center text-gray-400 border border-gray-700">
                     No tasks match your filter.
                 </div>
 
-                <x-completed-tasks-section :tasks="$completedTasks" />
+                <x-completed-tasks-section :tasks="$completedTasks" :read-only="$isInactive" />
             </div>
         </div>
     </div>

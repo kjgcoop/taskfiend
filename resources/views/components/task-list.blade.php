@@ -1,4 +1,4 @@
-@props(['tasks', 'depth' => 0, 'hideDate' => false])
+@props(['tasks', 'depth' => 0, 'hideDate' => false, 'readOnly' => false])
 
 @pushOnce('scripts')
 <script>
@@ -246,6 +246,8 @@
                 <!-- Complete Circle -->
                 @if($task->status === 'done')
                     <div class="mt-1 w-6 h-6 rounded-full bg-green-600 flex-shrink-0" title="Completed"></div>
+                @elseif($readOnly)
+                    <div class="mt-1 w-6 h-6 rounded-full border-2 border-gray-700 flex-shrink-0" title="Project is inactive"></div>
                 @else
                 <form method="POST" action="{{ route('tasks.update', $task) }}" onclick="event.stopPropagation()">
                     @csrf
@@ -417,7 +419,7 @@
 
         <!-- Recursively render subtasks -->
         @if($task->children->count() > 0)
-            <x-task-list :tasks="$task->children" :depth="$depth + 1" :hide-date="$hideDate" />
+            <x-task-list :tasks="$task->children" :depth="$depth + 1" :hide-date="$hideDate" :read-only="$readOnly" />
         @endif
     @empty
         <div class="bg-[#202020] p-8 rounded-lg text-center text-gray-400 border border-gray-700">
