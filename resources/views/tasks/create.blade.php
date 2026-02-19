@@ -311,7 +311,6 @@
                         });
 
                         const data = await response.json();
-                        console.log('[parseDate]', data);
                         if (data.success) {
                             this.taskCount = data.taskCount ?? null;
                             this.datePreview = this.formatPreview(data.formatted, this.taskCount);
