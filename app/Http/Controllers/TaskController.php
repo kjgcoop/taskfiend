@@ -195,8 +195,10 @@ class TaskController extends Controller
 
             $parsed = $dateParser->parseTaskInput($taskName);
             $taskName = $parsed['name'];
-            // Only auto-fill date/time from task name if not explicitly provided
-            if (!$date) {
+            // For quick-add, a date keyword in the task name (e.g. "tomorrow") overrides
+            // the day-view's pre-filled hidden date. For the full form, only fill in when
+            // the date picker was left empty.
+            if (!$date || ($request->boolean('quick_add') && $parsed['date'] !== null)) {
                 $date = $parsed['date'];
                 $time = $parsed['time'];
             }
