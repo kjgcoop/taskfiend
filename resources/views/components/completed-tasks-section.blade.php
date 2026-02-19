@@ -2,6 +2,7 @@
     'tasks',
     'label' => 'Show completed tasks',
     'hideDate' => false,
+    'readOnly' => false,
 ])
 
 @if($tasks->count() > 0)
@@ -17,7 +18,7 @@
     </label>
 
     <div x-show="showCompleted" x-cloak class="mt-4">
-        <x-task-list :tasks="$tasks" :hide-date="$hideDate" />
+        <x-task-list :tasks="$tasks" :hide-date="$hideDate" :read-only="$readOnly" />
     </div>
 </div>
 @endif

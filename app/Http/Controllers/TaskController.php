@@ -112,6 +112,16 @@ class TaskController extends Controller
             'assignee_ids.*' => 'exists:users,id',
         ]);
 
+        // Block task creation inside inactive projects
+        if (!empty($validated['project_id'])) {
+            $targetProject = Project::find($validated['project_id']);
+            if ($targetProject && in_array($targetProject->status, ['done', 'archived'])) {
+                return back()->withErrors([
+                    'project_id' => 'Cannot create tasks in an inactive project.'
+                ])->withInput();
+            }
+        }
+
         // Authorization check for parent task
         if (isset($validated['parent_id'])) {
             $parentTask = Task::findOrFail($validated['parent_id']);
@@ -314,6 +324,7 @@ class TaskController extends Controller
     public function edit(Task $task)
     {
         $this->authorizeTaskAccess($task);
+        $this->assertProjectActive($task);
 
         $projects = Project::where('user_id', Auth::id())
             ->orWhereHas('tasks.assignees', function ($query) {
@@ -348,6 +359,7 @@ class TaskController extends Controller
     public function update(Request $request, Task $task)
     {
         $this->authorizeTaskAccess($task);
+        $this->assertProjectActive($task);
 
         $validated = $request->validate([
             'name' => 'required|string|max:255',
@@ -511,6 +523,7 @@ class TaskController extends Controller
     public function updateField(Request $request, Task $task)
     {
         $this->authorizeTaskAccess($task);
+        $this->assertProjectActive($task, asJson: true);
 
         $field = $request->input('field');
         $allowedFields = ['name', 'description', 'status', 'date', 'time', 'duration_minutes', 'project_id', 'parent_id', 'recurrence_pattern', 'recurrence_floating', 'tag_ids', 'assignee_ids'];
@@ -710,6 +723,7 @@ class TaskController extends Controller
     public function duplicate(Task $task)
     {
         $this->authorizeTaskAccess($task);
+        $this->assertProjectActive($task);
 
         $task->load(['tags', 'assignees', 'attachments']);
 
@@ -763,6 +777,18 @@ class TaskController extends Controller
     public function destroy(Task $task)
     {
         abort(403, 'Tasks cannot be deleted. Please archive instead.');
+    }
+
+    protected function assertProjectActive(Task $task, bool $asJson = false)
+    {
+        $task->loadMissing('project');
+        if ($task->project && in_array($task->project->status, ['done', 'archived'])) {
+            $message = 'Tasks in inactive projects cannot be modified.';
+            if ($asJson) {
+                abort(response()->json(['success' => false, 'message' => $message], 403));
+            }
+            abort(403, $message);
+        }
     }
 
     protected function authorizeTaskAccess(Task $task)

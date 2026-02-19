@@ -158,6 +158,10 @@ class ProjectController extends Controller
             return response()->json(['success' => false, 'message' => 'Invalid field'], 400);
         }
 
+        if (in_array($project->status, ['done', 'archived']) && $field !== 'status') {
+            return response()->json(['success' => false, 'message' => 'This project is inactive. Only the status can be changed.'], 403);
+        }
+
         try {
             if ($field === 'assignee_ids') {
                 $assigneeIds = $request->input('assignee_ids', []);
