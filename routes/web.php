@@ -32,7 +32,7 @@ Route::middleware('auth')->group(function () {
     Route::post('/tasks/parse-date', [TaskController::class, 'parseDate'])->name('tasks.parseDate');
     Route::post('/tasks/{task}/duplicate', [TaskController::class, 'duplicate'])->name('tasks.duplicate');
 
-    Route::resource('projects', ProjectController::class);
+    Route::resource('projects', ProjectController::class)->except(['edit', 'update']);
     Route::post('/projects/{project}/update-field', [ProjectController::class, 'updateField'])->name('projects.updateField');
     Route::get('/projects/{project}/background', [ProjectController::class, 'showBackground'])->name('projects.background');
     Route::post('/projects/{project}/background', [ProjectController::class, 'uploadBackground'])->name('projects.background.upload');
