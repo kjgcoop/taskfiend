@@ -40,6 +40,16 @@
                     </button>
                 </div>
 
+                {{-- Full-day toggle (only visible in agenda view) --}}
+                <div x-data x-show="$store.dayView.current === 'agenda'" x-cloak>
+                    <button @click="$store.agendaFull.toggle()"
+                            :class="$store.agendaFull.on ? 'bg-gray-600 text-gray-100' : 'bg-gray-800 text-gray-400 hover:bg-gray-700 hover:text-gray-200'"
+                            class="px-3 py-2 rounded-md border border-gray-600 text-xs font-medium transition-colors"
+                            title="Toggle full 24-hour view">
+                        <span x-text="$store.agendaFull.on ? '24h' : 'Auto'"></span>
+                    </button>
+                </div>
+
                 <a href="{{ route('tasks.create') }}?date={{ $carbonDate->format('Y-m-d') }}" class="inline-flex items-center px-4 py-2 bg-blue-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-blue-700">
                     Add Task
                 </a>
@@ -80,6 +90,14 @@
                 set(v) {
                     this.current = v;
                     localStorage.setItem('day_view', v);
+                },
+            });
+
+            Alpine.store('agendaFull', {
+                on: localStorage.getItem('agenda_full') === '1',
+                toggle() {
+                    this.on = !this.on;
+                    localStorage.setItem('agenda_full', this.on ? '1' : '0');
                 },
             });
         });

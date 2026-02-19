@@ -198,6 +198,42 @@
                         </div>
                     </div>
 
+                    <!-- Duration -->
+                    <div>
+                        <span class="text-sm font-medium text-gray-500">Duration</span>
+                        <div @click="startEdit('duration_minutes')" x-show="!editing.duration_minutes" class="mt-1 cursor-pointer hover:bg-gray-700 p-2 rounded min-h-[40px]">
+                            @if($task->duration_minutes)
+                                <p class="text-gray-300">{{ $task->duration_minutes }} min</p>
+                            @else
+                                <p class="text-gray-400 italic">Click to set duration (optional)</p>
+                            @endif
+                        </div>
+                        <div x-show="editing.duration_minutes" class="mt-1">
+                            <input type="number" x-model="fields.duration_minutes" min="1" max="1440"
+                                   @keydown.enter="saveField('duration_minutes')"
+                                   @keydown.escape="cancelEdit('duration_minutes')"
+                                   placeholder="Minutes (e.g. 60)"
+                                   class="w-full rounded-md bg-gray-700 border-gray-600 text-gray-100 placeholder-gray-500 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                            <p class="mt-1 text-xs text-gray-500">Duration in minutes (1–1440). Sizes the block in agenda view.</p>
+                            <div class="flex gap-2 mt-2">
+                                <button @click="saveField('duration_minutes')"
+                                        class="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700">
+                                    Save
+                                </button>
+                                <button @click="cancelEdit('duration_minutes')"
+                                        class="px-3 py-1 bg-gray-700 text-gray-300 text-sm rounded hover:bg-gray-600">
+                                    Cancel
+                                </button>
+                                @if($task->duration_minutes)
+                                <button @click="fields.duration_minutes = ''; saveField('duration_minutes')"
+                                        class="px-3 py-1 bg-gray-700 text-red-400 text-sm rounded hover:bg-gray-600">
+                                    Clear
+                                </button>
+                                @endif
+                            </div>
+                        </div>
+                    </div>
+
                     <!-- Project -->
                     <div>
                         <span class="text-sm font-medium text-gray-500">Project</span>
@@ -617,6 +653,7 @@
                     status: @js($task->status),
                     date: @js($task->date ?? ''),
                     time: @js($task->time ?? ''),
+                    duration_minutes: @js($task->duration_minutes ?? ''),
                     project_id: @js($task->project_id ?? $inboxProjectId),
                     recurrence_pattern: @js($task->recurrence_pattern ?? ''),
                     recurrence_floating: @js((bool) $task->recurrence_floating),

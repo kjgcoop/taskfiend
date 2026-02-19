@@ -7,9 +7,9 @@
     $allDayTasks  = $tasks->filter(fn($t) => !$t->time);
     $timedTasks   = $tasks->filter(fn($t) => $t->time);
 
-    // Determine grid hour range
-    $gridStart = 8;  // default 8 AM
-    $gridEnd   = 20; // default 8 PM
+    // Abbreviated ("auto") range — what to clip to when not showing full day
+    $autoStart = 8;  // default 8 AM
+    $autoEnd   = 20; // default 8 PM
 
     if ($timedTasks->isNotEmpty()) {
         $hours = $timedTasks->map(function ($t) {
@@ -21,17 +21,24 @@
             $totalMins = (int)$h * 60 + (int)$m + ($t->duration_minutes ?? 30);
             return (int) ceil($totalMins / 60);
         });
-        $gridStart = max(0,  min($hours->min() - 1, $gridStart));
-        $gridEnd   = min(24, max($endHours->max() + 1, $gridEnd));
+        $autoStart = max(0,  min($hours->min() - 1, $autoStart));
+        $autoEnd   = min(24, max($endHours->max() + 1, $autoEnd));
     }
 
-    $totalHours   = $gridEnd - $gridStart;
+    // Always render the full 24-hour grid so the toggle works client-side
+    $gridStart    = 0;
+    $gridEnd      = 24;
+    $totalHours   = 24;
     $gridHeightPx = $totalHours * $hourHeightPx;
 
-    // Current time for today indicator
-    $isToday   = $carbonDate->isToday();
-    $nowTopPx  = $isToday
-        ? ((Carbon::now()->hour * 60 + Carbon::now()->minute - $gridStart * 60) / 60 * $hourHeightPx)
+    // Clip values (px) for abbreviated view — passed to Alpine
+    $clipTopPx    = $autoStart * $hourHeightPx;
+    $clipHeightPx = ($autoEnd - $autoStart) * $hourHeightPx;
+
+    // Current time indicator — position from midnight
+    $isToday  = $carbonDate->isToday();
+    $nowTopPx = $isToday
+        ? ((Carbon::now()->hour * 60 + Carbon::now()->minute) / 60 * $hourHeightPx)
         : null;
 
     // Helper: snap minutes to nearest 30; returns [snappedH, snappedM]
@@ -49,8 +56,7 @@
     };
 
     // ── Collision layout ──────────────────────────────────────────────────────
-    // Group tasks by snapped slot key, then assign colIndex / colCount so
-    // tasks sharing a slot are shown side-by-side rather than stacked.
+    // Task positions are always computed from midnight (hour 0).
     $slotGroups = []; // "H:M" => [task, ...]
     foreach ($timedTasks as $task) {
         [$th, $tm] = array_map('intval', explode(':', $task->time));
@@ -63,10 +69,9 @@
     foreach ($slotGroups as $key => $group) {
         [$sh, $sm] = array_map('intval', explode(':', $key));
         $colCount = count($group);
-        $topPx    = max(0, (($sh - $gridStart) * 60 + $sm) / 60 * $hourHeightPx);
+        $topPx    = ($sh * 60 + $sm) / 60 * $hourHeightPx;
 
         foreach ($group as $colIndex => $task) {
-            [$th, $tm] = array_map('intval', explode(':', $task->time));
             $displayDuration = max($task->duration_minutes ?? 30, 30);
             $heightPx = max(20, ($displayDuration / 60) * $hourHeightPx);
 
@@ -175,7 +180,13 @@
     </div>
     @endif
 
-    {{-- Time grid --}}
+    {{-- Time grid — clips to auto range unless full-day mode is on --}}
+    <div x-data="{
+            clipTopPx: {{ $clipTopPx }},
+            clipHeightPx: {{ $clipHeightPx }},
+        }"
+         :style="$store.agendaFull.on ? '' : `height: ${clipHeightPx}px; overflow: hidden;`">
+    <div :style="$store.agendaFull.on ? '' : `margin-top: -${clipTopPx}px;`">
     <div class="flex">
 
         {{-- Hour labels column --}}
@@ -297,4 +308,6 @@
 
         </div>{{-- end grid area --}}
     </div>{{-- end flex --}}
+    </div>{{-- end inner shift wrapper --}}
+    </div>{{-- end clip wrapper --}}
 </div>
