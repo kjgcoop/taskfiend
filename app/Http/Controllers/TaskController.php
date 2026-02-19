@@ -11,6 +11,8 @@ use App\Services\DateParser;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 class TaskController extends Controller
 {
@@ -684,6 +686,59 @@ class TaskController extends Controller
         } catch (\Exception $e) {
             return null;
         }
+    }
+
+    public function duplicate(Task $task)
+    {
+        $this->authorizeTaskAccess($task);
+
+        $task->load(['tags', 'assignees', 'attachments']);
+
+        $newTask = Task::create([
+            'name'                => 'Copy of ' . $task->name,
+            'description'         => $task->description,
+            'date'                => $task->date,
+            'time'                => $task->time,
+            'duration_minutes'    => $task->duration_minutes,
+            'project_id'          => $task->project_id,
+            'parent_id'           => $task->parent_id,
+            'recurrence_pattern'  => $task->recurrence_pattern,
+            'recurrence_floating' => $task->recurrence_floating,
+            'creator_id'          => Auth::id(),
+            'status'              => 'incomplete',
+        ]);
+
+        $newTask->tags()->sync($task->tags->pluck('id'));
+
+        $assigneeIds = $task->assignees->pluck('id')->toArray();
+        if (empty($assigneeIds)) {
+            $assigneeIds = [Auth::id()];
+        }
+        foreach ($assigneeIds as $assigneeId) {
+            $newTask->assignments()->create([
+                'assignee_id'    => $assigneeId,
+                'assigned_by_id' => Auth::id(),
+            ]);
+        }
+
+        foreach ($task->attachments as $attachment) {
+            $extension = pathinfo($attachment->file_path, PATHINFO_EXTENSION);
+            $newPath = 'task_attachments/' . Str::random(40) . ($extension ? '.' . $extension : '');
+            Storage::disk('private')->copy($attachment->file_path, $newPath);
+            $newTask->attachments()->create([
+                'user_id'           => Auth::id(),
+                'task_id'           => $newTask->id,
+                'file_path'         => $newPath,
+                'original_filename' => $attachment->original_filename,
+                'mime_type'         => $attachment->mime_type,
+                'file_size'         => $attachment->file_size,
+            ]);
+        }
+
+        $this->logChange($newTask, 'duplicated from task #' . $task->id);
+
+        return redirect()->route('tasks.show', $newTask)
+            ->with('success', 'Task duplicated successfully.');
     }
 
     public function destroy(Task $task)

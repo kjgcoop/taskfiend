@@ -4,6 +4,13 @@
             <h2 class="font-semibold text-xl text-gray-100 leading-tight">
                 {{ $task->name }}
             </h2>
+            <form method="POST" action="{{ route('tasks.duplicate', $task) }}">
+                @csrf
+                <button type="submit"
+                        class="inline-flex items-center px-3 py-1.5 bg-gray-700 text-gray-300 text-sm rounded hover:bg-gray-600 hover:text-gray-100 transition">
+                    Duplicate
+                </button>
+            </form>
         </div>
     </x-slot>
 
