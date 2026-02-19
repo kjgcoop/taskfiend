@@ -96,6 +96,24 @@ class DashboardController extends Controller
         return view('dashboard.undated', array_merge(compact('tasks'), $this->quickAddData()));
     }
 
+    public function all()
+    {
+        $tasks = Task::query()
+            ->where(function ($q) {
+                $q->where('creator_id', Auth::id())
+                  ->orWhereHas('assignees', function ($query) {
+                      $query->where('users.id', Auth::id());
+                  });
+            })
+            ->where('status', '!=', 'archived')
+            ->with(['creator', 'project', 'tags', 'assignees', 'attachments', 'comments'])
+            ->orderByRaw("CASE WHEN status = 'done' THEN 1 ELSE 0 END ASC")
+            ->orderByRaw('date IS NULL, date ASC, time ASC')
+            ->get();
+
+        return view('dashboard.all', array_merge(compact('tasks'), $this->quickAddData()));
+    }
+
     public function calendar(Request $request)
     {
         $month = $request->input('month', now()->month);

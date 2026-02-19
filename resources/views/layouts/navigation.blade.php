@@ -18,6 +18,9 @@
                     <x-nav-link :href="route('inbox')" :active="request()->routeIs('inbox')">
                         {{ __('Inbox') }}
                     </x-nav-link>
+                    <x-nav-link :href="route('all-tasks')" :active="request()->routeIs('all-tasks')">
+                        {{ __('All Tasks') }}
+                    </x-nav-link>
                     <x-nav-link :href="route('calendar')" :active="request()->routeIs('calendar') || request()->routeIs('overdue') || request()->routeIs('undated')">
                         {{ __('By Date') }}
                     </x-nav-link>
@@ -124,6 +127,9 @@
             </x-responsive-nav-link>
             <x-responsive-nav-link :href="route('inbox')" :active="request()->routeIs('inbox')">
                 {{ __('Inbox') }}
+            </x-responsive-nav-link>
+            <x-responsive-nav-link :href="route('all-tasks')" :active="request()->routeIs('all-tasks')">
+                {{ __('All Tasks') }}
             </x-responsive-nav-link>
             <x-responsive-nav-link :href="route('calendar')" :active="request()->routeIs('calendar') || request()->routeIs('overdue') || request()->routeIs('undated')">
                 {{ __('By Date') }}

@@ -21,6 +21,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/today', [DashboardController::class, 'day'])->name('today');
     Route::get('/overdue', [DashboardController::class, 'overdue'])->name('overdue');
     Route::get('/inbox', [DashboardController::class, 'inbox'])->name('inbox');
+    Route::get('/all-tasks', [DashboardController::class, 'all'])->name('all-tasks');
     Route::get('/undated', [DashboardController::class, 'undated'])->name('undated');
     Route::get('/calendar', [DashboardController::class, 'calendar'])->name('calendar');
     Route::get('/day', [DashboardController::class, 'day'])->name('day');
