@@ -4,6 +4,7 @@
             <h2 class="font-semibold text-xl text-gray-100 leading-tight">
                 {{ $task->name }}
             </h2>
+            @if(!$isInactive)
             <form method="POST" action="{{ route('tasks.duplicate', $task) }}">
                 @csrf
                 <button type="submit"
@@ -11,6 +12,7 @@
                     Duplicate
                 </button>
             </form>
+            @endif
         </div>
     </x-slot>
 
@@ -39,9 +41,10 @@
                 <!-- Task Name -->
                 <div class="mb-4">
                     <span class="text-sm font-medium text-gray-500">Task Name</span>
-                    <div @click="startEdit('name')" x-show="!editing.name" class="mt-1 cursor-pointer hover:bg-gray-700 p-2 rounded">
+                    <div @if(!$isInactive) @click="startEdit('name')" @endif x-show="!editing.name" class="mt-1 p-2 rounded {{ !$isInactive ? 'cursor-pointer hover:bg-gray-700' : '' }}">
                         <p class="text-lg font-semibold text-gray-100">{{ $task->name }}</p>
                     </div>
+                    @if(!$isInactive)
                     <div x-show="editing.name" class="mt-1">
                         <input type="text" x-model="fields.name"
                                @keydown.enter="saveField('name')"
@@ -58,7 +61,18 @@
                             </button>
                         </div>
                     </div>
+                    @endif
                 </div>
+
+                @if($isInactive)
+                <div class="mb-4 p-3 bg-yellow-900 bg-opacity-20 border border-yellow-600 rounded-lg">
+                    <p class="text-sm text-yellow-300">
+                        <span class="font-semibold">Project is inactive.</span>
+                        This task is read-only. You can still change the task's status, but all other fields are locked.
+                        To re-enable editing, change the project status back to <strong>Incomplete</strong>.
+                    </p>
+                </div>
+                @endif
 
                 @if($task->recurrence_pattern && $task->status !== 'done' && $task->status !== 'archived')
                 <div class="mb-4 p-3 bg-purple-900 bg-opacity-20 border border-purple-500 rounded-lg">
@@ -124,13 +138,14 @@
                     <!-- Date -->
                     <div>
                         <span class="text-sm font-medium text-gray-500">Date</span>
-                        <div @click="startEditDate()" x-show="!editing.date" class="mt-1 cursor-pointer hover:bg-gray-700 p-2 rounded min-h-[40px]">
+                        <div @if(!$isInactive) @click="startEditDate()" @endif x-show="!editing.date" class="mt-1 p-2 rounded min-h-[40px] {{ !$isInactive ? 'cursor-pointer hover:bg-gray-700' : '' }}">
                             @if($task->date)
                                 <p class="text-gray-300">{{ \Carbon\Carbon::parse($task->date)->format('l, F j, Y') }}</p>
                             @else
-                                <p class="text-gray-400 italic">Click to set date</p>
+                                <p class="text-gray-400 italic">{{ $isInactive ? 'No date set' : 'Click to set date' }}</p>
                             @endif
                         </div>
+                        @if(!$isInactive)
                         <div x-show="editing.date" class="mt-1">
                             <div class="flex gap-2 items-start">
                                 <div class="flex-1">
@@ -175,18 +190,20 @@
                                 @endif
                             </div>
                         </div>
+                        @endif
                     </div>
 
                     <!-- Time -->
                     <div>
                         <span class="text-sm font-medium text-gray-500">Time</span>
-                        <div @click="startEdit('time')" x-show="!editing.time" class="mt-1 cursor-pointer hover:bg-gray-700 p-2 rounded min-h-[40px]">
+                        <div @if(!$isInactive) @click="startEdit('time')" @endif x-show="!editing.time" class="mt-1 p-2 rounded min-h-[40px] {{ !$isInactive ? 'cursor-pointer hover:bg-gray-700' : '' }}">
                             @if($task->time)
                                 <p class="text-gray-300">{{ \Carbon\Carbon::parse($task->time)->format('g:i A') }}</p>
                             @else
-                                <p class="text-gray-400 italic">Click to set time (optional)</p>
+                                <p class="text-gray-400 italic">{{ $isInactive ? 'No time set' : 'Click to set time (optional)' }}</p>
                             @endif
                         </div>
+                        @if(!$isInactive)
                         <div x-show="editing.time" class="mt-1">
                             <input type="time" x-model="fields.time"
                                    @keydown.enter="saveField('time')"
@@ -203,18 +220,20 @@
                                 </button>
                             </div>
                         </div>
+                        @endif
                     </div>
 
                     <!-- Duration -->
                     <div>
                         <span class="text-sm font-medium text-gray-500">Duration</span>
-                        <div @click="startEdit('duration_minutes')" x-show="!editing.duration_minutes" class="mt-1 cursor-pointer hover:bg-gray-700 p-2 rounded min-h-[40px]">
+                        <div @if(!$isInactive) @click="startEdit('duration_minutes')" @endif x-show="!editing.duration_minutes" class="mt-1 p-2 rounded min-h-[40px] {{ !$isInactive ? 'cursor-pointer hover:bg-gray-700' : '' }}">
                             @if($task->duration_minutes)
                                 <p class="text-gray-300">{{ \App\Models\Task::formatDuration($task->duration_minutes) }}</p>
                             @else
-                                <p class="text-gray-400 italic">Click to set duration (optional)</p>
+                                <p class="text-gray-400 italic">{{ $isInactive ? 'No duration set' : 'Click to set duration (optional)' }}</p>
                             @endif
                         </div>
+                        @if(!$isInactive)
                         <div x-show="editing.duration_minutes" class="mt-1">
                             <input type="text" x-model="fields.duration_minutes"
                                    @keydown.enter="saveField('duration_minutes')"
@@ -239,14 +258,16 @@
                                 @endif
                             </div>
                         </div>
+                        @endif
                     </div>
 
                     <!-- Project -->
                     <div>
                         <span class="text-sm font-medium text-gray-500">Project</span>
-                        <div @click="startEdit('project_id')" x-show="!editing.project_id" class="mt-1 cursor-pointer hover:bg-gray-700 p-2 rounded">
+                        <div @if(!$isInactive) @click="startEdit('project_id')" @endif x-show="!editing.project_id" class="mt-1 p-2 rounded {{ !$isInactive ? 'cursor-pointer hover:bg-gray-700' : '' }}">
                             <p class="text-gray-300">{{ $task->project ? $task->project->name : 'Inbox' }}</p>
                         </div>
+                        @if(!$isInactive)
                         <div x-show="editing.project_id" class="mt-1">
                             <select x-model="fields.project_id"
                                     @keydown.enter="saveField('project_id')"
@@ -267,12 +288,13 @@
                                 </button>
                             </div>
                         </div>
+                        @endif
                     </div>
 
                     <!-- Parent Task -->
                     <div>
                         <span class="text-sm font-medium text-gray-500">Parent Task</span>
-                        <div @click="startEdit('parent_id')" x-show="!editing.parent_id" class="mt-1 cursor-pointer hover:bg-gray-700 p-2 rounded">
+                        <div @if(!$isInactive) @click="startEdit('parent_id')" @endif x-show="!editing.parent_id" class="mt-1 p-2 rounded {{ !$isInactive ? 'cursor-pointer hover:bg-gray-700' : '' }}">
                             <p class="text-gray-300">
                                 @if($task->parent)
                                     {{ $task->parent->name }}
@@ -281,6 +303,7 @@
                                 @endif
                             </p>
                         </div>
+                        @if(!$isInactive)
                         <div x-show="editing.parent_id" class="mt-1">
                             <select x-model="fields.parent_id"
                                     @keydown.enter="saveField('parent_id')"
@@ -304,16 +327,18 @@
                                 </button>
                             </div>
                         </div>
+                        @endif
                     </div>
                 </div>
 
                 <!-- Description -->
                 <div class="mt-4">
                     <span class="text-sm font-medium text-gray-500">Description</span>
-                    <div @click="startEdit('description')" x-show="!editing.description" class="mt-1 cursor-pointer hover:bg-gray-700 p-2 rounded min-h-[40px]">
+                    <div @if(!$isInactive) @click="startEdit('description')" @endif x-show="!editing.description" class="mt-1 p-2 rounded min-h-[40px] {{ !$isInactive ? 'cursor-pointer hover:bg-gray-700' : '' }}">
                         <div class="markdown-body" x-show="fields.description" x-html="fields.description ? marked.parse(fields.description) : ''"></div>
-                        <p x-show="!fields.description" class="text-gray-400 italic">Click to add description</p>
+                        <p x-show="!fields.description" class="text-gray-400 italic">{{ $isInactive ? 'No description' : 'Click to add description' }}</p>
                     </div>
+                    @if(!$isInactive)
                     <div x-show="editing.description" class="mt-1">
                         <textarea x-model="fields.description" rows="3"
                                   @keydown.enter.ctrl="saveField('description')"
@@ -330,12 +355,13 @@
                             </button>
                         </div>
                     </div>
+                    @endif
                 </div>
 
                 <!-- Recurrence Pattern -->
                 <div class="mt-4">
                     <span class="text-sm font-medium text-gray-500">Recurrence</span>
-                    <div @click="startEdit('recurrence_pattern')" x-show="!editing.recurrence_pattern" class="mt-1 cursor-pointer hover:bg-gray-700 p-2 rounded min-h-[40px]">
+                    <div @if(!$isInactive) @click="startEdit('recurrence_pattern')" @endif x-show="!editing.recurrence_pattern" class="mt-1 p-2 rounded min-h-[40px] {{ !$isInactive ? 'cursor-pointer hover:bg-gray-700' : '' }}">
                         @if($task->recurrence_pattern)
                             <p class="text-purple-400 font-semibold">🔄 {{ $task->recurrence_pattern }}
                                 @if($task->recurrence_floating)
@@ -351,9 +377,10 @@
                             <p class="text-xs text-gray-400 mt-1">ℹ️ When marked done, this task will be completed and a new instance will be created for the next occurrence.</p>
                             @endif
                         @else
-                            <p class="text-gray-400 italic">Click to set recurrence</p>
+                            <p class="text-gray-400 italic">{{ $isInactive ? 'No recurrence set' : 'Click to set recurrence' }}</p>
                         @endif
                     </div>
+                    @if(!$isInactive)
                     <div x-show="editing.recurrence_pattern" class="mt-1">
                         <input type="text" x-model="fields.recurrence_pattern"
                                placeholder="e.g., daily, every Monday, weekdays"
@@ -376,12 +403,13 @@
                             </button>
                         </div>
                     </div>
+                    @endif
                 </div>
 
                 <!-- Tags -->
                 <div class="mt-4">
                     <span class="text-sm font-medium text-gray-500">Tags</span>
-                    <div @click="startEdit('tag_ids')" x-show="!editing.tag_ids" class="mt-1 cursor-pointer hover:bg-gray-700 p-2 rounded min-h-[40px]">
+                    <div @if(!$isInactive) @click="startEdit('tag_ids')" @endif x-show="!editing.tag_ids" class="mt-1 p-2 rounded min-h-[40px] {{ !$isInactive ? 'cursor-pointer hover:bg-gray-700' : '' }}">
                         @if($task->tags->count() > 0)
                             <div class="flex gap-2 flex-wrap">
                                 @foreach($task->tags as $tag)
@@ -392,9 +420,10 @@
                                 @endforeach
                             </div>
                         @else
-                            <p class="text-gray-500 italic">No tags - click to add</p>
+                            <p class="text-gray-500 italic">{{ $isInactive ? 'No tags' : 'No tags - click to add' }}</p>
                         @endif
                     </div>
+                    @if(!$isInactive)
                     <div x-show="editing.tag_ids" class="mt-1">
                         <div class="space-y-2 mb-2 max-h-48 overflow-y-auto border border-gray-600 bg-[#101010] rounded p-3">
                             @forelse($tags as $tag)
@@ -418,19 +447,21 @@
                             </button>
                         </div>
                     </div>
+                    @endif
                 </div>
 
                 <!-- Assignees -->
                 @if($task->creator_id === Auth::id())
                 <div class="mt-4">
                     <span class="text-sm font-medium text-gray-500">Assigned To</span>
-                    <div @click="startEdit('assignee_ids')" x-show="!editing.assignee_ids" class="mt-1 cursor-pointer hover:bg-gray-700 p-2 rounded">
+                    <div @if(!$isInactive) @click="startEdit('assignee_ids')" @endif x-show="!editing.assignee_ids" class="mt-1 p-2 rounded {{ !$isInactive ? 'cursor-pointer hover:bg-gray-700' : '' }}">
                         <div class="space-y-1">
                             @foreach($task->assignees as $assignee)
                                 <p class="text-sm text-gray-300">{{ $assignee->name }}</p>
                             @endforeach
                         </div>
                     </div>
+                    @if(!$isInactive)
                     <div x-show="editing.assignee_ids" class="mt-1">
                         <div class="space-y-2 mb-2 max-h-48 overflow-y-auto border border-gray-600 bg-[#101010] rounded p-3">
                             @foreach($users as $user)
@@ -453,6 +484,7 @@
                             </button>
                         </div>
                     </div>
+                    @endif
                 </div>
                 @else
                 <div class="mt-4">
@@ -540,6 +572,7 @@
                             @endforelse
                         </div>
 
+                        @if(!$isInactive)
                         <form method="POST" action="{{ route('comments.store', $task) }}" enctype="multipart/form-data">
                             @csrf
                             <textarea name="comment" rows="3" required
@@ -553,6 +586,7 @@
                                 </button>
                             </div>
                         </form>
+                        @endif
                     </div>
 
                     <!-- Subtasks tab -->
@@ -565,10 +599,12 @@
                                     No subtasks yet.
                                 @endif
                             </p>
+                            @if(!$isInactive)
                             <a href="{{ route('tasks.create', ['parent_id' => $task->id]) }}"
                                class="inline-flex items-center px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700">
                                 + Add Subtask
                             </a>
+                            @endif
                         </div>
 
                         @if($task->children->count() > 0)
@@ -620,6 +656,7 @@
                             <p class="text-sm text-gray-500 mb-4">No attachments yet.</p>
                         @endif
 
+                        @if(!$isInactive)
                         <form method="POST" action="{{ route('attachments.store', $task) }}" enctype="multipart/form-data">
                             @csrf
                             <div class="flex gap-2">
@@ -630,6 +667,7 @@
                                 </button>
                             </div>
                         </form>
+                        @endif
                     </div>
 
                     <!-- History tab -->
