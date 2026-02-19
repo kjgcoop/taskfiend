@@ -459,147 +459,179 @@
                 @endif
             </div>
 
-            <!-- Subtasks -->
-            <div class="bg-[#202020] border border-gray-700 overflow-hidden shadow-sm sm:rounded-lg p-6">
-                <div class="flex justify-between items-center mb-4">
-                    <h3 class="text-lg font-semibold text-gray-100">
+            <!-- Tabbed sections: Subtasks, Attachments, Comments, History -->
+            <div x-data="{ tab: 'comments' }" class="bg-[#202020] border border-gray-700 overflow-hidden shadow-sm sm:rounded-lg">
+
+                <!-- Tab bar -->
+                <div class="flex border-b border-gray-700 overflow-x-auto">
+                    <button @click="tab = 'comments'"
+                            :class="tab === 'comments' ? 'border-b-2 border-blue-500 text-gray-100' : 'text-gray-400 hover:text-gray-200'"
+                            class="flex-shrink-0 flex items-center gap-1.5 px-5 py-3 text-sm font-medium transition-colors whitespace-nowrap">
+                        Comments
+                        @if($task->comments->count() > 0)
+                            <span class="px-1.5 py-0.5 text-xs rounded-full bg-gray-700 text-gray-300">{{ $task->comments->count() }}</span>
+                        @endif
+                    </button>
+                    <button @click="tab = 'subtasks'"
+                            :class="tab === 'subtasks' ? 'border-b-2 border-blue-500 text-gray-100' : 'text-gray-400 hover:text-gray-200'"
+                            class="flex-shrink-0 flex items-center gap-1.5 px-5 py-3 text-sm font-medium transition-colors whitespace-nowrap">
                         Subtasks
                         @if($task->children->count() > 0)
-                            <span class="text-sm text-gray-400 font-normal">
-                                ({{ $task->incompleteChildren()->count() }} of {{ $task->children->count() }} incomplete)
-                            </span>
+                            <span class="px-1.5 py-0.5 text-xs rounded-full bg-gray-700 text-gray-300">{{ $task->children->count() }}</span>
                         @endif
-                    </h3>
-                    <a href="{{ route('tasks.create', ['parent_id' => $task->id]) }}"
-                       class="inline-flex items-center px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700">
-                        + Add Subtask
-                    </a>
+                    </button>
+                    <button @click="tab = 'attachments'"
+                            :class="tab === 'attachments' ? 'border-b-2 border-blue-500 text-gray-100' : 'text-gray-400 hover:text-gray-200'"
+                            class="flex-shrink-0 flex items-center gap-1.5 px-5 py-3 text-sm font-medium transition-colors whitespace-nowrap">
+                        Attachments
+                        @if($task->attachments->count() > 0)
+                            <span class="px-1.5 py-0.5 text-xs rounded-full bg-gray-700 text-gray-300">{{ $task->attachments->count() }}</span>
+                        @endif
+                    </button>
+                    <button @click="tab = 'history'"
+                            :class="tab === 'history' ? 'border-b-2 border-blue-500 text-gray-100' : 'text-gray-400 hover:text-gray-200'"
+                            class="flex-shrink-0 px-5 py-3 text-sm font-medium transition-colors whitespace-nowrap">
+                        History
+                    </button>
                 </div>
 
-                @if($task->children->count() > 0)
-                    <div class="space-y-2">
-                        <x-subtask-list :tasks="$task->children" :parent="$task" />
-                    </div>
-                @else
-                    <p class="text-sm text-gray-500 italic">No subtasks yet. Click "Add Subtask" to create one.</p>
-                @endif
-            </div>
+                <!-- Tab content -->
+                <div class="p-6">
 
-            <!-- Attachments -->
-            <div class="bg-[#202020] border border-gray-700 overflow-hidden shadow-sm sm:rounded-lg p-6">
-                <h3 class="text-lg font-semibold text-gray-100 mb-4">Attachments</h3>
-                @if($task->attachments->count() > 0)
-                    <div class="space-y-2">
-                        @foreach($task->attachments as $attachment)
-                            <div class="flex items-center gap-3 p-2 bg-gray-700 border border-gray-600 rounded">
-                                <!-- Thumbnail/Icon -->
-                                <div class="flex-shrink-0 w-16 h-16 bg-gray-600 rounded overflow-hidden flex items-center justify-center">
-                                    @if(str_starts_with($attachment->mime_type, 'image/'))
-                                        <img src="{{ route('attachments.view', [$task, $attachment]) }}"
-                                             alt="{{ $attachment->original_filename }}"
-                                             class="w-full h-full object-cover">
-                                    @else
-                                        <!-- File icon placeholder -->
-                                        <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                  d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
-                                        </svg>
-                                    @endif
-                                </div>
-
-                                <!-- Filename and Actions -->
-                                <div class="flex-1 flex items-center justify-between">
-                                    <span class="text-sm text-gray-300" title="{{ $attachment->original_filename }}">{{ strlen($attachment->original_filename) > 15 ? substr($attachment->original_filename, 0, 12) . '...' : $attachment->original_filename }}</span>
-                                    <div class="flex gap-2">
-                                        <a href="{{ route('attachments.download', [$task, $attachment]) }}" class="text-sm text-blue-400 hover:underline">
-                                            Download
-                                        </a>
-                                        @if($task->creator_id === Auth::id())
-                                            <form method="POST" action="{{ route('attachments.destroy', [$task, $attachment]) }}" class="inline">
-                                                @csrf
-                                                @method('DELETE')
-                                                <button type="submit" class="text-sm text-red-600 hover:underline" onclick="return confirm('Are you sure?')">
-                                                    Delete
-                                                </button>
-                                            </form>
-                                        @endif
+                    <!-- Comments tab -->
+                    <div x-show="tab === 'comments'">
+                        <div class="space-y-4 mb-6">
+                            @forelse($task->comments as $comment)
+                                <div class="border-l-2 border-gray-600 pl-4">
+                                    <div class="flex items-center justify-between">
+                                        <span class="text-sm font-medium text-gray-300">{{ $comment->user->name }}</span>
+                                        <div class="flex items-center gap-2">
+                                            <span class="text-xs text-gray-500">{{ $comment->created_at->diffForHumans() }}</span>
+                                            @if($task->creator_id === Auth::id())
+                                                <form method="POST" action="{{ route('comments.destroy', [$task, $comment]) }}" class="inline">
+                                                    @csrf
+                                                    @method('DELETE')
+                                                    <button type="submit" class="text-xs text-red-600 hover:underline" onclick="return confirm('Are you sure?')">
+                                                        Delete
+                                                    </button>
+                                                </form>
+                                            @endif
+                                        </div>
                                     </div>
-                                </div>
-                            </div>
-                        @endforeach
-                    </div>
-                @else
-                    <p class="text-sm text-gray-500">No attachments yet.</p>
-                @endif
-
-                <form method="POST" action="{{ route('attachments.store', $task) }}" enctype="multipart/form-data" class="mt-4">
-                    @csrf
-                    <div class="flex gap-2">
-                        <input type="file" name="attachment" required class="flex-1 text-sm text-gray-300"
-                               accept=".jpg,.jpeg,.png,.webp,.gif,.heic,.heif,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.odt,.ods,.odp,.csv,.txt,.json">
-                        <button type="submit" class="px-4 py-2 bg-blue-600 text-white text-sm rounded hover:bg-blue-700">
-                            Upload
-                        </button>
-                    </div>
-                </form>
-            </div>
-
-            <!-- Comments -->
-            <div class="bg-[#202020] border border-gray-700 overflow-hidden shadow-sm sm:rounded-lg p-6">
-                <h3 class="text-lg font-semibold text-gray-100 mb-4">Comments</h3>
-                <div class="space-y-4 mb-6">
-                    @forelse($task->comments as $comment)
-                        <div class="border-l-2 border-gray-600 pl-4">
-                            <div class="flex items-center justify-between">
-                                <span class="text-sm font-medium text-gray-300">{{ $comment->user->name }}</span>
-                                <div class="flex items-center gap-2">
-                                    <span class="text-xs text-gray-500">{{ $comment->created_at->diffForHumans() }}</span>
-                                    @if($task->creator_id === Auth::id())
-                                        <form method="POST" action="{{ route('comments.destroy', [$task, $comment]) }}" class="inline">
-                                            @csrf
-                                            @method('DELETE')
-                                            <button type="submit" class="text-xs text-red-600 hover:underline" onclick="return confirm('Are you sure?')">
-                                                Delete
-                                            </button>
-                                        </form>
+                                    <p class="mt-1 text-sm text-gray-300">{{ $comment->comment }}</p>
+                                    @if($comment->file_path)
+                                        <p class="mt-1 text-xs">
+                                            <a href="{{ route('comments.download', [$task, $comment]) }}" class="text-blue-400 hover:text-blue-300 hover:underline">
+                                                📎 <span title="{{ $comment->original_filename }}">{{ strlen($comment->original_filename) > 15 ? substr($comment->original_filename, 0, 12) . '...' : $comment->original_filename }}</span>
+                                            </a>
+                                            <span class="text-gray-500 ml-2">({{ number_format($comment->file_size / 1024, 1) }} KB)</span>
+                                        </p>
                                     @endif
                                 </div>
-                            </div>
-                            <p class="mt-1 text-sm text-gray-300">{{ $comment->comment }}</p>
-                            @if($comment->file_path)
-                                <p class="mt-1 text-xs">
-                                    <a href="{{ route('comments.download', [$task, $comment]) }}" class="text-blue-400 hover:text-blue-300 hover:underline">
-                                        📎 <span title="{{ $comment->original_filename }}">{{ strlen($comment->original_filename) > 15 ? substr($comment->original_filename, 0, 12) . '...' : $comment->original_filename }}</span>
-                                    </a>
-                                    <span class="text-gray-500 ml-2">({{ number_format($comment->file_size / 1024, 1) }} KB)</span>
-                                </p>
-                            @endif
+                            @empty
+                                <p class="text-sm text-gray-500">No comments yet.</p>
+                            @endforelse
                         </div>
-                    @empty
-                        <p class="text-sm text-gray-500">No comments yet.</p>
-                    @endforelse
-                </div>
 
-                <form method="POST" action="{{ route('comments.store', $task) }}" enctype="multipart/form-data">
-                    @csrf
-                    <textarea name="comment" rows="3" required
-                              class="w-full rounded-md bg-gray-700 border-gray-600 text-gray-100 placeholder-gray-500 shadow-sm focus:border-blue-500 focus:ring-blue-500 mb-2"
-                              placeholder="Add a comment..."></textarea>
-                    <div class="flex items-center gap-4">
-                        <input type="file" name="attachment" class="text-sm text-gray-300"
-                               accept=".jpg,.jpeg,.png,.webp,.gif,.heic,.heif,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.odt,.ods,.odp,.csv,.txt,.json">
-                        <button type="submit" class="px-4 py-2 bg-blue-600 text-white text-sm rounded hover:bg-blue-700">
-                            Post Comment
-                        </button>
+                        <form method="POST" action="{{ route('comments.store', $task) }}" enctype="multipart/form-data">
+                            @csrf
+                            <textarea name="comment" rows="3" required
+                                      class="w-full rounded-md bg-gray-700 border-gray-600 text-gray-100 placeholder-gray-500 shadow-sm focus:border-blue-500 focus:ring-blue-500 mb-2"
+                                      placeholder="Add a comment..."></textarea>
+                            <div class="flex items-center gap-4">
+                                <input type="file" name="attachment" class="text-sm text-gray-300"
+                                       accept=".jpg,.jpeg,.png,.webp,.gif,.heic,.heif,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.odt,.ods,.odp,.csv,.txt,.json">
+                                <button type="submit" class="px-4 py-2 bg-blue-600 text-white text-sm rounded hover:bg-blue-700">
+                                    Post Comment
+                                </button>
+                            </div>
+                        </form>
                     </div>
-                </form>
-            </div>
 
-            <!-- Change Log -->
-            <div class="bg-[#202020] border border-gray-700 overflow-hidden shadow-sm sm:rounded-lg p-6">
-                <h3 class="text-lg font-semibold text-gray-100 mb-4">Change Log</h3>
-                <div class="space-y-4">
-                    <x-change :changes="$task->changeLogs" />
+                    <!-- Subtasks tab -->
+                    <div x-show="tab === 'subtasks'">
+                        <div class="flex justify-between items-center mb-4">
+                            <p class="text-sm text-gray-400">
+                                @if($task->children->count() > 0)
+                                    {{ $task->incompleteChildren()->count() }} of {{ $task->children->count() }} incomplete
+                                @else
+                                    No subtasks yet.
+                                @endif
+                            </p>
+                            <a href="{{ route('tasks.create', ['parent_id' => $task->id]) }}"
+                               class="inline-flex items-center px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700">
+                                + Add Subtask
+                            </a>
+                        </div>
+
+                        @if($task->children->count() > 0)
+                            <div class="space-y-2">
+                                <x-subtask-list :tasks="$task->children" :parent="$task" />
+                            </div>
+                        @endif
+                    </div>
+
+                    <!-- Attachments tab -->
+                    <div x-show="tab === 'attachments'">
+                        @if($task->attachments->count() > 0)
+                            <div class="space-y-2 mb-4">
+                                @foreach($task->attachments as $attachment)
+                                    <div class="flex items-center gap-3 p-2 bg-gray-700 border border-gray-600 rounded">
+                                        <div class="flex-shrink-0 w-16 h-16 bg-gray-600 rounded overflow-hidden flex items-center justify-center">
+                                            @if(str_starts_with($attachment->mime_type, 'image/'))
+                                                <img src="{{ route('attachments.view', [$task, $attachment]) }}"
+                                                     alt="{{ $attachment->original_filename }}"
+                                                     class="w-full h-full object-cover">
+                                            @else
+                                                <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                          d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
+                                                </svg>
+                                            @endif
+                                        </div>
+                                        <div class="flex-1 flex items-center justify-between">
+                                            <span class="text-sm text-gray-300" title="{{ $attachment->original_filename }}">{{ strlen($attachment->original_filename) > 15 ? substr($attachment->original_filename, 0, 12) . '...' : $attachment->original_filename }}</span>
+                                            <div class="flex gap-2">
+                                                <a href="{{ route('attachments.download', [$task, $attachment]) }}" class="text-sm text-blue-400 hover:underline">
+                                                    Download
+                                                </a>
+                                                @if($task->creator_id === Auth::id())
+                                                    <form method="POST" action="{{ route('attachments.destroy', [$task, $attachment]) }}" class="inline">
+                                                        @csrf
+                                                        @method('DELETE')
+                                                        <button type="submit" class="text-sm text-red-600 hover:underline" onclick="return confirm('Are you sure?')">
+                                                            Delete
+                                                        </button>
+                                                    </form>
+                                                @endif
+                                            </div>
+                                        </div>
+                                    </div>
+                                @endforeach
+                            </div>
+                        @else
+                            <p class="text-sm text-gray-500 mb-4">No attachments yet.</p>
+                        @endif
+
+                        <form method="POST" action="{{ route('attachments.store', $task) }}" enctype="multipart/form-data">
+                            @csrf
+                            <div class="flex gap-2">
+                                <input type="file" name="attachment" required class="flex-1 text-sm text-gray-300"
+                                       accept=".jpg,.jpeg,.png,.webp,.gif,.heic,.heif,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.odt,.ods,.odp,.csv,.txt,.json">
+                                <button type="submit" class="px-4 py-2 bg-blue-600 text-white text-sm rounded hover:bg-blue-700">
+                                    Upload
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+
+                    <!-- History tab -->
+                    <div x-show="tab === 'history'">
+                        <div class="space-y-4">
+                            <x-change :changes="$task->changeLogs" />
+                        </div>
+                    </div>
+
                 </div>
             </div>
         </div>
