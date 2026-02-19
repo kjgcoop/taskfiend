@@ -14,7 +14,7 @@
 
     <div class="py-12 relative" @if($project->user_id === Auth::id() && !$project->is_inbox) x-data="projectEditor({{ $project->id }})" @endif>
         @if($project->background_image)
-            <div class="absolute inset-0 bg-cover bg-center" style="background-image: url('{{ route('projects.background', $project) }}')"></div>
+            <div class="absolute inset-0" style="background-image: url('{{ route('projects.background', $project) }}'); background-attachment: fixed; background-position: center; background-size: cover; background-repeat: no-repeat;"></div>
             <div class="absolute inset-0 bg-black/65"></div>
         @endif
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-6 relative">
@@ -173,10 +173,11 @@
                         <span class="text-sm font-medium text-gray-500">Background Image</span>
                         @if($project->background_image)
                             <div class="mt-1">
-                                <div class="relative w-full h-24 rounded-md overflow-hidden border border-gray-600 mb-2">
+                                <div class="mb-2">
                                     <img src="{{ route('projects.background', $project) }}"
                                          alt="Project background"
-                                         class="w-full h-full object-cover">
+                                         class="rounded-md border border-gray-600"
+                                         style="height: 100px; width: auto;">
                                 </div>
                                 <div class="flex items-center gap-3">
                                     <button @click="showUpload = !showUpload"
