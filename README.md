@@ -67,3 +67,12 @@ To add a new page:
 
 If you add documentation, please consider contributing it back to this project. If it's something you/your users need documented, there's probably somebody else out there who could also use it.
 
+### Find Tasks without Tags
+I like most of my tasks to have tags. It seemed like overkill to program a solution for something I do so rarely. This query will get the required results. I'll forget it forever in approximately 17 seconds if I don't write it down:
+
+```
+SELECT tasks.id, name FROM tasks
+LEFT JOIN tag_task ON tasks.id = tag_task.task_id
+WHERE tag_task.task_id IS NULL
+AND tasks.status = 'incomplete';
+```
