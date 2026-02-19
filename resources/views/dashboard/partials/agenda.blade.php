@@ -99,10 +99,37 @@
         </div>
         <div class="flex-1 border-l border-gray-700 p-2 flex flex-wrap gap-1">
             @foreach($allDayTasks as $task)
-                <a href="{{ route('tasks.show', $task) }}"
-                   class="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-gray-700 hover:bg-gray-600 text-gray-200 transition-colors max-w-xs truncate">
-                    {{ $task->name }}
-                </a>
+                <span class="inline-flex items-center gap-1.5 px-2 py-1 rounded bg-gray-700 hover:bg-gray-600 transition-colors max-w-xs">
+                    @if($task->status === 'done')
+                        <span class="w-3 h-3 rounded-full bg-green-600 flex-shrink-0" title="Completed"></span>
+                    @else
+                        <form method="POST" action="{{ route('tasks.update', $task) }}" class="flex-shrink-0" onclick="event.stopPropagation()">
+                            @csrf
+                            @method('PUT')
+                            <input type="hidden" name="status" value="done">
+                            <input type="hidden" name="name" value="{{ $task->name }}">
+                            <input type="hidden" name="description" value="{{ $task->description }}">
+                            <input type="hidden" name="date" value="{{ $task->date }}">
+                            <input type="hidden" name="time" value="{{ $task->time }}">
+                            <input type="hidden" name="project_id" value="{{ $task->project_id }}">
+                            <input type="hidden" name="parent_id" value="{{ $task->parent_id }}">
+                            <input type="hidden" name="recurrence_pattern" value="{{ $task->recurrence_pattern }}">
+                            @foreach($task->tags as $tag)
+                                <input type="hidden" name="tag_ids[]" value="{{ $tag->id }}">
+                            @endforeach
+                            @foreach($task->assignees as $assignee)
+                                <input type="hidden" name="assignee_ids[]" value="{{ $assignee->id }}">
+                            @endforeach
+                            <input type="hidden" name="quick_complete" value="1">
+                            <button type="submit"
+                                    class="w-3 h-3 rounded-full border {{ $task->recurrence_pattern ? 'border-purple-400 hover:border-purple-300' : 'border-gray-400 hover:border-green-400' }} hover:bg-green-400 hover:bg-opacity-20 transition"
+                                    title="{{ $task->recurrence_pattern ? 'Complete & create next (' . $task->recurrence_pattern . ')' : 'Mark as done' }}">
+                            </button>
+                        </form>
+                    @endif
+                    <a href="{{ route('tasks.show', $task) }}"
+                       class="text-xs font-medium text-gray-200 truncate">{{ $task->name }}</a>
+                </span>
             @endforeach
         </div>
     </div>
@@ -177,20 +204,53 @@
                     $colorClass = $blockColors[$task->id % count($blockColors)];
                 @endphp
 
-                <a href="{{ route('tasks.show', $task) }}"
-                   class="absolute rounded border-l-2 text-white transition-colors overflow-hidden z-10 {{ $colorClass }}"
-                   style="top: {{ $topPx }}px; height: {{ $heightPx }}px; left: calc({{ $leftPct }}% + 2px); width: calc({{ $widthPct }}% - 4px);"
-                   title="{{ $task->name }} ({{ $timeLabel }})">
-                    <div class="px-2 py-1 h-full flex flex-col justify-start overflow-hidden">
-                        <div class="text-xs font-semibold leading-tight truncate">{{ $task->name }}</div>
-                        @if($heightPx >= 40)
-                        <div class="text-xs opacity-75 leading-tight truncate mt-0.5">{{ $timeLabel }}</div>
-                        @endif
-                        @if($heightPx >= 60 && $task->description)
-                        <div class="text-xs opacity-60 leading-tight truncate mt-0.5">{{ $task->description }}</div>
-                        @endif
-                    </div>
-                </a>
+                <div class="absolute rounded border-l-2 text-white overflow-hidden z-10 {{ $colorClass }}"
+                     style="top: {{ $topPx }}px; height: {{ $heightPx }}px; left: calc({{ $leftPct }}% + 2px); width: calc({{ $widthPct }}% - 4px);">
+                    {{-- Quick complete button --}}
+                    @if($task->status === 'done')
+                        <div class="absolute top-1 right-1 w-3.5 h-3.5 rounded-full bg-green-400 z-20 flex-shrink-0" title="Completed"></div>
+                    @else
+                        <form method="POST" action="{{ route('tasks.update', $task) }}"
+                              class="absolute top-1 right-1 z-20"
+                              onclick="event.stopPropagation()">
+                            @csrf
+                            @method('PUT')
+                            <input type="hidden" name="status" value="done">
+                            <input type="hidden" name="name" value="{{ $task->name }}">
+                            <input type="hidden" name="description" value="{{ $task->description }}">
+                            <input type="hidden" name="date" value="{{ $task->date }}">
+                            <input type="hidden" name="time" value="{{ $task->time }}">
+                            <input type="hidden" name="project_id" value="{{ $task->project_id }}">
+                            <input type="hidden" name="parent_id" value="{{ $task->parent_id }}">
+                            <input type="hidden" name="recurrence_pattern" value="{{ $task->recurrence_pattern }}">
+                            @foreach($task->tags as $tag)
+                                <input type="hidden" name="tag_ids[]" value="{{ $tag->id }}">
+                            @endforeach
+                            @foreach($task->assignees as $assignee)
+                                <input type="hidden" name="assignee_ids[]" value="{{ $assignee->id }}">
+                            @endforeach
+                            <input type="hidden" name="quick_complete" value="1">
+                            <button type="submit"
+                                    class="w-3.5 h-3.5 rounded-full border-2 {{ $task->recurrence_pattern ? 'border-purple-300 hover:border-purple-100' : 'border-white border-opacity-70 hover:border-green-300' }} hover:bg-green-400 hover:bg-opacity-30 transition block"
+                                    title="{{ $task->recurrence_pattern ? 'Complete & create next (' . $task->recurrence_pattern . ')' : 'Mark as done' }}">
+                            </button>
+                        </form>
+                    @endif
+                    {{-- Clickable link area --}}
+                    <a href="{{ route('tasks.show', $task) }}"
+                       class="block h-full px-2 py-1 pr-6"
+                       title="{{ $task->name }} ({{ $timeLabel }})">
+                        <div class="flex flex-col justify-start overflow-hidden h-full">
+                            <div class="text-xs font-semibold leading-tight truncate">{{ $task->name }}</div>
+                            @if($heightPx >= 40)
+                            <div class="text-xs opacity-75 leading-tight truncate mt-0.5">{{ $timeLabel }}</div>
+                            @endif
+                            @if($heightPx >= 60 && $task->description)
+                            <div class="text-xs opacity-60 leading-tight truncate mt-0.5">{{ $task->description }}</div>
+                            @endif
+                        </div>
+                    </a>
+                </div>
             @endforeach
 
         </div>{{-- end grid area --}}
