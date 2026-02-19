@@ -686,6 +686,45 @@ class TaskController extends Controller
         }
     }
 
+    public function duplicate(Task $task)
+    {
+        $this->authorizeTaskAccess($task);
+
+        $task->load(['tags', 'assignees']);
+
+        $newTask = Task::create([
+            'name'                => 'Copy of ' . $task->name,
+            'description'         => $task->description,
+            'date'                => $task->date,
+            'time'                => $task->time,
+            'duration_minutes'    => $task->duration_minutes,
+            'project_id'          => $task->project_id,
+            'parent_id'           => $task->parent_id,
+            'recurrence_pattern'  => $task->recurrence_pattern,
+            'recurrence_floating' => $task->recurrence_floating,
+            'creator_id'          => Auth::id(),
+            'status'              => 'incomplete',
+        ]);
+
+        $newTask->tags()->sync($task->tags->pluck('id'));
+
+        $assigneeIds = $task->assignees->pluck('id')->toArray();
+        if (empty($assigneeIds)) {
+            $assigneeIds = [Auth::id()];
+        }
+        foreach ($assigneeIds as $assigneeId) {
+            $newTask->assignments()->create([
+                'assignee_id'    => $assigneeId,
+                'assigned_by_id' => Auth::id(),
+            ]);
+        }
+
+        $this->logChange($newTask, 'duplicated from task #' . $task->id);
+
+        return redirect()->route('tasks.show', $newTask)
+            ->with('success', 'Task duplicated successfully.');
+    }
+
     public function destroy(Task $task)
     {
         abort(403, 'Tasks cannot be deleted. Please archive instead.');
