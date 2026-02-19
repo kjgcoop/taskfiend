@@ -136,7 +136,11 @@ class DashboardController extends Controller
     {
         $date = $request->input('date', today()->format('Y-m-d'));
         $carbonDate = Carbon::parse($date);
-        $view = $request->input('view', 'list'); // 'list' or 'agenda'
+        // Persist view preference in session; URL param takes priority if present
+        if ($request->has('view')) {
+            session(['day_view' => $request->input('view')]);
+        }
+        $view = session('day_view', 'list');
 
         $tasks = Task::query()
             ->where(function ($q) {
