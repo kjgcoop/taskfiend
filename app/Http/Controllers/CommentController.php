@@ -27,7 +27,7 @@ class CommentController extends Controller
                 'max:22528', // 22MB max (matches PHP upload_max_filesize)
                 'mimetypes:' .
                     // Images
-                    'image/jpeg,image/png,image/webp,image/gif,' .
+                    'image/jpeg,image/png,image/webp,image/gif,image/heic,image/heif,' .
                     // PDF
                     'application/pdf,' .
                     // Word
@@ -48,7 +48,7 @@ class CommentController extends Controller
             ],
         ], [
             'attachment.max' => 'File size must not exceed 22MB.',
-            'attachment.mimetypes' => 'File type not allowed. Accepted: images (JPG, PNG, WebP, GIF), PDF, Word, Excel, PowerPoint, LibreOffice formats, CSV, TXT, JSON.',
+            'attachment.mimetypes' => 'File type not allowed. Accepted: images (JPG, PNG, WebP, GIF, HEIC), PDF, Word, Excel, PowerPoint, LibreOffice formats, CSV, TXT, JSON.',
         ]);
 
         $commentData = [

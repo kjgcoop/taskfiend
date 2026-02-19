@@ -536,7 +536,7 @@
                     @csrf
                     <div class="flex gap-2">
                         <input type="file" name="attachment" required class="flex-1 text-sm text-gray-300"
-                               accept=".jpg,.jpeg,.png,.webp,.gif,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.odt,.ods,.odp,.csv,.txt,.json">
+                               accept=".jpg,.jpeg,.png,.webp,.gif,.heic,.heif,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.odt,.ods,.odp,.csv,.txt,.json">
                         <button type="submit" class="px-4 py-2 bg-blue-600 text-white text-sm rounded hover:bg-blue-700">
                             Upload
                         </button>
@@ -587,7 +587,7 @@
                               placeholder="Add a comment..."></textarea>
                     <div class="flex items-center gap-4">
                         <input type="file" name="attachment" class="text-sm text-gray-300"
-                               accept=".jpg,.jpeg,.png,.webp,.gif,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.odt,.ods,.odp,.csv,.txt,.json">
+                               accept=".jpg,.jpeg,.png,.webp,.gif,.heic,.heif,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.odt,.ods,.odp,.csv,.txt,.json">
                         <button type="submit" class="px-4 py-2 bg-blue-600 text-white text-sm rounded hover:bg-blue-700">
                             Post Comment
                         </button>
