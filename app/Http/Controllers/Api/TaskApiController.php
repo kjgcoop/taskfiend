@@ -138,8 +138,6 @@ class TaskApiController extends Controller
             ->orderBy('date')
             ->get();
 
-        $this->resolveNullProjects($tasks);
-
         return response()->json([
             'success' => true,
             'date' => $date,
@@ -173,38 +171,10 @@ class TaskApiController extends Controller
             ->orderBy('date')
             ->get();
 
-        $this->resolveNullProjects($tasks);
-
         return response()->json([
             'success' => true,
             'date' => $date,
             'tasks' => $tasks,
         ]);
-    }
-
-    /**
-     * For any tasks with a null project relation (project_id was null or project was deleted),
-     * resolve them to the task creator's Inbox project.
-     */
-    private function resolveNullProjects(\Illuminate\Support\Collection $tasks): void
-    {
-        $nullProjectCreatorIds = $tasks->filter(fn($t) => !$t->project)->pluck('creator_id')->unique();
-
-        if ($nullProjectCreatorIds->isEmpty()) {
-            return;
-        }
-
-        $inboxProjects = Project::whereIn('user_id', $nullProjectCreatorIds)
-            ->where('is_inbox', true)
-            ->get()
-            ->keyBy('user_id');
-
-        $tasks->each(function ($task) use ($inboxProjects) {
-            if (!$task->project && isset($inboxProjects[$task->creator_id])) {
-                $inbox = $inboxProjects[$task->creator_id];
-                $task->project_id = $inbox->id;
-                $task->setRelation('project', $inbox);
-            }
-        });
     }
 }
