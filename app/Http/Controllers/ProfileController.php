@@ -55,7 +55,28 @@ class ProfileController extends Controller
             Storage::disk('private')->delete($user->profile_image);
         }
 
-        $path = $request->file('profile_image')->store('profile_images', 'private');
+        // Resize to 200x200 square (center crop) using GD
+        $file = $request->file('profile_image');
+        $src = imagecreatefromstring(file_get_contents($file->getRealPath()));
+        $srcW = imagesx($src);
+        $srcH = imagesy($src);
+
+        // Center-crop to square
+        $cropSize = min($srcW, $srcH);
+        $srcX = intdiv($srcW - $cropSize, 2);
+        $srcY = intdiv($srcH - $cropSize, 2);
+
+        $dst = imagecreatetruecolor(200, 200);
+        imagecopyresampled($dst, $src, 0, 0, $srcX, $srcY, 200, 200, $cropSize, $cropSize);
+        imagedestroy($src);
+
+        ob_start();
+        imagejpeg($dst, null, 90);
+        $imageData = ob_get_clean();
+        imagedestroy($dst);
+
+        $path = 'profile_images/' . uniqid() . '.jpg';
+        Storage::disk('private')->put($path, $imageData);
         $user->update(['profile_image' => $path]);
 
         return Redirect::route('profile.edit')->with('status', 'profile-updated');
@@ -87,7 +108,7 @@ class ProfileController extends Controller
 
         return response(Storage::disk('private')->get($user->profile_image))
             ->header('Content-Type', Storage::disk('private')->mimeType($user->profile_image))
-            ->header('Cache-Control', 'public, max-age=86400');
+            ->header('Cache-Control', 'private, max-age=86400');
     }
 
     /**
