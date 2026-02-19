@@ -89,6 +89,33 @@
     ];
 @endphp
 
+@pushOnce('scripts')
+<script>
+    window.agendaQuickComplete = function () {
+        return {
+            done: false,
+            loading: false,
+            async submit() {
+                this.loading = true;
+                const form = this.$el;
+                try {
+                    const res = await fetch(form.action, {
+                        method: 'POST',
+                        headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                        body: new FormData(form),
+                    });
+                    if (res.ok) this.done = true;
+                } catch {
+                    form.submit(); // network failure – fall back to full reload
+                } finally {
+                    this.loading = false;
+                }
+            }
+        };
+    };
+</script>
+@endPushOnce
+
 <div class="bg-[#181818] rounded-lg border border-gray-700 overflow-hidden">
 
     {{-- All-day strip --}}
@@ -103,7 +130,8 @@
                     @if($task->status === 'done')
                         <span class="w-3 h-3 rounded-full bg-green-600 flex-shrink-0" title="Completed"></span>
                     @else
-                        <form method="POST" action="{{ route('tasks.update', $task) }}" class="flex-shrink-0" onclick="event.stopPropagation()">
+                        <form x-data="agendaQuickComplete()" @submit.prevent="submit()"
+                              method="POST" action="{{ route('tasks.update', $task) }}" class="flex-shrink-0">
                             @csrf
                             @method('PUT')
                             <input type="hidden" name="status" value="done">
@@ -121,10 +149,12 @@
                                 <input type="hidden" name="assignee_ids[]" value="{{ $assignee->id }}">
                             @endforeach
                             <input type="hidden" name="quick_complete" value="1">
-                            <button type="submit"
+                            <button x-show="!done" type="submit"
+                                    :disabled="loading" :class="loading ? 'opacity-40 cursor-wait' : ''"
                                     class="w-3 h-3 rounded-full border {{ $task->recurrence_pattern ? 'border-purple-400 hover:border-purple-300' : 'border-gray-400 hover:border-green-400' }} hover:bg-green-400 hover:bg-opacity-20 transition"
                                     title="{{ $task->recurrence_pattern ? 'Complete & create next (' . $task->recurrence_pattern . ')' : 'Mark as done' }}">
                             </button>
+                            <span x-show="done" class="w-3 h-3 rounded-full bg-green-600 block" style="display:none"></span>
                         </form>
                     @endif
                     <a href="{{ route('tasks.show', $task) }}"
@@ -210,9 +240,9 @@
                     @if($task->status === 'done')
                         <div class="absolute top-1 right-1 w-3.5 h-3.5 rounded-full bg-green-400 z-20 flex-shrink-0" title="Completed"></div>
                     @else
-                        <form method="POST" action="{{ route('tasks.update', $task) }}"
-                              class="absolute top-1 right-1 z-20"
-                              onclick="event.stopPropagation()">
+                        <form x-data="agendaQuickComplete()" @submit.prevent="submit()"
+                              method="POST" action="{{ route('tasks.update', $task) }}"
+                              class="absolute top-1 right-1 z-20">
                             @csrf
                             @method('PUT')
                             <input type="hidden" name="status" value="done">
@@ -230,10 +260,12 @@
                                 <input type="hidden" name="assignee_ids[]" value="{{ $assignee->id }}">
                             @endforeach
                             <input type="hidden" name="quick_complete" value="1">
-                            <button type="submit"
+                            <button x-show="!done" type="submit"
+                                    :disabled="loading" :class="loading ? 'opacity-40 cursor-wait' : ''"
                                     class="w-3.5 h-3.5 rounded-full border-2 {{ $task->recurrence_pattern ? 'border-purple-300 hover:border-purple-100' : 'border-white border-opacity-70 hover:border-green-300' }} hover:bg-green-400 hover:bg-opacity-30 transition block"
                                     title="{{ $task->recurrence_pattern ? 'Complete & create next (' . $task->recurrence_pattern . ')' : 'Mark as done' }}">
                             </button>
+                            <div x-show="done" class="w-3.5 h-3.5 rounded-full bg-green-400" style="display:none" title="Completed"></div>
                         </form>
                     @endif
                     {{-- Clickable link area --}}
