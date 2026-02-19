@@ -104,7 +104,17 @@
                         headers: { 'X-Requested-With': 'XMLHttpRequest' },
                         body: new FormData(form),
                     });
-                    if (res.ok) this.done = true;
+                    if (res.ok) {
+                        this.done = true;
+                        // Brief pause to show the filled dot, then fade out the block
+                        await new Promise(r => setTimeout(r, 400));
+                        const block = form.closest('[data-task-block]');
+                        if (block) {
+                            block.style.transition = 'opacity 0.3s';
+                            block.style.opacity = '0';
+                            setTimeout(() => block.style.display = 'none', 300);
+                        }
+                    }
                 } catch {
                     form.submit(); // network failure – fall back to full reload
                 } finally {
@@ -126,7 +136,7 @@
         </div>
         <div class="flex-1 border-l border-gray-700 p-2 flex flex-wrap gap-1">
             @foreach($allDayTasks as $task)
-                <span class="inline-flex items-center gap-1.5 px-2 py-1 rounded bg-gray-700 hover:bg-gray-600 transition-colors max-w-xs">
+                <span data-task-block class="inline-flex items-center gap-1.5 px-2 py-1 rounded bg-gray-700 hover:bg-gray-600 transition-colors max-w-xs">
                     @if($task->status === 'done')
                         <span class="w-3 h-3 rounded-full bg-green-600 flex-shrink-0" title="Completed"></span>
                     @else
@@ -234,7 +244,7 @@
                     $colorClass = $blockColors[$task->id % count($blockColors)];
                 @endphp
 
-                <div class="absolute rounded border-l-2 text-white overflow-hidden z-10 {{ $colorClass }}"
+                <div data-task-block class="absolute rounded border-l-2 text-white overflow-hidden z-10 {{ $colorClass }}"
                      style="top: {{ $topPx }}px; height: {{ $heightPx }}px; left: calc({{ $leftPct }}% + 2px); width: calc({{ $widthPct }}% - 4px);">
                     {{-- Quick complete button --}}
                     @if($task->status === 'done')
