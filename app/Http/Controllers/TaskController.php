@@ -99,7 +99,7 @@ class TaskController extends Controller
             'description' => 'nullable|string',
             'date' => 'nullable|string|max:255',
             'time' => 'nullable|date_format:H:i',
-            'duration_minutes' => 'nullable|integer|min:1|max:1440',
+            'duration_minutes' => 'nullable|string|max:20',
             'project_id' => 'nullable|exists:projects,id',
             'parent_id' => 'nullable|exists:tasks,id',
             'recurrence_pattern' => 'nullable|string',
@@ -224,7 +224,7 @@ class TaskController extends Controller
             'description' => $validated['description'] ?? null,
             'date' => $date,
             'time' => $time,
-            'duration_minutes' => $validated['duration_minutes'] ?? null,
+            'duration_minutes' => $this->parseDurationInput($validated['duration_minutes'] ?? null),
             'project_id' => $validated['project_id'] ?? null,
             'parent_id' => $validated['parent_id'] ?? null,
             'recurrence_pattern' => $recurrencePattern,
@@ -352,7 +352,7 @@ class TaskController extends Controller
             'description' => 'nullable|string',
             'date' => 'nullable|string|max:255',
             'time' => 'nullable|date_format:H:i',
-            'duration_minutes' => 'nullable|integer|min:1|max:1440',
+            'duration_minutes' => 'nullable|string|max:20',
             'project_id' => 'nullable|exists:projects,id',
             'parent_id' => 'nullable|exists:tasks,id',
             'recurrence_pattern' => 'nullable|string',
@@ -450,6 +450,10 @@ class TaskController extends Controller
                     $this->logChange($descendant, 'auto-archived (parent archived)');
                 }
             }
+        }
+
+        if (array_key_exists('duration_minutes', $validated)) {
+            $validated['duration_minutes'] = $this->parseDurationInput($validated['duration_minutes']);
         }
 
         $changes = [];
@@ -574,6 +578,19 @@ class TaskController extends Controller
                         return response()->json(['success' => false, 'message' => "Could not parse date: \"{$value}\". Try formats like: tomorrow, next friday, march 15, 3/15, 2026-03-15"], 400);
                     }
                     $value = $parsed->format('Y-m-d');
+                }
+
+                // Parse flexible duration input (e.g. "2h 20m", "90", "1h")
+                if ($field === 'duration_minutes') {
+                    if ($value === null || $value === '') {
+                        $value = null;
+                    } else {
+                        $parsed = $this->parseDurationInput((string) $value);
+                        if ($parsed === null) {
+                            return response()->json(['success' => false, 'message' => 'Could not parse duration. Try: 90, 1h 30m, 1h30m, 90m'], 400);
+                        }
+                        $value = $parsed;
+                    }
                 }
 
                 if ($field === 'status') {
@@ -932,5 +949,53 @@ class TaskController extends Controller
             // Recursively copy this subtask's subtasks
             $this->copySubtasksToNewTask($originalSubtask, $newSubtask);
         }
+    }
+
+    /**
+     * Parse a flexible duration string into an integer number of minutes.
+     *
+     * Accepts:
+     *   "90"       → 90  (plain integer = minutes)
+     *   "2h 20m"   → 140
+     *   "2h20m"    → 140
+     *   "2h"       → 120
+     *   "20m"      → 20
+     *
+     * Returns null for empty/unparseable input.
+     */
+    private function parseDurationInput(?string $input): ?int
+    {
+        if ($input === null || trim($input) === '') {
+            return null;
+        }
+
+        $input = trim($input);
+
+        // Plain integer → treat as minutes
+        if (ctype_digit($input)) {
+            $v = (int) $input;
+            return $v > 0 ? $v : null;
+        }
+
+        $totalMinutes = 0;
+        $matched = false;
+
+        // Hours component: 2h, 2hr, 2hrs, 2hour, 2hours
+        if (preg_match('/(\d+)\s*h(?:r|rs|our|ours)?/i', $input, $m)) {
+            $totalMinutes += (int) $m[1] * 60;
+            $matched = true;
+        }
+
+        // Minutes component: 20m, 20min, 20mins, 20minute, 20minutes
+        if (preg_match('/(\d+)\s*m(?:in|ins|inute|inutes)?(?!\s*\d)/i', $input, $m)) {
+            $totalMinutes += (int) $m[1];
+            $matched = true;
+        }
+
+        if ($matched && $totalMinutes > 0) {
+            return $totalMinutes;
+        }
+
+        return null;
     }
 }

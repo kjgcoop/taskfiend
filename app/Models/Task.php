@@ -198,4 +198,28 @@ class Task extends Model
             }]);
         }]);
     }
+
+    /**
+     * Format a duration in minutes as a human-readable string (e.g. "2h 20m").
+     * Returns null if $minutes is null or zero.
+     */
+    public static function formatDuration(?int $minutes): ?string
+    {
+        if (!$minutes) {
+            return null;
+        }
+
+        $hours = intdiv($minutes, 60);
+        $mins  = $minutes % 60;
+
+        if ($hours === 0) {
+            return "{$mins}m";
+        }
+
+        if ($mins === 0) {
+            return "{$hours}h";
+        }
+
+        return "{$hours}h {$mins}m";
+    }
 }

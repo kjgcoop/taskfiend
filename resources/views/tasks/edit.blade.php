@@ -74,12 +74,11 @@
 
                         <div class="mb-4">
                             <label for="duration_minutes" class="block text-sm font-medium text-gray-300 mb-2">Duration (Optional)</label>
-                            <input type="number" name="duration_minutes" id="duration_minutes" min="1" max="1440"
+                            <input type="text" name="duration_minutes" id="duration_minutes"
                                    class="w-40 rounded-md bg-gray-700 border-gray-600 text-gray-100 placeholder-gray-500 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                                   value="{{ old('duration_minutes', $task->duration_minutes) }}"
-                                   placeholder="e.g., 30">
-                            <span class="text-sm text-gray-500 ml-2">minutes</span>
-                            <p class="mt-1 text-xs text-gray-500">How long this task takes. Used in the agenda view to size the block.</p>
+                                   value="{{ old('duration_minutes', \App\Models\Task::formatDuration($task->duration_minutes) ?? '') }}"
+                                   placeholder="e.g., 1h 30m">
+                            <p class="mt-1 text-xs text-gray-500">How long this task takes (e.g. 90, 1h 30m, 2h). Used in the agenda view to size the block.</p>
                             @error('duration_minutes')<p class="mt-1 text-sm text-red-600">{{ $message }}</p>@enderror
                         </div>
 
