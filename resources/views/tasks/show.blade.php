@@ -391,9 +391,10 @@
                     <div x-show="editing.assignee_ids" class="mt-1">
                         <div class="space-y-2 mb-2 max-h-48 overflow-y-auto border border-gray-600 bg-[#101010] rounded p-3">
                             @foreach($users as $user)
-                                <label class="flex items-center">
+                                <label class="flex items-center {{ $user->id === Auth::id() ? 'cursor-not-allowed opacity-60' : '' }}">
                                     <input type="checkbox" value="{{ $user->id }}" x-model="fields.assignee_ids"
-                                           class="rounded border-gray-600 bg-gray-700 text-blue-600 focus:ring-blue-500">
+                                           class="rounded border-gray-600 bg-gray-700 text-blue-600 focus:ring-blue-500"
+                                           @if($user->id === Auth::id()) disabled title="You cannot remove yourself as you are the task creator" @endif>
                                     <span class="ml-2 text-sm text-gray-300">{{ $user->name }} ({{ $user->email }})</span>
                                 </label>
                             @endforeach
