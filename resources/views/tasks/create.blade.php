@@ -279,12 +279,12 @@
                         const d = new Date(this.resolvedDate + 'T12:00:00');
                         const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
                         this.dateText = d.toLocaleDateString('en-US', options);
-                        this.datePreview = this.dateText;
+                        this.previewDate();
                     }
                 },
 
                 formatPreview(formatted, count) {
-                    if (!count) return formatted;
+                    if (count === null || count === undefined) return formatted;
                     const label = count === 1 ? '1 task' : `${count} tasks`;
                     return `${formatted} \u2014 ${label}`;
                 },
