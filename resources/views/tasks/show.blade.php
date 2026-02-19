@@ -203,18 +203,18 @@
                         <span class="text-sm font-medium text-gray-500">Duration</span>
                         <div @click="startEdit('duration_minutes')" x-show="!editing.duration_minutes" class="mt-1 cursor-pointer hover:bg-gray-700 p-2 rounded min-h-[40px]">
                             @if($task->duration_minutes)
-                                <p class="text-gray-300">{{ $task->duration_minutes }} min</p>
+                                <p class="text-gray-300">{{ \App\Models\Task::formatDuration($task->duration_minutes) }}</p>
                             @else
                                 <p class="text-gray-400 italic">Click to set duration (optional)</p>
                             @endif
                         </div>
                         <div x-show="editing.duration_minutes" class="mt-1">
-                            <input type="number" x-model="fields.duration_minutes" min="1" max="1440"
+                            <input type="text" x-model="fields.duration_minutes"
                                    @keydown.enter="saveField('duration_minutes')"
                                    @keydown.escape="cancelEdit('duration_minutes')"
-                                   placeholder="Minutes (e.g. 60)"
+                                   placeholder="e.g. 1h 30m, 90, 2h"
                                    class="w-full rounded-md bg-gray-700 border-gray-600 text-gray-100 placeholder-gray-500 shadow-sm focus:border-blue-500 focus:ring-blue-500">
-                            <p class="mt-1 text-xs text-gray-500">Duration in minutes (1–1440). Sizes the block in agenda view.</p>
+                            <p class="mt-1 text-xs text-gray-500">Duration (e.g. 90, 1h 30m, 2h). Sizes the block in agenda view.</p>
                             <div class="flex gap-2 mt-2">
                                 <button @click="saveField('duration_minutes')"
                                         class="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700">
@@ -655,7 +655,7 @@
                     status: @js($task->status),
                     date: @js($task->date ?? ''),
                     time: @js($task->time ?? ''),
-                    duration_minutes: @js($task->duration_minutes ?? ''),
+                    duration_minutes: @js(\App\Models\Task::formatDuration($task->duration_minutes) ?? ''),
                     project_id: @js($task->project_id ?? $inboxProjectId),
                     recurrence_pattern: @js($task->recurrence_pattern ?? ''),
                     recurrence_floating: @js((bool) $task->recurrence_floating),
