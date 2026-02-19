@@ -423,7 +423,8 @@ class TaskController extends Controller
 
         if (isset($validated['assignee_ids']) && $task->creator_id === Auth::id()) {
             $currentAssigneeIds = $task->assignments->pluck('assignee_id')->toArray();
-            $newAssigneeIds = $validated['assignee_ids'];
+            // Creator cannot unassign themselves
+            $newAssigneeIds = array_unique(array_merge($validated['assignee_ids'], [Auth::id()]));
 
             $toRemove = array_diff($currentAssigneeIds, $newAssigneeIds);
             $toAdd = array_diff($newAssigneeIds, $currentAssigneeIds);
@@ -501,7 +502,8 @@ class TaskController extends Controller
                     return response()->json(['success' => false, 'message' => 'Only creator can change assignees'], 403);
                 }
 
-                $assigneeIds = $request->input('assignee_ids', []);
+                // Creator cannot unassign themselves
+                $assigneeIds = array_unique(array_merge($request->input('assignee_ids', []), [Auth::id()]));
                 $currentAssigneeIds = $task->assignments->pluck('assignee_id')->toArray();
 
                 $toRemove = array_diff($currentAssigneeIds, $assigneeIds);
