@@ -69,7 +69,7 @@
             </div>
 
             {{-- List view --}}
-            <div x-cloak x-show="$store.dayView.current === 'list'" x-data="taskFilter()">
+            <div x-cloak x-show="$store.dayView.current === 'list'" x-data="taskFilter(@js($projects), @js($tags))">
                 <x-task-input-bar :date="$carbonDate->format('Y-m-d')" />
                 <div x-ref="taskContainer">
                     <x-task-list :tasks="$tasks" :hide-date="true" />
