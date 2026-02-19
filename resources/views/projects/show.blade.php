@@ -12,8 +12,12 @@
         </div>
     </x-slot>
 
-    <div class="py-12" @if($project->user_id === Auth::id() && !$project->is_inbox) x-data="projectEditor({{ $project->id }})" @endif>
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-6">
+    <div class="py-12 relative" @if($project->user_id === Auth::id() && !$project->is_inbox) x-data="projectEditor({{ $project->id }})" @endif>
+        @if($project->background_image)
+            <div class="absolute inset-0 bg-cover bg-center" style="background-image: url('{{ route('projects.background', $project) }}')"></div>
+            <div class="absolute inset-0 bg-black/65"></div>
+        @endif
+        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-6 relative">
             @if($project->status === 'archived')
                 <div class="bg-amber-950/40 border border-amber-700/60 rounded-lg p-4 flex items-center gap-3">
                     <span class="text-amber-500 text-xl">🗄</span>
@@ -169,7 +173,7 @@
                         <span class="text-sm font-medium text-gray-500">Background Image</span>
                         @if($project->background_image)
                             <div class="mt-1">
-                                <div class="relative w-full h-28 rounded-md overflow-hidden border border-gray-600 mb-2">
+                                <div class="relative w-full h-24 rounded-md overflow-hidden border border-gray-600 mb-2">
                                     <img src="{{ route('projects.background', $project) }}"
                                          alt="Project background"
                                          class="w-full h-full object-cover">
