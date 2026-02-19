@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Project;
+use App\Models\Tag;
 use App\Models\Task;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -9,6 +11,22 @@ use Illuminate\Support\Facades\Auth;
 
 class DashboardController extends Controller
 {
+    /** Projects + tags needed by the quick-add autocomplete. */
+    private function quickAddData(): array
+    {
+        $projects = Project::where(function ($q) {
+                $q->where('user_id', Auth::id())
+                  ->orWhereHas('assignees', fn($q2) => $q2->where('users.id', Auth::id()));
+            })
+            ->where('status', '!=', 'archived')
+            ->orderBy('name')
+            ->get(['id', 'name']);
+
+        $tags = Tag::orderBy('tag_name')->get(['id', 'tag_name', 'color']);
+
+        return compact('projects', 'tags');
+    }
+
     public function inbox()
     {
         // Get user's Inbox project
@@ -35,7 +53,7 @@ class DashboardController extends Controller
             ->orderByRaw('date IS NULL, date ASC, time ASC')
             ->get();
 
-        return view('dashboard.inbox', compact('tasks'));
+        return view('dashboard.inbox', array_merge(compact('tasks'), $this->quickAddData()));
     }
 
     public function overdue()
@@ -56,7 +74,7 @@ class DashboardController extends Controller
             ->orderByRaw('time IS NULL, time ASC')
             ->get();
 
-        return view('dashboard.overdue', compact('tasks'));
+        return view('dashboard.overdue', array_merge(compact('tasks'), $this->quickAddData()));
     }
 
     public function undated()
@@ -75,7 +93,7 @@ class DashboardController extends Controller
             ->orderBy('created_at', 'desc')
             ->get();
 
-        return view('dashboard.undated', compact('tasks'));
+        return view('dashboard.undated', array_merge(compact('tasks'), $this->quickAddData()));
     }
 
     public function calendar(Request $request)
@@ -151,6 +169,6 @@ class DashboardController extends Controller
             ->orderByRaw('time IS NULL, time ASC')
             ->get();
 
-        return view('dashboard.day', compact('tasks', 'date', 'carbonDate'));
+        return view('dashboard.day', array_merge(compact('tasks', 'date', 'carbonDate'), $this->quickAddData()));
     }
 }

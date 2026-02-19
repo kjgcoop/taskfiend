@@ -11,11 +11,94 @@
         });
     });
 
-    window.taskFilter = function () {
+    window.taskFilter = function (projects, tags) {
         return {
             query: '',
             noResults: false,
             mode: 'create',
+
+            // Autocomplete state
+            projects: projects || [],
+            tags: tags || [],
+            showAutocomplete: false,
+            autocompleteType: null,
+            autocompleteQuery: '',
+            autocompleteIndex: 0,
+
+            get filteredProjects() {
+                if (!this.autocompleteQuery) return this.projects;
+                const q = this.autocompleteQuery.toLowerCase();
+                return this.projects.filter(p => p.name.toLowerCase().includes(q));
+            },
+
+            get filteredTags() {
+                if (!this.autocompleteQuery) return this.tags;
+                const q = this.autocompleteQuery.toLowerCase();
+                return this.tags.filter(t => t.tag_name.toLowerCase().includes(q));
+            },
+
+            handleInput(event) {
+                const input = event.target.value;
+                const cursorPos = event.target.selectionStart;
+                const beforeCursor = input.substring(0, cursorPos);
+
+                const projectMatch = beforeCursor.match(/#(\w*)$/);
+                const tagMatch = beforeCursor.match(/@(\w*)$/);
+
+                if (projectMatch && this.projects.length > 0) {
+                    this.autocompleteType = 'project';
+                    this.autocompleteQuery = projectMatch[1];
+                    this.autocompleteIndex = 0;
+                    this.showAutocomplete = true;
+                } else if (tagMatch && this.tags.length > 0) {
+                    this.autocompleteType = 'tag';
+                    this.autocompleteQuery = tagMatch[1];
+                    this.autocompleteIndex = 0;
+                    this.showAutocomplete = true;
+                } else {
+                    this.showAutocomplete = false;
+                }
+            },
+
+            handleKeydown(event) {
+                if (!this.showAutocomplete) return;
+                const list = this.autocompleteType === 'project' ? this.filteredProjects : this.filteredTags;
+                const maxIndex = Math.max(0, list.length - 1);
+
+                if (event.key === 'ArrowDown') {
+                    event.preventDefault();
+                    this.autocompleteIndex = Math.min(this.autocompleteIndex + 1, maxIndex);
+                } else if (event.key === 'ArrowUp') {
+                    event.preventDefault();
+                    this.autocompleteIndex = Math.max(this.autocompleteIndex - 1, 0);
+                } else if (event.key === 'Enter') {
+                    event.preventDefault();
+                    const item = list[this.autocompleteIndex];
+                    if (item) this.selectAutocomplete(this.autocompleteType === 'project' ? item.name : item.tag_name);
+                } else if (event.key === 'Escape') {
+                    event.preventDefault();
+                    this.showAutocomplete = false;
+                }
+            },
+
+            selectAutocomplete(name) {
+                const inputEl = this.$refs.createInput;
+                if (!inputEl) return;
+                const cursorPos = inputEl.selectionStart;
+                const beforeCursor = inputEl.value.substring(0, cursorPos);
+                const afterCursor = inputEl.value.substring(cursorPos);
+                const slug = name.toLowerCase().replace(/[^a-z0-9-]/g, '');
+                const newBefore = this.autocompleteType === 'project'
+                    ? beforeCursor.replace(/#\w*$/, '#' + slug + ' ')
+                    : beforeCursor.replace(/@\w*$/, '@' + slug + ' ');
+                inputEl.value = newBefore + afterCursor;
+                this.showAutocomplete = false;
+                this.$nextTick(() => {
+                    inputEl.focus();
+                    inputEl.setSelectionRange(newBefore.length, newBefore.length);
+                });
+            },
+
             init() {
                 this.$nextTick(() => {
                     const container = this.$refs.taskContainer;
@@ -30,6 +113,7 @@
             },
             switchToFilter() {
                 this.mode = 'filter';
+                this.showAutocomplete = false;
                 this.$nextTick(() => this.$refs.filterInput && this.$refs.filterInput.focus());
             },
             switchToCreate() {
