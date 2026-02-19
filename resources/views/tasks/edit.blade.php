@@ -163,10 +163,11 @@
                                 <label class="block text-sm font-medium text-gray-300 mb-2">Assign To</label>
                                 <div class="space-y-2">
                                     @foreach($users as $user)
-                                        <label class="flex items-center">
+                                        <label class="flex items-center {{ $user->id === Auth::id() ? 'cursor-not-allowed opacity-60' : '' }}">
                                             <input type="checkbox" name="assignee_ids[]" value="{{ $user->id }}"
                                                    class="rounded border-gray-600 bg-gray-700 text-blue-600 focus:ring-blue-500"
-                                                   {{ in_array($user->id, old('assignee_ids', $task->assignees->pluck('id')->toArray())) ? 'checked' : '' }}>
+                                                   {{ in_array($user->id, old('assignee_ids', $task->assignees->pluck('id')->toArray())) ? 'checked' : '' }}
+                                                   @if($user->id === Auth::id()) disabled title="You cannot remove yourself as you are the task creator" @endif>
                                             <span class="ml-2 text-sm text-gray-300">{{ $user->name }} ({{ $user->email }})</span>
                                         </label>
                                     @endforeach
