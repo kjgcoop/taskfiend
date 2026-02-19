@@ -249,6 +249,50 @@ class ProjectController extends Controller
         abort(403, 'Projects cannot be deleted. Please archive instead.');
     }
 
+    public function uploadBackground(Request $request, Project $project)
+    {
+        if ($project->user_id !== Auth::id()) {
+            abort(403);
+        }
+
+        $request->validate([
+            'background_image' => [
+                'required',
+                'file',
+                'mimetypes:image/jpeg,image/png,image/webp,image/gif,image/avif,image/heic,image/heif',
+                'max:20480',
+            ],
+        ]);
+
+        if ($project->background_image) {
+            Storage::disk('private')->delete($project->background_image);
+        }
+
+        $path = $request->file('background_image')->store("project-backgrounds/{$project->id}", 'private');
+        $project->background_image = $path;
+        $project->save();
+
+        $this->logChange($project, 'updated background image');
+
+        return back()->with('success', 'Background image updated.');
+    }
+
+    public function removeBackground(Project $project)
+    {
+        if ($project->user_id !== Auth::id()) {
+            abort(403);
+        }
+
+        if ($project->background_image) {
+            Storage::disk('private')->delete($project->background_image);
+            $project->background_image = null;
+            $project->save();
+            $this->logChange($project, 'removed background image');
+        }
+
+        return back()->with('success', 'Background image removed.');
+    }
+
     public function showBackground(Project $project)
     {
         if (!$project->background_image) {

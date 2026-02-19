@@ -164,6 +164,59 @@
                         </div>
                     </div>
 
+                    <!-- Background Image -->
+                    <div class="mt-4" x-data="{ showUpload: false }">
+                        <span class="text-sm font-medium text-gray-500">Background Image</span>
+                        @if($project->background_image)
+                            <div class="mt-1">
+                                <div class="relative w-full h-28 rounded-md overflow-hidden border border-gray-600 mb-2">
+                                    <img src="{{ route('projects.background', $project) }}"
+                                         alt="Project background"
+                                         class="w-full h-full object-cover">
+                                </div>
+                                <div class="flex items-center gap-3">
+                                    <button @click="showUpload = !showUpload"
+                                            class="text-sm text-gray-400 hover:text-gray-200 underline">
+                                        Replace
+                                    </button>
+                                    <form method="POST" action="{{ route('projects.background.remove', $project) }}">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit" class="text-sm text-red-400 hover:text-red-300 underline">
+                                            Remove
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                        @else
+                            <div class="mt-1">
+                                <button @click="showUpload = !showUpload"
+                                        class="text-sm text-gray-400 hover:text-gray-200 underline">
+                                    Add background image
+                                </button>
+                            </div>
+                        @endif
+                        <div x-show="showUpload" x-cloak class="mt-2">
+                            <form method="POST" action="{{ route('projects.background.upload', $project) }}"
+                                  enctype="multipart/form-data" class="flex items-center gap-2 flex-wrap">
+                                @csrf
+                                <input type="file" name="background_image" required
+                                       accept="image/jpeg,image/png,image/webp,image/gif,image/avif,image/heic,image/heif,.jpg,.jpeg,.png,.webp,.gif,.avif,.heic,.heif"
+                                       class="block text-sm text-gray-400 file:mr-3 file:py-1.5 file:px-3 file:rounded file:border-0 file:text-xs file:font-semibold file:bg-gray-700 file:text-gray-100 hover:file:bg-gray-600 bg-[#101010] border border-gray-600 rounded-md">
+                                <button type="submit"
+                                        class="px-3 py-1.5 bg-blue-600 text-white text-xs rounded hover:bg-blue-700 whitespace-nowrap">
+                                    Upload
+                                </button>
+                                <button type="button" @click="showUpload = false"
+                                        class="px-3 py-1.5 bg-gray-700 text-gray-300 text-xs rounded hover:bg-gray-600">
+                                    Cancel
+                                </button>
+                            </form>
+                            <p class="mt-1 text-xs text-gray-500">JPG, PNG, WebP, GIF, AVIF, HEIC &mdash; max 20 MB</p>
+                            @error('background_image')<p class="mt-1 text-sm text-red-500">{{ $message }}</p>@enderror
+                        </div>
+                    </div>
+
                 @else
                     {{-- Read-only view for non-creators --}}
                     <div class="grid grid-cols-2 gap-4">

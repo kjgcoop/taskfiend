@@ -35,6 +35,8 @@ Route::middleware('auth')->group(function () {
     Route::resource('projects', ProjectController::class);
     Route::post('/projects/{project}/update-field', [ProjectController::class, 'updateField'])->name('projects.updateField');
     Route::get('/projects/{project}/background', [ProjectController::class, 'showBackground'])->name('projects.background');
+    Route::post('/projects/{project}/background', [ProjectController::class, 'uploadBackground'])->name('projects.background.upload');
+    Route::delete('/projects/{project}/background', [ProjectController::class, 'removeBackground'])->name('projects.background.remove');
     Route::resource('tags', TagController::class);
     Route::post('/tags/quick-create', [TagController::class, 'quickStore'])->name('tags.quickStore');
 
