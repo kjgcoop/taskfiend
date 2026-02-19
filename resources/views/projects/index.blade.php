@@ -60,7 +60,6 @@
                             <span class="text-sm text-gray-500">{{ $project->tasks_count }} tasks</span>
                             <span class="inline-block px-2 py-1 text-xs rounded
                                 @if($project->status === 'done') bg-green-100 text-green-800
-                                @elseif($project->status === 'archived') bg-gray-100 text-gray-800
                                 @else bg-blue-100 text-blue-800 @endif">
                                 {{ ucfirst($project->status) }}
                             </span>
@@ -72,6 +71,31 @@
                     </div>
                 @endforelse
             </div>
+
+            @if($archivedProjects->count() > 0)
+                <div>
+                    <h3 class="text-sm font-semibold text-gray-500 uppercase tracking-widest mb-3">
+                        Archived Projects
+                    </h3>
+                    <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                        @foreach($archivedProjects as $project)
+                            <div class="bg-[#161616] border border-gray-700/50 p-6 rounded-lg opacity-60 hover:opacity-80 transition cursor-pointer"
+                                 onclick="window.location='{{ route('projects.show', $project) }}'">
+                                <div class="flex items-start justify-between gap-2">
+                                    <h3 class="font-semibold text-lg text-gray-400 line-through">{{ $project->name }}</h3>
+                                    <span class="shrink-0 inline-block px-2 py-1 text-xs rounded bg-gray-700 text-gray-400">Archived</span>
+                                </div>
+                                @if($project->description)
+                                    <p class="text-sm text-gray-600 mt-2">{{ Str::limit($project->description, 100) }}</p>
+                                @endif
+                                <div class="mt-4">
+                                    <span class="text-sm text-gray-600">{{ $project->tasks_count }} tasks</span>
+                                </div>
+                            </div>
+                        @endforeach
+                    </div>
+                </div>
+            @endif
         </div>
     </div>
 </x-app-layout>

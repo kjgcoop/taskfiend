@@ -11,7 +11,7 @@ class ProjectController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Project::query()
+        $accessible = Project::query()
             ->where(function ($q) {
                 $q->where('user_id', Auth::id())
                   ->orWhereHas('assignees', function ($query) {
@@ -19,18 +19,21 @@ class ProjectController extends Controller
                   });
             });
 
-        if ($request->has('status')) {
-            $query->where('status', $request->status);
-        } else {
-            $query->where('status', '!=', 'archived');
-        }
-
-        $projects = $query->withCount('tasks')
+        $projects = (clone $accessible)
+            ->where('status', '!=', 'archived')
+            ->withCount('tasks')
             ->with('creator')
             ->orderByRaw('LOWER(name)')
             ->get();
 
-        return view('projects.index', compact('projects'));
+        $archivedProjects = (clone $accessible)
+            ->where('status', 'archived')
+            ->withCount('tasks')
+            ->with('creator')
+            ->orderByRaw('LOWER(name)')
+            ->get();
+
+        return view('projects.index', compact('projects', 'archivedProjects'));
     }
 
     public function create()
