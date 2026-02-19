@@ -473,7 +473,7 @@
 
                                 <!-- Filename and Actions -->
                                 <div class="flex-1 flex items-center justify-between">
-                                    <span class="text-sm text-gray-300">{{ $attachment->original_filename }}</span>
+                                    <span class="text-sm text-gray-300" title="{{ $attachment->original_filename }}">{{ strlen($attachment->original_filename) > 15 ? substr($attachment->original_filename, 0, 12) . '...' : $attachment->original_filename }}</span>
                                     <div class="flex gap-2">
                                         <a href="{{ route('attachments.download', [$task, $attachment]) }}" class="text-sm text-blue-400 hover:underline">
                                             Download
@@ -532,7 +532,7 @@
                             @if($comment->file_path)
                                 <p class="mt-1 text-xs">
                                     <a href="{{ route('comments.download', [$task, $comment]) }}" class="text-blue-400 hover:text-blue-300 hover:underline">
-                                        📎 {{ $comment->original_filename }}
+                                        📎 <span title="{{ $comment->original_filename }}">{{ strlen($comment->original_filename) > 15 ? substr($comment->original_filename, 0, 12) . '...' : $comment->original_filename }}</span>
                                     </a>
                                     <span class="text-gray-500 ml-2">({{ number_format($comment->file_size / 1024, 1) }} KB)</span>
                                 </p>
