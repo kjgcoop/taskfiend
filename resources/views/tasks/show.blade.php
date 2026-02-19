@@ -664,6 +664,7 @@
                 dateText: @js($task->date ? \Carbon\Carbon::parse($task->date)->format('l, F j, Y') : ''),
                 datePreview: '',
                 dateError: '',
+                taskCount: null,
                 _datePreviewTimeout: null,
 
                 init() {
@@ -700,11 +701,18 @@
                     this.fields[field] = JSON.parse(JSON.stringify(this.original[field]));
                 },
 
+                formatPreview(formatted, count) {
+                    if (count === null || count === undefined) return formatted;
+                    const label = count === 1 ? '1 task' : `${count} tasks`;
+                    return `${formatted} \u2014 ${label}`;
+                },
+
                 async previewDate() {
                     const input = this.dateText.trim();
                     if (!input) {
                         this.datePreview = '';
                         this.dateError = '';
+                        this.taskCount = null;
                         return;
                     }
 
@@ -721,28 +729,48 @@
 
                         const data = await response.json();
                         if (data.success) {
-                            this.datePreview = data.formatted;
+                            this.taskCount = data.taskCount ?? null;
+                            this.datePreview = this.formatPreview(data.formatted, this.taskCount);
                             this.dateError = '';
                             this.fields.date = data.date;
                         } else {
                             this.datePreview = '';
                             this.dateError = 'Could not parse this date';
+                            this.taskCount = null;
                         }
                     } catch (e) {
                         this.datePreview = '';
                         this.dateError = '';
+                        this.taskCount = null;
                     }
                 },
 
-                pickDate(value) {
+                async pickDate(value) {
                     if (!value) return;
                     // Convert Y-m-d to readable text for the input
                     const d = new Date(value + 'T12:00:00');
                     const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
                     this.dateText = d.toLocaleDateString('en-US', options);
                     this.fields.date = value;
-                    this.datePreview = this.dateText;
                     this.dateError = '';
+
+                    try {
+                        const response = await fetch('/tasks/parse-date', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                                'Accept': 'application/json',
+                            },
+                            body: JSON.stringify({ input: value }),
+                        });
+                        const data = await response.json();
+                        this.taskCount = data.success ? (data.taskCount ?? null) : null;
+                    } catch (e) {
+                        this.taskCount = null;
+                    }
+
+                    this.datePreview = this.formatPreview(this.dateText, this.taskCount);
                 },
 
                 async saveDateField() {
