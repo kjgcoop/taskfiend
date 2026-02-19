@@ -318,9 +318,15 @@ class DataExportController extends Controller
 
     /**
      * Import user data from a zip file.
+     *
+     * DISABLED: The importer matches records by original ID with no ownership checks.
+     * On a shared server this can silently overwrite other users' data. Needs full
+     * ID remapping before it is safe to re-enable.
      */
     public function importAll(Request $request)
     {
+        abort(503, 'Data import is temporarily unavailable.');
+
         $request->validate([
             'import_file' => 'required|file|mimes:zip',
         ]);

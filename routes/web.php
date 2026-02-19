@@ -64,7 +64,10 @@ Route::middleware('auth')->group(function () {
     Route::get('/profile-image/{user}', [ProfileController::class, 'showImage'])->name('profile.image.show');
 
     Route::get('/export', [DataExportController::class, 'exportAll'])->name('export.all');
-    Route::post('/import', [DataExportController::class, 'importAll'])->name('import.all');
+    // TODO: importAll is disabled — the ID-based upsert has no ownership checks, so importing
+    // into an account that already has data (e.g. a shared server) can silently overwrite
+    // other users' records. Needs ID remapping before it's safe to re-enable.
+    // Route::post('/import', [DataExportController::class, 'importAll'])->name('import.all');
 
     Route::get('/projects/{project}/export-template', [DataExportController::class, 'exportProjectTemplate'])->name('projects.export-template');
     Route::post('/projects/import-template', [DataExportController::class, 'importProjectTemplate'])->name('projects.import-template');
