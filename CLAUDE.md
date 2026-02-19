@@ -191,20 +191,9 @@ Test user already created with API key generated.
 
 ## Suggested Next Steps
 
-### High Priority (Production Readiness)
-- **Manual Testing**: Start server and test all features through the UI
-  - Create/edit/delete tasks, projects, tags
-  - Test recurring tasks (create one, mark done, verify next occurrence created)
-  - Test natural language date parsing in task creation
-  - Upload/download attachments
-  - Add comments with attachments
-  - Test search functionality
-  - View changelogs
+### High Priority
 - **API Testing**: Test API endpoints with generated key
-- **Alpine.js Integration**: Add interactive features (mentioned in spec but not implemented)
-  - Inline task editing
-  - Drag-and-drop for task ordering
-  - Live search filtering
+- **Drag-and-drop task ordering**: The one remaining Alpine.js feature from the original spec not yet implemented
 
 ### Medium Priority (Code Quality)
 - Form Request classes for validation (currently inline in controllers)
@@ -215,12 +204,32 @@ Test user already created with API key generated.
 
 ### Low Priority (Nice to Have)
 - Email notifications for assignments
-- Asset compilation/optimization (Vite config exists)
-- Deployment configuration
 - Performance optimization (caching, eager loading)
 - Accessibility audit
 
 ## Important Notes
+
+### Session Summary (Feb 19, 2026)
+- **Quick-add bar** added to task list views
+  - Parses natural language dates, `#project`, and `@tag` directly from the input
+  - Live autocomplete suggestions for projects and tags
+  - Replaces/toggles with a filter input on the same bar
+- **Agenda view** for the day page
+  - Toggle between list and time-block (agenda) layouts; preference persisted in localStorage
+  - Quick-complete buttons in agenda view submit via AJAX (no page reload); task block fades out on completion
+- **Inline editing** on project show page
+- **Markdown rendering** in task descriptions
+- **Duration input** on task show view; 24-hour agenda toggle
+- **Attachment icon** indicator on task list rows
+- **Task count** displayed alongside date previews on create/edit forms and in the quick-add bar
+- **Password visibility toggle** on login form
+- **Prevent self-unassign**: task creators cannot remove themselves via the assignee checkboxes
+- **Bug fixes**:
+  - Quick-add date parsing no longer shadowed by day-view pre-filled date
+  - Task count display on show page corrected
+  - Overlapping task blocks in agenda view fixed
+  - Tag count now excludes archived/done tasks
+  - Null project handling in API task responses
 
 ### Recent Session Summary (Jan 6, 2026)
 - **Fixed critical recurring task bugs**:

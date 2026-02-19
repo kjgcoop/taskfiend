@@ -3,13 +3,29 @@ This is a vibe-coded to-do list software that is a lot like many of the other op
 
 Because I designed this for my own devious purposes, I assumed there would only be two or three users. It would probably fine for more than that, but it's not designed to scale. It assumes at least one user is technical enough to run this on a server and run scripts at the command line.
 
+### Features
+- **Quick-add bar** on task list views — type a task name with natural language dates, `#project`, and `@tag` to autofill fields with autocomplete suggestions
+- **Agenda view** on the day page — toggle between list and agenda (time-block) layouts; tasks can be quick-completed inline without a page reload
+- **Recurring tasks** — set a recurrence pattern on any task; completing it automatically creates the next occurrence (see `RECURRING_TASKS.md`)
+- **Natural language dates** — type "dentist next Tuesday" or "standup every weekday" and the date/recurrence is parsed automatically
+- **Markdown** in task descriptions
+- **Changelogs** — every create/edit is logged and browsable by task, project, tag, or user
+- **API** — create and query tasks via bearer token (see Admin-Like Functions below for key management)
+
+### Local Development Setup:
+1. Create environment file: `cp .env.example .env`
+2. Run the all-in-one setup command: `composer setup`
+   - This installs PHP and JS dependencies, generates an app key, runs migrations, and builds frontend assets.
+3. Create your first user: `php artisan user:create admin@example.com "Admin User" password123`
+4. Start the dev server: `php artisan serve`
+
 ### Get Docker Running:
 1. Create environment file: `cp .env.example .env`
 2. Edit .env and set APP_KEY, APP_ENV=production, APP_DEBUG=false
-3. Build and start containers: `docker-compose up -d --build`
+3. Build and start containers: `docker compose up -d --build` (or `docker-compose` for Docker V1)
 4. Run migrations and create first user:
-   - `docker-compose exec app php artisan migrate --force`
-   - `docker-compose exec app php artisan user:create admin@example.com "Admin User" password123`
+   - `docker compose exec app php artisan migrate --force`
+   - `docker compose exec app php artisan user:create admin@example.com "Admin User" password123`
 
 
 ### Admin-Like Functions
