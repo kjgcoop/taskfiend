@@ -29,6 +29,7 @@ class DataExportController extends Controller
                 'id' => $user->id,
                 'name' => $user->name,
                 'email' => $user->email,
+                'profile_image' => $user->profile_image,
             ],
             'projects' => [],
             'tasks' => [],
@@ -52,16 +53,22 @@ class DataExportController extends Controller
             ->orWhereIn('id', $projectIds)
             ->get();
 
+        $projectBackgroundPaths = [];
         foreach ($projects as $project) {
             $data['projects'][] = [
                 'id' => $project->id,
                 'name' => $project->name,
                 'description' => $project->description,
+                'background_image' => $project->background_image,
                 'user_id' => $project->user_id,
                 'status' => $project->status,
                 'created_at' => $project->created_at->toIso8601String(),
                 'updated_at' => $project->updated_at->toIso8601String(),
             ];
+
+            if ($project->background_image) {
+                $projectBackgroundPaths[$project->id] = $project->background_image;
+            }
         }
         foreach ($tasks as $task) {
             $data['tasks'][] = [
@@ -217,6 +224,32 @@ class DataExportController extends Controller
             }
         }
 
+        // Copy profile image
+        $profileImageDir = $tempDir . '/profile-image';
+        if ($user->profile_image && Storage::disk('private')->exists($user->profile_image)) {
+            if (!file_exists($profileImageDir)) {
+                mkdir($profileImageDir, 0755, true);
+            }
+            $profileImageFilename = basename($user->profile_image);
+            copy(Storage::disk('private')->path($user->profile_image), $profileImageDir . '/' . $profileImageFilename);
+        }
+
+        // Copy project background images
+        $projectBackgroundsDir = $tempDir . '/project-backgrounds';
+        if (!empty($projectBackgroundPaths)) {
+            if (!file_exists($projectBackgroundsDir)) {
+                mkdir($projectBackgroundsDir, 0755, true);
+            }
+
+            foreach ($projectBackgroundPaths as $projectId => $path) {
+                if (Storage::disk('private')->exists($path)) {
+                    $filename = basename($path);
+                    $destPath = $projectBackgroundsDir . '/' . $projectId . '_' . $filename;
+                    copy(Storage::disk('private')->path($path), $destPath);
+                }
+            }
+        }
+
         // Create zip file
         $zipPath = storage_path('app/temp/taskfiend_export_' . $user->id . '_' . time() . '.zip');
         $zip = new ZipArchive();
@@ -236,6 +269,38 @@ class DataExportController extends Controller
                     if (!$file->isDir()) {
                         $filePath = $file->getRealPath();
                         $relativePath = 'attachments/' . basename($filePath);
+                        $zip->addFile($filePath, $relativePath);
+                    }
+                }
+            }
+
+            // Add project background images
+            if (is_dir($projectBackgroundsDir)) {
+                $files = new \RecursiveIteratorIterator(
+                    new \RecursiveDirectoryIterator($projectBackgroundsDir),
+                    \RecursiveIteratorIterator::LEAVES_ONLY
+                );
+
+                foreach ($files as $file) {
+                    if (!$file->isDir()) {
+                        $filePath = $file->getRealPath();
+                        $relativePath = 'project-backgrounds/' . basename($filePath);
+                        $zip->addFile($filePath, $relativePath);
+                    }
+                }
+            }
+
+            // Add profile image
+            if (is_dir($profileImageDir)) {
+                $files = new \RecursiveIteratorIterator(
+                    new \RecursiveDirectoryIterator($profileImageDir),
+                    \RecursiveIteratorIterator::LEAVES_ONLY
+                );
+
+                foreach ($files as $file) {
+                    if (!$file->isDir()) {
+                        $filePath = $file->getRealPath();
+                        $relativePath = 'profile-image/' . basename($filePath);
                         $zip->addFile($filePath, $relativePath);
                     }
                 }
@@ -289,23 +354,59 @@ class DataExportController extends Controller
 
         $data = json_decode(file_get_contents($jsonPath), true);
 
+        // Restore profile image if present in the export
+        $profileImageDir = $tempDir . '/profile-image';
+        if (!empty($data['user']['profile_image'])) {
+            $profileImageFilename = basename($data['user']['profile_image']);
+            $sourceFile = $profileImageDir . '/' . $profileImageFilename;
+            if (file_exists($sourceFile)) {
+                // Delete existing profile image before replacing
+                if ($user->profile_image && Storage::disk('private')->exists($user->profile_image)) {
+                    Storage::disk('private')->delete($user->profile_image);
+                }
+                $newProfileImagePath = 'profile_images/' . $profileImageFilename;
+                Storage::disk('private')->put($newProfileImagePath, file_get_contents($sourceFile));
+                $user->update(['profile_image' => $newProfileImagePath]);
+            }
+        }
+
         // Import projects
+        $projectBackgroundsDir = $tempDir . '/project-backgrounds';
         foreach ($data['projects'] ?? [] as $projectData) {
+            // Handle background image: copy from export ZIP to private storage
+            $backgroundImagePath = null;
+            if (!empty($projectData['background_image'])) {
+                $exportedFilename = $projectData['id'] . '_' . basename($projectData['background_image']);
+                $sourceFile = $projectBackgroundsDir . '/' . $exportedFilename;
+                if (file_exists($sourceFile)) {
+                    $storagePath = 'project-backgrounds/' . $projectData['id'] . '/' . basename($projectData['background_image']);
+                    Storage::disk('private')->put($storagePath, file_get_contents($sourceFile));
+                    $backgroundImagePath = $storagePath;
+                }
+            }
+
             $project = Project::find($projectData['id']);
             if ($project) {
                 // Update existing project
-                $project->update([
+                $updateData = [
                     'name' => $projectData['name'],
                     'description' => $projectData['description'],
                     'user_id' => $projectData['user_id'],
-                ]);
+                    'status' => $projectData['status'] ?? 'incomplete',
+                ];
+                if ($backgroundImagePath !== null) {
+                    $updateData['background_image'] = $backgroundImagePath;
+                }
+                $project->update($updateData);
             } else {
                 // Create new project with original ID
                 Project::create([
                     'id' => $projectData['id'],
                     'name' => $projectData['name'],
                     'description' => $projectData['description'],
+                    'background_image' => $backgroundImagePath,
                     'user_id' => $projectData['user_id'],
+                    'status' => $projectData['status'] ?? 'incomplete',
                 ]);
             }
         }
@@ -463,21 +564,21 @@ class DataExportController extends Controller
             if ($log) {
                 // Update existing log
                 $log->update([
+                    'date' => $logData['date'],
                     'entity_type' => $logData['entity_type'],
                     'entity_id' => $logData['entity_id'],
                     'user_id' => $logData['user_id'],
-                    'action' => $logData['action'],
-                    'changes' => $logData['changes'],
+                    'description' => $logData['description'],
                 ]);
             } else {
                 // Create new log with original ID
                 ChangeLog::create([
                     'id' => $logData['id'],
+                    'date' => $logData['date'],
                     'entity_type' => $logData['entity_type'],
                     'entity_id' => $logData['entity_id'],
                     'user_id' => $logData['user_id'],
-                    'action' => $logData['action'],
-                    'changes' => $logData['changes'],
+                    'description' => $logData['description'],
                 ]);
             }
         }
@@ -498,7 +599,7 @@ class DataExportController extends Controller
         // Check authorization - user must be creator or assignee
         $isCreator = $project->user_id === $user->id;
         $isAssignee = $project->tasks()->whereHas('assignments', function($q) use ($user) {
-            $q->where('user_id', $user->id);
+            $q->where('assignee_id', $user->id);
         })->exists();
 
         if (!$isCreator && !$isAssignee) {
@@ -512,6 +613,7 @@ class DataExportController extends Controller
             'project' => [
                 'name' => $project->name,
                 'description' => $project->description,
+                'background_image' => $project->background_image,
             ],
             'tasks' => [],
             'tags' => [],
@@ -560,7 +662,7 @@ class DataExportController extends Controller
         foreach ($tags as $tag) {
             $data['tags'][] = [
                 'id' => $tag->id,
-                'name' => $tag->name,
+                'name' => $tag->tag_name,
                 'color' => $tag->color,
             ];
         }
@@ -602,6 +704,16 @@ class DataExportController extends Controller
             }
         }
 
+        // Copy project background image if it exists
+        $projectBackgroundsDir = $tempDir . '/project-backgrounds';
+        if ($project->background_image && Storage::disk('private')->exists($project->background_image)) {
+            if (!file_exists($projectBackgroundsDir)) {
+                mkdir($projectBackgroundsDir, 0755, true);
+            }
+            $bgFilename = basename($project->background_image);
+            copy(Storage::disk('private')->path($project->background_image), $projectBackgroundsDir . '/' . $bgFilename);
+        }
+
         // Create zip file
         $zipPath = storage_path('app/temp/taskfiend_template_' . $project->id . '_' . time() . '.zip');
         $zip = new ZipArchive();
@@ -621,6 +733,22 @@ class DataExportController extends Controller
                     if (!$file->isDir()) {
                         $filePath = $file->getRealPath();
                         $relativePath = 'attachments/' . basename($filePath);
+                        $zip->addFile($filePath, $relativePath);
+                    }
+                }
+            }
+
+            // Add project background image
+            if (is_dir($projectBackgroundsDir)) {
+                $files = new \RecursiveIteratorIterator(
+                    new \RecursiveDirectoryIterator($projectBackgroundsDir),
+                    \RecursiveIteratorIterator::LEAVES_ONLY
+                );
+
+                foreach ($files as $file) {
+                    if (!$file->isDir()) {
+                        $filePath = $file->getRealPath();
+                        $relativePath = 'project-backgrounds/' . basename($filePath);
                         $zip->addFile($filePath, $relativePath);
                     }
                 }
@@ -687,6 +815,18 @@ class DataExportController extends Controller
             'description' => $data['project']['description'] ?? '',
             'user_id' => $user->id,
         ]);
+
+        // Import project background image if present
+        $projectBackgroundsDir = $tempDir . '/project-backgrounds';
+        if (!empty($data['project']['background_image'])) {
+            $bgFilename = basename($data['project']['background_image']);
+            $sourceFile = $projectBackgroundsDir . '/' . $bgFilename;
+            if (file_exists($sourceFile)) {
+                $newBgPath = 'project-backgrounds/' . $project->id . '/' . $bgFilename;
+                Storage::disk('private')->put($newBgPath, file_get_contents($sourceFile));
+                $project->update(['background_image' => $newBgPath]);
+            }
+        }
 
         // Map old tag IDs to existing/new tag IDs
         $tagIdMap = [];
