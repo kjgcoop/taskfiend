@@ -11,29 +11,22 @@ class ProjectController extends Controller
 {
     public function index(Request $request)
     {
-        $accessible = Project::query()
+        $all = Project::query()
             ->where(function ($q) {
                 $q->where('user_id', Auth::id())
                   ->orWhereHas('assignees', function ($query) {
                       $query->where('users.id', Auth::id());
                   });
-            });
-
-        $projects = (clone $accessible)
-            ->where('status', '!=', 'archived')
+            })
             ->withCount('tasks')
             ->with('creator')
             ->orderByRaw('LOWER(name)')
             ->get();
 
-        $archivedProjects = (clone $accessible)
-            ->where('status', 'archived')
-            ->withCount('tasks')
-            ->with('creator')
-            ->orderByRaw('LOWER(name)')
-            ->get();
+        $projects         = $all->where('status', 'incomplete');
+        $inactiveProjects = $all->whereIn('status', ['done', 'archived']);
 
-        return view('projects.index', compact('projects', 'archivedProjects'));
+        return view('projects.index', compact('projects', 'inactiveProjects'));
     }
 
     public function create()

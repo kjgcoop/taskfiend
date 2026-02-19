@@ -72,18 +72,22 @@
                 @endforelse
             </div>
 
-            @if($archivedProjects->count() > 0)
+            @if($inactiveProjects->count() > 0)
                 <div>
                     <h3 class="text-sm font-semibold text-gray-500 uppercase tracking-widest mb-3">
-                        Archived Projects
+                        Inactive Projects
                     </h3>
                     <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                        @foreach($archivedProjects as $project)
+                        @foreach($inactiveProjects as $project)
                             <div class="bg-[#161616] border border-gray-700/50 p-6 rounded-lg opacity-60 hover:opacity-80 transition cursor-pointer"
                                  onclick="window.location='{{ route('projects.show', $project) }}'">
                                 <div class="flex items-start justify-between gap-2">
                                     <h3 class="font-semibold text-lg text-gray-400 line-through">{{ $project->name }}</h3>
-                                    <span class="shrink-0 inline-block px-2 py-1 text-xs rounded bg-gray-700 text-gray-400">Archived</span>
+                                    @if($project->status === 'done')
+                                        <span class="shrink-0 inline-block px-2 py-1 text-xs rounded bg-green-900/50 text-green-400">Done</span>
+                                    @else
+                                        <span class="shrink-0 inline-block px-2 py-1 text-xs rounded bg-gray-700 text-gray-400">Archived</span>
+                                    @endif
                                 </div>
                                 @if($project->description)
                                     <p class="text-sm text-gray-600 mt-2">{{ Str::limit($project->description, 100) }}</p>
