@@ -69,22 +69,27 @@ class ProjectController extends Controller
     {
         $this->authorizeProjectAccess($project);
 
+        $visibleToUser = function ($q) {
+            $q->where('creator_id', Auth::id())
+              ->orWhereHas('assignees', function ($query) {
+                  $query->where('users.id', Auth::id());
+              });
+        };
+
+        $taskEagerLoad = [
+            'creator',
+            'tags',
+            'assignees',
+            'attachments',
+            'comments',
+        ];
+
         $tasks = $project->tasks()
-            ->where(function ($q) {
-                $q->where('creator_id', Auth::id())
-                  ->orWhereHas('assignees', function ($query) {
-                      $query->where('users.id', Auth::id());
-                  });
-            })
+            ->where($visibleToUser)
             ->where('status', '!=', 'archived')
             ->where('status', '!=', 'done')
-            ->whereNull('parent_id') // Only get root-level tasks
-            ->with([
-                'creator',
-                'tags',
-                'assignees',
-                'attachments',
-                'comments',
+            ->whereNull('parent_id')
+            ->with(array_merge($taskEagerLoad, [
                 'children' => function ($query) {
                     $query->where('status', '!=', 'archived')
                           ->where('status', '!=', 'done')
@@ -96,13 +101,35 @@ class ProjectController extends Controller
                               'children' => function ($q) {
                                   $q->where('status', '!=', 'archived')
                                     ->where('status', '!=', 'done')
-                                    ->with(['tags', 'assignees', 'attachments', 'creator']);
+                                    ->with(['tags', 'assignees', 'attachments', 'creator', 'children']);
                               }
                           ]);
                 }
-            ])
+            ]))
             ->orderBy('date')
             ->orderBy('time')
+            ->get();
+
+        $completedTasks = $project->tasks()
+            ->where($visibleToUser)
+            ->where('status', 'done')
+            ->whereNull('parent_id')
+            ->with(array_merge($taskEagerLoad, [
+                'children' => function ($query) {
+                    $query->where('status', 'done')
+                          ->with([
+                              'tags',
+                              'assignees',
+                              'attachments',
+                              'creator',
+                              'children' => function ($q) {
+                                  $q->where('status', 'done')
+                                    ->with(['tags', 'assignees', 'attachments', 'creator', 'children']);
+                              }
+                          ]);
+                }
+            ]))
+            ->orderByDesc('updated_at')
             ->get();
 
         $project->load(['creator', 'assignees', 'changeLogs.user']);
@@ -111,7 +138,7 @@ class ProjectController extends Controller
             ->orderByRaw('LOWER(name)')
             ->get();
 
-        return view('projects.show', compact('project', 'tasks', 'users'));
+        return view('projects.show', compact('project', 'tasks', 'completedTasks', 'users'));
     }
 
     public function updateField(Request $request, Project $project)
