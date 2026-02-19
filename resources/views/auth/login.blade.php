@@ -17,10 +17,11 @@
             <x-input-label for="password" :value="__('Password')" />
 
             <div class="relative mt-1">
-                <x-text-input id="password" class="block w-full pr-10"
-                                :type="showPassword ? 'text' : 'password'"
-                                name="password"
-                                required autocomplete="current-password" />
+                <input id="password"
+                       x-bind:type="showPassword ? 'text' : 'password'"
+                       name="password"
+                       required autocomplete="current-password"
+                       class="block w-full pr-10 border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm" />
 
                 <button type="button"
                         @click="showPassword = !showPassword"
