@@ -20,9 +20,34 @@ class TaskAttachmentController extends Controller
         }
 
         $validated = $request->validate([
-            'attachment' => 'required|file|max:22528', // 22MB max (matches PHP upload_max_filesize)
+            'attachment' => [
+                'required',
+                'file',
+                'max:22528', // 22MB max (matches PHP upload_max_filesize)
+                'mimetypes:' .
+                    // Images
+                    'image/jpeg,image/png,image/webp,image/gif,image/heic,image/heif,' .
+                    // PDF
+                    'application/pdf,' .
+                    // Word
+                    'application/msword,' .
+                    'application/vnd.openxmlformats-officedocument.wordprocessingml.document,' .
+                    // Excel
+                    'application/vnd.ms-excel,' .
+                    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,' .
+                    // PowerPoint
+                    'application/vnd.ms-powerpoint,' .
+                    'application/vnd.openxmlformats-officedocument.presentationml.presentation,' .
+                    // LibreOffice
+                    'application/vnd.oasis.opendocument.text,' .
+                    'application/vnd.oasis.opendocument.spreadsheet,' .
+                    'application/vnd.oasis.opendocument.presentation,' .
+                    // Text-based formats (text/plain covers TXT; CSV and JSON may also be detected as text/plain)
+                    'text/csv,text/plain,application/json,text/json',
+            ],
         ], [
             'attachment.max' => 'File size must not exceed 22MB.',
+            'attachment.mimetypes' => 'File type not allowed. Accepted: images (JPG, PNG, WebP, GIF, HEIC), PDF, Word, Excel, PowerPoint, LibreOffice formats, CSV, TXT, JSON.',
         ]);
 
         $file = $request->file('attachment');
