@@ -54,7 +54,7 @@
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
 
             {{-- Agenda view --}}
-            <div x-cloak x-show="$store.dayView.current === 'agenda'">
+            <div x-data x-cloak x-show="$store.dayView.current === 'agenda'">
                 @include('dashboard.partials.agenda')
             </div>
 
