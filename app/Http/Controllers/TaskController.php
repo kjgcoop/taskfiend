@@ -11,6 +11,8 @@ use App\Services\DateParser;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 class TaskController extends Controller
 {
@@ -690,7 +692,7 @@ class TaskController extends Controller
     {
         $this->authorizeTaskAccess($task);
 
-        $task->load(['tags', 'assignees']);
+        $task->load(['tags', 'assignees', 'attachments']);
 
         $newTask = Task::create([
             'name'                => 'Copy of ' . $task->name,
@@ -716,6 +718,20 @@ class TaskController extends Controller
             $newTask->assignments()->create([
                 'assignee_id'    => $assigneeId,
                 'assigned_by_id' => Auth::id(),
+            ]);
+        }
+
+        foreach ($task->attachments as $attachment) {
+            $extension = pathinfo($attachment->file_path, PATHINFO_EXTENSION);
+            $newPath = 'task_attachments/' . Str::random(40) . ($extension ? '.' . $extension : '');
+            Storage::disk('private')->copy($attachment->file_path, $newPath);
+            $newTask->attachments()->create([
+                'user_id'           => Auth::id(),
+                'task_id'           => $newTask->id,
+                'file_path'         => $newPath,
+                'original_filename' => $attachment->original_filename,
+                'mime_type'         => $attachment->mime_type,
+                'file_size'         => $attachment->file_size,
             ]);
         }
 
