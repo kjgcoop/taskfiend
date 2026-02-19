@@ -35,6 +35,9 @@ class DateParser
             'monthly' => '/\b(monthly|every month)\b/i',
             'weekly_literal' => '/\b(weekly|every week)\b/i',
             'every_n_weeks' => '/\bevery (\d+) weeks?\b/i',
+            'tomorrow' => '/\btomorrow\b/i',
+            'today' => '/\btoday\b/i',
+            'next_day_of_week' => '/\bnext\s+(monday|tuesday|wednesday|thursday|friday|saturday|sunday)\b/i',
             'day_of_week' => '/\b(monday|tuesday|wednesday|thursday|friday|saturday|sunday)s?\b/i',
             'multi_days' => '/\b(mon|tue|wed|thu|fri|sat|sun)(,(mon|tue|wed|thu|fri|sat|sun))+\b/i',
             'monthly_ordinal' => '/\bevery (first|second|third|fourth|last) (monday|tuesday|wednesday|thursday|friday|saturday|sunday)\b/i',
@@ -88,6 +91,16 @@ class DateParser
             $result['recurrence_pattern'] = "every {$weeks} weeks";
             $result['date'] = Carbon::today()->format('Y-m-d');
             $result['name'] = trim(preg_replace($patterns['every_n_weeks'], '', $input));
+        } elseif (preg_match($patterns['tomorrow'], $input)) {
+            $result['date'] = Carbon::tomorrow()->format('Y-m-d');
+            $result['name'] = trim(preg_replace($patterns['tomorrow'], '', $input));
+        } elseif (preg_match($patterns['today'], $input)) {
+            $result['date'] = Carbon::today()->format('Y-m-d');
+            $result['name'] = trim(preg_replace($patterns['today'], '', $input));
+        } elseif (preg_match($patterns['next_day_of_week'], $input, $matches)) {
+            $dayName = ucfirst(strtolower($matches[1]));
+            $result['date'] = $this->getNextDayOfWeek($dayName)->format('Y-m-d');
+            $result['name'] = trim(preg_replace($patterns['next_day_of_week'], '', $input));
         } elseif (preg_match($patterns['day_of_week'], $input, $matches)) {
             $dayName = ucfirst(strtolower($matches[1]));
             $result['recurrence_pattern'] = $dayName;

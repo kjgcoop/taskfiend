@@ -127,6 +127,44 @@ class TaskController extends Controller
         $recurrencePattern = $validated['recurrence_pattern'] ?? null;
         $recurrenceFloating = !empty($validated['recurrence_floating']);
 
+        // Parse #project and @tag tokens from the task name (quick-add inline syntax).
+        // Strip these before DateParser runs so it receives a clean task name.
+        if (!isset($validated['project_id']) && preg_match('/#([\w-]+)/', $taskName, $projectMatch)) {
+            $projectQuery = strtolower($projectMatch[1]);
+            $project = Project::where(function ($q) use ($projectQuery) {
+                    $q->whereRaw('LOWER(name) = ?', [$projectQuery])
+                      ->orWhereRaw('LOWER(name) LIKE ?', [$projectQuery . '%']);
+                })
+                ->where(function ($q) {
+                    $q->where('user_id', Auth::id())
+                      ->orWhereHas('assignees', fn($q2) => $q2->where('users.id', Auth::id()));
+                })
+                ->first();
+            if ($project) {
+                $validated['project_id'] = $project->id;
+            }
+            $taskName = trim(preg_replace('/#[\w-]+\s*/', '', $taskName));
+        }
+
+        if (preg_match_all('/@([\w-]+)/', $taskName, $tagMatches)) {
+            $parsedTagIds = [];
+            foreach ($tagMatches[1] as $tagSlug) {
+                $tag = Tag::where(function ($q) use ($tagSlug) {
+                        $q->whereRaw('LOWER(tag_name) = ?', [strtolower($tagSlug)])
+                          ->orWhereRaw('LOWER(tag_name) LIKE ?', [strtolower($tagSlug) . '%']);
+                    })
+                    ->first();
+                if ($tag) {
+                    $parsedTagIds[] = $tag->id;
+                }
+            }
+            if (!empty($parsedTagIds)) {
+                $existingTagIds = $validated['tag_ids'] ?? [];
+                $validated['tag_ids'] = array_unique(array_merge($existingTagIds, $parsedTagIds));
+            }
+            $taskName = trim(preg_replace('/@[\w-]+\s*/', '', $taskName));
+        }
+
         // Parse natural language date if provided
         if ($date && !preg_match('/^\d{4}-\d{2}-\d{2}$/', $date)) {
             $parsedDate = $this->resolveNaturalDate($date);
