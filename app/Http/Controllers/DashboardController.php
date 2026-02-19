@@ -136,7 +136,6 @@ class DashboardController extends Controller
     {
         $date = $request->input('date', today()->format('Y-m-d'));
         $carbonDate = Carbon::parse($date);
-        $view = $request->input('view', 'list'); // 'list' or 'agenda'
 
         $tasks = Task::query()
             ->where(function ($q) {
@@ -152,6 +151,6 @@ class DashboardController extends Controller
             ->orderByRaw('time IS NULL, time ASC')
             ->get();
 
-        return view('dashboard.day', compact('tasks', 'date', 'carbonDate', 'view'));
+        return view('dashboard.day', compact('tasks', 'date', 'carbonDate'));
     }
 }
