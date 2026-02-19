@@ -284,9 +284,9 @@
                 },
 
                 formatPreview(formatted, count) {
-                    if (count === null) return formatted;
+                    if (!count) return formatted;
                     const label = count === 1 ? '1 task' : `${count} tasks`;
-                    return `${formatted} (${label})`;
+                    return `${formatted} \u2014 ${label}`;
                 },
 
                 async previewDate() {
