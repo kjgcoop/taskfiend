@@ -535,7 +535,8 @@
                 <form method="POST" action="{{ route('attachments.store', $task) }}" enctype="multipart/form-data" class="mt-4">
                     @csrf
                     <div class="flex gap-2">
-                        <input type="file" name="attachment" required class="flex-1 text-sm text-gray-300">
+                        <input type="file" name="attachment" required class="flex-1 text-sm text-gray-300"
+                               accept=".jpg,.jpeg,.png,.webp,.gif,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.odt,.ods,.odp,.csv,.txt,.json">
                         <button type="submit" class="px-4 py-2 bg-blue-600 text-white text-sm rounded hover:bg-blue-700">
                             Upload
                         </button>
@@ -585,7 +586,8 @@
                               class="w-full rounded-md bg-gray-700 border-gray-600 text-gray-100 placeholder-gray-500 shadow-sm focus:border-blue-500 focus:ring-blue-500 mb-2"
                               placeholder="Add a comment..."></textarea>
                     <div class="flex items-center gap-4">
-                        <input type="file" name="attachment" class="text-sm text-gray-300">
+                        <input type="file" name="attachment" class="text-sm text-gray-300"
+                               accept=".jpg,.jpeg,.png,.webp,.gif,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.odt,.ods,.odp,.csv,.txt,.json">
                         <button type="submit" class="px-4 py-2 bg-blue-600 text-white text-sm rounded hover:bg-blue-700">
                             Post Comment
                         </button>

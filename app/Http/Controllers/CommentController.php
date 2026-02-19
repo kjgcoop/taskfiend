@@ -21,9 +21,34 @@ class CommentController extends Controller
 
         $validated = $request->validate([
             'comment' => 'required|string',
-            'attachment' => 'nullable|file|max:22528', // 22MB max (matches PHP upload_max_filesize)
+            'attachment' => [
+                'nullable',
+                'file',
+                'max:22528', // 22MB max (matches PHP upload_max_filesize)
+                'mimetypes:' .
+                    // Images
+                    'image/jpeg,image/png,image/webp,image/gif,' .
+                    // PDF
+                    'application/pdf,' .
+                    // Word
+                    'application/msword,' .
+                    'application/vnd.openxmlformats-officedocument.wordprocessingml.document,' .
+                    // Excel
+                    'application/vnd.ms-excel,' .
+                    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,' .
+                    // PowerPoint
+                    'application/vnd.ms-powerpoint,' .
+                    'application/vnd.openxmlformats-officedocument.presentationml.presentation,' .
+                    // LibreOffice
+                    'application/vnd.oasis.opendocument.text,' .
+                    'application/vnd.oasis.opendocument.spreadsheet,' .
+                    'application/vnd.oasis.opendocument.presentation,' .
+                    // Text-based formats (text/plain covers TXT; CSV and JSON may also be detected as text/plain)
+                    'text/csv,text/plain,application/json,text/json',
+            ],
         ], [
             'attachment.max' => 'File size must not exceed 22MB.',
+            'attachment.mimetypes' => 'File type not allowed. Accepted: images (JPG, PNG, WebP, GIF), PDF, Word, Excel, PowerPoint, LibreOffice formats, CSV, TXT, JSON.',
         ]);
 
         $commentData = [
