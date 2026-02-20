@@ -525,17 +525,13 @@ class TaskController extends Controller
     public function updateField(Request $request, Task $task)
     {
         $this->authorizeTaskAccess($task);
+        $this->assertProjectActive($task, asJson: true);
 
         $field = $request->input('field');
         $allowedFields = ['name', 'description', 'status', 'date', 'time', 'duration_minutes', 'project_id', 'parent_id', 'recurrence_pattern', 'recurrence_floating', 'tag_ids', 'assignee_ids'];
 
         if (!in_array($field, $allowedFields)) {
             return response()->json(['success' => false, 'message' => 'Invalid field'], 400);
-        }
-
-        // Allow status changes on tasks in inactive projects; block everything else.
-        if ($field !== 'status') {
-            $this->assertProjectActive($task, asJson: true);
         }
 
         try {

@@ -96,7 +96,7 @@
                     <!-- Status -->
                     <div>
                         <span class="text-sm font-medium text-gray-500">Status</span>
-                        <div @click="startEdit('status')" x-show="!editing.status" class="mt-1 cursor-pointer hover:bg-gray-700 p-2 rounded">
+                        <div @if(!$isInactive) @click="startEdit('status')" @endif x-show="!editing.status" class="mt-1 p-2 rounded {{ !$isInactive ? 'cursor-pointer hover:bg-gray-700' : '' }}">
                             <span class="inline-block px-2 py-1 text-xs rounded
                                 @if($task->status === 'done') bg-green-100 text-green-800
                                 @elseif($task->status === 'archived') bg-gray-100 text-gray-800
@@ -107,6 +107,7 @@
                                 <span class="ml-2 text-xs text-purple-400">🔄</span>
                             @endif
                         </div>
+                        @if(!$isInactive)
                         <div x-show="editing.status" class="mt-1">
                             <select x-model="fields.status"
                                     @keydown.enter="saveField('status')"
@@ -127,6 +128,7 @@
                                 </button>
                             </div>
                         </div>
+                        @endif
                     </div>
 
                     <!-- Created By (read-only) -->
