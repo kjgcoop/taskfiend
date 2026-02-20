@@ -231,13 +231,32 @@ class TaskController extends Controller
             }
         }
 
+        // project_id is NOT NULL in the database; fall back to the user's inbox project
+        // when the form was submitted without one (e.g. quick-add without a #project token).
+        if (empty($validated['project_id'])) {
+            $inbox = Project::where('user_id', Auth::id())
+                ->where('is_inbox', true)
+                ->first();
+
+            if (!$inbox) {
+                $inbox = Project::create([
+                    'name'       => 'Inbox',
+                    'user_id'    => Auth::id(),
+                    'is_inbox'   => true,
+                    'status'     => 'incomplete',
+                ]);
+            }
+
+            $validated['project_id'] = $inbox->id;
+        }
+
         $task = Task::create([
             'name' => $taskName,
             'description' => $validated['description'] ?? null,
             'date' => $date,
             'time' => $time,
             'duration_minutes' => $this->parseDurationInput($validated['duration_minutes'] ?? null),
-            'project_id' => $validated['project_id'] ?? null,
+            'project_id' => $validated['project_id'],
             'parent_id' => $validated['parent_id'] ?? null,
             'recurrence_pattern' => $recurrencePattern,
             'recurrence_floating' => $recurrenceFloating,
