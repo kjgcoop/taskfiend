@@ -68,8 +68,7 @@
                 <div class="mb-4 p-3 bg-yellow-900 bg-opacity-20 border border-yellow-600 rounded-lg">
                     <p class="text-sm text-yellow-300">
                         <span class="font-semibold">Project is inactive.</span>
-                        This task is read-only. You can still change the task's status, but all other fields are locked.
-                        To re-enable editing, change the project status back to <strong>Incomplete</strong>.
+                        This task is read-only. To re-enable editing, change the project status back to <strong>Incomplete</strong>.
                     </p>
                 </div>
                 @endif
