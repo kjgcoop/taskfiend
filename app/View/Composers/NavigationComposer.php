@@ -3,7 +3,6 @@
 namespace App\View\Composers;
 
 use Illuminate\View\View;
-use Illuminate\Support\Facades\Storage;
 
 class NavigationComposer
 {
@@ -12,17 +11,16 @@ class NavigationComposer
      */
     public function compose(View $view): void
     {
-        $otherLinksFiles = collect();
+        $root = storage_path('app/other-links');
+        $paths = is_dir($root) ? (glob("$root/*") ?: []) : [];
 
-        try {
-            $files = Storage::disk('other-links')->files();
-            $otherLinksFiles = collect($files)->mapWithKeys(function ($value) {
-                $name = str_replace(['-', '_'], ' ', pathinfo($value, PATHINFO_FILENAME));
-                return [$value => $name];
+        $otherLinksFiles = collect($paths)
+            ->filter(fn($p) => is_file($p))
+            ->mapWithKeys(function ($path) {
+                $filename = basename($path);
+                $name = str_replace(['-', '_'], ' ', pathinfo($filename, PATHINFO_FILENAME));
+                return [$filename => $name];
             });
-        } catch (\Exception $e) {
-            // If directory doesn't exist, just leave collection empty
-        }
 
         $view->with('otherLinksFiles', $otherLinksFiles);
     }
