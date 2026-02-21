@@ -2,21 +2,24 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Task;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use FastVolt\Helper\Markdown;
 
 class OtherLinksController extends Controller
 {
-    public function index(Request $request, Task $task)
+    public function index(Request $request)
     {
-        $files = Storage::disk('other-links')->files();
+        $root = storage_path('app/other-links');
+        $paths = glob("$root/*") ?: [];
 
-        $files = collect($files)->mapWithKeys(function ($value) {
-            $name = str_replace(['-', '_'], ' ', pathinfo($value, PATHINFO_FILENAME));
-            return [ $value => $name ];
-        });
+        $files = collect($paths)
+            ->filter(fn($p) => is_file($p))
+            ->mapWithKeys(function ($path) {
+                $filename = basename($path);
+                $name = str_replace(['-', '_'], ' ', pathinfo($filename, PATHINFO_FILENAME));
+                return [$filename => $name];
+            });
 
         return view('other.links.list', [
             'files' => $files
@@ -25,6 +28,11 @@ class OtherLinksController extends Controller
 
     public function show(Request $request, string $filename)
     {
+        $fullPath = storage_path('app/other-links') . '/' . $filename;
+        if (!is_file($fullPath)) {
+            abort(404);
+        }
+
         $fileContents = Storage::disk('other-links')->get($filename);
 
         $markdown = new Markdown();
