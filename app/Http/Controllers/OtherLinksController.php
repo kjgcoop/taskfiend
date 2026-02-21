@@ -33,7 +33,10 @@ class OtherLinksController extends Controller
         );
 
         foreach ($iterator as $file) {
-            if (!$file->isFile()) {
+            // Skip directories; accept regular files and symlinks to files.
+            // isFile() can return false for symlinks in some PHP/SPL contexts,
+            // so gate on isDir() instead to reliably include symlinks.
+            if ($file->isDir()) {
                 continue;
             }
 
