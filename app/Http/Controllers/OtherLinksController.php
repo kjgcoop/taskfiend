@@ -83,9 +83,19 @@ class OtherLinksController extends Controller
         }
 
         $root = realpath(config("filesystems.disks.$diskName.root"));
-        $fullPath = realpath("$root/$relativePath");
 
-        if (!$fullPath || !str_starts_with($fullPath, $root) || !is_file($fullPath)) {
+        // Resolve only the directory portion so that symlinks within the root
+        // are allowed (resolving the full path would follow the symlink outside
+        // the root and trip the containment check).
+        $dirPath = realpath($root . '/' . dirname($relativePath));
+
+        if (!$dirPath || !str_starts_with($dirPath, $root)) {
+            abort(404);
+        }
+
+        $filePath = $dirPath . '/' . basename($relativePath);
+
+        if (!file_exists($filePath)) {
             abort(404);
         }
 
