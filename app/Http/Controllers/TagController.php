@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Project;
 use App\Models\Tag;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -77,7 +78,17 @@ class TagController extends Controller
 
         $tag->load('changeLogs.user');
 
-        return view('tags.show', compact('tag', 'tasks', 'completedTasks'));
+        $projects = Project::where(function ($q) {
+                $q->where('user_id', Auth::id())
+                  ->orWhereHas('assignees', fn($q2) => $q2->where('users.id', Auth::id()));
+            })
+            ->where('status', '!=', 'archived')
+            ->orderBy('name')
+            ->get(['id', 'name']);
+
+        $allTags = Tag::orderBy('tag_name')->get(['id', 'tag_name', 'color']);
+
+        return view('tags.show', compact('tag', 'tasks', 'completedTasks', 'projects', 'allTags'));
     }
 
     public function edit(Tag $tag)

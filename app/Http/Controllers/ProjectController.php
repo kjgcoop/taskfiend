@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Project;
+use App\Models\Tag;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -138,7 +139,17 @@ class ProjectController extends Controller
             ->orderByRaw('LOWER(name)')
             ->get();
 
-        return view('projects.show', compact('project', 'tasks', 'completedTasks', 'users'));
+        $projects = Project::where(function ($q) {
+                $q->where('user_id', Auth::id())
+                  ->orWhereHas('assignees', fn($q2) => $q2->where('users.id', Auth::id()));
+            })
+            ->where('status', '!=', 'archived')
+            ->orderBy('name')
+            ->get(['id', 'name']);
+
+        $tags = Tag::orderBy('tag_name')->get(['id', 'tag_name', 'color']);
+
+        return view('projects.show', compact('project', 'tasks', 'completedTasks', 'users', 'projects', 'tags'));
     }
 
     public function updateField(Request $request, Project $project)

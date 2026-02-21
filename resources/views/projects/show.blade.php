@@ -296,7 +296,7 @@
             </div>
 
             <!-- Project Tasks -->
-            <div class="bg-[#202020] border border-gray-700 overflow-hidden shadow-sm sm:rounded-lg p-6" x-data="taskFilter()">
+            <div class="bg-[#202020] border border-gray-700 overflow-hidden shadow-sm sm:rounded-lg p-6" x-data="taskFilter(@js($projects), @js($tags))">
                 <div class="flex justify-between items-center mb-4">
                     <h3 class="text-lg font-semibold text-gray-100">Tasks
                         <span class="text-sm text-gray-500 font-normal" x-text="$store.taskCount.ready ? ($store.taskCount.filtered ? 'showing ' + $store.taskCount.visible + ' of ' + $store.taskCount.total : $store.taskCount.total) : ''"></span>
@@ -307,14 +307,18 @@
                         </a>
                     @endif
                 </div>
-                <div class="mb-4">
-                    <input type="text"
-                           x-model="query"
-                           x-on:input="filterTasks()"
-                           x-on:keydown.escape="clearFilter()"
-                           placeholder="Filter tasks... (@ tag)"
-                           class="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-md text-gray-100 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                </div>
+                @if(!$isInactive)
+                    <x-task-input-bar :project-id="$project->id" filter-placeholder="Filter tasks... (@ tag)" />
+                @else
+                    <div class="mb-4">
+                        <input type="text"
+                               x-model="query"
+                               x-on:input="filterTasks()"
+                               x-on:keydown.escape="clearFilter()"
+                               placeholder="Filter tasks... (@ tag)"
+                               class="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-md text-gray-100 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                    </div>
+                @endif
                 <div x-ref="taskContainer">
                     <x-task-list :tasks="$tasks" :read-only="$isInactive" />
                 </div>
