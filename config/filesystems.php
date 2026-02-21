@@ -47,9 +47,17 @@ return [
             'report' => false,
         ],
 
-        'other-links' => [
+        'bundled-links' => [
             'driver' => 'local',
-            'root' => storage_path('app/other-links'),
+            'root' => resource_path('links'),
+            'visibility' => 'private',
+            'throw' => false,
+            'report' => false,
+        ],
+
+        'site' => [
+            'driver' => 'local',
+            'root' => storage_path('app/site'),
             'visibility' => 'private',
             'throw' => false,
             'report' => false,

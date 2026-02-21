@@ -12,14 +12,26 @@
 
     <div class="py-12">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
-            @if (empty($files))
-                I has no files :(
+            @if ($groups->isEmpty())
+                <p class="text-gray-500">I has no files :(</p>
             @else
-                <ul>
-                @foreach($files as $file => $name)
-                    <li><a href="other-links/{{ $file }}">{{ $name }}</a></li>
+                @foreach ($groups as $groupName => $files)
+                    <div class="mb-8">
+                        <h3 class="text-xs font-semibold uppercase tracking-widest text-gray-500 mb-3 pb-2 border-b border-gray-700">
+                            {{ $groupName }}
+                        </h3>
+                        <ul class="space-y-2">
+                            @foreach ($files as $file)
+                                <li>
+                                    <a href="{{ url('other-links/' . $file['routePath']) }}"
+                                       class="text-gray-300 hover:text-gray-100 transition-colors duration-150">
+                                        {{ $file['name'] }}
+                                    </a>
+                                </li>
+                            @endforeach
+                        </ul>
+                    </div>
                 @endforeach
-                </ul>
             @endif
         </div>
     </div>

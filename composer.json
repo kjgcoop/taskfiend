@@ -40,7 +40,9 @@
             "@php artisan key:generate",
             "@php artisan migrate --force",
             "npm install",
-            "npm run build"
+            "npm run build",
+            "@php -r \"is_dir('storage/app/site') || mkdir('storage/app/site', 0755, true);\"",
+            "@php -r \"file_exists('resources/links/README.md') || symlink(realpath('README.md'), realpath('resources/links') . '/README.md');\""
         ],
         "dev": [
             "Composer\\Config::disableProcessTimeout",

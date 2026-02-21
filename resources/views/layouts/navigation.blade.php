@@ -158,7 +158,7 @@
                     </button>
                     <div x-show="otherLinksOpen" x-transition class="bg-[#101010]">
                         @foreach($otherLinksFiles as $filename => $displayName)
-                            <x-responsive-nav-link href="/other-links/{{ $filename }}" :active="request()->routeIs('other.links.link') && request()->route('filename') === $filename">
+                            <x-responsive-nav-link href="/other-links/{{ $filename }}" :active="request()->routeIs('other.links.link') && request()->route('path') === $filename">
                                 {{ $displayName }}
                             </x-responsive-nav-link>
                         @endforeach

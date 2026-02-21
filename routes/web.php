@@ -14,7 +14,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\OtherLinksController;
 
 Route::get('/other-links', [OtherLinksController::class, 'index'])->name('other.links');
-Route::get('/other-links/{title}', [OtherLinksController::class, 'show'])->name('other.links.link');
+Route::get('/other-links/{path}', [OtherLinksController::class, 'show'])->name('other.links.link')->where('path', '.+');
 
 Route::middleware('auth')->group(function () {
     Route::get('/', [DashboardController::class, 'day'])->name('dashboard');

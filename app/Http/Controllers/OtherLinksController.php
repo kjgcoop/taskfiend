@@ -8,42 +8,97 @@ use FastVolt\Helper\Markdown;
 
 class OtherLinksController extends Controller
 {
-    public function index(Request $request)
+    private const SOURCES = [
+        'bundled' => 'bundled-links',
+        'site'    => 'site',
+    ];
+
+    private const GROUP_LABELS = [
+        'bundled' => 'Documentation',
+        'site'    => 'Site',
+    ];
+
+    private function scanSource(string $sourceKey): array
     {
-        $root = storage_path('app/other-links');
-        $paths = glob("$root/*") ?: [];
+        $diskName = self::SOURCES[$sourceKey];
+        $root = config("filesystems.disks.$diskName.root");
 
-        $files = collect($paths)
-            ->filter(fn($p) => is_file($p))
-            ->mapWithKeys(function ($path) {
-                $filename = basename($path);
-                $name = str_replace(['-', '_'], ' ', pathinfo($filename, PATHINFO_FILENAME));
-                return [$filename => $name];
-            });
+        if (!is_dir($root)) {
+            return [];
+        }
 
-        return view('other.links.list', [
-            'files' => $files
-        ]);
+        $files = [];
+        $iterator = new \RecursiveIteratorIterator(
+            new \RecursiveDirectoryIterator($root, \RecursiveDirectoryIterator::SKIP_DOTS)
+        );
+
+        foreach ($iterator as $file) {
+            if (!$file->isFile()) {
+                continue;
+            }
+
+            $relativePath = ltrim(str_replace($root, '', $file->getPathname()), '/');
+            $segments = explode('/', $relativePath);
+
+            $group = count($segments) > 1
+                ? ucwords(str_replace(['-', '_'], ' ', $segments[0]))
+                : self::GROUP_LABELS[$sourceKey];
+
+            $files[] = [
+                'routePath' => $sourceKey . '/' . $relativePath,
+                'group'     => $group,
+                'name'      => str_replace(['-', '_'], ' ', pathinfo($relativePath, PATHINFO_FILENAME)),
+            ];
+        }
+
+        usort($files, fn($a, $b) => strcmp($a['name'], $b['name']));
+
+        return $files;
     }
 
-    public function show(Request $request, string $filename)
+    public function index(Request $request)
     {
-        $fullPath = storage_path('app/other-links') . '/' . $filename;
-        if (!is_file($fullPath)) {
+        $groups = collect(array_merge(
+            $this->scanSource('bundled'),
+            $this->scanSource('site'),
+        ))->groupBy('group');
+
+        return view('other.links.list', ['groups' => $groups]);
+    }
+
+    public function show(Request $request, string $path)
+    {
+        $segments = explode('/', $path, 2);
+
+        if (count($segments) < 2) {
             abort(404);
         }
 
-        $fileContents = Storage::disk('other-links')->get($filename);
+        [$sourceKey, $relativePath] = $segments;
+
+        $diskName = self::SOURCES[$sourceKey] ?? null;
+
+        if (!$diskName) {
+            abort(404);
+        }
+
+        $root = realpath(config("filesystems.disks.$diskName.root"));
+        $fullPath = realpath("$root/$relativePath");
+
+        if (!$fullPath || !str_starts_with($fullPath, $root) || !is_file($fullPath)) {
+            abort(404);
+        }
+
+        $fileContents = Storage::disk($diskName)->get($relativePath);
 
         $markdown = new Markdown();
         $markdown->setContent($fileContents);
 
-        $title = str_replace(['-', '_'], ' ', pathinfo($filename, PATHINFO_FILENAME));
+        $title = str_replace(['-', '_'], ' ', pathinfo($relativePath, PATHINFO_FILENAME));
 
         return view('other.links.show', [
-            'title' => $title,
-            'fileContents' => $markdown->getHtml()
+            'title'        => $title,
+            'fileContents' => $markdown->getHtml(),
         ]);
-
     }
 }

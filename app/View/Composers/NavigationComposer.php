@@ -11,16 +11,27 @@ class NavigationComposer
      */
     public function compose(View $view): void
     {
-        $root = storage_path('app/other-links');
-        $paths = is_dir($root) ? (glob("$root/*") ?: []) : [];
+        $sources = [
+            'bundled' => config('filesystems.disks.bundled-links.root'),
+            'site'    => config('filesystems.disks.site.root'),
+        ];
 
-        $otherLinksFiles = collect($paths)
-            ->filter(fn($p) => is_file($p))
-            ->mapWithKeys(function ($path) {
+        $otherLinksFiles = collect();
+
+        foreach ($sources as $sourceKey => $root) {
+            if (!is_dir($root)) {
+                continue;
+            }
+
+            foreach (glob("$root/*") ?: [] as $path) {
+                if (!is_file($path)) {
+                    continue;
+                }
                 $filename = basename($path);
                 $name = str_replace(['-', '_'], ' ', pathinfo($filename, PATHINFO_FILENAME));
-                return [$filename => $name];
-            });
+                $otherLinksFiles->put("$sourceKey/$filename", $name);
+            }
+        }
 
         $view->with('otherLinksFiles', $otherLinksFiles);
     }
