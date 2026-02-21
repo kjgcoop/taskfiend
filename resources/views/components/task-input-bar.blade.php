@@ -1,4 +1,4 @@
-@props(['date' => null, 'filterPlaceholder' => 'Filter tasks... (# project, @ tag)'])
+@props(['date' => null, 'projectId' => null, 'tagId' => null, 'filterPlaceholder' => 'Filter tasks... (# project, @ tag)'])
 
 <div class="mb-4">
     {{-- Create mode (default) --}}
@@ -8,6 +8,12 @@
             <input type="hidden" name="quick_add" value="1">
             @if($date)
                 <input type="hidden" name="date" value="{{ $date }}">
+            @endif
+            @if($projectId)
+                <input type="hidden" name="project_id" value="{{ $projectId }}">
+            @endif
+            @if($tagId)
+                <input type="hidden" name="tag_ids[]" value="{{ $tagId }}">
             @endif
             <div class="relative flex-1" @click.outside="showAutocomplete = false">
                 <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none">

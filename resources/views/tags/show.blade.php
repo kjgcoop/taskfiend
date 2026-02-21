@@ -26,18 +26,11 @@
             </div>
 
             <!-- Tagged Tasks -->
-            <div class="bg-[#202020] border border-gray-700 overflow-hidden shadow-sm sm:rounded-lg p-6" x-data="taskFilter()">
+            <div class="bg-[#202020] border border-gray-700 overflow-hidden shadow-sm sm:rounded-lg p-6" x-data="taskFilter(@js($projects), @js($allTags))">
                 <h3 class="text-lg font-semibold text-gray-100 mb-4">Tagged Tasks
                     <span class="text-sm text-gray-500 font-normal" x-text="$store.taskCount.ready ? ($store.taskCount.filtered ? 'showing ' + $store.taskCount.visible + ' of ' + $store.taskCount.total : $store.taskCount.total) : ''"></span>
                 </h3>
-                <div class="mb-4">
-                    <input type="text"
-                           x-model="query"
-                           x-on:input="filterTasks()"
-                           x-on:keydown.escape="clearFilter()"
-                           placeholder="Filter tasks... (# project)"
-                           class="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-md text-gray-100 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                </div>
+                <x-task-input-bar :tag-id="$tag->id" filter-placeholder="Filter tasks... (# project)" />
                 <div x-ref="taskContainer">
                     <x-task-list :tasks="$tasks" />
                 </div>
