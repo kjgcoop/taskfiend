@@ -28,3 +28,5 @@ Thumbs.db
 /test-results
 /.claude/
 .env.testing
+resources/links/For-Claude-Code.md
+resources/links/Read-Me.md
