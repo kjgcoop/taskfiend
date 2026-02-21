@@ -14,7 +14,7 @@
     <div class="py-12">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8" x-data="taskFilter(@js($projects), @js($tags))">
             <div class="mb-4 text-sm text-gray-600">
-                All tasks you have access to, excluding archived
+                All tasks you have access to, excluding archived and done.
             </div>
             <x-task-input-bar filter-placeholder="Filter tasks... (@ tag, # project)" />
             <div x-ref="taskContainer">
