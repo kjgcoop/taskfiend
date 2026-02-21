@@ -48,7 +48,20 @@ class DashboardController extends Controller
             ->orderByRaw('date IS NULL, date ASC, time ASC')
             ->get();
 
-        return view('dashboard.inbox', array_merge(compact('tasks'), $this->quickAddData()));
+        $completedTasks = Task::query()
+            ->where(function ($q) {
+                $q->where('creator_id', Auth::id())
+                  ->orWhereHas('assignees', function ($query) {
+                      $query->where('users.id', Auth::id());
+                  });
+            })
+            ->where('status', 'done')
+            ->where('project_id', $inboxProject?->id)
+            ->with(['creator', 'tags', 'assignees', 'attachments', 'comments'])
+            ->orderByRaw('date IS NULL, date ASC, time ASC')
+            ->get();
+
+        return view('dashboard.inbox', array_merge(compact('tasks', 'completedTasks'), $this->quickAddData()));
     }
 
     public function overdue()

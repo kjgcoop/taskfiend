@@ -26,20 +26,19 @@ class SearchController extends Controller
 
         $tags = Tag::orderByRaw('LOWER(tag_name)')->get();
 
-        $query = Task::query()
+        $baseQuery = Task::query()
             ->where(function ($q) {
                 $q->where('creator_id', Auth::id())
                   ->orWhereHas('assignees', function ($query) {
                       $query->where('users.id', Auth::id());
                   });
             })
-            ->where('status', '!=', 'archived')
-            ->where('status', '!=', 'done');
+            ->where('status', '!=', 'archived');
 
         // Handle search text (searches in name and description)
         if ($request->filled('q')) {
             $searchText = $request->q;
-            $query->where(function ($q) use ($searchText) {
+            $baseQuery->where(function ($q) use ($searchText) {
                 $q->where('name', 'like', '%' . $searchText . '%')
                   ->orWhere('description', 'like', '%' . $searchText . '%');
             });
@@ -49,7 +48,7 @@ class SearchController extends Controller
         if ($request->filled('tag_ids')) {
             $tagIds = is_array($request->tag_ids) ? $request->tag_ids : [$request->tag_ids];
             foreach ($tagIds as $tagId) {
-                $query->whereHas('tags', function ($q) use ($tagId) {
+                $baseQuery->whereHas('tags', function ($q) use ($tagId) {
                     $q->where('tags.id', $tagId);
                 });
             }
@@ -66,18 +65,29 @@ class SearchController extends Controller
                     ->where('is_inbox', true)
                     ->first();
                 if ($inboxProject) {
-                    $query->where('project_id', $inboxProject->id);
+                    $baseQuery->where('project_id', $inboxProject->id);
                 }
             } else {
-                $query->where('project_id', $request->project_id);
+                $baseQuery->where('project_id', $request->project_id);
             }
         }
 
-        $tasks = $query->with(['creator', 'project', 'tags', 'assignees', 'attachments', 'comments'])
+        $with = ['creator', 'project', 'tags', 'assignees', 'attachments', 'comments'];
+
+        $tasks = (clone $baseQuery)
+            ->where('status', '!=', 'done')
+            ->with($with)
             ->orderBy('date')
             ->orderBy('time')
             ->get();
 
-        return view('search.index', compact('tasks', 'projects', 'tags'));
+        $completedTasks = (clone $baseQuery)
+            ->where('status', 'done')
+            ->with($with)
+            ->orderBy('date')
+            ->orderBy('time')
+            ->get();
+
+        return view('search.index', compact('tasks', 'completedTasks', 'projects', 'tags'));
     }
 }
