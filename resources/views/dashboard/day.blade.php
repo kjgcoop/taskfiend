@@ -77,6 +77,7 @@
                 <div x-show="noResults" x-cloak class="bg-[#202020] p-8 rounded-lg text-center text-gray-400 border border-gray-700">
                     No tasks match your filter.
                 </div>
+                <x-completed-tasks-section :tasks="$completedTasks" :hide-date="true" />
             </div>
 
         </div>

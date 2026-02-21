@@ -63,9 +63,21 @@ class TagController extends Controller
             ->orderBy('datetime')
             ->get();
 
+        $completedTasks = $tag->tasks()
+            ->where(function ($q) {
+                $q->where('creator_id', Auth::id())
+                  ->orWhereHas('assignees', function ($query) {
+                      $query->where('users.id', Auth::id());
+                  });
+            })
+            ->where('status', 'done')
+            ->with(['creator', 'project', 'assignees', 'attachments', 'comments'])
+            ->orderBy('datetime')
+            ->get();
+
         $tag->load('changeLogs.user');
 
-        return view('tags.show', compact('tag', 'tasks'));
+        return view('tags.show', compact('tag', 'tasks', 'completedTasks'));
     }
 
     public function edit(Tag $tag)

@@ -189,6 +189,19 @@ class DashboardController extends Controller
             ->orderByRaw('time IS NULL, time ASC')
             ->get();
 
-        return view('dashboard.day', array_merge(compact('tasks', 'date', 'carbonDate'), $this->quickAddData()));
+        $completedTasks = Task::query()
+            ->where(function ($q) {
+                $q->where('creator_id', Auth::id())
+                  ->orWhereHas('assignees', function ($query) {
+                      $query->where('users.id', Auth::id());
+                  });
+            })
+            ->where('status', 'done')
+            ->where('date', $carbonDate->format('Y-m-d'))
+            ->with(['creator', 'project', 'tags', 'assignees', 'attachments', 'comments'])
+            ->orderByRaw('time IS NULL, time ASC')
+            ->get();
+
+        return view('dashboard.day', array_merge(compact('tasks', 'completedTasks', 'date', 'carbonDate'), $this->quickAddData()));
     }
 }
