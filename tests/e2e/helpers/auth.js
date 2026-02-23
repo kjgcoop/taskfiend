@@ -26,8 +26,8 @@ export async function login(page, email, password = 'password123') {
  * @param {import('@playwright/test').Page} page - Playwright page object
  */
 export async function logout(page) {
-  // Click on user dropdown (look for text containing "User")
-  await page.click('button:has-text("User")');
+  // Click on user dropdown (avatar button in top-right nav)
+  await page.click('[data-testid="user-menu"]');
 
   // Wait for dropdown to open and "Log Out" to be visible
   await page.waitForSelector('text=Log Out', { state: 'visible' });
