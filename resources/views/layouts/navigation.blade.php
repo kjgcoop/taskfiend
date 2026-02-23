@@ -70,6 +70,7 @@
 
             <!-- Settings Dropdown -->
             <div class="hidden sm:flex sm:items-center sm:ms-6">
+                @auth
                 <x-dropdown align="right" width="48">
                     <x-slot name="trigger">
                         <button class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-gray-300 bg-[#202020] hover:text-gray-100 focus:outline-none transition ease-in-out duration-150">
@@ -105,6 +106,7 @@
                         </form>
                     </x-slot>
                 </x-dropdown>
+                @endauth
             </div>
 
             <!-- Hamburger -->
@@ -172,6 +174,7 @@
         </div>
 
         <!-- Responsive Settings Options -->
+        @auth
         <div class="pt-4 pb-1 border-t border-gray-700">
             <div class="px-4 flex items-center gap-3">
                 @if(Auth::user()->profile_image)
@@ -209,5 +212,6 @@
                 </form>
             </div>
         </div>
+        @endauth
     </div>
 </nav>
