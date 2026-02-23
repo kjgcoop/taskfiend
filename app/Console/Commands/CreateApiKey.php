@@ -29,6 +29,7 @@ class CreateApiKey extends Command
 
         ApiKey::create([
             'key_hash' => Hash::make($plainKey),
+            'key_prefix' => substr($plainKey, 0, 12),
             'user_id' => $user->id,
             'invalidated_at' => null,
         ]);

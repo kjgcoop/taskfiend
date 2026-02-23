@@ -127,6 +127,11 @@ class DashboardController extends Controller
 
     public function calendar(Request $request)
     {
+        $request->validate([
+            'month' => 'nullable|integer|min:1|max:12',
+            'year'  => 'nullable|integer|min:2000|max:2100',
+        ]);
+
         $month = $request->input('month', now()->month);
         $year = $request->input('year', now()->year);
 

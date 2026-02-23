@@ -21,7 +21,21 @@ class AuthenticateApiKey
             ], 401);
         }
 
-        $apiKeys = ApiKey::whereNull('invalidated_at')->with('user')->get();
+        // Use the stored key prefix to narrow candidates to (at most) a handful of
+        // rows before doing the expensive Hash::check(). Keys created before the
+        // prefix column was added fall back to the old full-scan path via the
+        // whereNull('key_prefix') clause, so there is no breaking change.
+        $prefix = strlen($token) >= 12 ? substr($token, 0, 12) : null;
+
+        $apiKeys = ApiKey::whereNull('invalidated_at')
+            ->where(function ($q) use ($prefix) {
+                if ($prefix) {
+                    $q->where('key_prefix', $prefix)
+                      ->orWhereNull('key_prefix');
+                }
+            })
+            ->with('user')
+            ->get();
 
         $validKey = null;
         foreach ($apiKeys as $apiKey) {

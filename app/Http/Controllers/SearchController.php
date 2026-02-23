@@ -12,6 +12,13 @@ class SearchController extends Controller
 {
     public function index(Request $request)
     {
+        $request->validate([
+            'q'          => 'nullable|string|max:255',
+            'tag_ids'    => 'nullable|array',
+            'tag_ids.*'  => 'integer|exists:tags,id',
+            'project_id' => 'nullable|string|max:20',
+        ]);
+
         // Get all projects and tags for the UI (exclude Inbox projects - they're handled separately)
         $projects = Project::where(function ($q) {
                 $q->where('user_id', Auth::id())

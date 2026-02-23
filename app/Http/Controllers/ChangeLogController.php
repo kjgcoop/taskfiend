@@ -20,6 +20,13 @@ class ChangeLogController extends Controller
 */
     public function task(Task $task)
     {
+        $isCreator = $task->creator_id === Auth::id();
+        $isAssignee = $task->assignees()->where('users.id', Auth::id())->exists();
+
+        if (!$isCreator && !$isAssignee) {
+            abort(403, 'You do not have access to this task.');
+        }
+
         $changeLogs = $task->changeLogs()->get();
 
         return view('changelogs.index', compact('changeLogs', 'task'));
@@ -28,13 +35,14 @@ class ChangeLogController extends Controller
     public function project(Project $project)
     {
         $isCreator = $project->user_id === Auth::id();
+        $isProjectAssignee = $project->assignees()->where('users.id', Auth::id())->exists();
         $hasTaskInProject = $project->tasks()
             ->whereHas('assignees', function ($query) {
                 $query->where('users.id', Auth::id());
             })
             ->exists();
 
-        if (!$isCreator && !$hasTaskInProject) {
+        if (!$isCreator && !$isProjectAssignee && !$hasTaskInProject) {
             abort(403, 'You do not have access to this project.');
         }
 

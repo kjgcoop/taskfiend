@@ -11,6 +11,7 @@ class ApiKey extends Model
 
     protected $fillable = [
         'key_hash',
+        'key_prefix',
         'user_id',
         'invalidated_at',
     ];
