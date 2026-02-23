@@ -132,19 +132,24 @@ test.describe('Project Authorization & Privacy', () => {
 
     await page.waitForURL(/\/projects\/(\d+)/);
 
-    // Edit to add User 2 as assignee
-    await page.click('a:has-text("Edit")');
-    await page.check(`label:has-text("${testUsers.user2.name}") input[name="assignee_ids[]"]`);
-    await page.click('button[type="submit"]');
+    // Open the inline assignee editor and add User 2
+    // Projects use inline editing on the show page (no separate edit route)
+    const assigneeSection = page.locator('div.mt-4').filter({ hasText: 'Assigned To' });
+    await assigneeSection.locator('div.cursor-pointer').click();
+    await page.waitForSelector(`label:has-text("${testUsers.user2.name}") input[type="checkbox"]`, { state: 'visible' });
+    await page.check(`label:has-text("${testUsers.user2.name}") input[type="checkbox"]`);
+    await assigneeSection.locator('button:has-text("Save")').click();
 
-    // Verify assignee was added
-    await page.waitForURL(/\/projects\/\d+/);
-    await expect(page.locator(`text=${testUsers.user2.name}`)).toBeVisible();
+    // saveField() reloads the page on success
+    await page.waitForLoadState('networkidle');
+    await expect(page.locator(`text=${testUsers.user2.name}`).first()).toBeVisible();
 
     // Remove assignee
-    await page.click('a:has-text("Edit")');
-    await page.uncheck(`label:has-text("${testUsers.user2.name}") input[name="assignee_ids[]"]`);
-    await page.click('button[type="submit"]');
+    await assigneeSection.locator('div.cursor-pointer').click();
+    await page.waitForSelector(`label:has-text("${testUsers.user2.name}") input[type="checkbox"]`, { state: 'visible' });
+    await page.uncheck(`label:has-text("${testUsers.user2.name}") input[type="checkbox"]`);
+    await assigneeSection.locator('button:has-text("Save")').click();
+    await page.waitForLoadState('networkidle');
   });
 
   test('assignee can view assigned project', async ({ page }) => {
@@ -255,11 +260,15 @@ test.describe('Project Authorization & Privacy', () => {
     await expect(page.locator('text=Temporary Access Project')).toBeVisible();
     await logout(page);
 
-    // User 1 removes User 2 from the project
+    // User 1 removes User 2 from the project via inline editing on the show page
     await login(page, testUsers.user1.email);
-    await page.goto(`/projects/${projectId}/edit`);
-    await page.uncheck(`label:has-text("${testUsers.user2.name}") input[name="assignee_ids[]"]`);
-    await page.click('button[type="submit"]');
+    await page.goto(`/projects/${projectId}`);
+    const assigneeSection = page.locator('div.mt-4').filter({ hasText: 'Assigned To' });
+    await assigneeSection.locator('div.cursor-pointer').click();
+    await page.waitForSelector(`label:has-text("${testUsers.user2.name}") input[type="checkbox"]`, { state: 'visible' });
+    await page.uncheck(`label:has-text("${testUsers.user2.name}") input[type="checkbox"]`);
+    await assigneeSection.locator('button:has-text("Save")').click();
+    await page.waitForLoadState('networkidle');
     await logout(page);
 
     // User 2 should no longer see the project
