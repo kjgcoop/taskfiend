@@ -26,14 +26,19 @@ export async function login(page, email, password = 'password123') {
  * @param {import('@playwright/test').Page} page - Playwright page object
  */
 export async function logout(page) {
+  // Ensure any in-flight navigation (e.g. after a form submit) has settled
+  // before we try to interact with the nav bar.
+  await page.waitForLoadState('domcontentloaded');
+
   // Click on user dropdown (avatar button in top-right nav)
   await page.click('[data-testid="user-menu"]');
 
-  // Wait for dropdown to open and "Log Out" to be visible
-  await page.waitForSelector('text=Log Out', { state: 'visible' });
-
-  // Click the "Log Out" link in the dropdown
-  await page.click('text=Log Out');
+  // The page has two "Log Out" links: one in the desktop dropdown and one in the
+  // mobile responsive menu.  Use .first() so Playwright targets the desktop
+  // dropdown entry unambiguously instead of warning about multiple matches.
+  const logoutLink = page.locator('text=Log Out').first();
+  await logoutLink.waitFor({ state: 'visible' });
+  await logoutLink.click();
 
   // Wait for redirect to home/login
   await page.waitForURL(/\/login|\/$/);
