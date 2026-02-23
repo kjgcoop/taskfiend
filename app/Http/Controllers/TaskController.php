@@ -677,7 +677,8 @@ class TaskController extends Controller
                             $this->createRecurringTask($task);
                         }
 
-                        return response()->json(['success' => true, 'reload' => true]);
+                        $task->load(['project', 'tags']);
+                        return response()->json(['success' => true, 'reload' => true, 'taskData' => $this->buildTaskData($task)]);
                     }
 
                     // Handle archiving with descendants
@@ -703,10 +704,27 @@ class TaskController extends Controller
                 }
             }
 
-            return response()->json(['success' => true]);
+            $task->load(['project', 'tags']);
+            return response()->json(['success' => true, 'taskData' => $this->buildTaskData($task)]);
         } catch (\Exception $e) {
             return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
         }
+    }
+
+    private function buildTaskData(Task $task): array
+    {
+        return [
+            'id'                 => $task->id,
+            'name'               => $task->name,
+            'status'             => $task->status,
+            'description'        => $task->description,
+            'date_formatted'     => $task->date ? \Carbon\Carbon::parse($task->date)->format('l, F j, Y') : null,
+            'time_formatted'     => $task->time ? \Carbon\Carbon::parse($task->time)->format('g:i A') : null,
+            'project_name'       => $task->project?->name,
+            'recurrence_pattern' => $task->recurrence_pattern,
+            'tags'               => $task->tags->map(fn ($t) => ['name' => $t->tag_name, 'color' => $t->color])->values()->toArray(),
+            'inactive'           => in_array($task->status, ['done', 'archived']),
+        ];
     }
 
     /**

@@ -767,6 +767,10 @@
                     if (data.success) {
                         this.original[field] = JSON.parse(JSON.stringify(this.fields[field]));
                         this.editing[field] = false;
+                        // Update the background list row immediately
+                        if (data.taskData) {
+                            window.dispatchEvent(new CustomEvent('task-panel-updated', { detail: data.taskData }));
+                        }
                         // Reload the panel with fresh data instead of full page reload
                         window.reloadTaskPanel(this.taskId);
                     } else {

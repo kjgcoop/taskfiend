@@ -235,6 +235,104 @@
             }
         }
     };
+
+    // Live-update list rows when the side panel saves a field
+    window.addEventListener('task-panel-updated', (e) => {
+        const d = e.detail;
+        const group = document.querySelector(`[data-task-group-id="${d.id}"]`);
+        if (!group) return;
+
+        // Inactive (done/archived): fade the row out without closing the panel
+        if (d.inactive) {
+            group.style.transition = 'opacity 0.4s';
+            group.style.opacity = '0';
+            setTimeout(() => { group.style.display = 'none'; }, 400);
+            return;
+        }
+
+        // Name
+        const nameEl = group.querySelector('[data-task-name-display]');
+        if (nameEl) {
+            nameEl.textContent = d.name;
+            const row = group.querySelector('[data-filterable]');
+            if (row) row.dataset.taskName = d.name.toLowerCase();
+        }
+
+        // Description preview
+        const descEl = group.querySelector('[data-task-desc-display]');
+        if (descEl) {
+            if (d.description) {
+                descEl.textContent = d.description.length > 100 ? d.description.substring(0, 97) + '...' : d.description;
+                descEl.style.display = '';
+            } else {
+                descEl.style.display = 'none';
+            }
+        }
+
+        // Date + time (full date view)
+        const dateEl = group.querySelector('[data-task-date-display]');
+        if (dateEl) {
+            if (d.date_formatted) {
+                dateEl.innerHTML = d.date_formatted +
+                    (d.time_formatted ? ` <span class="text-gray-400">${d.time_formatted}</span>` : '');
+                dateEl.style.display = '';
+            } else {
+                dateEl.style.display = 'none';
+            }
+        }
+
+        // Time-only (hideDate views like day agenda)
+        const timeEl = group.querySelector('[data-task-time-display]');
+        if (timeEl) {
+            if (d.time_formatted) {
+                timeEl.textContent = d.time_formatted;
+                timeEl.style.display = '';
+            } else {
+                timeEl.style.display = 'none';
+            }
+        }
+
+        // Project
+        const projEl = group.querySelector('[data-task-project-display]');
+        if (projEl) {
+            if (d.project_name) {
+                projEl.textContent = d.project_name;
+                projEl.style.display = '';
+            } else {
+                projEl.style.display = 'none';
+            }
+        }
+
+        // Recurrence
+        const recEl = group.querySelector('[data-task-recurrence-display]');
+        if (recEl) {
+            if (d.recurrence_pattern) {
+                recEl.textContent = d.recurrence_pattern;
+                recEl.style.display = '';
+            } else {
+                recEl.style.display = 'none';
+            }
+        }
+
+        // Tags
+        const tagsEl = group.querySelector('[data-task-tags-display]');
+        if (tagsEl) {
+            if (d.tags && d.tags.length > 0) {
+                tagsEl.innerHTML = d.tags.map(t =>
+                    `<span class="inline-block px-2 py-1 text-xs rounded"
+                           style="background-color:${t.color}22;color:${t.color}">${t.name}</span>`
+                ).join('');
+                tagsEl.style.display = '';
+                const row = group.querySelector('[data-filterable]');
+                if (row) row.dataset.tags = d.tags.map(t => t.name.toLowerCase()).join('|');
+            } else {
+                tagsEl.innerHTML = '';
+                tagsEl.style.display = 'none';
+                const row = group.querySelector('[data-filterable]');
+                if (row) row.dataset.tags = '';
+            }
+        }
+    });
 </script>
 @endPushOnce
 
@@ -269,7 +367,7 @@
 
             $marginLeft = $depth * 24; // 24px per level
         @endphp
-        <div data-task-group>
+        <div data-task-group data-task-group-id="{{ $task->id }}">
         <div class="bg-[#202020] p-4 rounded-lg shadow hover:shadow-md transition border border-gray-700"
              data-filterable
              data-task-name="{{ strtolower($task->name) }}"
@@ -347,23 +445,22 @@
                     @endif
 
                     <h3 class="font-semibold text-gray-100">
-                        {{ $task->name }}
+                        <span data-task-name-display>{{ $task->name }}</span>
                         @if($task->children->count() > 0)
                             <span class="text-xs text-gray-500 font-normal">
                                 ({{ $task->incompleteChildren()->count() }}/{{ $task->children->count() }} subtasks)
                             </span>
                         @endif
                     </h3>
-                    @if($task->description)
-                        <p class="text-sm text-gray-400 mt-1">{{ Str::limit($task->description, 100) }}</p>
-                    @endif
+                    <p class="text-sm text-gray-400 mt-1" data-task-desc-display
+                       @unless($task->description) style="display:none" @endunless>{{ Str::limit($task->description ?? '', 100) }}</p>
                     <div class="flex items-center gap-3 mt-2 text-xs text-gray-500">
                         @if($hideDate)
                             @if($task->time)
-                                <span class="text-gray-400">{{ \Carbon\Carbon::parse($task->time)->format('g:i A') }}</span>
+                                <span class="text-gray-400" data-task-time-display>{{ \Carbon\Carbon::parse($task->time)->format('g:i A') }}</span>
                             @endif
                         @elseif($task->date)
-                            <span>
+                            <span data-task-date-display>
                                 {{ \Carbon\Carbon::parse($task->date)->format('l, F j, Y') }}
                                 @if($task->time)
                                     <span class="text-gray-400">{{ \Carbon\Carbon::parse($task->time)->format('g:i A') }}</span>
@@ -371,10 +468,10 @@
                             </span>
                         @endif
                         @if($task->project)
-                            <span class="text-blue-400">{{ $task->project->name }}</span>
+                            <span class="text-blue-400" data-task-project-display>{{ $task->project->name }}</span>
                         @endif
                         @if($task->recurrence_pattern)
-                            <span class="text-purple-400">{{ $task->recurrence_pattern }}</span>
+                            <span class="text-purple-400" data-task-recurrence-display>{{ $task->recurrence_pattern }}</span>
                         @endif
                         @if($task->description)
                             <span class="flex items-center gap-1 text-gray-500" title="Has description">
@@ -399,16 +496,15 @@
                             </span>
                         @endif
                     </div>
-                    @if($task->tags->count() > 0)
-                        <div class="flex gap-1 mt-2">
-                            @foreach($task->tags as $tag)
-                                <span class="inline-block px-2 py-1 text-xs rounded"
-                                      style="background-color: {{ $tag->color }}22; color: {{ $tag->color }}">
-                                    {{ $tag->tag_name }}
-                                </span>
-                            @endforeach
-                        </div>
-                    @endif
+                    <div class="flex gap-1 mt-2 flex-wrap" data-task-tags-display
+                         @if($task->tags->count() === 0) style="display:none" @endif>
+                        @foreach($task->tags as $tag)
+                            <span class="inline-block px-2 py-1 text-xs rounded"
+                                  style="background-color: {{ $tag->color }}22; color: {{ $tag->color }}">
+                                {{ $tag->tag_name }}
+                            </span>
+                        @endforeach
+                    </div>
                 </div>
 
                 <!-- Assignee Avatars -->
