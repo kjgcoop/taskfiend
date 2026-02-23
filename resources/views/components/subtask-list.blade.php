@@ -1,7 +1,44 @@
 @props(['tasks', 'parent'])
 
+@pushOnce('scripts')
+<script>
+    window.listQuickComplete = window.listQuickComplete || function () {
+        return {
+            done: false,
+            loading: false,
+            async submit() {
+                this.loading = true;
+                const form = this.$el;
+                try {
+                    const res = await fetch(form.action, {
+                        method: 'POST',
+                        headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                        body: new FormData(form),
+                    });
+                    if (res.ok) {
+                        this.done = true;
+                        await new Promise(r => setTimeout(r, 400));
+                        const group = form.closest('[data-task-group]');
+                        if (group) {
+                            group.style.transition = 'opacity 0.3s';
+                            group.style.opacity = '0';
+                            setTimeout(() => group.style.display = 'none', 300);
+                        }
+                    }
+                } catch {
+                    form.submit();
+                } finally {
+                    this.loading = false;
+                }
+            }
+        };
+    };
+</script>
+@endPushOnce
+
 <div class="space-y-2">
     @foreach($tasks as $task)
+        <div data-task-group>
         <div class="bg-gray-700 border border-gray-600 p-3 rounded-lg hover:bg-gray-650 transition">
             <div class="flex items-start gap-3">
                 <!-- Status Indicator -->
@@ -19,7 +56,8 @@
                             </svg>
                         </span>
                     @else
-                        <form method="POST" action="{{ route('tasks.update', $task) }}" class="inline">
+                        <form x-data="listQuickComplete()" @submit.prevent="submit()"
+                              method="POST" action="{{ route('tasks.update', $task) }}" class="inline">
                             @csrf
                             @method('PUT')
                             <input type="hidden" name="status" value="done">
@@ -36,10 +74,12 @@
                                 <input type="hidden" name="assignee_ids[]" value="{{ $assignee->id }}">
                             @endforeach
                             <input type="hidden" name="quick_complete" value="1">
-                            <button type="submit"
+                            <button x-show="!done" type="submit"
+                                    :disabled="loading" :class="loading ? 'opacity-40 cursor-wait' : ''"
                                     class="w-5 h-5 rounded-full border-2 border-gray-400 hover:border-green-400 hover:bg-green-400 hover:bg-opacity-20 transition"
                                     title="Mark as done">
                             </button>
+                            <span x-show="done" class="inline-block w-5 h-5 rounded-full bg-green-500" style="display:none"></span>
                         </form>
                     @endif
                 </div>
@@ -127,5 +167,6 @@
                 </div>
             @endif
         </div>
+        </div>{{-- /data-task-group --}}
     @endforeach
 </div>

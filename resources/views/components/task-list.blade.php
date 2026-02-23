@@ -11,6 +11,39 @@
         });
     });
 
+    window.listQuickComplete = function () {
+        return {
+            done: false,
+            loading: false,
+            async submit() {
+                this.loading = true;
+                const form = this.$el;
+                try {
+                    const res = await fetch(form.action, {
+                        method: 'POST',
+                        headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                        body: new FormData(form),
+                    });
+                    if (res.ok) {
+                        this.done = true;
+                        // Brief pause to show filled dot, then fade out
+                        await new Promise(r => setTimeout(r, 400));
+                        const group = form.closest('[data-task-group]');
+                        if (group) {
+                            group.style.transition = 'opacity 0.3s';
+                            group.style.opacity = '0';
+                            setTimeout(() => group.style.display = 'none', 300);
+                        }
+                    }
+                } catch {
+                    form.submit(); // network failure – fall back to full reload
+                } finally {
+                    this.loading = false;
+                }
+            }
+        };
+    };
+
     window.taskFilter = function (projects, tags) {
         return {
             query: '',
@@ -236,6 +269,7 @@
 
             $marginLeft = $depth * 24; // 24px per level
         @endphp
+        <div data-task-group>
         <div class="bg-[#202020] p-4 rounded-lg shadow hover:shadow-md transition border border-gray-700"
              data-filterable
              data-task-name="{{ strtolower($task->name) }}"
@@ -249,7 +283,8 @@
                 @elseif($readOnly)
                     <div class="mt-1 w-6 h-6 rounded-full border-2 border-gray-700 flex-shrink-0" title="Project is inactive"></div>
                 @else
-                <form method="POST" action="{{ route('tasks.update', $task) }}" onclick="event.stopPropagation()">
+                <form x-data="listQuickComplete()" @submit.prevent="submit()"
+                      method="POST" action="{{ route('tasks.update', $task) }}" onclick="event.stopPropagation()">
                     @csrf
                     @method('PUT')
                     <input type="hidden" name="status" value="done">
@@ -286,10 +321,12 @@
 
                         $buttonClass .= ' hover:bg-green-400 hover:bg-opacity-20';
                     @endphp
-                    <button type="submit"
+                    <button x-show="!done" type="submit"
+                            :disabled="loading" :class="loading ? 'opacity-40 cursor-wait' : ''"
                             class="{{ $buttonClass }}"
                             title="{{ $titleText }}">
                     </button>
+                    <div x-show="done" class="mt-1 w-6 h-6 rounded-full bg-green-600 flex-shrink-0" style="display:none"></div>
                 </form>
                 @endif
 
@@ -421,6 +458,7 @@
         @if($task->children->count() > 0)
             <x-task-list :tasks="$task->children" :depth="$depth + 1" :hide-date="$hideDate" :read-only="$readOnly" />
         @endif
+        </div>{{-- /data-task-group --}}
     @empty
         <div class="bg-[#202020] p-8 rounded-lg text-center text-gray-400 border border-gray-700">
             No tasks found.
