@@ -237,9 +237,10 @@ test.describe('Task Authorization & Privacy', () => {
     await page.goto('/tasks/create');
     await page.fill('#name', 'User 1 Today Task');
 
-    // Set date and time to today at noon
+    // Set date and time to today at noon.
+    // input[name="date"] is a hidden Alpine.js field; fill the visible text input instead.
     const today = new Date().toISOString().split('T')[0];
-    await page.fill('input[name="date"]', today);
+    await page.fill('input[placeholder*="tomorrow"]', today);
     await page.fill('input[name="time"]', '12:00');
 
     await page.click('button[type="submit"]');
