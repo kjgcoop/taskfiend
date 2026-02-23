@@ -331,7 +331,9 @@
                 @endif
 
                 <!-- Task Content -->
-                <div class="flex-1 cursor-pointer" onclick="window.location='{{ route('tasks.show', $task) }}'">
+                <div class="flex-1 cursor-pointer"
+                     onclick="(event.ctrlKey || event.metaKey) ? window.open('{{ route('tasks.show', $task) }}', '_blank') : openTaskPanel({{ $task->id }})"
+                     title="Click to peek · Ctrl+click or middle-click to open full page">
                     <!-- Show parent context if exists -->
                     @if($task->parent)
                         <div class="text-xs text-gray-500 mb-1">

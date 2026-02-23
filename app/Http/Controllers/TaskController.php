@@ -342,6 +342,40 @@ class TaskController extends Controller
         return view('tasks.show', compact('task', 'projects', 'tags', 'users', 'nextDueDate', 'availableParents', 'inboxProjectId', 'isInactive'));
     }
 
+    public function panel(Task $task)
+    {
+        $this->authorizeTaskAccess($task);
+
+        $task->load(['creator', 'project', 'tags', 'assignees', 'assignments.assignedBy',
+                     'attachments', 'comments.user', 'changeLogs.user', 'children', 'parent']);
+
+        $projects = Project::where('user_id', Auth::id())
+            ->orWhereHas('tasks.assignees', function ($query) {
+                $query->where('users.id', Auth::id());
+            })
+            ->where('status', '!=', 'archived')
+            ->orderByRaw('LOWER(name)')
+            ->get();
+
+        $tags = Tag::orderByRaw('LOWER(tag_name)')->get();
+        $users = User::whereNull('email_enabled_at')->get();
+        $inboxProjectId = Project::where('user_id', Auth::id())->where('is_inbox', true)->value('id');
+
+        $nextDueDate = null;
+        if ($task->recurrence_pattern && $task->date) {
+            $dateParser = new DateParser();
+            $currentDate = Carbon::parse($task->date);
+            $nextOccurrence = $dateParser->getNextOccurrence($task->recurrence_pattern, $currentDate);
+            if ($nextOccurrence) {
+                $nextDueDate = $nextOccurrence->format('l, F j, Y');
+            }
+        }
+
+        $isInactive = $task->project && in_array($task->project->status, ['done', 'archived']);
+
+        return view('tasks._panel', compact('task', 'projects', 'tags', 'users', 'nextDueDate', 'inboxProjectId', 'isInactive'));
+    }
+
     public function edit(Task $task)
     {
         $this->authorizeTaskAccess($task);

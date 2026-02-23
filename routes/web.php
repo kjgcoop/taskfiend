@@ -28,6 +28,7 @@ Route::middleware('auth')->group(function () {
 
 
     Route::resource('tasks', TaskController::class);
+    Route::get('/tasks/{task}/panel', [TaskController::class, 'panel'])->name('tasks.panel');
     Route::post('/tasks/{task}/update-field', [TaskController::class, 'updateField'])->name('tasks.updateField');
     Route::post('/tasks/parse-date', [TaskController::class, 'parseDate'])->name('tasks.parseDate');
     Route::post('/tasks/{task}/duplicate', [TaskController::class, 'duplicate'])->name('tasks.duplicate');
