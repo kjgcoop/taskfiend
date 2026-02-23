@@ -143,17 +143,27 @@
                     loading: false,
                     error: false,
                     currentTaskId: null,
+                    _pushedEntry: false, // true when we own the current history entry
 
                     init() {
-                        // Intercept browser back button while panel is open
                         window.addEventListener('popstate', (e) => {
                             if (this.open) {
-                                // Panel is open: closing it IS the back action; don't navigate further
+                                // Back pressed while panel is open — close the panel
                                 this._closeWithoutHistory();
+                            } else if (e.state && e.state.taskPanel && e.state.taskId) {
+                                // Forward pressed back to a panel state — reopen without pushing again
+                                this._openFromHistory(e.state.taskId);
                             }
                         });
+
+                        // Auto-open if the page was loaded with ?task= in the URL (e.g. pasted link)
+                        const taskId = new URLSearchParams(location.search).get('task');
+                        if (taskId) {
+                            this._openFromPageLoad(parseInt(taskId));
+                        }
                     },
 
+                    // Normal open triggered by clicking a task in the list
                     async openTask(taskId) {
                         const wasAlreadyOpen = this.open;
                         this.open = true;
@@ -161,14 +171,47 @@
                         this.error = false;
                         this.currentTaskId = taskId;
 
-                        // Push a history entry so back button can peel the panel
+                        const taskUrl = this._urlWithTask(taskId);
+
                         if (!wasAlreadyOpen) {
-                            history.pushState({ taskPanel: true, taskId }, '');
+                            history.pushState({ taskPanel: true, taskId }, '', taskUrl);
+                            this._pushedEntry = true;
                         } else {
-                            // Replace so we don't stack entries when reloading panel content
-                            history.replaceState({ taskPanel: true, taskId }, '');
+                            // Panel already open (reloading after a save) — update URL in place
+                            history.replaceState({ taskPanel: true, taskId }, '', taskUrl);
                         }
 
+                        await this._loadContent(taskId);
+                    },
+
+                    // Opened because the page URL already contained ?task= on load
+                    async _openFromPageLoad(taskId) {
+                        this.open = true;
+                        this.loading = true;
+                        this.error = false;
+                        this.currentTaskId = taskId;
+
+                        // Insert a clean base entry before the panel entry so back restores the bare URL
+                        const baseUrl = this._urlWithoutTask();
+                        history.replaceState({}, '', baseUrl);
+                        history.pushState({ taskPanel: true, taskId }, '', this._urlWithTask(taskId));
+                        this._pushedEntry = true;
+
+                        await this._loadContent(taskId);
+                    },
+
+                    // Opened because the user pressed the forward button to a panel history entry
+                    async _openFromHistory(taskId) {
+                        this.open = true;
+                        this.loading = true;
+                        this.error = false;
+                        this.currentTaskId = taskId;
+                        this._pushedEntry = true; // entry already exists, back will still work
+
+                        await this._loadContent(taskId);
+                    },
+
+                    async _loadContent(taskId) {
                         try {
                             const res = await fetch(`/tasks/${taskId}/panel`, {
                                 headers: { 'X-Requested-With': 'XMLHttpRequest' },
@@ -177,12 +220,10 @@
                             const html = await res.text();
 
                             const content = document.getElementById('task-panel-content');
-                            // Destroy any existing Alpine tree before replacing content
                             if (window.Alpine && typeof Alpine.destroyTree === 'function') {
                                 Alpine.destroyTree(content);
                             }
                             content.innerHTML = html;
-                            // Execute script tags in injected HTML
                             content.querySelectorAll('script').forEach(oldScript => {
                                 const newScript = document.createElement('script');
                                 Array.from(oldScript.attributes).forEach(attr => {
@@ -191,7 +232,6 @@
                                 newScript.textContent = oldScript.textContent;
                                 oldScript.replaceWith(newScript);
                             });
-                            // Init Alpine.js on new content
                             if (window.Alpine) {
                                 Alpine.initTree(content);
                             }
@@ -204,15 +244,20 @@
                     },
 
                     close() {
-                        // Navigate back in history — the popstate handler calls _closeWithoutHistory()
-                        if (this.open) {
-                            history.back();
+                        if (!this.open) return;
+                        if (this._pushedEntry) {
+                            history.back(); // popstate fires → _closeWithoutHistory()
+                        } else {
+                            // Fallback: clean URL manually and close
+                            history.replaceState({}, '', this._urlWithoutTask());
+                            this._closeWithoutHistory();
                         }
                     },
 
                     _closeWithoutHistory() {
                         this.open = false;
                         this.currentTaskId = null;
+                        this._pushedEntry = false;
                         setTimeout(() => {
                             const content = document.getElementById('task-panel-content');
                             if (content) {
@@ -223,6 +268,18 @@
                             }
                             this.error = false;
                         }, 200);
+                    },
+
+                    _urlWithTask(taskId) {
+                        const u = new URL(location.href);
+                        u.searchParams.set('task', taskId);
+                        return u.toString();
+                    },
+
+                    _urlWithoutTask() {
+                        const u = new URL(location.href);
+                        u.searchParams.delete('task');
+                        return u.toString();
                     },
                 };
             };
