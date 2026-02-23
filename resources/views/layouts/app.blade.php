@@ -109,7 +109,7 @@
             </div>
 
             <!-- Panel drawer -->
-            <div class="relative z-10 flex flex-col w-full max-w-2xl h-full bg-gray-900 border-l border-gray-700 shadow-2xl overflow-y-auto"
+            <div class="relative z-10 flex flex-col w-[90vw] max-w-[90vw] h-full bg-gray-900 border-l border-gray-700 shadow-2xl overflow-y-auto"
                  x-transition:enter="transition-transform ease-out duration-200"
                  x-transition:enter-start="translate-x-full"
                  x-transition:enter-end="translate-x-0"
@@ -144,11 +144,30 @@
                     error: false,
                     currentTaskId: null,
 
+                    init() {
+                        // Intercept browser back button while panel is open
+                        window.addEventListener('popstate', (e) => {
+                            if (this.open) {
+                                // Panel is open: closing it IS the back action; don't navigate further
+                                this._closeWithoutHistory();
+                            }
+                        });
+                    },
+
                     async openTask(taskId) {
+                        const wasAlreadyOpen = this.open;
                         this.open = true;
                         this.loading = true;
                         this.error = false;
                         this.currentTaskId = taskId;
+
+                        // Push a history entry so back button can peel the panel
+                        if (!wasAlreadyOpen) {
+                            history.pushState({ taskPanel: true, taskId }, '');
+                        } else {
+                            // Replace so we don't stack entries when reloading panel content
+                            history.replaceState({ taskPanel: true, taskId }, '');
+                        }
 
                         try {
                             const res = await fetch(`/tasks/${taskId}/panel`, {
@@ -185,9 +204,15 @@
                     },
 
                     close() {
+                        // Navigate back in history — the popstate handler calls _closeWithoutHistory()
+                        if (this.open) {
+                            history.back();
+                        }
+                    },
+
+                    _closeWithoutHistory() {
                         this.open = false;
                         this.currentTaskId = null;
-                        // Small delay so exit transition plays before clearing
                         setTimeout(() => {
                             const content = document.getElementById('task-panel-content');
                             if (content) {
