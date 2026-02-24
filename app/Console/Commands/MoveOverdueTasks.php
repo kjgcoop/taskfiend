@@ -14,7 +14,7 @@ class MoveOverdueTasks extends Command
 
     public function handle()
     {
-        $today = Carbon::today('America/Los_Angeles')->toDateString();
+        $today = Carbon::today(config('app.timezone'))->toDateString();
 
         $tasks = Task::where('status', 'incomplete')
             ->whereNotNull('date')
