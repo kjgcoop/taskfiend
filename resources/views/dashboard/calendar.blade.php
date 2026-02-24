@@ -35,7 +35,7 @@
                         @endforeach
 
                         @php
-                            $date = $startDate->copy()->startOfWeek();
+                            $date = $startDate->copy()->startOfWeek(\Carbon\Carbon::SUNDAY);
                             $endOfMonth = $startDate->copy()->endOfMonth();
                         @endphp
 
