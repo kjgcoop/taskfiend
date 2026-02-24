@@ -97,7 +97,7 @@
                     </div>
 
                     <!-- Tag Cloud -->
-                    <div class="mb-6">
+                    <div class="mb-4">
                         <label class="block text-sm font-medium text-gray-300 mb-2">Tags</label>
                         <div class="flex flex-wrap gap-2">
                             <template x-for="tag in tags" :key="tag.id">
@@ -114,6 +114,71 @@
                         </div>
                     </div>
 
+                    <!-- Date Filters -->
+                    <div class="mb-4 grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        <div>
+                            <label for="date_from" class="block text-sm font-medium text-gray-300 mb-2">Date from</label>
+                            <input type="date" name="date_from" id="date_from"
+                                   value="{{ request('date_from') }}"
+                                   class="w-full rounded-md bg-gray-700 border-gray-600 text-gray-100 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                        </div>
+                        <div>
+                            <label for="date_to" class="block text-sm font-medium text-gray-300 mb-2">Date to</label>
+                            <input type="date" name="date_to" id="date_to"
+                                   value="{{ request('date_to') }}"
+                                   class="w-full rounded-md bg-gray-700 border-gray-600 text-gray-100 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                        </div>
+                        <div class="flex items-end pb-1">
+                            <label class="inline-flex items-center cursor-pointer">
+                                <input type="checkbox" name="has_date" value="1" {{ request('has_date') ? 'checked' : '' }}
+                                       class="rounded border-gray-600 bg-gray-700 text-blue-600 focus:ring-blue-500">
+                                <span class="ml-2 text-sm text-gray-300">Has a date</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Person Filters -->
+                    <div class="mb-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <label for="assignee_id" class="block text-sm font-medium text-gray-300 mb-2">Assigned to</label>
+                            <select name="assignee_id" id="assignee_id"
+                                    class="w-full rounded-md bg-gray-700 border-gray-600 text-gray-100 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                                <option value="">Anyone</option>
+                                @foreach($users as $user)
+                                    <option value="{{ $user->id }}" {{ request('assignee_id') == $user->id ? 'selected' : '' }}>
+                                        {{ $user->name }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div>
+                            <label for="creator_id" class="block text-sm font-medium text-gray-300 mb-2">Created by</label>
+                            <select name="creator_id" id="creator_id"
+                                    class="w-full rounded-md bg-gray-700 border-gray-600 text-gray-100 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                                <option value="">Anyone</option>
+                                @foreach($users as $user)
+                                    <option value="{{ $user->id }}" {{ request('creator_id') == $user->id ? 'selected' : '' }}>
+                                        {{ $user->name }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Status Toggles -->
+                    <div class="mb-6 flex items-center gap-6">
+                        <label class="inline-flex items-center cursor-pointer">
+                            <input type="checkbox" name="show_completed" value="1" {{ request('show_completed') ? 'checked' : '' }}
+                                   class="rounded border-gray-600 bg-gray-700 text-blue-600 focus:ring-blue-500">
+                            <span class="ml-2 text-sm text-gray-300">Show completed</span>
+                        </label>
+                        <label class="inline-flex items-center cursor-pointer">
+                            <input type="checkbox" name="include_archived" value="1" {{ request('include_archived') ? 'checked' : '' }}
+                                   class="rounded border-gray-600 bg-gray-700 text-blue-600 focus:ring-blue-500">
+                            <span class="ml-2 text-sm text-gray-300">Include archived</span>
+                        </label>
+                    </div>
+
                     <div class="flex items-center gap-4">
                         <button type="submit" class="inline-flex items-center px-4 py-2 bg-blue-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-blue-700">
                             Search
@@ -126,11 +191,11 @@
             </div>
 
             <!-- Search Results -->
-            @if(request()->hasAny(['q', 'tag_ids', 'project_id']))
+            @if(request()->hasAny(['q', 'tag_ids', 'project_id', 'date_from', 'date_to', 'has_date', 'assignee_id', 'creator_id', 'show_completed', 'include_archived']))
                 <div class="bg-[#202020] border border-gray-700 overflow-hidden shadow-sm sm:rounded-lg p-6" x-data="taskFilter()">
                     <h3 class="text-lg font-semibold text-gray-100 mb-4">
                         Search Results
-                        <span class="text-sm font-normal text-gray-500" x-data x-text="$store.taskCount.ready ? ($store.taskCount.filtered ? '(showing ' + $store.taskCount.visible + ' of ' + $store.taskCount.total + ' found)' : '(' + $store.taskCount.total + ' found)') : '({{ $tasks->count() }} found)'">({{ $tasks->count() }} found)</span>
+                        <span class="text-sm font-normal text-gray-500" x-data x-text="$store.taskCount.ready ? ($store.taskCount.filtered ? '(showing ' + $store.taskCount.visible + ' of ' + $store.taskCount.total + ' found)' : '(' + $store.taskCount.total + ' found)') : '({{ $tasks->count() + $completedTasks->count() }} found)'">({{ $tasks->count() + $completedTasks->count() }} found)</span>
                     </h3>
                     <div class="mb-4">
                         <input type="text"
