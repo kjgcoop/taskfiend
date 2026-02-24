@@ -72,7 +72,7 @@
             <div x-cloak x-show="$store.dayView.current === 'list'" x-data="taskFilter(@js($projects), @js($tags))">
                 <x-task-input-bar :date="$carbonDate->format('Y-m-d')" />
                 <div x-ref="taskContainer">
-                    <x-task-list :tasks="$tasks" :hide-date="true" />
+                    <x-task-list :tasks="$tasks" :hide-date="true" :view-date="$carbonDate->format('Y-m-d')" />
                 </div>
                 <div x-show="noResults" x-cloak class="bg-[#202020] p-8 rounded-lg text-center text-gray-400 border border-gray-700">
                     No tasks match your filter.
