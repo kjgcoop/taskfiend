@@ -77,35 +77,33 @@
             </div>
         </div>
     </div>
-</x-app-layout>
 
-@push('scripts')
-<script>
-    window.addEventListener('task-panel-updated', (e) => {
-        const d = e.detail;
-        const chip = document.querySelector(`[data-task-group-id="${d.id}"]`);
-        if (!chip) return;
+    <script>
+        window.addEventListener('task-panel-updated', (e) => {
+            const d = e.detail;
+            const chip = document.querySelector(`[data-task-group-id="${d.id}"]`);
+            if (!chip) return;
 
-        const cell = chip.closest('[data-cal-cell]');
-        const shouldFade = d.inactive || (cell && d.date !== cell.dataset.calCell);
+            const cell = chip.closest('[data-cal-cell]');
+            const shouldFade = d.inactive || (cell && d.date !== cell.dataset.calCell);
 
-        if (shouldFade) {
-            chip.style.transition = 'opacity 0.4s';
-            chip.style.opacity = '0';
-            setTimeout(() => {
-                chip.remove();
-                if (cell) {
-                    const countEl = cell.querySelector('[data-cal-count]');
-                    if (countEl) {
-                        const n = parseInt(countEl.textContent) - 1;
-                        n > 0 ? (countEl.textContent = n) : countEl.remove();
+            if (shouldFade) {
+                chip.style.transition = 'opacity 0.4s';
+                chip.style.opacity = '0';
+                setTimeout(() => {
+                    chip.remove();
+                    if (cell) {
+                        const countEl = cell.querySelector('[data-cal-count]');
+                        if (countEl) {
+                            const n = parseInt(countEl.textContent) - 1;
+                            n > 0 ? (countEl.textContent = n) : countEl.remove();
+                        }
                     }
-                }
-            }, 400);
-        } else {
-            // Name updated — refresh the chip label
-            chip.textContent = d.name;
-        }
-    });
-</script>
-@endpush
+                }, 400);
+            } else {
+                // Name updated — refresh the chip label
+                chip.textContent = d.name;
+            }
+        });
+    </script>
+</x-app-layout>
