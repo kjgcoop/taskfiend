@@ -40,7 +40,8 @@
                         @endphp
 
                         @for($i = 0; $i < 42; $i++)
-                            <div class="border border-gray-600 rounded p-2 min-h-24 {{ $date->month != $month ? 'bg-[#101010] text-gray-500' : 'bg-[#202020]' }}">
+                            <div class="border border-gray-600 rounded p-2 min-h-24 {{ $date->month != $month ? 'bg-[#101010] text-gray-500' : 'bg-[#202020]' }}"
+                                 data-cal-cell="{{ $date->format('Y-m-d') }}">
                                 @php
                                     $dateKey = $date->format('Y-m-d');
                                     $dayTasks = $tasks->get($dateKey) ?? collect();
@@ -50,14 +51,17 @@
                                         {{ $date->day }}
                                     </a>
                                     @if($dayTasks->count() > 0)
-                                        <span class="font-thin text-[10px] text-gray-500">{{ $dayTasks->count() }}</span>
+                                        <span class="font-thin text-[10px] text-gray-500" data-cal-count>{{ $dayTasks->count() }}</span>
                                     @endif
                                 </div>
                                 <div class="space-y-1 overflow-hidden">
                                     @foreach($dayTasks->take(3) as $task)
-                                        <a href="{{ route('tasks.show', $task) }}" class="block text-xs p-1 bg-blue-900 text-blue-200 rounded truncate hover:bg-blue-800">
+                                        <button type="button"
+                                                data-task-group-id="{{ $task->id }}"
+                                                onclick="openTaskPanel({{ $task->id }})"
+                                                class="block w-full text-left text-xs p-1 bg-blue-900 text-blue-200 rounded truncate hover:bg-blue-800">
                                             {{ $task->name }}
-                                        </a>
+                                        </button>
                                     @endforeach
                                     @if($dayTasks->count() > 3)
                                         <a href="{{ route('day', ['date' => $dateKey]) }}" class="block text-xs text-blue-400 hover:underline">
@@ -74,3 +78,34 @@
         </div>
     </div>
 </x-app-layout>
+
+@push('scripts')
+<script>
+    window.addEventListener('task-panel-updated', (e) => {
+        const d = e.detail;
+        const chip = document.querySelector(`[data-task-group-id="${d.id}"]`);
+        if (!chip) return;
+
+        const cell = chip.closest('[data-cal-cell]');
+        const shouldFade = d.inactive || (cell && d.date !== cell.dataset.calCell);
+
+        if (shouldFade) {
+            chip.style.transition = 'opacity 0.4s';
+            chip.style.opacity = '0';
+            setTimeout(() => {
+                chip.remove();
+                if (cell) {
+                    const countEl = cell.querySelector('[data-cal-count]');
+                    if (countEl) {
+                        const n = parseInt(countEl.textContent) - 1;
+                        n > 0 ? (countEl.textContent = n) : countEl.remove();
+                    }
+                }
+            }, 400);
+        } else {
+            // Name updated — refresh the chip label
+            chip.textContent = d.name;
+        }
+    });
+</script>
+@endpush
