@@ -718,6 +718,7 @@ class TaskController extends Controller
             'name'               => $task->name,
             'status'             => $task->status,
             'description'        => $task->description,
+            'date'               => $task->date,
             'date_formatted'     => $task->date ? \Carbon\Carbon::parse($task->date)->format('l, F j, Y') : null,
             'time_formatted'     => $task->time ? \Carbon\Carbon::parse($task->time)->format('g:i A') : null,
             'project_name'       => $task->project?->name,

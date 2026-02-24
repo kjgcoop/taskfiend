@@ -40,7 +40,8 @@
                         @endphp
 
                         @for($i = 0; $i < 42; $i++)
-                            <div class="border border-gray-600 rounded p-2 min-h-24 {{ $date->month != $month ? 'bg-[#101010] text-gray-500' : 'bg-[#202020]' }}">
+                            <div class="border border-gray-600 rounded p-2 min-h-24 {{ $date->month != $month ? 'bg-[#101010] text-gray-500' : 'bg-[#202020]' }}"
+                                 data-cal-cell="{{ $date->format('Y-m-d') }}">
                                 @php
                                     $dateKey = $date->format('Y-m-d');
                                     $dayTasks = $tasks->get($dateKey) ?? collect();
@@ -50,14 +51,17 @@
                                         {{ $date->day }}
                                     </a>
                                     @if($dayTasks->count() > 0)
-                                        <span class="font-thin text-[10px] text-gray-500">{{ $dayTasks->count() }}</span>
+                                        <span class="font-thin text-[10px] text-gray-500" data-cal-count>{{ $dayTasks->count() }}</span>
                                     @endif
                                 </div>
                                 <div class="space-y-1 overflow-hidden">
                                     @foreach($dayTasks->take(3) as $task)
-                                        <a href="{{ route('tasks.show', $task) }}" class="block text-xs p-1 bg-blue-900 text-blue-200 rounded truncate hover:bg-blue-800">
+                                        <button type="button"
+                                                data-task-group-id="{{ $task->id }}"
+                                                onclick="openTaskPanel({{ $task->id }})"
+                                                class="block w-full text-left text-xs p-1 bg-blue-900 text-blue-200 rounded truncate hover:bg-blue-800">
                                             {{ $task->name }}
-                                        </a>
+                                        </button>
                                     @endforeach
                                     @if($dayTasks->count() > 3)
                                         <a href="{{ route('day', ['date' => $dateKey]) }}" class="block text-xs text-blue-400 hover:underline">
@@ -73,4 +77,91 @@
             </div>
         </div>
     </div>
+
+    <script>
+        window.addEventListener('task-panel-updated', (e) => {
+            const d = e.detail;
+            const chip = document.querySelector(`[data-task-group-id="${d.id}"]`);
+            if (!chip) return;
+
+            const oldCell = chip.closest('[data-cal-cell]');
+            const dateChanged = oldCell && d.date !== oldCell.dataset.calCell;
+            const shouldRemove = d.inactive || dateChanged;
+
+            if (!shouldRemove) {
+                chip.textContent = d.name;
+                return;
+            }
+
+            // Fade chip out of old cell
+            chip.style.transition = 'opacity 0.4s';
+            chip.style.opacity = '0';
+
+            setTimeout(() => {
+                chip.remove();
+
+                // Decrement old cell count
+                if (oldCell) {
+                    const countEl = oldCell.querySelector('[data-cal-count]');
+                    if (countEl) {
+                        const n = parseInt(countEl.textContent) - 1;
+                        n > 0 ? (countEl.textContent = n) : countEl.remove();
+                    }
+                }
+
+                // Add to new cell if it's visible on this calendar and task isn't inactive
+                if (!d.inactive && d.date) {
+                    const newCell = document.querySelector(`[data-cal-cell="${d.date}"]`);
+                    if (newCell) addChipToCell(newCell, d);
+                }
+            }, 400);
+        });
+
+        function addChipToCell(cell, d) {
+            // Update or create the tiny task count in the cell header
+            let countEl = cell.querySelector('[data-cal-count]');
+            if (countEl) {
+                countEl.textContent = parseInt(countEl.textContent) + 1;
+            } else {
+                countEl = document.createElement('span');
+                countEl.className = 'font-thin text-[10px] text-gray-500';
+                countEl.setAttribute('data-cal-count', '');
+                countEl.textContent = '1';
+                cell.querySelector('.flex.items-center').appendChild(countEl);
+            }
+
+            const container = cell.querySelector('.space-y-1');
+            const visibleChips = container.querySelectorAll('[data-task-group-id]');
+            // The "+N more" link is the only <a> inside .space-y-1
+            const moreLink = container.querySelector('a');
+
+            if (visibleChips.length < 3) {
+                // Room for another chip — insert it before "+N more" (or append)
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.dataset.taskGroupId = d.id;
+                btn.setAttribute('onclick', `openTaskPanel(${d.id})`);
+                btn.className = 'block w-full text-left text-xs p-1 bg-blue-900 text-blue-200 rounded truncate hover:bg-blue-800';
+                btn.textContent = d.name;
+                btn.style.opacity = '0';
+                btn.style.transition = 'opacity 0.4s';
+                moreLink ? container.insertBefore(btn, moreLink) : container.appendChild(btn);
+                // Fade in on next frame
+                requestAnimationFrame(() => requestAnimationFrame(() => { btn.style.opacity = '1'; }));
+            } else {
+                // Already at 3 chips — bump (or create) "+N more"
+                if (moreLink) {
+                    const m = moreLink.textContent.match(/\+(\d+)/);
+                    if (m) moreLink.textContent = `+${parseInt(m[1]) + 1} more`;
+                } else {
+                    const dayLink = cell.querySelector('a'); // date-number link in header
+                    const a = document.createElement('a');
+                    a.href = dayLink ? dayLink.href : '#';
+                    a.className = 'block text-xs text-blue-400 hover:underline';
+                    a.textContent = '+1 more';
+                    container.appendChild(a);
+                }
+            }
+        }
+    </script>
 </x-app-layout>

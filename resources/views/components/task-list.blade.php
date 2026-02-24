@@ -1,4 +1,4 @@
-@props(['tasks', 'depth' => 0, 'hideDate' => false, 'readOnly' => false])
+@props(['tasks', 'depth' => 0, 'hideDate' => false, 'readOnly' => false, 'viewDate' => null])
 
 @pushOnce('scripts')
 <script>
@@ -250,6 +250,15 @@
             return;
         }
 
+        // Task moved off this day view: fade it out
+        const list = group.closest('[data-view-date]');
+        if (list && d.date !== list.dataset.viewDate) {
+            group.style.transition = 'opacity 0.4s';
+            group.style.opacity = '0';
+            setTimeout(() => { group.style.display = 'none'; }, 400);
+            return;
+        }
+
         // Name
         const nameEl = group.querySelector('[data-task-name-display]');
         if (nameEl) {
@@ -336,7 +345,7 @@
 </script>
 @endPushOnce
 
-<div class="space-y-2">
+<div class="space-y-2" @if($viewDate) data-view-date="{{ $viewDate }}" @endif>
     @forelse($tasks as $task)
         @php
             // Find first image attachment from task or comments
