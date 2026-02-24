@@ -5,6 +5,7 @@
     "scripts": {
         "build": "vite build",
         "dev": "vite",
+        "test": "php artisan test && node node_modules/@playwright/test/cli.js test",
         "test:e2e": "node node_modules/@playwright/test/cli.js test",
         "test:e2e:ui": "node node_modules/@playwright/test/cli.js test --ui",
         "test:e2e:headed": "node node_modules/@playwright/test/cli.js test --headed",
