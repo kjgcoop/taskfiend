@@ -12,14 +12,13 @@
         <link rel="icon" type="image/x-icon" href="/favicon.ico">
 
         <!-- Fonts -->
-        <link rel="preconnect" href="https://fonts.bunny.net">
-        <link href="https://fonts.bunny.net/css?family=figtree:400,500,600&display=swap" rel="stylesheet" />
+        <link rel="stylesheet" href="/css/fonts-figtree.css">
 
         <!-- Scripts -->
         @vite(['resources/css/app.css', 'resources/js/app.js'])
 
         <!-- Markdown rendering -->
-        <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+        <script src="/js/vendor/marked.min.js"></script>
         <style>
             .markdown-body { color: #d1d5db; }
             .markdown-body h1, .markdown-body h2, .markdown-body h3,
