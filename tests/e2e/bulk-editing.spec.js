@@ -1,0 +1,340 @@
+import { test, expect } from '@playwright/test';
+import { login, logout, testUsers } from './helpers/auth.js';
+
+/**
+ * Bulk Editing UI Tests
+ *
+ * Verifies the complete bulk-edit flow:
+ *   toggle → select tasks → configure fields → confirm → apply
+ *
+ * Each test creates its own tasks via the quick-add bar so it is
+ * independent of other specs (the global setup already seeded users).
+ */
+
+// ── helpers ─────────────────────────────────────────────────────────────────
+
+/**
+ * Use the quick-add bar to create a task on the Inbox page.
+ * Returns the task name so callers can locate rows.
+ */
+async function quickAddTask(page, name) {
+  await page.fill('input[placeholder="Add a task..."]', name);
+  await page.keyboard.press('Enter');
+  // Wait for the row to appear in the list
+  await expect(page.locator(`[data-task-name="${name.toLowerCase()}"]`)).toBeVisible({ timeout: 5000 });
+  return name;
+}
+
+/** Click the bulk-edit toggle (clipboard/checkmark icon) in the input bar. */
+async function clickBulkToggle(page) {
+  await page.click('button[title="Bulk edit mode"]');
+}
+
+/** Click the "Exit bulk edit" button in the bulk-mode header. */
+async function exitBulkMode(page) {
+  await page.click('button[title="Exit bulk edit"]');
+}
+
+/**
+ * Return the task-group wrapper div for the given task name.
+ * The group is identified by the data-filterable child that holds
+ * the data-task-name attribute.
+ */
+function taskGroupLocator(page, name) {
+  return page
+    .locator('[data-task-group]')
+    .filter({ has: page.locator(`[data-task-name="${name.toLowerCase()}"]`) });
+}
+
+// ── tests ────────────────────────────────────────────────────────────────────
+
+test.describe('Bulk Editing', () => {
+  test.beforeEach(async ({ page }) => {
+    await login(page, testUsers.user1.email);
+    await page.goto('/inbox');
+    await page.waitForLoadState('networkidle');
+  });
+
+  test.afterEach(async ({ page }) => {
+    await logout(page);
+  });
+
+  // ── toggle ────────────────────────────────────────────────────────────────
+
+  test('bulk edit toggle button is visible in the quick-add bar', async ({ page }) => {
+    await expect(page.locator('button[title="Bulk edit mode"]')).toBeVisible();
+  });
+
+  test('clicking the toggle enters bulk edit mode', async ({ page }) => {
+    await clickBulkToggle(page);
+
+    // The bulk-mode header row appears
+    await expect(page.locator('text=Bulk edit')).toBeVisible();
+    // The create-task form is hidden
+    await expect(page.locator('input[placeholder="Add a task..."]')).not.toBeVisible();
+  });
+
+  test('clicking the toggle again exits bulk edit mode', async ({ page }) => {
+    await clickBulkToggle(page);
+    await exitBulkMode(page);
+
+    // Back to create mode
+    await expect(page.locator('input[placeholder="Add a task..."]')).toBeVisible();
+    await expect(page.locator('text=Bulk edit')).not.toBeVisible();
+  });
+
+  // ── selection ─────────────────────────────────────────────────────────────
+
+  test('task circles become squares in bulk mode', async ({ page }) => {
+    const name = `BulkCircle-${Date.now()}`;
+    await quickAddTask(page, name);
+
+    await clickBulkToggle(page);
+
+    const group = taskGroupLocator(page, name);
+
+    // Square selector button is visible
+    await expect(group.locator('button[title="Select task"]')).toBeVisible();
+  });
+
+  test('clicking the square selects the task and shows a ring', async ({ page }) => {
+    const name = `BulkSelect-${Date.now()}`;
+    await quickAddTask(page, name);
+
+    await clickBulkToggle(page);
+
+    const group = taskGroupLocator(page, name);
+    await group.locator('button[title="Select task"]').click();
+
+    // Ring class applied to the card
+    await expect(group.locator('[data-filterable]')).toHaveClass(/ring-2/);
+
+    // Selection counter in the bulk header
+    await expect(page.locator('text=1 task selected')).toBeVisible();
+  });
+
+  test('clicking a selected task deselects it', async ({ page }) => {
+    const name = `BulkDeselect-${Date.now()}`;
+    await quickAddTask(page, name);
+
+    await clickBulkToggle(page);
+
+    const group   = taskGroupLocator(page, name);
+    const square  = group.locator('button[title="Select task"]');
+
+    await square.click(); // select
+    await square.click(); // deselect
+
+    await expect(group.locator('[data-filterable]')).not.toHaveClass(/ring-2/);
+    await expect(page.locator('text=0 tasks selected')).toBeVisible();
+  });
+
+  test('clicking the task row also toggles selection in bulk mode', async ({ page }) => {
+    const name = `BulkRowClick-${Date.now()}`;
+    await quickAddTask(page, name);
+
+    await clickBulkToggle(page);
+
+    const group = taskGroupLocator(page, name);
+    // Click the task name area (the flex-1 content div)
+    await group.locator('[data-task-name-display]').click();
+
+    await expect(group.locator('[data-filterable]')).toHaveClass(/ring-2/);
+  });
+
+  test('"Select all visible" selects every visible task', async ({ page }) => {
+    const nameA = `BulkAll-A-${Date.now()}`;
+    const nameB = `BulkAll-B-${Date.now()}`;
+    await quickAddTask(page, nameA);
+    await quickAddTask(page, nameB);
+
+    await clickBulkToggle(page);
+
+    // Click "Select all visible" in the bulk header
+    await page.click('button:has-text("Select all visible")');
+
+    await expect(taskGroupLocator(page, nameA).locator('[data-filterable]')).toHaveClass(/ring-2/);
+    await expect(taskGroupLocator(page, nameB).locator('[data-filterable]')).toHaveClass(/ring-2/);
+
+    // Counter should show ≥ 2
+    const countText = await page.locator('.font-medium.text-gray-100').first().innerText();
+    expect(parseInt(countText)).toBeGreaterThanOrEqual(2);
+  });
+
+  test('"Deselect all" clears all selections', async ({ page }) => {
+    const nameA = `BulkDeselAll-A-${Date.now()}`;
+    const nameB = `BulkDeselAll-B-${Date.now()}`;
+    await quickAddTask(page, nameA);
+    await quickAddTask(page, nameB);
+
+    await clickBulkToggle(page);
+    await page.click('button:has-text("Select all visible")');
+
+    // Both selected; now deselect all
+    await page.click('button:has-text("Deselect all")');
+
+    await expect(taskGroupLocator(page, nameA).locator('[data-filterable]')).not.toHaveClass(/ring-2/);
+    await expect(taskGroupLocator(page, nameB).locator('[data-filterable]')).not.toHaveClass(/ring-2/);
+  });
+
+  test('exiting bulk mode clears selections', async ({ page }) => {
+    const name = `BulkExit-${Date.now()}`;
+    await quickAddTask(page, name);
+
+    await clickBulkToggle(page);
+    await taskGroupLocator(page, name).locator('button[title="Select task"]').click();
+
+    await exitBulkMode(page);
+    await clickBulkToggle(page); // re-enter
+
+    // Task should not be selected (ring gone)
+    await expect(taskGroupLocator(page, name).locator('[data-filterable]')).not.toHaveClass(/ring-2/);
+  });
+
+  // ── bottom bar ────────────────────────────────────────────────────────────
+
+  test('bottom bar is hidden when no tasks are selected', async ({ page }) => {
+    const name = `BulkBar-${Date.now()}`;
+    await quickAddTask(page, name);
+
+    await clickBulkToggle(page);
+
+    // Bar element exists in DOM but should not be visible (x-show false)
+    const bar = page.locator('.fixed.bottom-0 select[x-model="status"]');
+    await expect(bar).not.toBeVisible();
+  });
+
+  test('bottom bar appears once a task is selected', async ({ page }) => {
+    const name = `BulkBarVisible-${Date.now()}`;
+    await quickAddTask(page, name);
+
+    await clickBulkToggle(page);
+    await taskGroupLocator(page, name).locator('button[title="Select task"]').click();
+
+    // Status dropdown inside the fixed bar should now be visible
+    await expect(page.locator('.fixed.bottom-0 select').first()).toBeVisible();
+  });
+
+  test('Apply button is disabled until a field is changed', async ({ page }) => {
+    const name = `BulkApply-${Date.now()}`;
+    await quickAddTask(page, name);
+
+    await clickBulkToggle(page);
+    await taskGroupLocator(page, name).locator('button[title="Select task"]').click();
+
+    // The Apply button should have cursor-not-allowed when no fields are set
+    const applyBtn = page.locator('.fixed.bottom-0 button:has-text("Apply")');
+    await expect(applyBtn).toHaveClass(/cursor-not-allowed/);
+    await expect(applyBtn).toBeDisabled();
+  });
+
+  test('Apply button becomes enabled after selecting a status', async ({ page }) => {
+    const name = `BulkApplyEnabled-${Date.now()}`;
+    await quickAddTask(page, name);
+
+    await clickBulkToggle(page);
+    await taskGroupLocator(page, name).locator('button[title="Select task"]').click();
+
+    // Change the status dropdown
+    await page.locator('.fixed.bottom-0 select[x-model="status"]').selectOption('archived');
+
+    const applyBtn = page.locator('.fixed.bottom-0 button:has-text("Apply")');
+    await expect(applyBtn).not.toBeDisabled();
+  });
+
+  // ── confirmation dialog ───────────────────────────────────────────────────
+
+  test('Apply opens a confirmation dialog describing the changes', async ({ page }) => {
+    const name = `BulkConfirm-${Date.now()}`;
+    await quickAddTask(page, name);
+
+    await clickBulkToggle(page);
+    await taskGroupLocator(page, name).locator('button[title="Select task"]').click();
+
+    await page.locator('.fixed.bottom-0 select[x-model="status"]').selectOption('done');
+    await page.locator('.fixed.bottom-0 button:has-text("Apply")').click();
+
+    // Dialog should mention "status" and "1 task"
+    const dialog = page.locator('.bg-gray-800.border.border-gray-700.rounded-lg');
+    await expect(dialog).toBeVisible();
+    await expect(dialog.locator('p')).toContainText('status');
+    await expect(dialog.locator('p')).toContainText('1 task');
+  });
+
+  test('confirmation dialog mentions all changed fields', async ({ page }) => {
+    const name = `BulkConfirmFields-${Date.now()}`;
+    await quickAddTask(page, name);
+
+    await clickBulkToggle(page);
+    await taskGroupLocator(page, name).locator('button[title="Select task"]').click();
+
+    // Set both date and status
+    await page.locator('.fixed.bottom-0 input[type="date"]').fill('2026-09-01');
+    await page.locator('.fixed.bottom-0 select[x-model="status"]').selectOption('archived');
+    await page.locator('.fixed.bottom-0 button:has-text("Apply")').click();
+
+    const message = await page.locator('.bg-gray-800.border.border-gray-700.rounded-lg p').innerText();
+    expect(message).toContain('due date');
+    expect(message).toContain('status');
+  });
+
+  test('Cancel closes the confirmation dialog without making changes', async ({ page }) => {
+    const name = `BulkCancel-${Date.now()}`;
+    await quickAddTask(page, name);
+
+    await clickBulkToggle(page);
+    await taskGroupLocator(page, name).locator('button[title="Select task"]').click();
+
+    await page.locator('.fixed.bottom-0 select[x-model="status"]').selectOption('done');
+    await page.locator('.fixed.bottom-0 button:has-text("Apply")').click();
+
+    // Dialog visible
+    const dialog = page.locator('.bg-gray-800.border.border-gray-700.rounded-lg');
+    await expect(dialog).toBeVisible();
+
+    await dialog.locator('button:has-text("Cancel")').click();
+
+    // Dialog gone; task row still visible (not marked done)
+    await expect(dialog).not.toBeVisible();
+    await expect(taskGroupLocator(page, name)).toBeVisible();
+  });
+
+  // ── end-to-end apply ──────────────────────────────────────────────────────
+
+  test('confirming Apply archives the selected task and reloads the page', async ({ page }) => {
+    const name = `BulkApplyE2E-${Date.now()}`;
+    await quickAddTask(page, name);
+
+    await clickBulkToggle(page);
+    await taskGroupLocator(page, name).locator('button[title="Select task"]').click();
+
+    await page.locator('.fixed.bottom-0 select[x-model="status"]').selectOption('archived');
+    await page.locator('.fixed.bottom-0 button:has-text("Apply")').click();
+
+    const dialog = page.locator('.bg-gray-800.border.border-gray-700.rounded-lg');
+    await dialog.locator('button:has-text("Yes, apply changes")').click();
+
+    // Page reloads; archived tasks are filtered from Inbox view by default
+    await page.waitForLoadState('networkidle');
+    await expect(taskGroupLocator(page, name)).not.toBeVisible();
+  });
+
+  test('after a successful apply, bulk mode is exited', async ({ page }) => {
+    const name = `BulkExitAfterApply-${Date.now()}`;
+    await quickAddTask(page, name);
+
+    await clickBulkToggle(page);
+    await taskGroupLocator(page, name).locator('button[title="Select task"]').click();
+
+    await page.locator('.fixed.bottom-0 select[x-model="status"]').selectOption('archived');
+    await page.locator('.fixed.bottom-0 button:has-text("Apply")').click();
+
+    const dialog = page.locator('.bg-gray-800.border.border-gray-700.rounded-lg');
+    await dialog.locator('button:has-text("Yes, apply changes")').click();
+
+    await page.waitForLoadState('networkidle');
+
+    // Create-task input should be visible again (bulk mode off)
+    await expect(page.locator('input[placeholder="Add a task..."]')).toBeVisible();
+  });
+});
