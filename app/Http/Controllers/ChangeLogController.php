@@ -120,7 +120,7 @@ class ChangeLogController extends Controller
 
         // Tag filter: include tag-level and task-level changes for tasks with those tags
         if ($tagIds = array_filter((array) $request->get('tags', []))) {
-            $taskIds = \DB::table('task_tag')->whereIn('tag_id', $tagIds)->pluck('task_id')->unique();
+            $taskIds = \DB::table('tag_task')->whereIn('tag_id', $tagIds)->pluck('task_id')->unique();
             $query->where(function ($q) use ($tagIds, $taskIds) {
                 $q->where(function ($sq) use ($tagIds) {
                     $sq->where('entity_type', 'tags')
