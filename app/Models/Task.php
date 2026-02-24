@@ -14,6 +14,7 @@ class Task extends Model
         'name',
         'description',
         'status',
+        'completed_at',
         'creator_id',
         'date',
         'time',
@@ -28,6 +29,7 @@ class Task extends Model
     {
         return [
             'recurrence_floating' => 'boolean',
+            'completed_at'        => 'datetime',
         ];
     }
 

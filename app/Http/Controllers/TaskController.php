@@ -489,6 +489,10 @@ class TaskController extends Controller
             && $validated['status'] === 'done'
             && $task->status !== 'done';
 
+        $statusChangedToIncomplete = isset($validated['status'])
+            && $validated['status'] === 'incomplete'
+            && $task->status !== 'incomplete';
+
         if ($statusChangedToDone && $task->hasIncompleteDescendants()) {
             // Auto-complete all descendants
             $this->completeTaskAndDescendants($task);
@@ -531,6 +535,12 @@ class TaskController extends Controller
                 $changes[$field] = ['old' => $task->$field, 'new' => $validated[$field]];
                 $task->$field = $validated[$field];
             }
+        }
+
+        if ($statusChangedToDone) {
+            $task->completed_at = now();
+        } elseif ($statusChangedToIncomplete) {
+            $task->completed_at = null;
         }
 
         $task->save();
@@ -694,7 +704,17 @@ class TaskController extends Controller
                     }
                 }
 
+                $previousStatus = $task->status;
                 $task->$field = $value;
+
+                if ($field === 'status') {
+                    if ($value === 'done' && $previousStatus !== 'done') {
+                        $task->completed_at = now();
+                    } elseif ($value === 'incomplete') {
+                        $task->completed_at = null;
+                    }
+                }
+
                 $task->save();
 
                 $this->logChange($task, "updated {$field}");
@@ -906,6 +926,7 @@ class TaskController extends Controller
         foreach ($descendants as $descendant) {
             if ($descendant->status !== 'done') {
                 $descendant->status = 'done';
+                $descendant->completed_at = now();
                 $descendant->save();
                 $this->logChange($descendant, 'auto-completed (parent marked done)');
             }
@@ -914,6 +935,7 @@ class TaskController extends Controller
         // Mark parent as done
         if ($task->status !== 'done') {
             $task->status = 'done';
+            $task->completed_at = now();
             $task->save();
         }
     }

@@ -215,7 +215,7 @@ class DashboardController extends Controller
                   });
             })
             ->where('status', 'done')
-            ->where('date', $carbonDate->format('Y-m-d'))
+            ->whereDate('completed_at', $carbonDate->format('Y-m-d'))
             ->with(['creator', 'project', 'tags', 'assignees', 'attachments', 'comments'])
             ->orderByRaw('time IS NULL, time ASC')
             ->get();
