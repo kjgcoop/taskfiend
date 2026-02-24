@@ -25,8 +25,19 @@ DB_DATABASE=:memory:
 
 ### 3. Run Tests
 
+To run all the tests:
+```bash
+npm test 
+```
+
+To run the Playwright/frontend tests:
 ```bash
 npm run test:e2e
+```
+
+To run the unit tests:
+```bash
+php artisan test 
 ```
 
 ## Test Suites
