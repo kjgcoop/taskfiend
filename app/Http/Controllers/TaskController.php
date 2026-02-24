@@ -873,6 +873,65 @@ class TaskController extends Controller
         abort(403, 'Tasks cannot be deleted. Please archive instead.');
     }
 
+    public function bulkUpdate(Request $request)
+    {
+        $request->validate([
+            'task_ids'   => 'required|array|min:1',
+            'task_ids.*' => 'integer',
+            'date'       => 'nullable|date_format:Y-m-d',
+            'project_id' => 'nullable|integer|exists:projects,id',
+            'status'     => 'nullable|in:incomplete,done,archived',
+        ]);
+
+        $date      = $request->input('date');
+        $projectId = $request->input('project_id');
+        $status    = $request->input('status');
+
+        if ($date === null && $projectId === null && $status === null) {
+            return response()->json(['success' => false, 'message' => 'No changes specified.'], 422);
+        }
+
+        // Validate project access
+        if ($projectId) {
+            $project = Project::where('id', $projectId)
+                ->where(function ($q) {
+                    $q->where('user_id', Auth::id())
+                      ->orWhereHas('assignees', fn($q2) => $q2->where('users.id', Auth::id()));
+                })
+                ->first();
+
+            if (!$project) {
+                return response()->json(['success' => false, 'message' => 'Invalid project.'], 403);
+            }
+        }
+
+        // Only update tasks the current user can access
+        $tasks = Task::where(function ($q) {
+                $q->where('creator_id', Auth::id())
+                  ->orWhereHas('assignees', fn($q2) => $q2->where('users.id', Auth::id()));
+            })
+            ->whereIn('id', $request->input('task_ids'))
+            ->get();
+
+        $changes = [];
+        if ($date !== null)      $changes['date']       = $date;
+        if ($projectId !== null) $changes['project_id'] = $projectId;
+        if ($status !== null)    $changes['status']     = $status;
+
+        $updatedCount = 0;
+        foreach ($tasks as $task) {
+            $task->update($changes);
+            $this->logChange($task, 'bulk updated: ' . implode(', ', array_keys($changes)));
+            $updatedCount++;
+        }
+
+        return response()->json([
+            'success' => true,
+            'updated' => $updatedCount,
+            'message' => "Updated {$updatedCount} task(s).",
+        ]);
+    }
+
     protected function assertProjectActive(Task $task, bool $asJson = false)
     {
         $task->loadMissing('project');

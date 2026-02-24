@@ -1,8 +1,8 @@
 @props(['date' => null, 'projectId' => null, 'tagId' => null, 'filterPlaceholder' => 'Filter tasks... (# project, @ tag)'])
 
 <div class="mb-4">
-    {{-- Create mode (default) --}}
-    <div x-show="mode === 'create'" class="flex gap-2 items-center">
+    {{-- Create mode (default, hidden in bulk mode) --}}
+    <div x-show="mode === 'create' && !$store.bulkEdit.active" class="flex gap-2 items-center">
         <form action="{{ route('tasks.store') }}" method="POST" class="flex-1 flex gap-2">
             @csrf
             <input type="hidden" name="quick_add" value="1">
@@ -85,10 +85,18 @@
                 <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z" />
             </svg>
         </button>
+        <button @click="$store.bulkEdit.toggle()"
+                title="Bulk edit mode"
+                :class="$store.bulkEdit.active ? 'text-blue-400 bg-gray-700' : 'text-gray-500 hover:text-gray-300'"
+                class="flex-shrink-0 p-2 rounded-md hover:bg-gray-700 transition">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+            </svg>
+        </button>
     </div>
 
-    {{-- Filter mode --}}
-    <div x-show="mode === 'filter'" x-cloak class="flex gap-2 items-center">
+    {{-- Filter mode (hidden in bulk mode) --}}
+    <div x-show="mode === 'filter' && !$store.bulkEdit.active" x-cloak class="flex gap-2 items-center">
         <button @click="switchToCreate()"
                 title="Back to add task"
                 class="flex-shrink-0 p-2 text-gray-500 hover:text-gray-300 rounded-md hover:bg-gray-700 transition">
@@ -103,5 +111,39 @@
                x-on:keydown.escape="switchToCreate()"
                placeholder="{{ $filterPlaceholder }}"
                class="flex-1 px-4 py-2 bg-gray-700 border border-gray-600 rounded-md text-gray-100 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+        <button @click="$store.bulkEdit.toggle()"
+                title="Bulk edit mode"
+                :class="$store.bulkEdit.active ? 'text-blue-400 bg-gray-700' : 'text-gray-500 hover:text-gray-300'"
+                class="flex-shrink-0 p-2 rounded-md hover:bg-gray-700 transition">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+            </svg>
+        </button>
+    </div>
+
+    {{-- Bulk edit mode header --}}
+    <div x-show="$store.bulkEdit.active" x-cloak class="flex gap-3 items-center">
+        <button @click="$store.bulkEdit.toggle()"
+                title="Exit bulk edit"
+                class="flex-shrink-0 p-2 text-blue-400 bg-gray-700 rounded-md hover:bg-gray-600 transition">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+            </svg>
+        </button>
+        <span class="text-sm font-medium text-blue-400">Bulk edit</span>
+        <span class="text-sm text-gray-400">
+            <span x-text="$store.bulkEdit.count"></span>
+            <span x-text="$store.bulkEdit.count === 1 ? 'task' : 'tasks'"></span>
+            selected
+        </span>
+        <button @click="$store.bulkEdit.selectAllVisible()"
+                class="text-xs text-blue-400 hover:text-blue-300 underline">
+            Select all visible
+        </button>
+        <button @click="$store.bulkEdit.deselectAll()"
+                x-show="$store.bulkEdit.count > 0"
+                class="text-xs text-gray-500 hover:text-gray-300 underline">
+            Deselect all
+        </button>
     </div>
 </div>

@@ -85,6 +85,186 @@
 
         @stack('scripts')
 
+        <!-- Bulk Edit Bottom Bar -->
+        <div x-data="bulkEditBar()"
+             x-cloak
+             x-show="$store.bulkEdit.active && $store.bulkEdit.selected.length > 0"
+             x-transition:enter="transition ease-out duration-200 transform"
+             x-transition:enter-start="translate-y-full opacity-0"
+             x-transition:enter-end="translate-y-0 opacity-100"
+             x-transition:leave="transition ease-in duration-150 transform"
+             x-transition:leave-start="translate-y-0 opacity-100"
+             x-transition:leave-end="translate-y-full opacity-0"
+             style="display:none"
+             class="fixed bottom-0 left-0 right-0 z-40 bg-gray-900 border-t border-gray-600 shadow-2xl">
+
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex items-center gap-4 flex-wrap">
+
+                <!-- Selection count + select-all controls -->
+                <div class="flex items-center gap-3 text-sm flex-shrink-0">
+                    <span class="font-medium text-gray-100">
+                        <span x-text="$store.bulkEdit.selected.length"></span>
+                        <span x-text="$store.bulkEdit.selected.length === 1 ? ' task selected' : ' tasks selected'"></span>
+                    </span>
+                    <button @click="$store.bulkEdit.selectAllVisible()"
+                            class="text-blue-400 hover:text-blue-300 underline text-xs">
+                        Select all visible
+                    </button>
+                    <button @click="$store.bulkEdit.deselectAll()"
+                            class="text-gray-500 hover:text-gray-300 underline text-xs">
+                        Deselect all
+                    </button>
+                </div>
+
+                <div class="flex-1 hidden sm:block"></div>
+
+                <!-- Date input -->
+                <div class="flex items-center gap-1.5">
+                    <label class="text-xs text-gray-400 whitespace-nowrap">Date</label>
+                    <input type="date" x-model="date"
+                           class="text-sm bg-gray-700 border border-gray-600 rounded px-2 py-1.5 text-gray-100 focus:outline-none focus:ring-1 focus:ring-blue-500">
+                    <button @click="date = ''" x-show="date" title="Clear date"
+                            class="text-gray-500 hover:text-gray-300 text-xs w-5 h-5 flex items-center justify-center" style="display:none">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+                        </svg>
+                    </button>
+                </div>
+
+                <!-- Project dropdown -->
+                <div class="flex items-center gap-1.5">
+                    <label class="text-xs text-gray-400 whitespace-nowrap">Project</label>
+                    <select x-model="projectId"
+                            class="text-sm bg-gray-700 border border-gray-600 rounded px-2 py-1.5 text-gray-100 focus:outline-none focus:ring-1 focus:ring-blue-500">
+                        <option value="">— no change —</option>
+                        <template x-for="project in $store.bulkEdit.projects" :key="project.id">
+                            <option :value="project.id" x-text="project.name"></option>
+                        </template>
+                    </select>
+                </div>
+
+                <!-- Status dropdown -->
+                <div class="flex items-center gap-1.5">
+                    <label class="text-xs text-gray-400 whitespace-nowrap">Status</label>
+                    <select x-model="status"
+                            class="text-sm bg-gray-700 border border-gray-600 rounded px-2 py-1.5 text-gray-100 focus:outline-none focus:ring-1 focus:ring-blue-500">
+                        <option value="">— no change —</option>
+                        <option value="incomplete">Incomplete</option>
+                        <option value="done">Done</option>
+                        <option value="archived">Archived</option>
+                    </select>
+                </div>
+
+                <!-- Apply button -->
+                <button @click="openConfirm()"
+                        :disabled="!hasChanges"
+                        :class="hasChanges
+                            ? 'bg-blue-600 hover:bg-blue-700 text-white cursor-pointer'
+                            : 'bg-gray-700 text-gray-500 cursor-not-allowed'"
+                        class="px-4 py-2 rounded text-sm font-medium transition flex-shrink-0">
+                    Apply
+                </button>
+            </div>
+
+            <!-- Confirmation dialog -->
+            <div x-show="confirming"
+                 x-cloak
+                 x-transition:enter="transition ease-out duration-150"
+                 x-transition:enter-start="opacity-0"
+                 x-transition:enter-end="opacity-100"
+                 class="fixed inset-0 z-50 flex items-center justify-center bg-black/60"
+                 style="display:none"
+                 @keydown.escape.window="confirming = false">
+                <div class="bg-gray-800 border border-gray-700 rounded-lg shadow-xl p-6 max-w-md w-full mx-4">
+                    <h3 class="text-lg font-semibold text-gray-100 mb-3">Confirm bulk edit</h3>
+                    <p class="text-gray-300 mb-6" x-text="confirmMessage"></p>
+                    <div class="flex gap-3 justify-end">
+                        <button @click="confirming = false"
+                                class="px-4 py-2 bg-gray-700 text-gray-300 rounded hover:bg-gray-600 text-sm transition">
+                            Cancel
+                        </button>
+                        <button @click="submit()"
+                                :disabled="submitting"
+                                :class="submitting ? 'opacity-60 cursor-wait' : 'hover:bg-blue-700'"
+                                class="px-4 py-2 bg-blue-600 text-white rounded text-sm font-medium transition">
+                            <span x-show="!submitting">Yes, apply changes</span>
+                            <span x-show="submitting" style="display:none">Applying…</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <script>
+            window.bulkEditBar = function () {
+                return {
+                    date: '',
+                    projectId: '',
+                    status: '',
+                    confirming: false,
+                    submitting: false,
+                    confirmMessage: '',
+
+                    get hasChanges() {
+                        return this.date !== '' || this.projectId !== '' || this.status !== '';
+                    },
+
+                    openConfirm() {
+                        if (!this.hasChanges) return;
+                        const count = this.$store.bulkEdit.selected.length;
+                        const fields = [];
+                        if (this.date)      fields.push('due date');
+                        if (this.projectId) fields.push('project');
+                        if (this.status)    fields.push('status');
+
+                        const fieldStr = fields.length === 1
+                            ? fields[0]
+                            : fields.slice(0, -1).join(', ') + ' and ' + fields[fields.length - 1];
+
+                        this.confirmMessage = `You're about to change the ${fieldStr} on ${count} ${count === 1 ? 'task' : 'tasks'}. Are you sure?`;
+                        this.confirming = true;
+                    },
+
+                    async submit() {
+                        this.submitting = true;
+                        try {
+                            const formData = new FormData();
+                            formData.append('_token', document.querySelector('meta[name="csrf-token"]').content);
+
+                            this.$store.bulkEdit.selected.forEach(id => {
+                                formData.append('task_ids[]', id);
+                            });
+
+                            if (this.date)      formData.append('date', this.date);
+                            if (this.projectId) formData.append('project_id', this.projectId);
+                            if (this.status)    formData.append('status', this.status);
+
+                            const response = await fetch('/tasks/bulk-update', {
+                                method: 'POST',
+                                body: formData,
+                            });
+
+                            const data = await response.json();
+
+                            if (data.success) {
+                                this.confirming = false;
+                                this.$store.bulkEdit.toggle(); // exit bulk mode & clear selection
+                                window.location.reload();
+                            } else {
+                                alert('Error: ' + (data.message || 'Failed to update tasks.'));
+                                this.confirming = false;
+                            }
+                        } catch (e) {
+                            alert('An error occurred. Please try again.');
+                            this.confirming = false;
+                        } finally {
+                            this.submitting = false;
+                        }
+                    },
+                };
+            };
+        </script>
+
         <!-- Task Side Panel Overlay -->
         <div id="task-panel-overlay"
              x-data="taskPanelOverlay()"
