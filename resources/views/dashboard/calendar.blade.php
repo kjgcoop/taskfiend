@@ -84,26 +84,84 @@
             const chip = document.querySelector(`[data-task-group-id="${d.id}"]`);
             if (!chip) return;
 
-            const cell = chip.closest('[data-cal-cell]');
-            const shouldFade = d.inactive || (cell && d.date !== cell.dataset.calCell);
+            const oldCell = chip.closest('[data-cal-cell]');
+            const dateChanged = oldCell && d.date !== oldCell.dataset.calCell;
+            const shouldRemove = d.inactive || dateChanged;
 
-            if (shouldFade) {
-                chip.style.transition = 'opacity 0.4s';
-                chip.style.opacity = '0';
-                setTimeout(() => {
-                    chip.remove();
-                    if (cell) {
-                        const countEl = cell.querySelector('[data-cal-count]');
-                        if (countEl) {
-                            const n = parseInt(countEl.textContent) - 1;
-                            n > 0 ? (countEl.textContent = n) : countEl.remove();
-                        }
-                    }
-                }, 400);
-            } else {
-                // Name updated — refresh the chip label
+            if (!shouldRemove) {
                 chip.textContent = d.name;
+                return;
             }
+
+            // Fade chip out of old cell
+            chip.style.transition = 'opacity 0.4s';
+            chip.style.opacity = '0';
+
+            setTimeout(() => {
+                chip.remove();
+
+                // Decrement old cell count
+                if (oldCell) {
+                    const countEl = oldCell.querySelector('[data-cal-count]');
+                    if (countEl) {
+                        const n = parseInt(countEl.textContent) - 1;
+                        n > 0 ? (countEl.textContent = n) : countEl.remove();
+                    }
+                }
+
+                // Add to new cell if it's visible on this calendar and task isn't inactive
+                if (!d.inactive && d.date) {
+                    const newCell = document.querySelector(`[data-cal-cell="${d.date}"]`);
+                    if (newCell) addChipToCell(newCell, d);
+                }
+            }, 400);
         });
+
+        function addChipToCell(cell, d) {
+            // Update or create the tiny task count in the cell header
+            let countEl = cell.querySelector('[data-cal-count]');
+            if (countEl) {
+                countEl.textContent = parseInt(countEl.textContent) + 1;
+            } else {
+                countEl = document.createElement('span');
+                countEl.className = 'font-thin text-[10px] text-gray-500';
+                countEl.setAttribute('data-cal-count', '');
+                countEl.textContent = '1';
+                cell.querySelector('.flex.items-center').appendChild(countEl);
+            }
+
+            const container = cell.querySelector('.space-y-1');
+            const visibleChips = container.querySelectorAll('[data-task-group-id]');
+            // The "+N more" link is the only <a> inside .space-y-1
+            const moreLink = container.querySelector('a');
+
+            if (visibleChips.length < 3) {
+                // Room for another chip — insert it before "+N more" (or append)
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.dataset.taskGroupId = d.id;
+                btn.setAttribute('onclick', `openTaskPanel(${d.id})`);
+                btn.className = 'block w-full text-left text-xs p-1 bg-blue-900 text-blue-200 rounded truncate hover:bg-blue-800';
+                btn.textContent = d.name;
+                btn.style.opacity = '0';
+                btn.style.transition = 'opacity 0.4s';
+                moreLink ? container.insertBefore(btn, moreLink) : container.appendChild(btn);
+                // Fade in on next frame
+                requestAnimationFrame(() => requestAnimationFrame(() => { btn.style.opacity = '1'; }));
+            } else {
+                // Already at 3 chips — bump (or create) "+N more"
+                if (moreLink) {
+                    const m = moreLink.textContent.match(/\+(\d+)/);
+                    if (m) moreLink.textContent = `+${parseInt(m[1]) + 1} more`;
+                } else {
+                    const dayLink = cell.querySelector('a'); // date-number link in header
+                    const a = document.createElement('a');
+                    a.href = dayLink ? dayLink.href : '#';
+                    a.className = 'block text-xs text-blue-400 hover:underline';
+                    a.textContent = '+1 more';
+                    container.appendChild(a);
+                }
+            }
+        }
     </script>
 </x-app-layout>
