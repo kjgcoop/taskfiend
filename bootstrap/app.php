@@ -17,5 +17,19 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
-        //
+        // When PHP drops the entire POST body because it exceeds post_max_size,
+        // the CSRF token is lost and Laravel throws a TokenMismatchException (419).
+        // Detect this case and redirect back with a friendly error instead.
+        $exceptions->render(function (
+            \Illuminate\Session\TokenMismatchException $e,
+            \Illuminate\Http\Request $request
+        ) {
+            $contentLength = (int) $request->server('CONTENT_LENGTH', 0);
+            $postMaxBytes = \App\Http\Middleware\HandleOversizedUpload::iniToBytes(ini_get('post_max_size'));
+
+            if ($contentLength > 0 && $postMaxBytes > 0 && $contentLength > $postMaxBytes) {
+                return redirect()->back()
+                    ->withErrors(['attachment' => 'The uploaded file is too large. The maximum total upload size is ' . ini_get('post_max_size') . '.']);
+            }
+        });
     })->create();

@@ -24,11 +24,20 @@ class TaskAttachmentController extends Controller
             abort(403, 'Tasks in inactive projects cannot be modified.');
         }
 
+        // PHP silently rejects files that exceed upload_max_filesize and sets an
+        // error code on the upload rather than passing the file to Laravel.
+        // Catch that here so the user gets a readable message instead of
+        // a confusing "field is required" validation error.
+        if (isset($_FILES['attachment']) && in_array($_FILES['attachment']['error'], [UPLOAD_ERR_INI_SIZE, UPLOAD_ERR_FORM_SIZE])) {
+            return redirect()->back()
+                ->withErrors(['attachment' => 'The uploaded file is too large. The maximum file size is ' . ini_get('upload_max_filesize') . '.']);
+        }
+
         $validated = $request->validate([
             'attachment' => [
                 'required',
                 'file',
-                'max:22528', // 22MB max (matches PHP upload_max_filesize)
+                'max:22528', // 22MB ceiling; effective limit is PHP's upload_max_filesize
                 'mimetypes:' .
                     // Images
                     'image/jpeg,image/png,image/webp,image/gif,image/heic,image/heif,' .
