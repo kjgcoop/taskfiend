@@ -65,7 +65,12 @@
                                 <p class="text-sm {{ $hasBg ? 'text-gray-200' : 'text-gray-400' }} mt-2">{{ Str::limit($project->description, 100) }}</p>
                             @endif
                             <div class="flex items-center justify-between mt-4">
-                                <span class="text-sm {{ $hasBg ? 'text-gray-300' : 'text-gray-500' }}">{{ $project->tasks_count }} tasks</span>
+                                <span class="text-sm {{ $hasBg ? 'text-gray-300' : 'text-gray-500' }}">
+                                    {{ $project->open_tasks_count }} open
+                                    @if($project->done_tasks_count > 0)
+                                        &middot; {{ $project->done_tasks_count }} completed
+                                    @endif
+                                </span>
                                 <span class="inline-block px-2 py-1 text-xs rounded
                                     @if($project->status === 'done') bg-green-100 text-green-800
                                     @else bg-blue-100 text-blue-800 @endif">
@@ -102,7 +107,12 @@
                                     <p class="text-sm text-gray-600 mt-2">{{ Str::limit($project->description, 100) }}</p>
                                 @endif
                                 <div class="mt-4">
-                                    <span class="text-sm text-gray-600">{{ $project->tasks_count }} tasks</span>
+                                    <span class="text-sm text-gray-600">
+                                        {{ $project->open_tasks_count }} open
+                                        @if($project->done_tasks_count > 0)
+                                            &middot; {{ $project->done_tasks_count }} completed
+                                        @endif
+                                    </span>
                                 </div>
                             </div>
                         @endforeach
