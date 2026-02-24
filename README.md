@@ -67,6 +67,16 @@ To add a new page:
 
 If you add documentation, please consider contributing it back to this project. If it's something you/your users need documented, there's probably somebody else out there who could also use it.
 
+### Frontend Assets
+
+The following third-party assets are vendored into this repository so the app works without external CDN requests at runtime.
+
+| Asset | Source | License |
+|-------|--------|---------|
+| **Figtree** font (woff2 + CSS) | [Fontsource](https://fontsource.org/fonts/figtree) — originally by Erik Kennedy | SIL OFL 1.1 (see `public/fonts/OFL.txt`) |
+| **Instrument Sans** font (woff2 + CSS) | [Fontsource](https://fontsource.org/fonts/instrument-sans) — originally by Rodrigo Fuenzalida / Instrument | SIL OFL 1.1 (see `public/fonts/OFL.txt`) |
+| **marked.js** v15.0.12 (`public/js/vendor/marked.min.js`) | [github.com/markedjs/marked](https://github.com/markedjs/marked) | MIT (copyright notice in file header) |
+
 ### Find Tasks without Tags
 I like most of my tasks to have tags. It seemed like overkill to program a solution for something I do so rarely. This query will get the required results. I'll forget it forever in approximately 17 seconds if I don't write it down:
 
