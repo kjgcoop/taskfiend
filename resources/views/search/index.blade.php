@@ -179,13 +179,23 @@
                         </label>
                     </div>
 
-                    <div class="flex items-center gap-4">
+                    <div class="flex items-center gap-4 flex-wrap">
                         <button type="submit" class="inline-flex items-center px-4 py-2 bg-blue-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-blue-700">
                             Search
                         </button>
                         <a href="{{ route('search') }}" class="text-sm text-gray-400 hover:text-gray-300">
                             Clear
                         </a>
+                        <div class="ml-auto flex items-center gap-2">
+                            <label for="sort" class="text-sm text-gray-400">Sort by</label>
+                            <select name="sort" id="sort" class="rounded-md bg-gray-700 border-gray-600 text-gray-100 text-sm shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                                <option value="date_asc" {{ request('sort', 'date_asc') === 'date_asc' ? 'selected' : '' }}>Date (oldest first)</option>
+                                <option value="date_desc" {{ request('sort') === 'date_desc' ? 'selected' : '' }}>Date (newest first)</option>
+                                <option value="name_asc" {{ request('sort') === 'name_asc' ? 'selected' : '' }}>Name (A–Z)</option>
+                                <option value="name_desc" {{ request('sort') === 'name_desc' ? 'selected' : '' }}>Name (Z–A)</option>
+                                <option value="created_desc" {{ request('sort') === 'created_desc' ? 'selected' : '' }}>Recently created</option>
+                            </select>
+                        </div>
                     </div>
                 </form>
             </div>

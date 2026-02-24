@@ -20,6 +20,14 @@
                 </a>
             </div>
             <div class="flex items-center gap-2">
+                @if($carbonDate->isToday() && $overdueCount > 0)
+                    <a href="{{ route('overdue') }}" class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-red-900/40 border border-red-700/50 rounded-md text-sm text-red-400 hover:text-red-300 hover:bg-red-900/60 transition-colors">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        {{ $overdueCount }} overdue
+                    </a>
+                @endif
                 {{-- View toggle (client-side via Alpine store) --}}
                 <div class="flex rounded-md border border-gray-600 overflow-hidden" x-data>
                     <button @click="$store.dayView.set('list')"

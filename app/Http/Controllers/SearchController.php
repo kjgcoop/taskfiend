@@ -25,6 +25,7 @@ class SearchController extends Controller
             'include_archived' => 'nullable|boolean',
             'assignee_id'      => 'nullable|integer|exists:users,id',
             'creator_id'       => 'nullable|integer|exists:users,id',
+            'sort'             => 'nullable|in:date_asc,date_desc,name_asc,name_desc,created_desc',
         ]);
 
         // Get all projects and tags for the UI (exclude Inbox projects - they're handled separately)
@@ -116,20 +117,25 @@ class SearchController extends Controller
 
         $with = ['creator', 'project', 'tags', 'assignees', 'attachments', 'comments'];
 
-        $tasks = (clone $baseQuery)
-            ->where('status', '!=', 'done')
+        $sort = $request->input('sort', 'date_asc');
+        $applySort = function ($query) use ($sort) {
+            return match ($sort) {
+                'date_desc'    => $query->orderByRaw('(date IS NULL) ASC, date DESC')->orderBy('time'),
+                'name_asc'     => $query->orderByRaw('LOWER(name) ASC'),
+                'name_desc'    => $query->orderByRaw('LOWER(name) DESC'),
+                'created_desc' => $query->orderBy('created_at', 'desc'),
+                default        => $query->orderBy('date')->orderBy('time'),
+            };
+        };
+
+        $tasks = $applySort((clone $baseQuery)->where('status', '!=', 'done'))
             ->with($with)
-            ->orderBy('date')
-            ->orderBy('time')
             ->get();
 
         $completedTasks = collect();
         if ($request->boolean('show_completed')) {
-            $completedTasks = (clone $baseQuery)
-                ->where('status', 'done')
+            $completedTasks = $applySort((clone $baseQuery)->where('status', 'done'))
                 ->with($with)
-                ->orderBy('date')
-                ->orderBy('time')
                 ->get();
         }
 

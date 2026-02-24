@@ -220,6 +220,23 @@ class DashboardController extends Controller
             ->orderByRaw('time IS NULL, time ASC')
             ->get();
 
-        return view('dashboard.day', array_merge(compact('tasks', 'completedTasks', 'date', 'carbonDate'), $this->quickAddData()));
+        $overdueCount = 0;
+        if ($carbonDate->isToday()) {
+            $overdueCount = Task::query()
+                ->where(function ($q) {
+                    $q->where('creator_id', Auth::id())
+                      ->orWhereHas('assignees', function ($query) {
+                          $query->where('users.id', Auth::id());
+                      });
+                })
+                ->where('status', '!=', 'archived')
+                ->where('status', '!=', 'done')
+                ->whereNotNull('date')
+                ->where('date', '<', today()->format('Y-m-d'))
+                ->whereHas('project', fn($pq) => $pq->whereNotIn('status', ['archived', 'done']))
+                ->count();
+        }
+
+        return view('dashboard.day', array_merge(compact('tasks', 'completedTasks', 'date', 'carbonDate', 'overdueCount'), $this->quickAddData()));
     }
 }

@@ -21,9 +21,32 @@
                     <x-nav-link :href="route('all-tasks')" :active="request()->routeIs('all-tasks')">
                         {{ __('All Tasks') }}
                     </x-nav-link>
-                    <x-nav-link :href="route('calendar')" :active="request()->routeIs('calendar') || request()->routeIs('overdue') || request()->routeIs('undated')">
-                        {{ __('By Date') }}
-                    </x-nav-link>
+                    <div class="flex items-center">
+                        <x-dropdown align="left" width="48">
+                            <x-slot name="trigger">
+                                @php
+                                    $byDateActive = request()->routeIs('calendar') || request()->routeIs('overdue') || request()->routeIs('undated');
+                                @endphp
+                                <button class="inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium leading-5 focus:outline-none transition duration-150 ease-in-out {{ $byDateActive ? 'border-indigo-400 text-gray-100' : 'border-transparent text-gray-400 hover:text-gray-100 hover:border-gray-500' }}">
+                                    By Date
+                                    <svg class="ms-1 fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
+                                    </svg>
+                                </button>
+                            </x-slot>
+                            <x-slot name="content">
+                                <x-dropdown-link :href="route('calendar')" :active="request()->routeIs('calendar')">
+                                    {{ __('Calendar') }}
+                                </x-dropdown-link>
+                                <x-dropdown-link :href="route('overdue')" :active="request()->routeIs('overdue')">
+                                    {{ __('Overdue') }}
+                                </x-dropdown-link>
+                                <x-dropdown-link :href="route('undated')" :active="request()->routeIs('undated')">
+                                    {{ __('Undated') }}
+                                </x-dropdown-link>
+                            </x-slot>
+                        </x-dropdown>
+                    </div>
                     <x-nav-link :href="route('search')" :active="request()->routeIs('search')">
                         {{ __('Search') }}
                     </x-nav-link>
@@ -133,8 +156,14 @@
             <x-responsive-nav-link :href="route('all-tasks')" :active="request()->routeIs('all-tasks')">
                 {{ __('All Tasks') }}
             </x-responsive-nav-link>
-            <x-responsive-nav-link :href="route('calendar')" :active="request()->routeIs('calendar') || request()->routeIs('overdue') || request()->routeIs('undated')">
-                {{ __('By Date') }}
+            <x-responsive-nav-link :href="route('calendar')" :active="request()->routeIs('calendar')">
+                {{ __('Calendar') }}
+            </x-responsive-nav-link>
+            <x-responsive-nav-link :href="route('overdue')" :active="request()->routeIs('overdue')">
+                {{ __('Overdue') }}
+            </x-responsive-nav-link>
+            <x-responsive-nav-link :href="route('undated')" :active="request()->routeIs('undated')">
+                {{ __('Undated') }}
             </x-responsive-nav-link>
             <x-responsive-nav-link :href="route('search')" :active="request()->routeIs('search')">
                 {{ __('Search') }}
