@@ -283,6 +283,10 @@ test.describe('Bulk Editing', () => {
     await expect(dialog).toBeVisible();
     await expect(dialog.locator('p')).toContainText('status');
     await expect(dialog.locator('p')).toContainText('1 task');
+
+    // Dismiss dialog so the afterEach logout isn't blocked by the backdrop.
+    await page.keyboard.press('Escape');
+    await expect(dialog).not.toBeVisible();
   });
 
   test('confirmation dialog mentions all changed fields', async ({ page }) => {
@@ -299,6 +303,10 @@ test.describe('Bulk Editing', () => {
     const message = await confirmDialog(page).locator('p').innerText();
     expect(message).toContain('due date');
     expect(message).toContain('status');
+
+    // Dismiss dialog so the afterEach logout isn't blocked by the backdrop.
+    await page.keyboard.press('Escape');
+    await expect(confirmDialog(page)).not.toBeVisible();
   });
 
   test('Cancel closes the confirmation dialog without making changes', async ({ page }) => {
