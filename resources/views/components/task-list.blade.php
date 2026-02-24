@@ -9,6 +9,35 @@
             filtered: false,
             ready: false
         });
+
+        Alpine.store('bulkEdit', {
+            active: false,
+            selected: [],
+            projects: [],
+            toggle() {
+                this.active = !this.active;
+                if (!this.active) this.selected = [];
+            },
+            toggleTask(id) {
+                const idx = this.selected.indexOf(id);
+                if (idx >= 0) this.selected.splice(idx, 1);
+                else this.selected.push(id);
+            },
+            isSelected(id) { return this.selected.includes(id); },
+            selectAllVisible() {
+                const groups = document.querySelectorAll('[data-task-group-id]');
+                const ids = [];
+                groups.forEach(group => {
+                    const filterable = group.querySelector('[data-filterable]');
+                    if (filterable && filterable.style.display !== 'none' && group.offsetParent !== null) {
+                        ids.push(parseInt(group.dataset.taskGroupId));
+                    }
+                });
+                this.selected = ids;
+            },
+            deselectAll() { this.selected = []; },
+            get count() { return this.selected.length; }
+        });
     });
 
     window.listQuickComplete = function () {
@@ -141,6 +170,10 @@
                         Alpine.store('taskCount').visible = total;
                         Alpine.store('taskCount').filtered = false;
                         Alpine.store('taskCount').ready = true;
+                    }
+                    // Make projects available to the bulk edit bar
+                    if (this.projects && this.projects.length > 0) {
+                        Alpine.store('bulkEdit').projects = this.projects;
                     }
                 });
             },
@@ -382,15 +415,34 @@
              data-task-name="{{ strtolower($task->name) }}"
              data-project="{{ strtolower($task->project?->name ?? '') }}"
              data-tags="{{ strtolower($task->tags->pluck('tag_name')->join('|')) }}"
-             style="margin-left: {{ $marginLeft }}px;">
+             style="margin-left: {{ $marginLeft }}px;"
+             :class="$store.bulkEdit.active && $store.bulkEdit.isSelected({{ $task->id }}) ? 'ring-2 ring-blue-500 ring-inset' : ''">
             <div class="flex items-start gap-4">
-                <!-- Complete Circle -->
+                <!-- Bulk edit: square selector (shown in bulk mode for all tasks) -->
+                @if(!$readOnly)
+                <button x-show="$store.bulkEdit.active"
+                        @click.stop="$store.bulkEdit.toggleTask({{ $task->id }})"
+                        title="Select task"
+                        class="mt-1 w-6 h-6 flex-shrink-0 rounded border-2 flex items-center justify-center transition"
+                        :class="$store.bulkEdit.isSelected({{ $task->id }})
+                            ? 'border-blue-500 bg-blue-500'
+                            : 'border-gray-500 hover:border-blue-400'">
+                    <svg x-show="$store.bulkEdit.isSelected({{ $task->id }})"
+                         class="w-3.5 h-3.5 text-white" fill="currentColor" viewBox="0 0 20 20" style="display:none">
+                        <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+                    </svg>
+                </button>
+                @endif
+
+                <!-- Complete circle / quick-complete form (hidden in bulk mode) -->
                 @if($task->status === 'done')
-                    <div class="mt-1 w-6 h-6 rounded-full bg-green-600 flex-shrink-0" title="Completed"></div>
+                    <div x-show="!$store.bulkEdit.active"
+                         class="mt-1 w-6 h-6 rounded-full bg-green-600 flex-shrink-0" title="Completed"></div>
                 @elseif($readOnly)
                     <div class="mt-1 w-6 h-6 rounded-full border-2 border-gray-700 flex-shrink-0" title="Project is inactive"></div>
                 @else
-                <form x-data="listQuickComplete()" @submit.prevent="submit()"
+                <form x-show="!$store.bulkEdit.active"
+                      x-data="listQuickComplete()" @submit.prevent="submit()"
                       method="POST" action="{{ route('tasks.update', $task) }}" onclick="event.stopPropagation()">
                     @csrf
                     @method('PUT')
@@ -438,8 +490,11 @@
                 @endif
 
                 <!-- Task Content -->
-                <div class="flex-1 cursor-pointer"
-                     onclick="(event.ctrlKey || event.metaKey) ? window.open('{{ route('tasks.show', $task) }}', '_blank') : openTaskPanel({{ $task->id }})"
+                <div class="flex-1"
+                     :class="$store.bulkEdit.active ? 'cursor-pointer' : 'cursor-pointer'"
+                     @click="$store.bulkEdit.active
+                         ? $store.bulkEdit.toggleTask({{ $task->id }})
+                         : ((event.ctrlKey || event.metaKey) ? window.open('{{ route('tasks.show', $task) }}', '_blank') : openTaskPanel({{ $task->id }}))"
                      title="Click to peek · Ctrl+click or middle-click to open full page">
                     <!-- Show parent context if exists -->
                     @if($task->parent)
