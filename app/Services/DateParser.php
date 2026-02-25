@@ -39,6 +39,7 @@ class DateParser
             'today' => '/\btoday\b/i',
             'next_day_of_week' => '/\bnext\s+(monday|tuesday|wednesday|thursday|friday|saturday|sunday)\b/i',
             'day_of_week' => '/\b(monday|tuesday|wednesday|thursday|friday|saturday|sunday)s?\b/i',
+            'multi_days_full' => '/\b(monday|tuesday|wednesday|thursday|friday|saturday|sunday)(\s*,\s*(monday|tuesday|wednesday|thursday|friday|saturday|sunday))+\b/i',
             'multi_days' => '/\b(mon|tue|wed|thu|fri|sat|sun)(,(mon|tue|wed|thu|fri|sat|sun))+\b/i',
             'monthly_ordinal' => '/\bevery (first|second|third|fourth|last) (monday|tuesday|wednesday|thursday|friday|saturday|sunday)\b/i',
             'monthly_day' => '/\bevery (\d{1,2})(st|nd|rd|th)?(?!\s+(days?|weeks?|months?|years?))\b/i',
@@ -101,6 +102,11 @@ class DateParser
             $dayName = ucfirst(strtolower($matches[1]));
             $result['date'] = $this->getNextDayOfWeek($dayName)->format('Y-m-d');
             $result['name'] = trim(preg_replace($patterns['next_day_of_week'], '', $input));
+        } elseif (preg_match($patterns['multi_days_full'], $input, $matches)) {
+            $abbr = $this->normalizeMultiDayToAbbr($matches[0]);
+            $result['recurrence_pattern'] = $abbr;
+            $result['date'] = $this->getNextMultiDay($abbr)->format('Y-m-d');
+            $result['name'] = trim(preg_replace($patterns['multi_days_full'], '', $input));
         } elseif (preg_match($patterns['day_of_week'], $input, $matches)) {
             $dayName = ucfirst(strtolower($matches[1]));
             $result['recurrence_pattern'] = $dayName;
@@ -185,6 +191,17 @@ class DateParser
         }
 
         return $date->next($targetDay);
+    }
+
+    protected function normalizeMultiDayToAbbr(string $days): string
+    {
+        $fullToAbbr = [
+            'monday' => 'mon', 'tuesday' => 'tue', 'wednesday' => 'wed',
+            'thursday' => 'thu', 'friday' => 'fri', 'saturday' => 'sat', 'sunday' => 'sun',
+        ];
+        $parts = preg_split('/\s*,\s*/', strtolower(trim($days)));
+        $abbrs = array_map(fn($d) => $fullToAbbr[trim($d)] ?? trim($d), $parts);
+        return implode(',', $abbrs);
     }
 
     protected function getNextMultiDay(string $days, Carbon $currentDate = null): Carbon
@@ -354,6 +371,11 @@ class DateParser
 
         if (preg_match('/^(monday|tuesday|wednesday|thursday|friday|saturday|sunday)s$/i', $normalizedPattern, $matches)) {
             return $this->getNextDayOfWeek($matches[1], $currentDate);
+        }
+
+        // Normalize full day names ("Monday,Wednesday") to abbreviations before multi-day check
+        if (preg_match('/^(monday|tuesday|wednesday|thursday|friday|saturday|sunday)(\s*,\s*(monday|tuesday|wednesday|thursday|friday|saturday|sunday))+$/i', $normalizedPattern)) {
+            $normalizedPattern = $this->normalizeMultiDayToAbbr($normalizedPattern);
         }
 
         if (preg_match('/^(mon|tue|wed|thu|fri|sat|sun)(,(mon|tue|wed|thu|fri|sat|sun))+$/i', $normalizedPattern)) {
