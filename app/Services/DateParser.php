@@ -347,6 +347,15 @@ class DateParser
             return $this->getNextDayOfWeek($normalizedPattern, $currentDate);
         }
 
+        // Handle "every Wednesday" and plural "Wednesdays" entered directly in the field
+        if (preg_match('/^every (monday|tuesday|wednesday|thursday|friday|saturday|sunday)$/i', $normalizedPattern, $matches)) {
+            return $this->getNextDayOfWeek($matches[1], $currentDate);
+        }
+
+        if (preg_match('/^(monday|tuesday|wednesday|thursday|friday|saturday|sunday)s$/i', $normalizedPattern, $matches)) {
+            return $this->getNextDayOfWeek($matches[1], $currentDate);
+        }
+
         if (preg_match('/^(mon|tue|wed|thu|fri|sat|sun)(,(mon|tue|wed|thu|fri|sat|sun))+$/i', $normalizedPattern)) {
             return $this->getNextMultiDay($normalizedPattern, $currentDate);
         }
