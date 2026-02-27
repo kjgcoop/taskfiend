@@ -13,6 +13,7 @@ class ChangeLog extends Model
         'entity_type',
         'entity_id',
         'description',
+        'verb',
     ];
 
     protected $casts = [

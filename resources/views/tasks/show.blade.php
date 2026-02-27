@@ -64,6 +64,16 @@
                     @endif
                 </div>
 
+                @php $rescheduleCount = $task->rescheduleCount(); @endphp
+                @if($rescheduleCount > 0)
+                <div class="mb-4 flex items-center gap-2">
+                    <span class="inline-flex items-center px-2 py-1 rounded text-sm font-medium bg-amber-900 bg-opacity-40 text-amber-400 border border-amber-700"
+                          title="This task has been rescheduled {{ $rescheduleCount }} time{{ $rescheduleCount === 1 ? '' : 's' }}">
+                        ↻ Rescheduled {{ $rescheduleCount }} {{ $rescheduleCount === 1 ? 'time' : 'times' }}
+                    </span>
+                </div>
+                @endif
+
                 @if($isInactive)
                 <div class="mb-4 p-3 bg-yellow-900 bg-opacity-20 border border-yellow-600 rounded-lg">
                     <p class="text-sm text-yellow-300">

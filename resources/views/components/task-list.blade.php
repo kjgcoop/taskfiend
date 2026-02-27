@@ -515,6 +515,13 @@
                                 ({{ $task->incompleteChildren()->count() }}/{{ $task->children->count() }} subtasks)
                             </span>
                         @endif
+                        @php $rescheduleCount = $task->rescheduleCount(); @endphp
+                        @if($rescheduleCount >= config('app.reschedule_badge_threshold'))
+                            <span class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-amber-900 bg-opacity-40 text-amber-400 border border-amber-700"
+                                  title="Rescheduled {{ $rescheduleCount }} time{{ $rescheduleCount === 1 ? '' : 's' }}">
+                                ↻ {{ $rescheduleCount }}
+                            </span>
+                        @endif
                     </h3>
                     <p class="text-sm text-gray-400 mt-1" data-task-desc-display
                        @unless($task->description) style="display:none" @endunless>{{ Str::limit($task->description ?? '', 100) }}</p>

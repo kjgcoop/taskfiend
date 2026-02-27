@@ -123,4 +123,6 @@ return [
         'store' => env('APP_MAINTENANCE_STORE', 'database'),
     ],
 
+    'reschedule_badge_threshold' => env('RESCHEDULE_BADGE_THRESHOLD', 5),
+
 ];
