@@ -282,7 +282,7 @@ class TaskController extends Controller
             ]);
         }
 
-        $this->logChange($task, 'created task');
+        $this->logChange($task, 'created task', 'created');
 
         if ($request->boolean('quick_add')) {
             return redirect()->back()->with('success', 'Task created.');
@@ -496,7 +496,7 @@ class TaskController extends Controller
         if ($statusChangedToDone && $task->hasIncompleteDescendants()) {
             // Auto-complete all descendants
             $this->completeTaskAndDescendants($task);
-            $this->logChange($task, 'marked done with all subtasks');
+            $this->logChange($task, 'marked done with all subtasks', 'completed');
 
             // Handle recurring task AFTER completion
             if ($task->recurrence_pattern) {
@@ -520,7 +520,7 @@ class TaskController extends Controller
                 if ($descendant->status !== 'archived') {
                     $descendant->status = 'archived';
                     $descendant->save();
-                    $this->logChange($descendant, 'auto-archived (parent archived)');
+                    $this->logChange($descendant, 'auto-archived (parent archived)', 'archived');
                 }
             }
         }
@@ -568,7 +568,16 @@ class TaskController extends Controller
         }
 
         foreach ($changes as $field => $change) {
-            $this->logChange($task, "changed {$field} from {$change['old']} to {$change['new']}");
+            $verb = match($field) {
+                'date' => ($change['old'] && $change['new']) ? 'rescheduled' : ($change['new'] ? 'scheduled' : 'edited'),
+                'status' => match($change['new']) {
+                    'done'     => 'completed',
+                    'archived' => 'archived',
+                    default    => 'edited',
+                },
+                default => 'edited',
+            };
+            $this->logChange($task, "changed {$field} from {$change['old']} to {$change['new']}", $verb, $field, $change['old'], $change['new']);
         }
 
         if ($task->status === 'done' && $task->recurrence_pattern) {
@@ -686,7 +695,7 @@ class TaskController extends Controller
                     // Handle completion with subtasks
                     if ($value === 'done' && $task->status !== 'done' && $task->hasIncompleteDescendants()) {
                         $this->completeTaskAndDescendants($task);
-                        $this->logChange($task, 'marked done with all subtasks');
+                        $this->logChange($task, 'marked done with all subtasks', 'completed');
 
                         if ($task->recurrence_pattern) {
                             $this->createRecurringTask($task);
@@ -703,12 +712,13 @@ class TaskController extends Controller
                             if ($descendant->status !== 'archived') {
                                 $descendant->status = 'archived';
                                 $descendant->save();
-                                $this->logChange($descendant, 'auto-archived (parent archived)');
+                                $this->logChange($descendant, 'auto-archived (parent archived)', 'archived');
                             }
                         }
                     }
                 }
 
+                $previousValue = $task->$field;
                 $previousStatus = $task->status;
                 $task->$field = $value;
 
@@ -722,7 +732,17 @@ class TaskController extends Controller
 
                 $task->save();
 
-                $this->logChange($task, "updated {$field}");
+                $verb = 'edited';
+                if ($field === 'date') {
+                    $verb = ($previousValue && $value) ? 'rescheduled' : ($value ? 'scheduled' : 'edited');
+                } elseif ($field === 'status') {
+                    $verb = match($value) {
+                        'done'     => 'completed',
+                        'archived' => 'archived',
+                        default    => 'edited',
+                    };
+                }
+                $this->logChange($task, "updated {$field}", $verb, $field, $previousValue, $value);
 
                 if ($field === 'status' && $value === 'done' && $task->recurrence_pattern) {
                     $this->createRecurringTask($task);
@@ -867,7 +887,7 @@ class TaskController extends Controller
             ]);
         }
 
-        $this->logChange($newTask, 'duplicated from task #' . $task->id);
+        $this->logChange($newTask, 'duplicated from task #' . $task->id, 'created');
 
         return redirect()->route('tasks.show', $newTask)
             ->with('success', 'Task duplicated successfully.');
@@ -926,7 +946,7 @@ class TaskController extends Controller
         $updatedCount = 0;
         foreach ($tasks as $task) {
             $task->update($changes);
-            $this->logChange($task, 'bulk updated: ' . implode(', ', array_keys($changes)));
+            $this->logChange($task, 'bulk updated: ' . implode(', ', array_keys($changes)), 'edited');
             $updatedCount++;
         }
 
@@ -968,14 +988,18 @@ class TaskController extends Controller
         }
     }
 
-    protected function logChange(Task $task, string $description)
+    protected function logChange(Task $task, string $description, string $verb = 'edited', ?string $field = null, mixed $oldValue = null, mixed $newValue = null)
     {
         $task->changeLogs()->create([
-            'date' => now(),
-            'user_id' => Auth::id(),
+            'date'        => now(),
+            'user_id'     => Auth::id(),
             'entity_type' => 'tasks',
-            'entity_id' => $task->id,
+            'entity_id'   => $task->id,
             'description' => $description,
+            'verb'        => $verb,
+            'field'       => $field,
+            'old_value'   => $oldValue !== null ? (string) $oldValue : null,
+            'new_value'   => $newValue !== null ? (string) $newValue : null,
         ]);
     }
 
@@ -992,7 +1016,7 @@ class TaskController extends Controller
                 $descendant->status = 'done';
                 $descendant->completed_at = now();
                 $descendant->save();
-                $this->logChange($descendant, 'auto-completed (parent marked done)');
+                $this->logChange($descendant, 'auto-completed (parent marked done)', 'completed');
             }
         }
 

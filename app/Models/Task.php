@@ -103,6 +103,11 @@ class Task extends Model
             ->where('entity_type', 'tasks');
     }
 
+    public function rescheduleCount(): int
+    {
+        return $this->changeLogs()->where('verb', 'rescheduled')->count();
+    }
+
     /**
      * Get all descendant tasks (recursive, all levels)
      * Returns flat collection for bulk operations

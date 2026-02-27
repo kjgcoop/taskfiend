@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Assignment;
+use App\Models\ChangeLog;
 use App\Models\Project;
 use App\Models\Tag;
 use App\Models\Task;
@@ -191,6 +193,12 @@ class DashboardController extends Controller
     {
         $date = $request->input('date', today()->format('Y-m-d'));
         $carbonDate = Carbon::parse($date);
+        $dateStr = $carbonDate->format('Y-m-d');
+
+        // Past days get the review layout
+        if ($carbonDate->startOfDay()->lt(today()->startOfDay())) {
+            return $this->dayReview($carbonDate, $dateStr);
+        }
 
         $tasks = Task::query()
             ->where(function ($q) {
@@ -201,7 +209,7 @@ class DashboardController extends Controller
             })
             ->where('status', '!=', 'archived')
             ->where('status', '!=', 'done')
-            ->where('date', $carbonDate->format('Y-m-d'))
+            ->where('date', $dateStr)
             ->whereHas('project', fn($pq) => $pq->whereNotIn('status', ['archived', 'done']))
             ->with(['creator', 'project', 'tags', 'assignees', 'attachments', 'comments'])
             ->orderByRaw('time IS NULL, time ASC')
@@ -215,7 +223,26 @@ class DashboardController extends Controller
                   });
             })
             ->where('status', 'done')
-            ->whereDate('completed_at', $carbonDate->format('Y-m-d'))
+            ->whereDate('completed_at', $dateStr)
+            ->with(['creator', 'project', 'tags', 'assignees', 'attachments', 'comments'])
+            ->orderByRaw('time IS NULL, time ASC')
+            ->get();
+
+        // Tasks on this day that are archived directly OR belong to an archived/done project.
+        // Done tasks stay in $completedTasks regardless of project status.
+        $archivedTasks = Task::query()
+            ->where(function ($q) {
+                $q->where('creator_id', Auth::id())
+                  ->orWhereHas('assignees', function ($query) {
+                      $query->where('users.id', Auth::id());
+                  });
+            })
+            ->where('date', $dateStr)
+            ->where('status', '!=', 'done')
+            ->where(function ($q) {
+                $q->where('status', 'archived')
+                  ->orWhereHas('project', fn($pq) => $pq->whereIn('status', ['archived', 'done']));
+            })
             ->with(['creator', 'project', 'tags', 'assignees', 'attachments', 'comments'])
             ->orderByRaw('time IS NULL, time ASC')
             ->get();
@@ -237,6 +264,109 @@ class DashboardController extends Controller
                 ->count();
         }
 
-        return view('dashboard.day', array_merge(compact('tasks', 'completedTasks', 'date', 'carbonDate', 'overdueCount'), $this->quickAddData()));
+        return view('dashboard.day', array_merge(compact('tasks', 'completedTasks', 'archivedTasks', 'date', 'carbonDate', 'overdueCount'), $this->quickAddData()));
+    }
+
+    private function dayReview(Carbon $carbonDate, string $dateStr)
+    {
+        $userId = Auth::id();
+        $taskWith = ['creator', 'project', 'tags', 'assignees', 'attachments', 'comments'];
+
+        // Tasks directly dated for this day where the user is creator or assignee
+        $datedTasks = Task::query()
+            ->where(function ($q) use ($userId) {
+                $q->where('creator_id', $userId)
+                  ->orWhereHas('assignees', fn($q2) => $q2->where('users.id', $userId));
+            })
+            ->where('date', $dateStr)
+            ->with($taskWith)
+            ->orderByRaw('time IS NULL, time ASC')
+            ->get()
+            ->keyBy('id');
+
+        // Change log entries where date was changed FROM this day
+        $rescheduledLogs = ChangeLog::where('entity_type', 'tasks')
+            ->where('field', 'date')
+            ->where('old_value', $dateStr)
+            ->get()
+            ->keyBy('entity_id');
+
+        $rescheduledTaskIds = $rescheduledLogs->keys()->toArray();
+
+        // Load those tasks that I can see (creator or assignee) and aren't already in datedTasks
+        $rescheduledTasks = collect();
+        if (!empty($rescheduledTaskIds)) {
+            $rescheduledTasks = Task::whereIn('id', $rescheduledTaskIds)
+                ->whereNotIn('id', $datedTasks->keys()->toArray())
+                ->where(function ($q) use ($userId) {
+                    $q->where('creator_id', $userId)
+                      ->orWhereHas('assignees', fn($q2) => $q2->where('users.id', $userId));
+                })
+                ->with($taskWith)
+                ->get()
+                ->keyBy('id');
+        }
+
+        // Assignments created on this day by someone else
+        $newAssignmentTaskIds = Assignment::where('assignee_id', $userId)
+            ->where('assigned_by_id', '!=', $userId)
+            ->whereDate('created_at', $dateStr)
+            ->pluck('task_id')
+            ->toArray();
+
+        // Load those tasks that aren't already captured above
+        $alreadyCapturedIds = array_merge(
+            $datedTasks->keys()->toArray(),
+            $rescheduledTasks->keys()->toArray()
+        );
+
+        $assignedThatDayTasks = collect();
+        if (!empty($newAssignmentTaskIds)) {
+            $freshIds = array_diff($newAssignmentTaskIds, $alreadyCapturedIds);
+            if (!empty($freshIds)) {
+                $assignedThatDayTasks = Task::whereIn('id', $freshIds)
+                    ->with($taskWith)
+                    ->get()
+                    ->keyBy('id');
+            }
+        }
+
+        // Categorise dated tasks into sections
+        $completedOnDay = collect();
+        $completedLater = collect();
+        $stillOpen      = collect();
+        $archivedOnDay  = collect();
+
+        foreach ($datedTasks as $task) {
+            if ($task->status === 'done') {
+                $completedAt = $task->completed_at ? Carbon::parse($task->completed_at) : null;
+                if ($completedAt && $completedAt->isSameDay($carbonDate)) {
+                    $completedOnDay->push($task);
+                } else {
+                    $completedLater->push($task);
+                }
+            } elseif ($task->status === 'archived' || ($task->project && in_array($task->project->status, ['archived', 'done']))) {
+                $archivedOnDay->push($task);
+            } else {
+                $stillOpen->push($task);
+            }
+        }
+
+        // Attach new_date to rescheduled tasks for display
+        foreach ($rescheduledTasks as $task) {
+            $log = $rescheduledLogs->get($task->id);
+            $task->rescheduled_to = $log ? $log->new_value : null;
+        }
+
+        return view('dashboard.day-review', compact(
+            'carbonDate',
+            'dateStr',
+            'completedOnDay',
+            'completedLater',
+            'stillOpen',
+            'archivedOnDay',
+            'rescheduledTasks',
+            'assignedThatDayTasks'
+        ));
     }
 }
