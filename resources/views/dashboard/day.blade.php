@@ -86,6 +86,7 @@
                     No tasks match your filter.
                 </div>
                 <x-completed-tasks-section :tasks="$completedTasks" :hide-date="true" />
+                <x-completed-tasks-section :tasks="$archivedTasks" label="Show archived tasks" :hide-date="true" :read-only="true" :show-as-archived="true" />
             </div>
 
         </div>

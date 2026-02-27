@@ -38,7 +38,7 @@
         <div class="max-w-4xl mx-auto sm:px-6 lg:px-8 space-y-8">
 
             @php
-                $totalOnPlate = $completedOnDay->count() + $completedLater->count() + $stillOpen->count() + $rescheduledTasks->count();
+                $totalOnPlate = $completedOnDay->count() + $completedLater->count() + $stillOpen->count() + $archivedOnDay->count() + $rescheduledTasks->count();
                 $totalCompleted = $completedOnDay->count() + $completedLater->count();
                 $isEmpty = $totalOnPlate === 0 && $assignedThatDayTasks->count() === 0;
             @endphp
@@ -108,6 +108,31 @@
                                     'dotColor' => '',
                                     'dotTitle' => 'Not completed',
                                     'dimName'  => false,
+                                ])
+                            @endforeach
+                        </div>
+                    </section>
+                @endif
+
+                {{-- ── Archived ─────────────────────────────────────────────── --}}
+                @if($archivedOnDay->count() > 0)
+                    <section>
+                        <h3 class="text-xs font-semibold uppercase tracking-widest text-gray-500 mb-3">
+                            Archived
+                        </h3>
+                        <div class="space-y-2">
+                            @foreach($archivedOnDay as $task)
+                                @php
+                                    $archivedSubtitle = $task->project && in_array($task->project->status, ['archived', 'done'])
+                                        ? 'Project archived: ' . $task->project->name
+                                        : 'Archived';
+                                @endphp
+                                @include('dashboard.partials.review-task-row', [
+                                    'task'     => $task,
+                                    'dotColor' => 'bg-gray-600',
+                                    'dotTitle' => $archivedSubtitle,
+                                    'dimName'  => true,
+                                    'subtitle' => $archivedSubtitle,
                                 ])
                             @endforeach
                         </div>

@@ -228,6 +228,25 @@ class DashboardController extends Controller
             ->orderByRaw('time IS NULL, time ASC')
             ->get();
 
+        // Tasks on this day that are archived directly OR belong to an archived/done project.
+        // Done tasks stay in $completedTasks regardless of project status.
+        $archivedTasks = Task::query()
+            ->where(function ($q) {
+                $q->where('creator_id', Auth::id())
+                  ->orWhereHas('assignees', function ($query) {
+                      $query->where('users.id', Auth::id());
+                  });
+            })
+            ->where('date', $dateStr)
+            ->where('status', '!=', 'done')
+            ->where(function ($q) {
+                $q->where('status', 'archived')
+                  ->orWhereHas('project', fn($pq) => $pq->whereIn('status', ['archived', 'done']));
+            })
+            ->with(['creator', 'project', 'tags', 'assignees', 'attachments', 'comments'])
+            ->orderByRaw('time IS NULL, time ASC')
+            ->get();
+
         $overdueCount = 0;
         if ($carbonDate->isToday()) {
             $overdueCount = Task::query()
@@ -245,7 +264,7 @@ class DashboardController extends Controller
                 ->count();
         }
 
-        return view('dashboard.day', array_merge(compact('tasks', 'completedTasks', 'date', 'carbonDate', 'overdueCount'), $this->quickAddData()));
+        return view('dashboard.day', array_merge(compact('tasks', 'completedTasks', 'archivedTasks', 'date', 'carbonDate', 'overdueCount'), $this->quickAddData()));
     }
 
     private function dayReview(Carbon $carbonDate, string $dateStr)
@@ -316,6 +335,7 @@ class DashboardController extends Controller
         $completedOnDay = collect();
         $completedLater = collect();
         $stillOpen      = collect();
+        $archivedOnDay  = collect();
 
         foreach ($datedTasks as $task) {
             if ($task->status === 'done') {
@@ -325,7 +345,9 @@ class DashboardController extends Controller
                 } else {
                     $completedLater->push($task);
                 }
-            } elseif ($task->status !== 'archived') {
+            } elseif ($task->status === 'archived' || ($task->project && in_array($task->project->status, ['archived', 'done']))) {
+                $archivedOnDay->push($task);
+            } else {
                 $stillOpen->push($task);
             }
         }
@@ -342,6 +364,7 @@ class DashboardController extends Controller
             'completedOnDay',
             'completedLater',
             'stillOpen',
+            'archivedOnDay',
             'rescheduledTasks',
             'assignedThatDayTasks'
         ));

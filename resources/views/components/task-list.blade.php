@@ -1,4 +1,4 @@
-@props(['tasks', 'depth' => 0, 'hideDate' => false, 'readOnly' => false, 'viewDate' => null])
+@props(['tasks', 'depth' => 0, 'hideDate' => false, 'readOnly' => false, 'viewDate' => null, 'showAsArchived' => false])
 
 @pushOnce('scripts')
 <script>
@@ -435,7 +435,9 @@
                 @endif
 
                 <!-- Complete circle / quick-complete form (hidden in bulk mode) -->
-                @if($task->status === 'done')
+                @if($showAsArchived)
+                    <div class="mt-1 w-6 h-6 rounded-full bg-gray-600 flex-shrink-0" title="Archived"></div>
+                @elseif($task->status === 'done')
                     <div x-show="!$store.bulkEdit.active"
                          class="mt-1 w-6 h-6 rounded-full bg-green-600 flex-shrink-0" title="Completed"></div>
                 @elseif($readOnly)
@@ -508,7 +510,7 @@
                         </div>
                     @endif
 
-                    <h3 class="font-semibold text-gray-100">
+                    <h3 class="font-semibold {{ $showAsArchived ? 'text-gray-500 line-through' : 'text-gray-100' }}">
                         <span data-task-name-display>{{ $task->name }}</span>
                         @if($task->children->count() > 0)
                             <span class="text-xs text-gray-500 font-normal">
