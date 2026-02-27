@@ -104,10 +104,11 @@
                         <div class="space-y-2">
                             @foreach($stillOpen as $task)
                                 @include('dashboard.partials.review-task-row', [
-                                    'task'     => $task,
-                                    'dotColor' => '',
-                                    'dotTitle' => 'Not completed',
-                                    'dimName'  => false,
+                                    'task'        => $task,
+                                    'dotColor'    => '',
+                                    'dotTitle'    => 'Not completed',
+                                    'dimName'     => false,
+                                    'completable' => true,
                                 ])
                             @endforeach
                         </div>
