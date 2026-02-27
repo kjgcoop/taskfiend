@@ -8,11 +8,38 @@
     $completable = $completable ?? false;
 @endphp
 
-<div class="bg-[#202020] px-4 py-3 rounded-lg border border-gray-700 flex items-start gap-3">
+<div class="bg-[#202020] px-4 py-3 rounded-lg border border-gray-700 flex items-start gap-3" data-review-row>
 
     {{-- Status dot / quick-complete button --}}
     @if($completable && $task->status !== 'done')
-        <form method="POST" action="{{ route('tasks.update', $task) }}" class="flex-shrink-0 mt-0.5">
+        <form x-data="{
+                done: false,
+                loading: false,
+                async submit() {
+                    this.loading = true;
+                    try {
+                        const res = await fetch(this.$el.action, {
+                            method: 'POST',
+                            headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                            body: new FormData(this.$el),
+                        });
+                        if (res.ok) {
+                            this.done = true;
+                            await new Promise(r => setTimeout(r, 400));
+                            const row = this.$el.closest('[data-review-row]');
+                            if (row) {
+                                row.style.transition = 'opacity 0.3s';
+                                row.style.opacity = '0';
+                                setTimeout(() => row.style.display = 'none', 300);
+                            }
+                        }
+                    } catch { this.$el.submit(); }
+                    finally { this.loading = false; }
+                }
+              }"
+              @submit.prevent="submit()"
+              method="POST" action="{{ route('tasks.update', $task) }}"
+              class="flex-shrink-0 mt-0.5">
             @csrf
             @method('PUT')
             <input type="hidden" name="status" value="done">
@@ -30,9 +57,11 @@
                 <input type="hidden" name="assignee_ids[]" value="{{ $assignee->id }}">
             @endforeach
             <input type="hidden" name="quick_complete" value="1">
-            <button type="submit"
+            <button x-show="!done" type="submit"
+                    :disabled="loading" :class="loading ? 'opacity-40 cursor-wait' : ''"
                     class="w-5 h-5 rounded-full border-2 border-gray-600 hover:border-green-400 hover:bg-green-400 hover:bg-opacity-20 transition"
                     title="Mark as done"></button>
+            <div x-show="done" class="w-5 h-5 rounded-full bg-green-600 flex-shrink-0" style="display:none"></div>
         </form>
     @else
         <div class="mt-0.5 flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center
