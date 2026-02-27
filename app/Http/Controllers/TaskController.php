@@ -577,7 +577,7 @@ class TaskController extends Controller
                 },
                 default => 'edited',
             };
-            $this->logChange($task, "changed {$field} from {$change['old']} to {$change['new']}", $verb);
+            $this->logChange($task, "changed {$field} from {$change['old']} to {$change['new']}", $verb, $field, $change['old'], $change['new']);
         }
 
         if ($task->status === 'done' && $task->recurrence_pattern) {
@@ -737,7 +737,7 @@ class TaskController extends Controller
                         default    => 'edited',
                     };
                 }
-                $this->logChange($task, "updated {$field}", $verb);
+                $this->logChange($task, "updated {$field}", $verb, $field, $previousValue, $value);
 
                 if ($field === 'status' && $value === 'done' && $task->recurrence_pattern) {
                     $this->createRecurringTask($task);
@@ -983,15 +983,18 @@ class TaskController extends Controller
         }
     }
 
-    protected function logChange(Task $task, string $description, string $verb = 'edited')
+    protected function logChange(Task $task, string $description, string $verb = 'edited', ?string $field = null, mixed $oldValue = null, mixed $newValue = null)
     {
         $task->changeLogs()->create([
-            'date' => now(),
-            'user_id' => Auth::id(),
+            'date'        => now(),
+            'user_id'     => Auth::id(),
             'entity_type' => 'tasks',
-            'entity_id' => $task->id,
+            'entity_id'   => $task->id,
             'description' => $description,
-            'verb' => $verb,
+            'verb'        => $verb,
+            'field'       => $field,
+            'old_value'   => $oldValue !== null ? (string) $oldValue : null,
+            'new_value'   => $newValue !== null ? (string) $newValue : null,
         ]);
     }
 
