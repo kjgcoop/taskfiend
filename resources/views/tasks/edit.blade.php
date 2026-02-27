@@ -124,21 +124,85 @@
                         </div>
 
                         <!-- Parent Task -->
-                        <div class="mb-4">
-                            <label for="parent_id" class="block text-sm font-medium text-gray-300 mb-2">
-                                Parent Task (Optional - create as subtask)
+                        @php
+                            $_editParentId = old('parent_id', $task->parent_id ?? '');
+                            $_editParentName = '';
+                            if ($_editParentId) {
+                                $_found = $availableParents->firstWhere('id', $_editParentId);
+                                $_editParentName = $_found ? $_found->name : ($task->parent?->name ?? '');
+                            }
+                            $_parentsForCombo = $availableParents->map(fn($t) => [
+                                'id' => $t->id,
+                                'name' => str_repeat('→ ', $t->getDepth()) . $t->name,
+                                'rawName' => $t->name,
+                            ])->values()->all();
+                        @endphp
+                        <div class="mb-4"
+                             x-data="{
+                                 search: @js($_editParentName),
+                                 selectedId: @js((string) ($_editParentId ?? '')),
+                                 open: false,
+                                 tasks: @js($_parentsForCombo),
+                                 get filtered() {
+                                     const q = this.search.toLowerCase().trim();
+                                     if (!q) return this.tasks.slice(0, 10);
+                                     return this.tasks.filter(t => t.rawName.toLowerCase().includes(q)).slice(0, 10);
+                                 },
+                                 select(task) {
+                                     this.selectedId = task.id;
+                                     this.search = task.rawName;
+                                     this.open = false;
+                                 },
+                                 clear() {
+                                     this.selectedId = '';
+                                     this.search = '';
+                                     this.open = false;
+                                 },
+                                 onInput() {
+                                     this.selectedId = '';
+                                     this.open = true;
+                                 }
+                             }" @click.outside="open = false">
+                            <label class="block text-sm font-medium text-gray-300 mb-2">
+                                Parent Task <span class="font-normal text-gray-500">(Optional – type to search)</span>
                             </label>
-                            <select name="parent_id" id="parent_id"
-                                    class="w-full rounded-md bg-gray-700 border-gray-600 text-gray-100 placeholder-gray-500 shadow-sm focus:border-blue-500 focus:ring-blue-500">
-                                <option value="">None (Top-level task)</option>
-                                @foreach($availableParents as $parentOption)
-                                    <option value="{{ $parentOption->id }}" {{ old('parent_id', $task->parent_id) == $parentOption->id ? 'selected' : '' }}>
-                                        {{ str_repeat('→ ', $parentOption->getDepth()) }}{{ $parentOption->name }}
-                                    </option>
-                                @endforeach
-                            </select>
+                            <div class="relative">
+                                <input type="text"
+                                       x-model="search"
+                                       @input="onInput"
+                                       @focus="open = true"
+                                       @keydown.escape="open = false"
+                                       @keydown.enter.prevent="if (filtered.length > 0) select(filtered[0])"
+                                       placeholder="Search for a parent task…"
+                                       autocomplete="off"
+                                       class="w-full rounded-md bg-gray-700 border-gray-600 text-gray-100 placeholder-gray-500 shadow-sm focus:border-blue-500 focus:ring-blue-500 pr-8">
+                                <button type="button" x-show="selectedId || search"
+                                        @click="clear()"
+                                        class="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-100 text-xl leading-none">
+                                    &times;
+                                </button>
+                                <div x-show="open" x-cloak
+                                     class="absolute z-50 w-full mt-1 bg-gray-800 border border-gray-600 rounded-md shadow-lg max-h-60 overflow-y-auto">
+                                    <div @mousedown.prevent="clear(); open = false"
+                                         class="px-3 py-2 text-sm text-gray-400 cursor-pointer hover:bg-gray-700 border-b border-gray-700">
+                                        None (Top-level task)
+                                    </div>
+                                    <template x-for="task in filtered" :key="task.id">
+                                        <div @mousedown.prevent="select(task)"
+                                             class="px-3 py-2 text-sm text-gray-100 cursor-pointer hover:bg-gray-700"
+                                             :class="{ 'bg-gray-600': selectedId == task.id }">
+                                            <span x-text="task.name"></span>
+                                        </div>
+                                    </template>
+                                    <div x-show="search && filtered.length === 0"
+                                         class="px-3 py-2 text-sm text-gray-500 italic">
+                                        No matching tasks found
+                                    </div>
+                                </div>
+                            </div>
+                            <input type="hidden" name="parent_id" :value="selectedId">
                             <p class="mt-1 text-xs text-gray-500">
-                                Select a parent task to make this a subtask. Subtasks inherit permissions from their parent.
+                                Search for a parent task to make this a subtask. Subtasks inherit permissions from their parent.
                             </p>
                             @error('parent_id')<p class="mt-1 text-sm text-red-600">{{ $message }}</p>@enderror
                         </div>

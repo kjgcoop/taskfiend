@@ -305,18 +305,41 @@
                             </p>
                         </div>
                         @if(!$isInactive)
-                        <div x-show="editing.parent_id" class="mt-1">
-                            <select x-model="fields.parent_id"
-                                    @keydown.enter="saveField('parent_id')"
-                                    @keydown.escape="cancelEdit('parent_id')"
-                                    class="w-full rounded-md bg-gray-700 border-gray-600 text-gray-100 placeholder-gray-500 shadow-sm focus:border-blue-500 focus:ring-blue-500">
-                                <option value="">No Parent (Top-level)</option>
-                                @foreach($availableParents as $parentOption)
-                                    <option value="{{ $parentOption->id }}">
-                                        {{ str_repeat('→ ', $parentOption->getDepth()) }}{{ $parentOption->name }}
-                                    </option>
-                                @endforeach
-                            </select>
+                        <div x-show="editing.parent_id" class="mt-1" @click.outside="parentOpen = false">
+                            <div class="relative">
+                                <input type="text"
+                                       x-model="parentSearch"
+                                       @input="fields.parent_id = ''; parentOpen = true"
+                                       @focus="parentOpen = true"
+                                       @keydown.escape="parentOpen = false"
+                                       @keydown.enter.prevent="if (parentFiltered.length > 0) selectParent(parentFiltered[0])"
+                                       placeholder="Search for a parent task…"
+                                       autocomplete="off"
+                                       class="w-full rounded-md bg-gray-700 border-gray-600 text-gray-100 placeholder-gray-500 shadow-sm focus:border-blue-500 focus:ring-blue-500 pr-8">
+                                <button type="button" x-show="fields.parent_id || parentSearch"
+                                        @click="clearParent()"
+                                        class="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-100 text-xl leading-none">
+                                    &times;
+                                </button>
+                                <div x-show="parentOpen" x-cloak
+                                     class="absolute z-50 w-full mt-1 bg-gray-800 border border-gray-600 rounded-md shadow-lg max-h-60 overflow-y-auto">
+                                    <div @mousedown.prevent="clearParent()"
+                                         class="px-3 py-2 text-sm text-gray-400 cursor-pointer hover:bg-gray-700 border-b border-gray-700">
+                                        None (Top-level task)
+                                    </div>
+                                    <template x-for="task in parentFiltered" :key="task.id">
+                                        <div @mousedown.prevent="selectParent(task)"
+                                             class="px-3 py-2 text-sm text-gray-100 cursor-pointer hover:bg-gray-700"
+                                             :class="{ 'bg-gray-600': fields.parent_id == task.id }">
+                                            <span x-text="task.name"></span>
+                                        </div>
+                                    </template>
+                                    <div x-show="parentSearch && parentFiltered.length === 0"
+                                         class="px-3 py-2 text-sm text-gray-500 italic">
+                                        No matching tasks found
+                                    </div>
+                                </div>
+                            </div>
                             <div class="flex gap-2 mt-2">
                                 <button @click="saveField('parent_id')"
                                         class="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700">
@@ -697,6 +720,7 @@
                     time: @js($task->time ?? ''),
                     duration_minutes: @js(\App\Models\Task::formatDuration($task->duration_minutes) ?? ''),
                     project_id: @js($task->project_id ?? $inboxProjectId),
+                    parent_id: @js($task->parent_id ?? ''),
                     recurrence_pattern: @js($task->recurrence_pattern ?? ''),
                     recurrence_floating: @js((bool) $task->recurrence_floating),
                     tag_ids: @js($task->tags->pluck('id')->toArray()),
@@ -708,6 +732,24 @@
                 dateError: '',
                 taskCount: null,
                 _datePreviewTimeout: null,
+                parentSearch: @js($task->parent ? $task->parent->name : ''),
+                parentOpen: false,
+                parentTasks: @js($availableParents->map(fn($t) => ['id' => $t->id, 'name' => str_repeat('→ ', $t->getDepth()) . $t->name, 'rawName' => $t->name])->values()->all()),
+                get parentFiltered() {
+                    const q = this.parentSearch.toLowerCase().trim();
+                    if (!q) return this.parentTasks.slice(0, 10);
+                    return this.parentTasks.filter(t => t.rawName.toLowerCase().includes(q)).slice(0, 10);
+                },
+                selectParent(task) {
+                    this.fields.parent_id = task.id;
+                    this.parentSearch = task.rawName;
+                    this.parentOpen = false;
+                },
+                clearParent() {
+                    this.fields.parent_id = '';
+                    this.parentSearch = '';
+                    this.parentOpen = false;
+                },
 
                 init() {
                     this.original = JSON.parse(JSON.stringify(this.fields));
@@ -735,6 +777,9 @@
                         this.dateText = @js($task->date ? \Carbon\Carbon::parse($task->date)->format('l, F j, Y') : '');
                         this.datePreview = '';
                         this.dateError = '';
+                    } else if (field === 'parent_id') {
+                        this.parentSearch = @js($task->parent ? $task->parent->name : '');
+                        this.parentOpen = false;
                     }
                     this.resetField(field);
                 },
