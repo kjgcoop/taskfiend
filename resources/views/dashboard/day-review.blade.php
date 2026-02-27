@@ -81,7 +81,7 @@
                             @foreach($completedLater as $task)
                                 @php
                                     $completedAt = $task->completed_at ? \Carbon\Carbon::parse($task->completed_at) : null;
-                                    $completedLabel = $completedAt ? 'Completed ' . $completedAt->format('l, F j') : 'Completed later';
+                                    $completedLabel = $completedAt ? 'Completed ' . $completedAt->format('l, F j, Y') : 'Completed later';
                                 @endphp
                                 @include('dashboard.partials.review-task-row', [
                                     'task'       => $task,
