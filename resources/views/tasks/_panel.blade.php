@@ -461,7 +461,7 @@
                                     @endif
                                 </div>
                             </div>
-                            <p class="mt-0.5 text-sm text-gray-300">{{ $comment->comment }}</p>
+                            <div x-data="{ comment: @js($comment->comment) }" class="markdown-body mt-0.5 text-sm" x-html="marked.parse(comment)"></div>
                             @if($comment->file_path)
                                 <p class="mt-0.5 text-xs">
                                     <a href="{{ route('comments.download', [$task, $comment]) }}"

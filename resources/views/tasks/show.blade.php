@@ -558,7 +558,7 @@
                                             @endif
                                         </div>
                                     </div>
-                                    <p class="mt-1 text-sm text-gray-300">{{ $comment->comment }}</p>
+                                    <div x-data="{ comment: @js($comment->comment) }" class="markdown-body mt-1 text-sm" x-html="marked.parse(comment)"></div>
                                     @if($comment->file_path)
                                         <p class="mt-1 text-xs">
                                             <a href="{{ route('comments.download', [$task, $comment]) }}" class="text-blue-400 hover:text-blue-300 hover:underline">
