@@ -660,6 +660,11 @@ class TaskController extends Controller
                     $value = $parsed->format('Y-m-d');
                 }
 
+                // Coerce boolean fields properly ("false" string → false, "true" string → true)
+                if ($field === 'recurrence_floating') {
+                    $value = filter_var($value, FILTER_VALIDATE_BOOLEAN);
+                }
+
                 // Parse flexible duration input (e.g. "2h 20m", "90", "1h")
                 if ($field === 'duration_minutes') {
                     if ($value === null || $value === '') {
