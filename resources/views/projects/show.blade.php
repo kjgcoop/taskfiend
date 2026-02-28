@@ -71,46 +71,6 @@
                         @endif
                     </div>
 
-                    <div class="grid grid-cols-2 gap-4 mb-4">
-                        <!-- Status (editable) -->
-                        <div>
-                            <span class="text-sm font-medium text-gray-500">Status</span>
-                            <div @click="startEdit('status')" x-show="!editing.status" class="mt-1 cursor-pointer hover:bg-gray-700 p-2 rounded">
-                                <span class="inline-block px-2 py-1 text-xs rounded
-                                    @if($project->status === 'done') bg-green-100 text-green-800
-                                    @elseif($project->status === 'archived') bg-gray-100 text-gray-800
-                                    @else bg-blue-100 text-blue-800 @endif">
-                                    {{ ucfirst($project->status) }}
-                                </span>
-                            </div>
-                            <div x-show="editing.status" class="mt-1">
-                                <select x-model="fields.status"
-                                        @keydown.escape="cancelEdit('status')"
-                                        class="w-full rounded-md bg-gray-700 border-gray-600 text-gray-100 placeholder-gray-500 shadow-sm focus:border-blue-500 focus:ring-blue-500">
-                                    <option value="incomplete">Incomplete</option>
-                                    <option value="done">Done</option>
-                                    <option value="archived">Archived</option>
-                                </select>
-                                <div class="flex gap-2 mt-2">
-                                    <button @click="saveField('status')"
-                                            class="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700">
-                                        Save
-                                    </button>
-                                    <button @click="cancelEdit('status')"
-                                            class="px-3 py-1 bg-gray-700 text-gray-300 text-sm rounded hover:bg-gray-600">
-                                        Cancel
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Created By (read-only) -->
-                        <div>
-                            <span class="text-sm font-medium text-gray-500">Created By</span>
-                            <p class="mt-1 text-gray-300">{{ $project->creator->name }}</p>
-                        </div>
-                    </div>
-
                     <!-- Description -->
                     <div class="mt-4">
                         <span class="text-sm font-medium text-gray-500">Description</span>
@@ -148,150 +108,208 @@
                         @endif
                     </div>
 
-                    <!-- Assignees -->
-                    <div class="mt-4">
-                        <span class="text-sm font-medium text-gray-500">Assigned To</span>
-                        @if(!$isInactive)
-                            <div @click="startEdit('assignee_ids')" x-show="!editing.assignee_ids" class="mt-1 cursor-pointer hover:bg-gray-700 p-2 rounded min-h-[40px]">
-                                @if($project->assignees->count() > 0)
-                                    <div class="space-y-1">
-                                        @foreach($project->assignees as $assignee)
-                                            <p class="text-sm text-gray-300">{{ $assignee->name }}</p>
-                                        @endforeach
+                    <!-- Read more: Status, Assignees, Background Image -->
+                    <details class="mt-4 group">
+                        <summary class="cursor-pointer text-sm text-blue-400 hover:text-blue-300 list-none flex items-center gap-1">
+                            <span class="group-open:hidden">Read more</span>
+                            <span class="hidden group-open:inline">Show less</span>
+                        </summary>
+                        <div class="mt-4 space-y-4">
+                            <div class="grid grid-cols-2 gap-4">
+                                <!-- Status (editable) -->
+                                <div>
+                                    <span class="text-sm font-medium text-gray-500">Status</span>
+                                    <div @click="startEdit('status')" x-show="!editing.status" class="mt-1 cursor-pointer hover:bg-gray-700 p-2 rounded">
+                                        <span class="inline-block px-2 py-1 text-xs rounded
+                                            @if($project->status === 'done') bg-green-100 text-green-800
+                                            @elseif($project->status === 'archived') bg-gray-100 text-gray-800
+                                            @else bg-blue-100 text-blue-800 @endif">
+                                            {{ ucfirst($project->status) }}
+                                        </span>
                                     </div>
-                                @else
-                                    <p class="text-gray-400 italic">Click to add assignees</p>
-                                @endif
-                            </div>
-                            <div x-show="editing.assignee_ids" class="mt-1">
-                                <div class="space-y-2 mb-2 max-h-48 overflow-y-auto border border-gray-600 bg-[#101010] rounded p-3">
-                                    @foreach($users as $user)
-                                        <label class="flex items-center">
-                                            <input type="checkbox" value="{{ $user->id }}" x-model="fields.assignee_ids"
-                                                   class="rounded border-gray-600 bg-gray-700 text-blue-600 focus:ring-blue-500">
-                                            <span class="ml-2 text-sm text-gray-300">{{ $user->name }} ({{ $user->email }})</span>
-                                        </label>
-                                    @endforeach
-                                </div>
-                                <div class="flex gap-2 mt-2">
-                                    <button @click="saveField('assignee_ids')"
-                                            class="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700">
-                                        Save
-                                    </button>
-                                    <button @click="cancelEdit('assignee_ids')"
-                                            class="px-3 py-1 bg-gray-700 text-gray-300 text-sm rounded hover:bg-gray-600">
-                                        Cancel
-                                    </button>
-                                </div>
-                            </div>
-                        @else
-                            <div class="mt-1 p-2 min-h-[40px]">
-                                @if($project->assignees->count() > 0)
-                                    <div class="space-y-1">
-                                        @foreach($project->assignees as $assignee)
-                                            <p class="text-sm text-gray-300">{{ $assignee->name }}</p>
-                                        @endforeach
+                                    <div x-show="editing.status" class="mt-1">
+                                        <select x-model="fields.status"
+                                                @keydown.escape="cancelEdit('status')"
+                                                class="w-full rounded-md bg-gray-700 border-gray-600 text-gray-100 placeholder-gray-500 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                                            <option value="incomplete">Incomplete</option>
+                                            <option value="done">Done</option>
+                                            <option value="archived">Archived</option>
+                                        </select>
+                                        <div class="flex gap-2 mt-2">
+                                            <button @click="saveField('status')"
+                                                    class="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700">
+                                                Save
+                                            </button>
+                                            <button @click="cancelEdit('status')"
+                                                    class="px-3 py-1 bg-gray-700 text-gray-300 text-sm rounded hover:bg-gray-600">
+                                                Cancel
+                                            </button>
+                                        </div>
                                     </div>
-                                @else
-                                    <p class="text-gray-600 italic">No assignees</p>
-                                @endif
-                            </div>
-                        @endif
-                    </div>
+                                </div>
 
-                    <!-- Background Image (only editable when project is active) -->
-                    @if(!$isInactive)
-                    <div class="mt-4" x-data="{ showUpload: false }">
-                        <span class="text-sm font-medium text-gray-500">Background Image</span>
-                        @if($project->background_image)
-                            <div class="mt-1">
-                                <div class="mb-2">
-                                    <img src="{{ route('projects.background', $project) }}"
-                                         alt="Project background"
-                                         class="rounded-md border border-gray-600"
-                                         style="height: 100px; width: auto;">
+                                <!-- Created By (read-only) -->
+                                <div>
+                                    <span class="text-sm font-medium text-gray-500">Created By</span>
+                                    <p class="mt-1 text-gray-300">{{ $project->creator->name }}</p>
                                 </div>
-                                <div class="flex items-center gap-3">
-                                    <button @click="showUpload = !showUpload"
-                                            class="text-sm text-gray-400 hover:text-gray-200 underline">
-                                        Replace
-                                    </button>
-                                    <form method="POST" action="{{ route('projects.background.remove', $project) }}">
+                            </div>
+
+                            <!-- Assignees -->
+                            <div>
+                                <span class="text-sm font-medium text-gray-500">Assigned To</span>
+                                @if(!$isInactive)
+                                    <div @click="startEdit('assignee_ids')" x-show="!editing.assignee_ids" class="mt-1 cursor-pointer hover:bg-gray-700 p-2 rounded min-h-[40px]">
+                                        @if($project->assignees->count() > 0)
+                                            <div class="space-y-1">
+                                                @foreach($project->assignees as $assignee)
+                                                    <p class="text-sm text-gray-300">{{ $assignee->name }}</p>
+                                                @endforeach
+                                            </div>
+                                        @else
+                                            <p class="text-gray-400 italic">Click to add assignees</p>
+                                        @endif
+                                    </div>
+                                    <div x-show="editing.assignee_ids" class="mt-1">
+                                        <div class="space-y-2 mb-2 max-h-48 overflow-y-auto border border-gray-600 bg-[#101010] rounded p-3">
+                                            @foreach($users as $user)
+                                                <label class="flex items-center">
+                                                    <input type="checkbox" value="{{ $user->id }}" x-model="fields.assignee_ids"
+                                                           class="rounded border-gray-600 bg-gray-700 text-blue-600 focus:ring-blue-500">
+                                                    <span class="ml-2 text-sm text-gray-300">{{ $user->name }} ({{ $user->email }})</span>
+                                                </label>
+                                            @endforeach
+                                        </div>
+                                        <div class="flex gap-2 mt-2">
+                                            <button @click="saveField('assignee_ids')"
+                                                    class="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700">
+                                                Save
+                                            </button>
+                                            <button @click="cancelEdit('assignee_ids')"
+                                                    class="px-3 py-1 bg-gray-700 text-gray-300 text-sm rounded hover:bg-gray-600">
+                                                Cancel
+                                            </button>
+                                        </div>
+                                    </div>
+                                @else
+                                    <div class="mt-1 p-2 min-h-[40px]">
+                                        @if($project->assignees->count() > 0)
+                                            <div class="space-y-1">
+                                                @foreach($project->assignees as $assignee)
+                                                    <p class="text-sm text-gray-300">{{ $assignee->name }}</p>
+                                                @endforeach
+                                            </div>
+                                        @else
+                                            <p class="text-gray-600 italic">No assignees</p>
+                                        @endif
+                                    </div>
+                                @endif
+                            </div>
+
+                            <!-- Background Image (only editable when project is active) -->
+                            @if(!$isInactive)
+                            <div x-data="{ showUpload: false }">
+                                <span class="text-sm font-medium text-gray-500">Background Image</span>
+                                @if($project->background_image)
+                                    <div class="mt-1">
+                                        <div class="mb-2">
+                                            <img src="{{ route('projects.background', $project) }}"
+                                                 alt="Project background"
+                                                 class="rounded-md border border-gray-600"
+                                                 style="height: 100px; width: auto;">
+                                        </div>
+                                        <div class="flex items-center gap-3">
+                                            <button @click="showUpload = !showUpload"
+                                                    class="text-sm text-gray-400 hover:text-gray-200 underline">
+                                                Replace
+                                            </button>
+                                            <form method="POST" action="{{ route('projects.background.remove', $project) }}">
+                                                @csrf
+                                                @method('DELETE')
+                                                <button type="submit" class="text-sm text-red-400 hover:text-red-300 underline">
+                                                    Remove
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </div>
+                                @else
+                                    <div class="mt-1">
+                                        <button @click="showUpload = !showUpload"
+                                                class="text-sm text-gray-400 hover:text-gray-200 underline">
+                                            Add background image
+                                        </button>
+                                    </div>
+                                @endif
+                                <div x-show="showUpload" x-cloak class="mt-2">
+                                    <form method="POST" action="{{ route('projects.background.upload', $project) }}"
+                                          enctype="multipart/form-data" class="flex items-center gap-2 flex-wrap">
                                         @csrf
-                                        @method('DELETE')
-                                        <button type="submit" class="text-sm text-red-400 hover:text-red-300 underline">
-                                            Remove
+                                        <input type="file" name="background_image" required
+                                               accept="image/jpeg,image/png,image/webp,image/gif,image/avif,image/heic,image/heif,.jpg,.jpeg,.png,.webp,.gif,.avif,.heic,.heif"
+                                               class="block text-sm text-gray-400 file:mr-3 file:py-1.5 file:px-3 file:rounded file:border-0 file:text-xs file:font-semibold file:bg-gray-700 file:text-gray-100 hover:file:bg-gray-600 bg-[#101010] border border-gray-600 rounded-md">
+                                        <button type="submit"
+                                                class="px-3 py-1.5 bg-blue-600 text-white text-xs rounded hover:bg-blue-700 whitespace-nowrap">
+                                            Upload
+                                        </button>
+                                        <button type="button" @click="showUpload = false"
+                                                class="px-3 py-1.5 bg-gray-700 text-gray-300 text-xs rounded hover:bg-gray-600">
+                                            Cancel
                                         </button>
                                     </form>
+                                    <p class="mt-1 text-xs text-gray-500">JPG, PNG, WebP, GIF, AVIF, HEIC &mdash; max 20 MB</p>
+                                    @error('background_image')<p class="mt-1 text-sm text-red-500">{{ $message }}</p>@enderror
                                 </div>
                             </div>
-                        @else
-                            <div class="mt-1">
-                                <button @click="showUpload = !showUpload"
-                                        class="text-sm text-gray-400 hover:text-gray-200 underline">
-                                    Add background image
-                                </button>
-                            </div>
-                        @endif
-                        <div x-show="showUpload" x-cloak class="mt-2">
-                            <form method="POST" action="{{ route('projects.background.upload', $project) }}"
-                                  enctype="multipart/form-data" class="flex items-center gap-2 flex-wrap">
-                                @csrf
-                                <input type="file" name="background_image" required
-                                       accept="image/jpeg,image/png,image/webp,image/gif,image/avif,image/heic,image/heif,.jpg,.jpeg,.png,.webp,.gif,.avif,.heic,.heif"
-                                       class="block text-sm text-gray-400 file:mr-3 file:py-1.5 file:px-3 file:rounded file:border-0 file:text-xs file:font-semibold file:bg-gray-700 file:text-gray-100 hover:file:bg-gray-600 bg-[#101010] border border-gray-600 rounded-md">
-                                <button type="submit"
-                                        class="px-3 py-1.5 bg-blue-600 text-white text-xs rounded hover:bg-blue-700 whitespace-nowrap">
-                                    Upload
-                                </button>
-                                <button type="button" @click="showUpload = false"
-                                        class="px-3 py-1.5 bg-gray-700 text-gray-300 text-xs rounded hover:bg-gray-600">
-                                    Cancel
-                                </button>
-                            </form>
-                            <p class="mt-1 text-xs text-gray-500">JPG, PNG, WebP, GIF, AVIF, HEIC &mdash; max 20 MB</p>
-                            @error('background_image')<p class="mt-1 text-sm text-red-500">{{ $message }}</p>@enderror
+                            @endif {{-- !$isInactive --}}
                         </div>
-                    </div>
-                    @endif {{-- !$isInactive --}}
+                    </details>
 
                 @else
                     {{-- Read-only view for non-creators --}}
-                    <div class="grid grid-cols-2 gap-4">
-                        <div>
-                            <span class="text-sm font-medium text-gray-500">Status</span>
-                            <p class="mt-1">
-                                <span class="inline-block px-2 py-1 text-xs rounded
-                                    @if($project->status === 'done') bg-green-100 text-green-800
-                                    @elseif($project->status === 'archived') bg-gray-100 text-gray-800
-                                    @else bg-blue-100 text-blue-800 @endif">
-                                    {{ ucfirst($project->status) }}
-                                </span>
-                            </p>
-                        </div>
-                        <div>
-                            <span class="text-sm font-medium text-gray-500">Created By</span>
-                            <p class="mt-1 text-gray-300">{{ $project->creator->name }}</p>
-                        </div>
-                    </div>
-
                     @if($project->description)
-                        <div class="mt-4">
+                        <div class="mb-4">
                             <span class="text-sm font-medium text-gray-500">Description</span>
                             <p class="mt-1 text-gray-300">{{ $project->description }}</p>
                         </div>
                     @endif
 
-                    @if($project->assignees->count() > 0)
-                        <div class="mt-4">
-                            <span class="text-sm font-medium text-gray-500">Assigned To</span>
-                            <div class="mt-1 space-y-1">
-                                @foreach($project->assignees as $assignee)
-                                    <p class="text-sm text-gray-300">{{ $assignee->name }}</p>
-                                @endforeach
+                    <!-- Read more: Status, Created By, Assignees -->
+                    <details class="mt-2 group">
+                        <summary class="cursor-pointer text-sm text-blue-400 hover:text-blue-300 list-none flex items-center gap-1">
+                            <span class="group-open:hidden">Read more</span>
+                            <span class="hidden group-open:inline">Show less</span>
+                        </summary>
+                        <div class="mt-4 space-y-4">
+                            <div class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <span class="text-sm font-medium text-gray-500">Status</span>
+                                    <p class="mt-1">
+                                        <span class="inline-block px-2 py-1 text-xs rounded
+                                            @if($project->status === 'done') bg-green-100 text-green-800
+                                            @elseif($project->status === 'archived') bg-gray-100 text-gray-800
+                                            @else bg-blue-100 text-blue-800 @endif">
+                                            {{ ucfirst($project->status) }}
+                                        </span>
+                                    </p>
+                                </div>
+                                <div>
+                                    <span class="text-sm font-medium text-gray-500">Created By</span>
+                                    <p class="mt-1 text-gray-300">{{ $project->creator->name }}</p>
+                                </div>
                             </div>
+
+                            @if($project->assignees->count() > 0)
+                                <div>
+                                    <span class="text-sm font-medium text-gray-500">Assigned To</span>
+                                    <div class="mt-1 space-y-1">
+                                        @foreach($project->assignees as $assignee)
+                                            <p class="text-sm text-gray-300">{{ $assignee->name }}</p>
+                                        @endforeach
+                                    </div>
+                                </div>
+                            @endif
                         </div>
-                    @endif
+                    </details>
                 @endif
             </div>
 
