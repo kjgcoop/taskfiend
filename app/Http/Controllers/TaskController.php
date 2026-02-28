@@ -48,9 +48,11 @@ class TaskController extends Controller
 
     public function create(Request $request)
     {
-        $projects = Project::where('user_id', Auth::id())
-            ->orWhereHas('tasks.assignees', function ($query) {
-                $query->where('users.id', Auth::id());
+        $projects = Project::where(function ($query) {
+                $query->where('user_id', Auth::id())
+                    ->orWhereHas('tasks.assignees', function ($q) {
+                        $q->where('users.id', Auth::id());
+                    });
             })
             ->where('status', '!=', 'archived')
             ->orderByRaw('LOWER(name)')
@@ -299,9 +301,11 @@ class TaskController extends Controller
         $task->load(['creator', 'project', 'tags', 'assignees', 'assignments.assignedBy',
                      'attachments', 'comments.user', 'changeLogs.user', 'children', 'parent']);
 
-        $projects = Project::where('user_id', Auth::id())
-            ->orWhereHas('tasks.assignees', function ($query) {
-                $query->where('users.id', Auth::id());
+        $projects = Project::where(function ($query) {
+                $query->where('user_id', Auth::id())
+                    ->orWhereHas('tasks.assignees', function ($q) {
+                        $q->where('users.id', Auth::id());
+                    });
             })
             ->where('status', '!=', 'archived')
             ->orderByRaw('LOWER(name)')
@@ -349,9 +353,11 @@ class TaskController extends Controller
         $task->load(['creator', 'project', 'tags', 'assignees', 'assignments.assignedBy',
                      'attachments', 'comments.user', 'changeLogs.user', 'children', 'parent']);
 
-        $projects = Project::where('user_id', Auth::id())
-            ->orWhereHas('tasks.assignees', function ($query) {
-                $query->where('users.id', Auth::id());
+        $projects = Project::where(function ($query) {
+                $query->where('user_id', Auth::id())
+                    ->orWhereHas('tasks.assignees', function ($q) {
+                        $q->where('users.id', Auth::id());
+                    });
             })
             ->where('status', '!=', 'archived')
             ->orderByRaw('LOWER(name)')
@@ -381,9 +387,11 @@ class TaskController extends Controller
         $this->authorizeTaskAccess($task);
         $this->assertProjectActive($task);
 
-        $projects = Project::where('user_id', Auth::id())
-            ->orWhereHas('tasks.assignees', function ($query) {
-                $query->where('users.id', Auth::id());
+        $projects = Project::where(function ($query) {
+                $query->where('user_id', Auth::id())
+                    ->orWhereHas('tasks.assignees', function ($q) {
+                        $q->where('users.id', Auth::id());
+                    });
             })
             ->where('status', '!=', 'archived')
             ->orderByRaw('LOWER(name)')
