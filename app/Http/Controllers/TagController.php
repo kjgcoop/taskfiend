@@ -60,7 +60,7 @@ class TagController extends Controller
             })
             ->where('status', '!=', 'archived')
             ->where('status', '!=', 'done')
-            ->with(['creator', 'project', 'assignees', 'attachments', 'comments'])
+            ->with(['creator', 'project', 'assignees', 'attachments', 'comments', 'completedBy'])
             ->orderBy('datetime')
             ->get();
 
@@ -72,7 +72,7 @@ class TagController extends Controller
                   });
             })
             ->where('status', 'done')
-            ->with(['creator', 'project', 'assignees', 'attachments', 'comments'])
+            ->with(['creator', 'project', 'assignees', 'attachments', 'comments', 'completedBy'])
             ->orderBy('datetime')
             ->get();
 

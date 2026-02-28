@@ -15,6 +15,7 @@ class Task extends Model
         'description',
         'status',
         'completed_at',
+        'completed_by_id',
         'creator_id',
         'date',
         'time',
@@ -45,6 +46,11 @@ class Task extends Model
     public function creator(): BelongsTo
     {
         return $this->belongsTo(User::class, 'creator_id');
+    }
+
+    public function completedBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'completed_by_id');
     }
 
     public function project(): BelongsTo

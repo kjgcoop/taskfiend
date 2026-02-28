@@ -46,7 +46,7 @@ class DashboardController extends Controller
             ->where('status', '!=', 'archived')
             ->where('status', '!=', 'done')
             ->where('project_id', $inboxProject?->id)
-            ->with(['creator', 'tags', 'assignees', 'attachments', 'comments'])
+            ->with(['creator', 'tags', 'assignees', 'attachments', 'comments', 'completedBy'])
             ->orderByRaw('date IS NULL, date ASC, time ASC')
             ->get();
 
@@ -59,7 +59,7 @@ class DashboardController extends Controller
             })
             ->where('status', 'done')
             ->where('project_id', $inboxProject?->id)
-            ->with(['creator', 'tags', 'assignees', 'attachments', 'comments'])
+            ->with(['creator', 'tags', 'assignees', 'attachments', 'comments', 'completedBy'])
             ->orderByRaw('date IS NULL, date ASC, time ASC')
             ->get();
 
@@ -80,7 +80,7 @@ class DashboardController extends Controller
             ->whereNotNull('date')
             ->where('date', '<', today()->format('Y-m-d'))
             ->whereHas('project', fn($pq) => $pq->whereNotIn('status', ['archived', 'done']))
-            ->with(['creator', 'project', 'tags', 'assignees', 'attachments', 'comments'])
+            ->with(['creator', 'project', 'tags', 'assignees', 'attachments', 'comments', 'completedBy'])
             ->orderBy('date', 'asc')
             ->orderByRaw('time IS NULL, time ASC')
             ->get();
@@ -101,7 +101,7 @@ class DashboardController extends Controller
             ->where('status', '!=', 'done')
             ->whereNull('date')
             ->whereHas('project', fn($pq) => $pq->whereNotIn('status', ['archived', 'done']))
-            ->with(['creator', 'project', 'tags', 'assignees', 'attachments', 'comments'])
+            ->with(['creator', 'project', 'tags', 'assignees', 'attachments', 'comments', 'completedBy'])
             ->orderBy('created_at', 'desc')
             ->get();
 
@@ -119,7 +119,7 @@ class DashboardController extends Controller
             })
             ->where('status', '!=', 'archived')
             ->whereHas('project', fn($pq) => $pq->whereNotIn('status', ['archived', 'done']))
-            ->with(['creator', 'project', 'tags', 'assignees', 'attachments', 'comments'])
+            ->with(['creator', 'project', 'tags', 'assignees', 'attachments', 'comments', 'completedBy'])
             ->orderByRaw("CASE WHEN status = 'done' THEN 1 ELSE 0 END ASC")
             ->orderByRaw('date IS NULL, date ASC, time ASC')
             ->get();
@@ -152,7 +152,7 @@ class DashboardController extends Controller
             ->whereNotNull('date')
             ->whereBetween('date', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
             ->whereHas('project', fn($pq) => $pq->whereNotIn('status', ['archived', 'done']))
-            ->with(['creator', 'project', 'tags', 'assignees', 'attachments', 'comments'])
+            ->with(['creator', 'project', 'tags', 'assignees', 'attachments', 'comments', 'completedBy'])
             ->orderByRaw('time IS NULL, time ASC')
             ->get()
             ->groupBy(function ($task) {
@@ -211,7 +211,7 @@ class DashboardController extends Controller
             ->where('status', '!=', 'done')
             ->where('date', $dateStr)
             ->whereHas('project', fn($pq) => $pq->whereNotIn('status', ['archived', 'done']))
-            ->with(['creator', 'project', 'tags', 'assignees', 'attachments', 'comments'])
+            ->with(['creator', 'project', 'tags', 'assignees', 'attachments', 'comments', 'completedBy'])
             ->orderByRaw('time IS NULL, time ASC')
             ->get();
 
@@ -224,7 +224,7 @@ class DashboardController extends Controller
             })
             ->where('status', 'done')
             ->whereDate('completed_at', $dateStr)
-            ->with(['creator', 'project', 'tags', 'assignees', 'attachments', 'comments'])
+            ->with(['creator', 'project', 'tags', 'assignees', 'attachments', 'comments', 'completedBy'])
             ->orderByRaw('time IS NULL, time ASC')
             ->get();
 
@@ -243,7 +243,7 @@ class DashboardController extends Controller
                 $q->where('status', 'archived')
                   ->orWhereHas('project', fn($pq) => $pq->whereIn('status', ['archived', 'done']));
             })
-            ->with(['creator', 'project', 'tags', 'assignees', 'attachments', 'comments'])
+            ->with(['creator', 'project', 'tags', 'assignees', 'attachments', 'comments', 'completedBy'])
             ->orderByRaw('time IS NULL, time ASC')
             ->get();
 
@@ -270,7 +270,7 @@ class DashboardController extends Controller
     private function dayReview(Carbon $carbonDate, string $dateStr)
     {
         $userId = Auth::id();
-        $taskWith = ['creator', 'project', 'tags', 'assignees', 'attachments', 'comments'];
+        $taskWith = ['creator', 'project', 'tags', 'assignees', 'attachments', 'comments', 'completedBy'];
 
         // Tasks directly dated for this day where the user is creator or assignee
         $datedTasks = Task::query()
