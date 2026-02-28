@@ -145,7 +145,7 @@
                     <div class="flex-1">
                         <input type="text" x-model="dateText" x-ref="dateInput"
                                @input.debounce.300ms="previewDate()"
-                               @keydown.enter="saveDateField()"
+                               @keydown.enter.prevent="saveDateField()"
                                @keydown.escape="cancelEdit('date')"
                                placeholder="tomorrow, next friday, march 15..."
                                class="w-full rounded-md bg-gray-700 border-gray-600 text-gray-100 placeholder-gray-500 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm">
@@ -716,9 +716,8 @@
                     await this.saveField('date');
                     return;
                 }
-                if (!/^\d{4}-\d{2}-\d{2}$/.test(this.fields.date)) {
-                    this.fields.date = input;
-                }
+                // Always use the typed text — the server handles natural language parsing
+                this.fields.date = input;
                 await this.saveField('date');
             },
 
