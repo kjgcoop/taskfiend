@@ -584,8 +584,8 @@
                 @php
                     $avatarColors = ['bg-blue-500', 'bg-green-500', 'bg-yellow-500', 'bg-purple-500', 'bg-pink-500', 'bg-indigo-500', 'bg-red-500', 'bg-teal-500'];
                 @endphp
-                @if($task->status === 'done' && $task->completedBy)
-                    @php $completer = $task->completedBy; @endphp
+                @if($task->status === 'done' && $task->completionLog?->user)
+                    @php $completer = $task->completionLog->user; @endphp
                     <div class="flex-shrink-0">
                         @if($completer->profile_image)
                             <img src="{{ route('profile.image.show', $completer) }}"

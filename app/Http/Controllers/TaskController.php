@@ -39,7 +39,7 @@ class TaskController extends Controller
             $query->whereHas('project', fn($pq) => $pq->whereNotIn('status', ['archived', 'done']));
         }
 
-        $tasks = $query->with(['creator', 'project', 'tags', 'assignees', 'attachments', 'comments', 'completedBy'])
+        $tasks = $query->with(['creator', 'project', 'tags', 'assignees', 'attachments', 'comments', 'completionLog.user'])
             ->orderBy('date')
             ->get();
 
@@ -539,10 +539,8 @@ class TaskController extends Controller
 
         if ($statusChangedToDone) {
             $task->completed_at = now();
-            $task->completed_by_id = Auth::id();
         } elseif ($statusChangedToIncomplete) {
             $task->completed_at = null;
-            $task->completed_by_id = null;
         }
 
         $task->save();
@@ -727,10 +725,8 @@ class TaskController extends Controller
                 if ($field === 'status') {
                     if ($value === 'done' && $previousStatus !== 'done') {
                         $task->completed_at = now();
-                        $task->completed_by_id = Auth::id();
                     } elseif ($value === 'incomplete') {
                         $task->completed_at = null;
-                        $task->completed_by_id = null;
                     }
                 }
 
@@ -1019,7 +1015,6 @@ class TaskController extends Controller
             if ($descendant->status !== 'done') {
                 $descendant->status = 'done';
                 $descendant->completed_at = now();
-                $descendant->completed_by_id = Auth::id();
                 $descendant->save();
                 $this->logChange($descendant, 'auto-completed (parent marked done)', 'completed');
             }
@@ -1029,7 +1024,6 @@ class TaskController extends Controller
         if ($task->status !== 'done') {
             $task->status = 'done';
             $task->completed_at = now();
-            $task->completed_by_id = Auth::id();
             $task->save();
         }
     }

@@ -86,7 +86,7 @@ class ProjectController extends Controller
             'assignees',
             'attachments',
             'comments',
-            'completedBy',
+            'completionLog.user',
         ];
 
         $tasks = $project->tasks()

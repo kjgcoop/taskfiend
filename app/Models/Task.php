@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Support\Collection;
 
 class Task extends Model
@@ -15,7 +16,6 @@ class Task extends Model
         'description',
         'status',
         'completed_at',
-        'completed_by_id',
         'creator_id',
         'date',
         'time',
@@ -48,9 +48,12 @@ class Task extends Model
         return $this->belongsTo(User::class, 'creator_id');
     }
 
-    public function completedBy(): BelongsTo
+    public function completionLog(): HasOne
     {
-        return $this->belongsTo(User::class, 'completed_by_id');
+        return $this->hasOne(ChangeLog::class, 'entity_id')
+                    ->where('entity_type', 'tasks')
+                    ->where('verb', 'completed')
+                    ->latestOfMany('date');
     }
 
     public function project(): BelongsTo
