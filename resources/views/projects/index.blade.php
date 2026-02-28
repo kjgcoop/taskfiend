@@ -71,11 +71,13 @@
                                         &middot; {{ $project->done_tasks_count }} completed
                                     @endif
                                 </span>
+                                @if($project->status !== 'incomplete')
                                 <span class="inline-block px-2 py-1 text-xs rounded
                                     @if($project->status === 'done') bg-green-100 text-green-800
                                     @else bg-blue-100 text-blue-800 @endif">
                                     {{ ucfirst($project->status) }}
                                 </span>
+                                @endif
                             </div>
                         </div>
                     </div>
