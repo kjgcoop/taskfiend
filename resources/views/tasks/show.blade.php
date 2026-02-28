@@ -281,23 +281,13 @@
                         @if(!$isInactive)
                         <div x-show="editing.project_id" class="mt-1">
                             <select x-model="fields.project_id"
-                                    @keydown.enter="saveField('project_id')"
+                                    @change="saveField('project_id')"
                                     @keydown.escape="cancelEdit('project_id')"
                                     class="w-full rounded-md bg-gray-700 border-gray-600 text-gray-100 placeholder-gray-500 shadow-sm focus:border-blue-500 focus:ring-blue-500">
                                 @foreach($projects as $project)
                                     <option value="{{ $project->id }}">{{ $project->name }}</option>
                                 @endforeach
                             </select>
-                            <div class="flex gap-2 mt-2">
-                                <button @click="saveField('project_id')"
-                                        class="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700">
-                                    Save
-                                </button>
-                                <button @click="cancelEdit('project_id')"
-                                        class="px-3 py-1 bg-gray-700 text-gray-300 text-sm rounded hover:bg-gray-600">
-                                    Cancel
-                                </button>
-                            </div>
                         </div>
                         @endif
                     </div>
