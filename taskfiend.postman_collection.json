@@ -1,0 +1,1071 @@
+{
+  "info": {
+    "name": "Task Fiend",
+    "description": "Complete collection for the Task Fiend API and web endpoints.\n\n## Setup\n1. Set collection variables: `base_url`, `email`, `password`, `api_key`.\n2. Run **Auth → Get CSRF Token** first — it extracts the token and stores it in `csrf_token`.\n3. Run **Auth → Login** to establish a session cookie (required for all web routes).\n4. For API routes under the **API** folder, only `api_key` is needed (Bearer token).\n\n## Notes\n- Web routes use Laravel session cookies + CSRF tokens (handled automatically by the pre-request scripts below).\n- Replace `{task}`, `{project}`, `{tag}`, `{id}` path params with real IDs before sending.\n- `date` params use `YYYY-MM-DD` format.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "base_url", "value": "http://localhost:8000", "type": "string" },
+    { "key": "email",    "value": "test@example.com",     "type": "string" },
+    { "key": "password", "value": "password123",           "type": "string" },
+    { "key": "api_key",  "value": "tfk_YOUR_KEY_HERE",    "type": "string" },
+    { "key": "csrf_token", "value": "",                   "type": "string" },
+    { "key": "task_id",    "value": "1",                  "type": "string" },
+    { "key": "project_id", "value": "1",                  "type": "string" },
+    { "key": "tag_id",     "value": "1",                  "type": "string" },
+    { "key": "comment_id",    "value": "1",               "type": "string" },
+    { "key": "attachment_id", "value": "1",               "type": "string" },
+    { "key": "user_id",       "value": "1",               "type": "string" }
+  ],
+  "item": [
+
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Get CSRF Token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// Extract the CSRF token from the <meta name=\"csrf-token\"> tag",
+                  "const html = pm.response.text();",
+                  "const match = html.match(/name=\"csrf-token\"\\s+content=\"([^\"]+)\"/);",
+                  "if (match) {",
+                  "    pm.collectionVariables.set('csrf_token', match[1]);",
+                  "    console.log('CSRF token saved:', match[1]);",
+                  "} else {",
+                  "    console.warn('CSRF token not found in response');",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{base_url}}/login", "host": ["{{base_url}}"], "path": ["login"] }
+          }
+        },
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// After login Laravel redirects to /; a 302 means success.",
+                  "pm.test('Login succeeded (redirect)', () => {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 302]);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/x-www-form-urlencoded" },
+              { "key": "Accept",       "value": "text/html,application/xhtml+xml" },
+              { "key": "X-CSRF-TOKEN", "value": "{{csrf_token}}" }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                { "key": "_token",   "value": "{{csrf_token}}" },
+                { "key": "email",    "value": "{{email}}" },
+                { "key": "password", "value": "{{password}}" }
+              ]
+            },
+            "url": { "raw": "{{base_url}}/login", "host": ["{{base_url}}"], "path": ["login"] }
+          }
+        },
+        {
+          "name": "Logout",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/x-www-form-urlencoded" }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                { "key": "_token", "value": "{{csrf_token}}" }
+              ]
+            },
+            "url": { "raw": "{{base_url}}/logout", "host": ["{{base_url}}"], "path": ["logout"] }
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "API (Bearer Token)",
+      "description": "These three endpoints use `Authorization: Bearer <api_key>` — no cookies or CSRF needed.",
+      "item": [
+        {
+          "name": "Create Task",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{api_key}}" },
+              { "key": "Content-Type",  "value": "application/json" },
+              { "key": "Accept",        "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Buy oat milk\",\n  \"description\": \"From the farmers market\",\n  \"datetime\": \"2026-03-05\",\n  \"project_id\": null\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": { "raw": "{{base_url}}/api/tasks", "host": ["{{base_url}}"], "path": ["api", "tasks"] }
+          }
+        },
+        {
+          "name": "Tasks Completed on Day",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{api_key}}" },
+              { "key": "Accept",        "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/tasks/completed/2026-03-03",
+              "host": ["{{base_url}}"],
+              "path": ["api", "tasks", "completed", "2026-03-03"]
+            }
+          }
+        },
+        {
+          "name": "Tasks on Day",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{api_key}}" },
+              { "key": "Accept",        "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/tasks/on/2026-03-03",
+              "host": ["{{base_url}}"],
+              "path": ["api", "tasks", "on", "2026-03-03"]
+            }
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "Dashboard",
+      "item": [
+        {
+          "name": "Today / Day View",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "text/html" }],
+            "url": { "raw": "{{base_url}}/today", "host": ["{{base_url}}"], "path": ["today"] }
+          }
+        },
+        {
+          "name": "Day View (with date param)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "text/html" }],
+            "url": {
+              "raw": "{{base_url}}/day?date=2026-03-03",
+              "host": ["{{base_url}}"],
+              "path": ["day"],
+              "query": [{ "key": "date", "value": "2026-03-03" }]
+            }
+          }
+        },
+        {
+          "name": "Overdue",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{base_url}}/overdue", "host": ["{{base_url}}"], "path": ["overdue"] }
+          }
+        },
+        {
+          "name": "Inbox",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{base_url}}/inbox", "host": ["{{base_url}}"], "path": ["inbox"] }
+          }
+        },
+        {
+          "name": "All Tasks",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{base_url}}/all-tasks", "host": ["{{base_url}}"], "path": ["all-tasks"] }
+          }
+        },
+        {
+          "name": "Undated",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{base_url}}/undated", "host": ["{{base_url}}"], "path": ["undated"] }
+          }
+        },
+        {
+          "name": "Calendar",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{base_url}}/calendar", "host": ["{{base_url}}"], "path": ["calendar"] }
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "Tasks",
+      "item": [
+        {
+          "name": "List Tasks",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{base_url}}/tasks", "host": ["{{base_url}}"], "path": ["tasks"] }
+          }
+        },
+        {
+          "name": "Create Task Form",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{base_url}}/tasks/create", "host": ["{{base_url}}"], "path": ["tasks", "create"] }
+          }
+        },
+        {
+          "name": "Store Task",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/x-www-form-urlencoded" }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                { "key": "_token",             "value": "{{csrf_token}}" },
+                { "key": "name",               "value": "My new task" },
+                { "key": "description",        "value": "Task created via Postman" },
+                { "key": "datetime",           "value": "2026-03-05" },
+                { "key": "project_id",         "value": "" },
+                { "key": "status",             "value": "incomplete" },
+                { "key": "recurrence_pattern", "value": "" }
+              ]
+            },
+            "url": { "raw": "{{base_url}}/tasks", "host": ["{{base_url}}"], "path": ["tasks"] }
+          }
+        },
+        {
+          "name": "Show Task",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/tasks/{{task_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["tasks", "{{task_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Edit Task Form",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/tasks/{{task_id}}/edit",
+              "host": ["{{base_url}}"],
+              "path": ["tasks", "{{task_id}}", "edit"]
+            }
+          }
+        },
+        {
+          "name": "Update Task (PUT)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/x-www-form-urlencoded" }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                { "key": "_token",      "value": "{{csrf_token}}" },
+                { "key": "name",        "value": "Updated task name" },
+                { "key": "description", "value": "Updated description" },
+                { "key": "datetime",    "value": "2026-03-10" },
+                { "key": "status",      "value": "incomplete" }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/tasks/{{task_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["tasks", "{{task_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Archive Task (DELETE)",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Content-Type", "value": "application/x-www-form-urlencoded" }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                { "key": "_token", "value": "{{csrf_token}}" }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/tasks/{{task_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["tasks", "{{task_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Task Panel (AJAX)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "X-Requested-With", "value": "XMLHttpRequest" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/tasks/{{task_id}}/panel",
+              "host": ["{{base_url}}"],
+              "path": ["tasks", "{{task_id}}", "panel"]
+            }
+          }
+        },
+        {
+          "name": "Update Field (AJAX)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type",     "value": "application/json" },
+              { "key": "Accept",           "value": "application/json" },
+              { "key": "X-CSRF-TOKEN",     "value": "{{csrf_token}}" },
+              { "key": "X-Requested-With", "value": "XMLHttpRequest" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"field\": \"status\",\n  \"value\": \"done\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{base_url}}/tasks/{{task_id}}/update-field",
+              "host": ["{{base_url}}"],
+              "path": ["tasks", "{{task_id}}", "update-field"]
+            }
+          }
+        },
+        {
+          "name": "Parse Date",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Accept",       "value": "application/json" },
+              { "key": "X-CSRF-TOKEN", "value": "{{csrf_token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Team sync every Tuesday\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{base_url}}/tasks/parse-date",
+              "host": ["{{base_url}}"],
+              "path": ["tasks", "parse-date"]
+            }
+          }
+        },
+        {
+          "name": "Bulk Update",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Accept",       "value": "application/json" },
+              { "key": "X-CSRF-TOKEN", "value": "{{csrf_token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"task_ids\": [1, 2],\n  \"field\": \"status\",\n  \"value\": \"done\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{base_url}}/tasks/bulk-update",
+              "host": ["{{base_url}}"],
+              "path": ["tasks", "bulk-update"]
+            }
+          }
+        },
+        {
+          "name": "Duplicate Task",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/x-www-form-urlencoded" }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                { "key": "_token", "value": "{{csrf_token}}" }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/tasks/{{task_id}}/duplicate",
+              "host": ["{{base_url}}"],
+              "path": ["tasks", "{{task_id}}", "duplicate"]
+            }
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "Projects",
+      "item": [
+        {
+          "name": "List Projects",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{base_url}}/projects", "host": ["{{base_url}}"], "path": ["projects"] }
+          }
+        },
+        {
+          "name": "Create Project Form",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{base_url}}/projects/create", "host": ["{{base_url}}"], "path": ["projects", "create"] }
+          }
+        },
+        {
+          "name": "Store Project",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/x-www-form-urlencoded" }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                { "key": "_token",      "value": "{{csrf_token}}" },
+                { "key": "name",        "value": "My Project" },
+                { "key": "description", "value": "A project created via Postman" },
+                { "key": "color",       "value": "#3b82f6" }
+              ]
+            },
+            "url": { "raw": "{{base_url}}/projects", "host": ["{{base_url}}"], "path": ["projects"] }
+          }
+        },
+        {
+          "name": "Show Project",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/projects/{{project_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["projects", "{{project_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Archive Project (DELETE)",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Content-Type", "value": "application/x-www-form-urlencoded" }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                { "key": "_token", "value": "{{csrf_token}}" }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/projects/{{project_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["projects", "{{project_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Update Project Field (AJAX)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type",     "value": "application/json" },
+              { "key": "Accept",           "value": "application/json" },
+              { "key": "X-CSRF-TOKEN",     "value": "{{csrf_token}}" },
+              { "key": "X-Requested-With", "value": "XMLHttpRequest" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"field\": \"name\",\n  \"value\": \"Renamed Project\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{base_url}}/projects/{{project_id}}/update-field",
+              "host": ["{{base_url}}"],
+              "path": ["projects", "{{project_id}}", "update-field"]
+            }
+          }
+        },
+        {
+          "name": "Show Project Background",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/projects/{{project_id}}/background",
+              "host": ["{{base_url}}"],
+              "path": ["projects", "{{project_id}}", "background"]
+            }
+          }
+        },
+        {
+          "name": "Upload Project Background",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "_token",     "value": "{{csrf_token}}", "type": "text" },
+                { "key": "background", "type": "file",            "src": "" }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/projects/{{project_id}}/background",
+              "host": ["{{base_url}}"],
+              "path": ["projects", "{{project_id}}", "background"]
+            }
+          }
+        },
+        {
+          "name": "Remove Project Background",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Content-Type", "value": "application/x-www-form-urlencoded" }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                { "key": "_token", "value": "{{csrf_token}}" }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/projects/{{project_id}}/background",
+              "host": ["{{base_url}}"],
+              "path": ["projects", "{{project_id}}", "background"]
+            }
+          }
+        },
+        {
+          "name": "Export Project Template",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/projects/{{project_id}}/export-template",
+              "host": ["{{base_url}}"],
+              "path": ["projects", "{{project_id}}", "export-template"]
+            }
+          }
+        },
+        {
+          "name": "Import Project Template",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "_token", "value": "{{csrf_token}}", "type": "text" },
+                { "key": "file",   "type": "file",            "src": "" }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/projects/import-template",
+              "host": ["{{base_url}}"],
+              "path": ["projects", "import-template"]
+            }
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "Tags",
+      "item": [
+        {
+          "name": "List Tags",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{base_url}}/tags", "host": ["{{base_url}}"], "path": ["tags"] }
+          }
+        },
+        {
+          "name": "Create Tag Form",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{base_url}}/tags/create", "host": ["{{base_url}}"], "path": ["tags", "create"] }
+          }
+        },
+        {
+          "name": "Store Tag",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/x-www-form-urlencoded" }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                { "key": "_token", "value": "{{csrf_token}}" },
+                { "key": "name",   "value": "urgent" },
+                { "key": "color",  "value": "#ef4444" }
+              ]
+            },
+            "url": { "raw": "{{base_url}}/tags", "host": ["{{base_url}}"], "path": ["tags"] }
+          }
+        },
+        {
+          "name": "Show Tag",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/tags/{{tag_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["tags", "{{tag_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Edit Tag Form",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/tags/{{tag_id}}/edit",
+              "host": ["{{base_url}}"],
+              "path": ["tags", "{{tag_id}}", "edit"]
+            }
+          }
+        },
+        {
+          "name": "Update Tag",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/x-www-form-urlencoded" }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                { "key": "_token", "value": "{{csrf_token}}" },
+                { "key": "name",   "value": "critical" },
+                { "key": "color",  "value": "#dc2626" }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/tags/{{tag_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["tags", "{{tag_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Delete Tag",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Content-Type", "value": "application/x-www-form-urlencoded" }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                { "key": "_token", "value": "{{csrf_token}}" }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/tags/{{tag_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["tags", "{{tag_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Quick Create Tag (AJAX)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Accept",       "value": "application/json" },
+              { "key": "X-CSRF-TOKEN", "value": "{{csrf_token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"quick-tag\",\n  \"color\": \"#8b5cf6\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{base_url}}/tags/quick-create",
+              "host": ["{{base_url}}"],
+              "path": ["tags", "quick-create"]
+            }
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "Comments",
+      "item": [
+        {
+          "name": "Store Comment",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "_token",  "value": "{{csrf_token}}", "type": "text" },
+                { "key": "content", "value": "This is a comment",  "type": "text" },
+                { "key": "attachment", "type": "file", "src": "", "description": "Optional file attachment" }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/tasks/{{task_id}}/comments",
+              "host": ["{{base_url}}"],
+              "path": ["tasks", "{{task_id}}", "comments"]
+            }
+          }
+        },
+        {
+          "name": "Delete Comment",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Content-Type", "value": "application/x-www-form-urlencoded" }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                { "key": "_token", "value": "{{csrf_token}}" }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/tasks/{{task_id}}/comments/{{comment_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["tasks", "{{task_id}}", "comments", "{{comment_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Download Comment Attachment",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/tasks/{{task_id}}/comments/{{comment_id}}/download",
+              "host": ["{{base_url}}"],
+              "path": ["tasks", "{{task_id}}", "comments", "{{comment_id}}", "download"]
+            }
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "Task Attachments",
+      "item": [
+        {
+          "name": "Upload Attachment",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "_token", "value": "{{csrf_token}}", "type": "text" },
+                { "key": "file",   "type": "file",            "src": "" }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/tasks/{{task_id}}/attachments",
+              "host": ["{{base_url}}"],
+              "path": ["tasks", "{{task_id}}", "attachments"]
+            }
+          }
+        },
+        {
+          "name": "Delete Attachment",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Content-Type", "value": "application/x-www-form-urlencoded" }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                { "key": "_token", "value": "{{csrf_token}}" }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/tasks/{{task_id}}/attachments/{{attachment_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["tasks", "{{task_id}}", "attachments", "{{attachment_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Download Attachment",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/tasks/{{task_id}}/attachments/{{attachment_id}}/download",
+              "host": ["{{base_url}}"],
+              "path": ["tasks", "{{task_id}}", "attachments", "{{attachment_id}}", "download"]
+            }
+          }
+        },
+        {
+          "name": "View Attachment (inline)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/tasks/{{task_id}}/attachments/{{attachment_id}}/view",
+              "host": ["{{base_url}}"],
+              "path": ["tasks", "{{task_id}}", "attachments", "{{attachment_id}}", "view"]
+            }
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "Search",
+      "item": [
+        {
+          "name": "Search",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/search?q=milk&tags[]=1&project_id=1&assignee_id=1",
+              "host": ["{{base_url}}"],
+              "path": ["search"],
+              "query": [
+                { "key": "q",            "value": "milk" },
+                { "key": "tags[]",       "value": "1",   "description": "Tag ID (repeatable)" },
+                { "key": "project_id",   "value": "1",   "description": "Optional project filter" },
+                { "key": "assignee_id",  "value": "1",   "description": "Optional assignee filter" }
+              ]
+            }
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "Change Logs",
+      "item": [
+        {
+          "name": "Task Changelog",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/changelogs/task/{{task_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["changelogs", "task", "{{task_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Project Changelog",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/changelogs/project/{{project_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["changelogs", "project", "{{project_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Tag Changelog",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/changelogs/tag/{{tag_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["changelogs", "tag", "{{tag_id}}"]
+            }
+          }
+        },
+        {
+          "name": "User Changelog",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/changelogs/user",
+              "host": ["{{base_url}}"],
+              "path": ["changelogs", "user"]
+            }
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "Profile",
+      "item": [
+        {
+          "name": "Edit Profile",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{base_url}}/profile", "host": ["{{base_url}}"], "path": ["profile"] }
+          }
+        },
+        {
+          "name": "Update Profile",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/x-www-form-urlencoded" }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                { "key": "_token", "value": "{{csrf_token}}" },
+                { "key": "name",   "value": "Updated Name" },
+                { "key": "email",  "value": "test@example.com" }
+              ]
+            },
+            "url": { "raw": "{{base_url}}/profile", "host": ["{{base_url}}"], "path": ["profile"] }
+          }
+        },
+        {
+          "name": "Update Profile Image",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "_token", "value": "{{csrf_token}}", "type": "text" },
+                { "key": "image",  "type": "file",            "src": "" }
+              ]
+            },
+            "url": { "raw": "{{base_url}}/profile/image", "host": ["{{base_url}}"], "path": ["profile", "image"] }
+          }
+        },
+        {
+          "name": "Delete Profile Image",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Content-Type", "value": "application/x-www-form-urlencoded" }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                { "key": "_token", "value": "{{csrf_token}}" }
+              ]
+            },
+            "url": { "raw": "{{base_url}}/profile/image", "host": ["{{base_url}}"], "path": ["profile", "image"] }
+          }
+        },
+        {
+          "name": "Show Profile Image",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/profile-image/{{user_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["profile-image", "{{user_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Delete Account",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Content-Type", "value": "application/x-www-form-urlencoded" }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                { "key": "_token",   "value": "{{csrf_token}}" },
+                { "key": "password", "value": "{{password}}" }
+              ]
+            },
+            "url": { "raw": "{{base_url}}/profile", "host": ["{{base_url}}"], "path": ["profile"] }
+          }
+        },
+        {
+          "name": "Change Password",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/x-www-form-urlencoded" }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                { "key": "_token",              "value": "{{csrf_token}}" },
+                { "key": "current_password",    "value": "{{password}}" },
+                { "key": "password",            "value": "newpassword123" },
+                { "key": "password_confirmation","value": "newpassword123" }
+              ]
+            },
+            "url": { "raw": "{{base_url}}/password", "host": ["{{base_url}}"], "path": ["password"] }
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "Data Export",
+      "item": [
+        {
+          "name": "Export All Data",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{base_url}}/export", "host": ["{{base_url}}"], "path": ["export"] }
+          }
+        }
+      ]
+    }
+
+  ]
+}
