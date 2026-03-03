@@ -165,18 +165,30 @@
                         </div>
                     </div>
 
-                    <!-- Status Toggles -->
-                    <div class="mb-6 flex items-center gap-6">
-                        <label class="inline-flex items-center cursor-pointer">
-                            <input type="checkbox" name="show_completed" value="1" {{ request('show_completed') ? 'checked' : '' }}
-                                   class="rounded border-gray-600 bg-gray-700 text-blue-600 focus:ring-blue-500">
-                            <span class="ml-2 text-sm text-gray-300">Show completed</span>
-                        </label>
-                        <label class="inline-flex items-center cursor-pointer">
-                            <input type="checkbox" name="include_archived" value="1" {{ request('include_archived') ? 'checked' : '' }}
-                                   class="rounded border-gray-600 bg-gray-700 text-blue-600 focus:ring-blue-500">
-                            <span class="ml-2 text-sm text-gray-300">Include archived</span>
-                        </label>
+                    <!-- Status Filters -->
+                    @php
+                        $hasSearchParams = request()->hasAny(['q', 'tag_ids', 'project_id', 'date_from', 'date_to', 'has_date', 'assignee_id', 'creator_id', 'show_incomplete', 'show_done', 'show_archived', 'sort']);
+                        $defaultIncomplete = $hasSearchParams ? request()->boolean('show_incomplete') : true;
+                    @endphp
+                    <div class="mb-6">
+                        <label class="block text-sm font-medium text-gray-300 mb-2">Status</label>
+                        <div class="flex items-center gap-6">
+                            <label class="inline-flex items-center cursor-pointer">
+                                <input type="checkbox" name="show_incomplete" value="1" {{ $defaultIncomplete ? 'checked' : '' }}
+                                       class="rounded border-gray-600 bg-gray-700 text-blue-600 focus:ring-blue-500">
+                                <span class="ml-2 text-sm text-gray-300">Incomplete</span>
+                            </label>
+                            <label class="inline-flex items-center cursor-pointer">
+                                <input type="checkbox" name="show_done" value="1" {{ request('show_done') ? 'checked' : '' }}
+                                       class="rounded border-gray-600 bg-gray-700 text-blue-600 focus:ring-blue-500">
+                                <span class="ml-2 text-sm text-gray-300">Done</span>
+                            </label>
+                            <label class="inline-flex items-center cursor-pointer">
+                                <input type="checkbox" name="show_archived" value="1" {{ request('show_archived') ? 'checked' : '' }}
+                                       class="rounded border-gray-600 bg-gray-700 text-blue-600 focus:ring-blue-500">
+                                <span class="ml-2 text-sm text-gray-300">Archived</span>
+                            </label>
+                        </div>
                     </div>
 
                     <div class="flex items-center gap-4 flex-wrap">
@@ -201,11 +213,11 @@
             </div>
 
             <!-- Search Results -->
-            @if(request()->hasAny(['q', 'tag_ids', 'project_id', 'date_from', 'date_to', 'has_date', 'assignee_id', 'creator_id', 'show_completed', 'include_archived']))
+            @if(request()->hasAny(['q', 'tag_ids', 'project_id', 'date_from', 'date_to', 'has_date', 'assignee_id', 'creator_id', 'show_incomplete', 'show_done', 'show_archived']))
                 <div class="bg-[#202020] border border-gray-700 overflow-hidden shadow-sm sm:rounded-lg p-6" x-data="taskFilter()">
                     <h3 class="text-lg font-semibold text-gray-100 mb-4">
                         Search Results
-                        <span class="text-sm font-normal text-gray-500" x-data x-text="$store.taskCount.ready ? ($store.taskCount.filtered ? '(showing ' + $store.taskCount.visible + ' of ' + $store.taskCount.total + ' found)' : '(' + $store.taskCount.total + ' found)') : '({{ $tasks->count() + $completedTasks->count() }} found)'">({{ $tasks->count() + $completedTasks->count() }} found)</span>
+                        <span class="text-sm font-normal text-gray-500" x-data x-text="$store.taskCount.ready ? ($store.taskCount.filtered ? '(showing ' + $store.taskCount.visible + ' of ' + $store.taskCount.total + ' found)' : '(' + $store.taskCount.total + ' found)') : '({{ $tasks->count() + $completedTasks->count() + $archivedTasks->count() }} found)'">({{ $tasks->count() + $completedTasks->count() + $archivedTasks->count() }} found)</span>
                     </h3>
                     <div class="mb-4">
                         <input type="text"
@@ -216,12 +228,42 @@
                                class="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-md text-gray-100 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                     </div>
                     <div x-ref="taskContainer">
-                        <x-task-list :tasks="$tasks" />
+                        @php
+                            $multipleStatuses = (request('show_incomplete') ? 1 : 0) + (request('show_done') ? 1 : 0) + (request('show_archived') ? 1 : 0) > 1;
+                        @endphp
+
+                        @if($tasks->isNotEmpty())
+                            @if($multipleStatuses)
+                                <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Incomplete</p>
+                            @endif
+                            <x-task-list :tasks="$tasks" />
+                        @endif
+
+                        @if($completedTasks->isNotEmpty())
+                            <div class="{{ $tasks->isNotEmpty() ? 'mt-6 border-t border-gray-700 pt-4' : '' }}">
+                                @if($multipleStatuses)
+                                    <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Done</p>
+                                @endif
+                                <x-task-list :tasks="$completedTasks" />
+                            </div>
+                        @endif
+
+                        @if($archivedTasks->isNotEmpty())
+                            <div class="{{ ($tasks->isNotEmpty() || $completedTasks->isNotEmpty()) ? 'mt-6 border-t border-gray-700 pt-4' : '' }}">
+                                @if($multipleStatuses)
+                                    <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Archived</p>
+                                @endif
+                                <x-task-list :tasks="$archivedTasks" :show-as-archived="true" />
+                            </div>
+                        @endif
+
+                        @if($tasks->isEmpty() && $completedTasks->isEmpty() && $archivedTasks->isEmpty())
+                            <p class="text-gray-500 text-center py-8 italic">No tasks found matching your criteria.</p>
+                        @endif
                     </div>
                     <div x-show="noResults" x-cloak class="bg-[#202020] p-8 rounded-lg text-center text-gray-400 border border-gray-700">
                         No tasks match your filter.
                     </div>
-                    <x-completed-tasks-section :tasks="$completedTasks" />
                 </div>
             @endif
         </div>

@@ -14,18 +14,19 @@ class SearchController extends Controller
     public function index(Request $request)
     {
         $request->validate([
-            'q'                => 'nullable|string|max:255',
-            'tag_ids'          => 'nullable|array',
-            'tag_ids.*'        => 'integer|exists:tags,id',
-            'project_id'       => 'nullable|string|max:20',
-            'date_from'        => 'nullable|date',
-            'date_to'          => 'nullable|date',
-            'has_date'         => 'nullable|boolean',
-            'show_completed'   => 'nullable|boolean',
-            'include_archived' => 'nullable|boolean',
-            'assignee_id'      => 'nullable|integer|exists:users,id',
-            'creator_id'       => 'nullable|integer|exists:users,id',
-            'sort'             => 'nullable|in:date_asc,date_desc,name_asc,name_desc,created_desc',
+            'q'               => 'nullable|string|max:255',
+            'tag_ids'         => 'nullable|array',
+            'tag_ids.*'       => 'integer|exists:tags,id',
+            'project_id'      => 'nullable|string|max:20',
+            'date_from'       => 'nullable|date',
+            'date_to'         => 'nullable|date',
+            'has_date'        => 'nullable|boolean',
+            'show_incomplete' => 'nullable|boolean',
+            'show_done'       => 'nullable|boolean',
+            'show_archived'   => 'nullable|boolean',
+            'assignee_id'     => 'nullable|integer|exists:users,id',
+            'creator_id'      => 'nullable|integer|exists:users,id',
+            'sort'            => 'nullable|in:date_asc,date_desc,name_asc,name_desc,created_desc',
         ]);
 
         // Get all projects and tags for the UI (exclude Inbox projects - they're handled separately)
@@ -52,9 +53,7 @@ class SearchController extends Controller
                   });
             });
 
-        if (!$request->boolean('include_archived')) {
-            $baseQuery->where('status', '!=', 'archived');
-        }
+        // Status filtering is handled per-collection below
 
         // Handle search text (searches in name and description)
         if ($request->filled('q')) {
@@ -128,17 +127,27 @@ class SearchController extends Controller
             };
         };
 
-        $tasks = $applySort((clone $baseQuery)->where('status', '!=', 'done'))
-            ->with($with)
-            ->get();
+        $tasks = collect();
+        if ($request->boolean('show_incomplete')) {
+            $tasks = $applySort((clone $baseQuery)->where('status', 'incomplete'))
+                ->with($with)
+                ->get();
+        }
 
         $completedTasks = collect();
-        if ($request->boolean('show_completed')) {
+        if ($request->boolean('show_done')) {
             $completedTasks = $applySort((clone $baseQuery)->where('status', 'done'))
                 ->with($with)
                 ->get();
         }
 
-        return view('search.index', compact('tasks', 'completedTasks', 'projects', 'tags', 'users'));
+        $archivedTasks = collect();
+        if ($request->boolean('show_archived')) {
+            $archivedTasks = $applySort((clone $baseQuery)->where('status', 'archived'))
+                ->with($with)
+                ->get();
+        }
+
+        return view('search.index', compact('tasks', 'completedTasks', 'archivedTasks', 'projects', 'tags', 'users'));
     }
 }
