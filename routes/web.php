@@ -62,6 +62,7 @@ Route::middleware('auth')->group(function () {
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::post('/profile/image', [ProfileController::class, 'updateImage'])->name('profile.image.update');
     Route::delete('/profile/image', [ProfileController::class, 'destroyImage'])->name('profile.image.destroy');
+    Route::delete('/profile/sessions', [ProfileController::class, 'destroySessions'])->name('profile.sessions.destroy');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
     Route::get('/profile-image/{user}', [ProfileController::class, 'showImage'])->name('profile.image.show');
 
@@ -74,5 +75,14 @@ Route::middleware('auth')->group(function () {
     Route::get('/projects/{project}/export-template', [DataExportController::class, 'exportProjectTemplate'])->name('projects.export-template');
     Route::post('/projects/import-template', [DataExportController::class, 'importProjectTemplate'])->name('projects.import-template');
 });
+
+// Session validity check — used by the client-side polling heartbeat.
+// Returns 200 {"ok":true} when authenticated, 401 {"ok":false} otherwise.
+// Must be outside the auth middleware group so it returns JSON instead of redirecting.
+Route::get('/auth/check', function () {
+    return auth()->check()
+        ? response()->json(['ok' => true])
+        : response()->json(['ok' => false], 401);
+})->name('auth.check');
 
 require __DIR__.'/auth.php';

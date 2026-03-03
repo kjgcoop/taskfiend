@@ -4,6 +4,7 @@
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="csrf-token" content="{{ csrf_token() }}">
+        <meta name="session-check-interval" content="{{ config('session.check_interval', 60) }}">
 
         <title>{{ config('app.name', 'Laravel') }}</title>
 
@@ -473,6 +474,27 @@
             window.reloadTaskPanel = function (taskId) {
                 window.dispatchEvent(new CustomEvent('reload-task-panel', { detail: { taskId } }));
             };
+        </script>
+
+        <script>
+            (function () {
+                const seconds = parseInt(
+                    document.querySelector('meta[name="session-check-interval"]')?.content || '60',
+                    10
+                );
+                if (!seconds || seconds <= 0) return;
+
+                setInterval(async function () {
+                    try {
+                        const res = await fetch('/auth/check', { credentials: 'same-origin' });
+                        if (!res.ok) {
+                            window.location.href = '/login';
+                        }
+                    } catch (_) {
+                        // Network error — don't redirect; the server may just be temporarily unreachable.
+                    }
+                }, seconds * 1000);
+            })();
         </script>
     </body>
 </html>
