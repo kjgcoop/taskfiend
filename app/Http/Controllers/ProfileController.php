@@ -7,6 +7,7 @@ use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Redirect;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
@@ -109,6 +110,23 @@ class ProfileController extends Controller
         return response(Storage::disk('private')->get($user->profile_image))
             ->header('Content-Type', Storage::disk('private')->mimeType($user->profile_image))
             ->header('Cache-Control', 'private, max-age=86400');
+    }
+
+    /**
+     * Invalidate all of the user's sessions, including the current one.
+     */
+    public function destroySessions(Request $request): RedirectResponse
+    {
+        $userId = $request->user()->id;
+
+        DB::table('sessions')->where('user_id', $userId)->delete();
+
+        Auth::logout();
+
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
+
+        return Redirect::route('login');
     }
 
     /**
