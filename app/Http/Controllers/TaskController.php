@@ -797,7 +797,8 @@ class TaskController extends Controller
 
         if ($result) {
             $dateStr = $result->format('Y-m-d');
-            $taskCount = Task::where(function ($q) {
+            $tasks = Task::with('project:id,name')
+                ->where(function ($q) {
                     $q->where('creator_id', Auth::id())
                       ->orWhereHas('assignees', function ($query) {
                           $query->where('user_id', Auth::id());
@@ -805,13 +806,28 @@ class TaskController extends Controller
                 })
                 ->where('date', $dateStr)
                 ->where('status', 'incomplete')
-                ->count();
+                ->get(['id', 'name', 'project_id']);
+
+            $projects = $tasks->groupBy('project_id')
+                ->map(function ($projectTasks) {
+                    $names = $projectTasks->pluck('name');
+                    $count = $names->count();
+                    return [
+                        'name'  => $projectTasks->first()->project->name ?? 'No Project',
+                        'count' => $count,
+                        'tasks' => $names->take(10)->values()->all(),
+                        'more'  => max(0, $count - 10),
+                    ];
+                })
+                ->sortByDesc('count')
+                ->values()
+                ->all();
 
             return response()->json([
-                'success' => true,
-                'date' => $dateStr,
+                'success'   => true,
+                'date'      => $dateStr,
                 'formatted' => $result->format('l, F j, Y'),
-                'taskCount' => $taskCount,
+                'projects'  => $projects,
             ]);
         }
 

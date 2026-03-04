@@ -181,7 +181,27 @@
                                            class="absolute inset-0 opacity-0 w-full h-full cursor-pointer">
                                 </div>
                             </div>
-                            <div x-show="datePreview" class="mt-1 text-xs text-green-400" x-text="datePreview"></div>
+                            <div x-show="datePreview" class="mt-1 text-xs text-green-400 flex flex-wrap items-baseline gap-x-1">
+                                <span x-text="datePreview"></span>
+                                <template x-if="projects && projects.length > 0">
+                                    <span class="flex flex-wrap items-baseline gap-x-1">
+                                        <span class="text-gray-500">&mdash;</span>
+                                        <span x-text="projects.reduce((s, p) => s + p.count, 0) + (projects.reduce((s,p)=>s+p.count,0)===1?' task':' tasks')"></span>
+                                        <template x-for="proj in projects" :key="proj.name">
+                                            <span class="relative group inline-flex items-baseline gap-x-0.5">
+                                                <span class="text-gray-500">·</span>
+                                                <span class="underline decoration-dotted cursor-help" x-text="proj.name + ' \u00d7' + proj.count"></span>
+                                                <div class="absolute hidden group-hover:block bottom-full left-0 mb-1 bg-gray-900 border border-gray-600 rounded p-2 text-gray-200 whitespace-nowrap z-50 shadow-lg">
+                                                    <template x-for="(task, idx) in proj.tasks" :key="idx">
+                                                        <div x-text="task" class="py-0.5"></div>
+                                                    </template>
+                                                    <div x-show="proj.more > 0" x-text="'+' + proj.more + ' more'" class="text-gray-400 italic mt-1 py-0.5"></div>
+                                                </div>
+                                            </span>
+                                        </template>
+                                    </span>
+                                </template>
+                            </div>
                             <div x-show="dateError" class="mt-1 text-xs text-red-400" x-text="dateError"></div>
                             <p class="mt-1 text-xs text-gray-500">Type a date or click the calendar icon. Accepts: tomorrow, next friday, march 15, 3/15, 2026-03-15</p>
                             <div class="flex gap-2 mt-2">
@@ -730,7 +750,7 @@
                 dateText: @js($task->date ? \Carbon\Carbon::parse($task->date)->format('l, F j, Y') : ''),
                 datePreview: '',
                 dateError: '',
-                taskCount: null,
+                projects: null,
                 _datePreviewTimeout: null,
                 parentSearch: @js($task->parent ? $task->parent->name : ''),
                 parentOpen: false,
@@ -788,18 +808,12 @@
                     this.fields[field] = JSON.parse(JSON.stringify(this.original[field]));
                 },
 
-                formatPreview(formatted, count) {
-                    if (count === null || count === undefined) return formatted;
-                    const label = count === 1 ? '1 task' : `${count} tasks`;
-                    return `${formatted} \u2014 ${label}`;
-                },
-
                 async previewDate() {
                     const input = this.dateText.trim();
                     if (!input) {
                         this.datePreview = '';
                         this.dateError = '';
-                        this.taskCount = null;
+                        this.projects = null;
                         return;
                     }
 
@@ -816,19 +830,19 @@
 
                         const data = await response.json();
                         if (data.success) {
-                            this.taskCount = data.taskCount ?? null;
-                            this.datePreview = this.formatPreview(data.formatted, this.taskCount);
+                            this.projects = data.projects ?? null;
+                            this.datePreview = data.formatted;
                             this.dateError = '';
                             this.fields.date = data.date;
                         } else {
                             this.datePreview = '';
                             this.dateError = 'Could not parse this date';
-                            this.taskCount = null;
+                            this.projects = null;
                         }
                     } catch (e) {
                         this.datePreview = '';
                         this.dateError = '';
-                        this.taskCount = null;
+                        this.projects = null;
                     }
                 },
 
@@ -840,6 +854,7 @@
                     this.dateText = d.toLocaleDateString('en-US', options);
                     this.fields.date = value;
                     this.dateError = '';
+                    this.projects = null;
 
                     try {
                         const response = await fetch('/tasks/parse-date', {
@@ -852,12 +867,12 @@
                             body: JSON.stringify({ input: value }),
                         });
                         const data = await response.json();
-                        this.taskCount = data.success ? (data.taskCount ?? null) : null;
+                        this.projects = data.success ? (data.projects ?? null) : null;
                     } catch (e) {
-                        this.taskCount = null;
+                        this.projects = null;
                     }
 
-                    this.datePreview = this.formatPreview(this.dateText, this.taskCount);
+                    this.datePreview = this.dateText;
                 },
 
                 async saveDateField() {
