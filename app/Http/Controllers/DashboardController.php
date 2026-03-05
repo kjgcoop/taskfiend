@@ -19,7 +19,7 @@ class DashboardController extends Controller
         match ($sort) {
             'created'  => $query->orderBy('created_at', 'desc'),
             'name'     => $query->orderByRaw('LOWER(name) ASC'),
-            default    => $query->orderByRaw('date IS NULL, date ASC, time ASC'),
+            default    => $query->orderByRaw('date IS NULL, date ASC, time IS NULL, time ASC'),
         };
     }
 
