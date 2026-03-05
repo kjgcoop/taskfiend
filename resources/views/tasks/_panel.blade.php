@@ -455,6 +455,14 @@
                     <span class="px-1.5 py-0.5 text-xs rounded-full bg-gray-700 text-gray-300">{{ $task->attachments->count() }}</span>
                 @endif
             </button>
+            <button @click="tab = 'activity'"
+                    :class="tab === 'activity' ? 'border-b-2 border-blue-500 text-gray-100' : 'text-gray-400 hover:text-gray-200'"
+                    class="flex-shrink-0 flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium transition-colors whitespace-nowrap">
+                Activity
+                @if($task->changeLogs->count() > 0)
+                    <span class="px-1.5 py-0.5 text-xs rounded-full bg-gray-700 text-gray-300">{{ $task->changeLogs->count() }}</span>
+                @endif
+            </button>
         </div>
 
         <!-- Tab content -->
@@ -592,6 +600,11 @@
                     </div>
                 </form>
                 @endif
+            </div>
+
+            <!-- Activity -->
+            <div x-show="tab === 'activity'">
+                <x-change :changes="$task->changeLogs" />
             </div>
 
         </div>
