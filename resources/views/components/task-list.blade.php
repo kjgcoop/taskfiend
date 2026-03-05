@@ -115,8 +115,10 @@
             },
 
             handleInput(event) {
-                this.nameError = '';
                 const input = event.target.value;
+                this.nameError = input.length > 255
+                    ? `Task name is too long (${input.length}/255 characters max).`
+                    : '';
                 const cursorPos = event.target.selectionStart;
                 const beforeCursor = input.substring(0, cursorPos);
 
