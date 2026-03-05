@@ -49,9 +49,11 @@ class TagController extends Controller
             ->with('success', 'Tag created successfully.');
     }
 
-    public function show(Tag $tag)
+    public function show(Request $request, Tag $tag)
     {
-        $tasks = $tag->tasks()
+        $sort = $request->input('sort', 'date');
+
+        $tasksQuery = $tag->tasks()
             ->where(function ($q) {
                 $q->where('creator_id', Auth::id())
                   ->orWhereHas('assignees', function ($query) {
@@ -60,9 +62,13 @@ class TagController extends Controller
             })
             ->where('status', '!=', 'archived')
             ->where('status', '!=', 'done')
-            ->with(['creator', 'project', 'assignees', 'attachments', 'comments', 'completionLog.user'])
-            ->orderBy('datetime')
-            ->get();
+            ->with(['creator', 'project', 'assignees', 'attachments', 'comments', 'completionLog.user']);
+        match ($sort) {
+            'created' => $tasksQuery->orderBy('created_at', 'desc'),
+            'name'    => $tasksQuery->orderByRaw('LOWER(name) ASC'),
+            default   => $tasksQuery->orderByRaw('date IS NULL, date ASC, time ASC'),
+        };
+        $tasks = $tasksQuery->get();
 
         $perPage = (int) env('PAGINATION_PER_PAGE', 100);
 
@@ -106,7 +112,7 @@ class TagController extends Controller
 
         return view('tags.show', compact(
             'tag', 'tasks', 'completedTasks', 'completedTasksHasMore', 'completedTasksTotal',
-            'projects', 'allTags'
+            'projects', 'allTags', 'sort'
         ));
     }
 

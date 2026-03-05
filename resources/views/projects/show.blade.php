@@ -319,11 +319,19 @@
                     <h3 class="text-lg font-semibold text-gray-100">Tasks
                         <span class="text-sm text-gray-500 font-normal" x-text="$store.taskCount.ready ? ($store.taskCount.filtered ? 'showing ' + $store.taskCount.visible + ' of ' + $store.taskCount.total : $store.taskCount.total) : ''"></span>
                     </h3>
-                    @if(!$isInactive)
-                        <a href="{{ route('tasks.create') }}?project_id={{ $project->id }}" class="text-sm text-blue-400 hover:underline">
-                            Add Task
-                        </a>
-                    @endif
+                    <div class="flex items-center gap-3">
+                        <select onchange="(function(v){const p=new URLSearchParams(window.location.search);p.set('sort',v);window.location.href=window.location.pathname+'?'+p.toString()})(this.value)"
+                                class="text-sm bg-gray-700 border border-gray-600 rounded px-2 py-1 text-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <option value="date" {{ $sort === 'date' ? 'selected' : '' }}>Date & Time</option>
+                            <option value="created" {{ $sort === 'created' ? 'selected' : '' }}>Date Added</option>
+                            <option value="name" {{ $sort === 'name' ? 'selected' : '' }}>Name (A–Z)</option>
+                        </select>
+                        @if(!$isInactive)
+                            <a href="{{ route('tasks.create') }}?project_id={{ $project->id }}" class="text-sm text-blue-400 hover:underline">
+                                Add Task
+                            </a>
+                        @endif
+                    </div>
                 </div>
                 @if(!$isInactive)
                     <x-task-input-bar :project-id="$project->id" filter-placeholder="Filter tasks... (@ tag)" />
