@@ -78,6 +78,14 @@
 
             {{-- List view --}}
             <div x-cloak x-show="$store.dayView.current === 'list'" x-data="taskFilter(@js($projects), @js($tags))">
+                <div class="flex justify-end mb-2">
+                    <select onchange="(function(v){const p=new URLSearchParams(window.location.search);p.set('sort',v);window.location.href=window.location.pathname+'?'+p.toString()})(this.value)"
+                            class="text-sm bg-gray-700 border border-gray-600 rounded px-2 py-1 text-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <option value="date" {{ $sort === 'date' ? 'selected' : '' }}>Date & Time</option>
+                        <option value="created" {{ $sort === 'created' ? 'selected' : '' }}>Date Added</option>
+                        <option value="name" {{ $sort === 'name' ? 'selected' : '' }}>Name (A–Z)</option>
+                    </select>
+                </div>
                 <x-task-input-bar :date="$carbonDate->format('Y-m-d')" />
                 <div x-ref="taskContainer">
                     <x-task-list :tasks="$tasks" :hide-date="true" :view-date="$carbonDate->format('Y-m-d')" />
