@@ -13,6 +13,16 @@ use Illuminate\Support\Facades\Auth;
 
 class DashboardController extends Controller
 {
+    /** Apply sort ordering to a task query based on the sort parameter. */
+    private function applySortOrder($query, string $sort): void
+    {
+        match ($sort) {
+            'created'  => $query->orderBy('created_at', 'desc'),
+            'name'     => $query->orderByRaw('LOWER(name) ASC'),
+            default    => $query->orderByRaw('date IS NULL, date ASC, time IS NULL, time ASC'),
+        };
+    }
+
     /** Projects + tags needed by the quick-add autocomplete. */
     private function quickAddData(): array
     {
@@ -29,14 +39,16 @@ class DashboardController extends Controller
         return compact('projects', 'tags');
     }
 
-    public function inbox()
+    public function inbox(Request $request)
     {
+        $sort = $request->input('sort', 'date');
+
         // Get user's Inbox project
         $inboxProject = \App\Models\Project::where('user_id', Auth::id())
             ->where('is_inbox', true)
             ->first();
 
-        $tasks = Task::query()
+        $tasksQuery = Task::query()
             ->where(function ($q) {
                 $q->where('creator_id', Auth::id())
                   ->orWhereHas('assignees', function ($query) {
@@ -46,11 +58,12 @@ class DashboardController extends Controller
             ->where('status', '!=', 'archived')
             ->where('status', '!=', 'done')
             ->where('project_id', $inboxProject?->id)
-            ->with(['creator', 'tags', 'assignees', 'attachments', 'comments', 'completionLog.user'])
-            ->orderByRaw('date IS NULL, date ASC, time ASC')
-            ->get();
+            ->with(['creator', 'tags', 'assignees', 'attachments', 'comments', 'completionLog.user']);
 
-        $completedTasks = Task::query()
+        $this->applySortOrder($tasksQuery, $sort);
+        $tasks = $tasksQuery->get();
+
+        $completedTasksQuery = Task::query()
             ->where(function ($q) {
                 $q->where('creator_id', Auth::id())
                   ->orWhereHas('assignees', function ($query) {
@@ -59,16 +72,19 @@ class DashboardController extends Controller
             })
             ->where('status', 'done')
             ->where('project_id', $inboxProject?->id)
-            ->with(['creator', 'tags', 'assignees', 'attachments', 'comments', 'completionLog.user'])
-            ->orderByRaw('date IS NULL, date ASC, time ASC')
-            ->get();
+            ->with(['creator', 'tags', 'assignees', 'attachments', 'comments', 'completionLog.user']);
 
-        return view('dashboard.inbox', array_merge(compact('tasks', 'completedTasks'), $this->quickAddData()));
+        $this->applySortOrder($completedTasksQuery, $sort);
+        $completedTasks = $completedTasksQuery->get();
+
+        return view('dashboard.inbox', array_merge(compact('tasks', 'completedTasks', 'sort'), $this->quickAddData()));
     }
 
-    public function overdue()
+    public function overdue(Request $request)
     {
-        $tasks = Task::query()
+        $sort = $request->input('sort', 'date');
+
+        $tasksQuery = Task::query()
             ->where(function ($q) {
                 $q->where('creator_id', Auth::id())
                   ->orWhereHas('assignees', function ($query) {
@@ -80,17 +96,19 @@ class DashboardController extends Controller
             ->whereNotNull('date')
             ->where('date', '<', today()->format('Y-m-d'))
             ->whereHas('project', fn($pq) => $pq->whereNotIn('status', ['archived', 'done']))
-            ->with(['creator', 'project', 'tags', 'assignees', 'attachments', 'comments', 'completionLog.user'])
-            ->orderBy('date', 'asc')
-            ->orderByRaw('time IS NULL, time ASC')
-            ->get();
+            ->with(['creator', 'project', 'tags', 'assignees', 'attachments', 'comments', 'completionLog.user']);
 
-        return view('dashboard.overdue', array_merge(compact('tasks'), $this->quickAddData()));
+        $this->applySortOrder($tasksQuery, $sort);
+        $tasks = $tasksQuery->get();
+
+        return view('dashboard.overdue', array_merge(compact('tasks', 'sort'), $this->quickAddData()));
     }
 
-    public function undated()
+    public function undated(Request $request)
     {
-        $tasks = Task::query()
+        $sort = $request->input('sort', 'created');
+
+        $tasksQuery = Task::query()
             ->where(function ($q) {
                 $q->where('creator_id', Auth::id())
                   ->orWhereHas('assignees', function ($query) {
@@ -101,16 +119,19 @@ class DashboardController extends Controller
             ->where('status', '!=', 'done')
             ->whereNull('date')
             ->whereHas('project', fn($pq) => $pq->whereNotIn('status', ['archived', 'done']))
-            ->with(['creator', 'project', 'tags', 'assignees', 'attachments', 'comments', 'completionLog.user'])
-            ->orderBy('created_at', 'desc')
-            ->get();
+            ->with(['creator', 'project', 'tags', 'assignees', 'attachments', 'comments', 'completionLog.user']);
 
-        return view('dashboard.undated', array_merge(compact('tasks'), $this->quickAddData()));
+        $this->applySortOrder($tasksQuery, $sort);
+        $tasks = $tasksQuery->get();
+
+        return view('dashboard.undated', array_merge(compact('tasks', 'sort'), $this->quickAddData()));
     }
 
-    public function all()
+    public function all(Request $request)
     {
-        $tasks = Task::query()
+        $sort = $request->input('sort', 'date');
+
+        $tasksQuery = Task::query()
             ->where(function ($q) {
                 $q->where('creator_id', Auth::id())
                   ->orWhereHas('assignees', function ($query) {
@@ -120,11 +141,12 @@ class DashboardController extends Controller
             ->where('status', '!=', 'archived')
             ->whereHas('project', fn($pq) => $pq->whereNotIn('status', ['archived', 'done']))
             ->with(['creator', 'project', 'tags', 'assignees', 'attachments', 'comments', 'completionLog.user'])
-            ->orderByRaw("CASE WHEN status = 'done' THEN 1 ELSE 0 END ASC")
-            ->orderByRaw('date IS NULL, date ASC, time ASC')
-            ->get();
+            ->orderByRaw("CASE WHEN status = 'done' THEN 1 ELSE 0 END ASC");
 
-        return view('dashboard.all', array_merge(compact('tasks'), $this->quickAddData()));
+        $this->applySortOrder($tasksQuery, $sort);
+        $tasks = $tasksQuery->get();
+
+        return view('dashboard.all', array_merge(compact('tasks', 'sort'), $this->quickAddData()));
     }
 
     public function calendar(Request $request)
@@ -200,7 +222,9 @@ class DashboardController extends Controller
             return $this->dayReview($carbonDate, $dateStr);
         }
 
-        $tasks = Task::query()
+        $sort = $request->input('sort', 'date');
+
+        $tasksQuery = Task::query()
             ->where(function ($q) {
                 $q->where('creator_id', Auth::id())
                   ->orWhereHas('assignees', function ($query) {
@@ -211,9 +235,9 @@ class DashboardController extends Controller
             ->where('status', '!=', 'done')
             ->where('date', $dateStr)
             ->whereHas('project', fn($pq) => $pq->whereNotIn('status', ['archived', 'done']))
-            ->with(['creator', 'project', 'tags', 'assignees', 'attachments', 'comments', 'completionLog.user'])
-            ->orderByRaw('time IS NULL, time ASC')
-            ->get();
+            ->with(['creator', 'project', 'tags', 'assignees', 'attachments', 'comments', 'completionLog.user']);
+        $this->applySortOrder($tasksQuery, $sort);
+        $tasks = $tasksQuery->get();
 
         $completedTasks = Task::query()
             ->where(function ($q) {
@@ -264,7 +288,7 @@ class DashboardController extends Controller
                 ->count();
         }
 
-        return view('dashboard.day', array_merge(compact('tasks', 'completedTasks', 'archivedTasks', 'date', 'carbonDate', 'overdueCount'), $this->quickAddData()));
+        return view('dashboard.day', array_merge(compact('tasks', 'completedTasks', 'archivedTasks', 'date', 'carbonDate', 'overdueCount', 'sort'), $this->quickAddData()));
     }
 
     private function dayReview(Carbon $carbonDate, string $dateStr)

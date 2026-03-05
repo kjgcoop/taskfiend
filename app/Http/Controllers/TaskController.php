@@ -39,11 +39,18 @@ class TaskController extends Controller
             $query->whereHas('project', fn($pq) => $pq->whereNotIn('status', ['archived', 'done']));
         }
 
+        $sort = $request->input('sort', 'date');
+
+        match ($sort) {
+            'created' => $query->orderBy('created_at', 'desc'),
+            'name'    => $query->orderByRaw('LOWER(name) ASC'),
+            default   => $query->orderByRaw('date IS NULL, date ASC, time ASC'),
+        };
+
         $tasks = $query->with(['creator', 'project', 'tags', 'assignees', 'attachments', 'comments', 'completionLog.user'])
-            ->orderBy('date')
             ->get();
 
-        return view('tasks.index', compact('tasks'));
+        return view('tasks.index', compact('tasks', 'sort'));
     }
 
     public function create(Request $request)

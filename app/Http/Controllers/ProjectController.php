@@ -69,9 +69,11 @@ class ProjectController extends Controller
             ->with('success', 'Project created successfully.');
     }
 
-    public function show(Project $project)
+    public function show(Request $request, Project $project)
     {
         $this->authorizeProjectAccess($project);
+
+        $sort = $request->input('sort', 'date');
 
         $isDirectMember = $project->user_id === Auth::id()
             || $project->assignees()->where('users.id', Auth::id())->exists();
@@ -79,11 +81,20 @@ class ProjectController extends Controller
         $visibleToUser = function ($q) use ($isDirectMember) {
             if (!$isDirectMember) {
                 $q->where('creator_id', Auth::id())
-                  ->orWhereHas('assignees', function ($query) {
-                      $query->where('users.id', Auth::id());
-                  });
+                    ->orWhereHas('assignees', function ($query) {
+                        $query->where('users.id', Auth::id());
+                    });
             }
         };
+
+
+        /*
+                $visibleToUser = function ($q) {
+                    $q->where('creator_id', Auth::id())
+                      ->orWhereHas('assignees', function ($query) {
+                          $query->where('users.id', Auth::id());
+                      });
+                };*/
 
         $taskEagerLoad = [
             'creator',
@@ -116,8 +127,11 @@ class ProjectController extends Controller
                           ]);
                 }
             ]))
-            ->orderBy('date')
-            ->orderBy('time')
+            ->when($sort === 'created', fn($q) => $q->orderBy('created_at', 'desc'))
+            ->when($sort === 'name',    fn($q) => $q->orderByRaw('LOWER(name) ASC'))
+            ->when($sort === 'date',    fn($q) => $q->orderByRaw('date IS NULL, date ASC, time IS NULL, time ASC'))
+//            ->orderBy('date')
+//            ->orderBy('time')
             ->get();
 
         $perPage = (int) env('PAGINATION_PER_PAGE', 100);
@@ -172,7 +186,7 @@ class ProjectController extends Controller
 
         return view('projects.show', compact(
             'project', 'tasks', 'completedTasks', 'completedTasksHasMore', 'completedTasksTotal',
-            'users', 'projects', 'tags'
+            'users', 'projects', 'tags', 'sort'
         ));
     }
 
@@ -192,9 +206,9 @@ class ProjectController extends Controller
         $visibleToUser = function ($q) use ($isDirectMember) {
             if (!$isDirectMember) {
                 $q->where('creator_id', Auth::id())
-                  ->orWhereHas('assignees', function ($query) {
-                      $query->where('users.id', Auth::id());
-                  });
+                    ->orWhereHas('assignees', function ($query) {
+                        $query->where('users.id', Auth::id());
+                    });
             }
         };
 
