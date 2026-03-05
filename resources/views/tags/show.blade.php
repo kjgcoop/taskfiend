@@ -37,7 +37,13 @@
                 <div x-show="noResults" x-cloak class="bg-[#202020] p-8 rounded-lg text-center text-gray-400 border border-gray-700">
                     No tasks match your filter.
                 </div>
-                <x-completed-tasks-section :tasks="$completedTasks" />
+                <x-completed-tasks-section
+                    :tasks="$completedTasks"
+                    :total-count="$completedTasksTotal"
+                    :has-more="$completedTasksHasMore"
+                    :next-page="2"
+                    :ajax-url="$completedTasksHasMore ? route('tags.completedTasks', $tag) : null"
+                />
             </div>
         </div>
     </div>

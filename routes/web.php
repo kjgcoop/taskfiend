@@ -35,11 +35,13 @@ Route::middleware('auth')->group(function () {
     Route::post('/tasks/{task}/duplicate', [TaskController::class, 'duplicate'])->name('tasks.duplicate');
 
     Route::resource('projects', ProjectController::class)->except(['edit', 'update']);
+    Route::get('/projects/{project}/completed-tasks', [ProjectController::class, 'completedTasks'])->name('projects.completedTasks');
     Route::post('/projects/{project}/update-field', [ProjectController::class, 'updateField'])->name('projects.updateField');
     Route::get('/projects/{project}/background', [ProjectController::class, 'showBackground'])->name('projects.background');
     Route::post('/projects/{project}/background', [ProjectController::class, 'uploadBackground'])->name('projects.background.upload');
     Route::delete('/projects/{project}/background', [ProjectController::class, 'removeBackground'])->name('projects.background.remove');
     Route::resource('tags', TagController::class);
+    Route::get('/tags/{tag}/completed-tasks', [TagController::class, 'completedTasks'])->name('tags.completedTasks');
     Route::post('/tags/quick-create', [TagController::class, 'quickStore'])->name('tags.quickStore');
 
     Route::post('/tasks/{task}/comments', [CommentController::class, 'store'])->name('comments.store');

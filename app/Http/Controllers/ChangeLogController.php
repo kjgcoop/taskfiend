@@ -11,9 +11,12 @@ use Illuminate\Support\Facades\Auth;
 
 class ChangeLogController extends Controller
 {
-    const PER_PAGE = 100;
+    private static function perPage(): int
+    {
+        return max(1, (int) env('PAGINATION_PER_PAGE', 100));
+    }
 
-    public function task(Task $task)
+    public function task(Request $request, Task $task)
     {
         $isCreator = $task->creator_id === Auth::id();
         $isAssignee = $task->assignees()->where('users.id', Auth::id())->exists();
@@ -22,12 +25,30 @@ class ChangeLogController extends Controller
             abort(403, 'You do not have access to this task.');
         }
 
-        $changeLogs = $task->changeLogs()->with('user')->orderByDesc('date')->get();
+        $perPage = self::perPage();
+        $page    = max(1, (int) $request->get('page', 1));
+        $offset  = ($page - 1) * $perPage;
 
-        return view('changelogs.index', compact('changeLogs', 'task'));
+        $changeLogs = $task->changeLogs()->with('user')->orderByDesc('date')
+            ->skip($offset)->take($perPage + 1)->get();
+
+        $hasMore = $changeLogs->count() > $perPage;
+        if ($hasMore) {
+            $changeLogs = $changeLogs->slice(0, $perPage);
+        }
+
+        if ($request->ajax()) {
+            return response()->json([
+                'html'     => view('changelogs.partials.context-entries', compact('changeLogs'))->render(),
+                'hasMore'  => $hasMore,
+                'nextPage' => $page + 1,
+            ]);
+        }
+
+        return view('changelogs.index', compact('changeLogs', 'task', 'hasMore', 'page'));
     }
 
-    public function project(Project $project)
+    public function project(Request $request, Project $project)
     {
         $isCreator = $project->user_id === Auth::id();
         $isProjectAssignee = $project->assignees()->where('users.id', Auth::id())->exists();
@@ -41,49 +62,87 @@ class ChangeLogController extends Controller
             abort(403, 'You do not have access to this project.');
         }
 
-        $changeLogs = ChangeLog::where(function ($q) use ($project) {
+        $perPage = self::perPage();
+        $page    = max(1, (int) $request->get('page', 1));
+        $offset  = ($page - 1) * $perPage;
+
+        $taskIds = $project->tasks()->pluck('id');
+
+        $changeLogs = ChangeLog::where(function ($q) use ($project, $taskIds) {
             $q->where(function ($subQ) use ($project) {
                 $subQ->where('entity_type', 'projects')
                      ->where('entity_id', $project->id);
             })
-            ->orWhere(function ($subQ) use ($project) {
-                $taskIds = $project->tasks()->pluck('id');
+            ->orWhere(function ($subQ) use ($taskIds) {
                 $subQ->where('entity_type', 'tasks')
                      ->whereIn('entity_id', $taskIds);
             });
         })
         ->with('user')
         ->orderByDesc('date')
+        ->skip($offset)->take($perPage + 1)
         ->get();
 
-        return view('changelogs.index', compact('changeLogs', 'project'));
+        $hasMore = $changeLogs->count() > $perPage;
+        if ($hasMore) {
+            $changeLogs = $changeLogs->slice(0, $perPage);
+        }
+
+        if ($request->ajax()) {
+            return response()->json([
+                'html'     => view('changelogs.partials.context-entries', compact('changeLogs'))->render(),
+                'hasMore'  => $hasMore,
+                'nextPage' => $page + 1,
+            ]);
+        }
+
+        return view('changelogs.index', compact('changeLogs', 'project', 'hasMore', 'page'));
     }
 
-    public function tag(Tag $tag)
+    public function tag(Request $request, Tag $tag)
     {
-        $changeLogs = ChangeLog::where(function ($q) use ($tag) {
+        $perPage = self::perPage();
+        $page    = max(1, (int) $request->get('page', 1));
+        $offset  = ($page - 1) * $perPage;
+
+        $taskIds = $tag->tasks()
+            ->where(function ($q) {
+                $q->where('creator_id', Auth::id())
+                  ->orWhereHas('assignees', function ($query) {
+                      $query->where('users.id', Auth::id());
+                  });
+            })
+            ->pluck('tasks.id');
+
+        $changeLogs = ChangeLog::where(function ($q) use ($tag, $taskIds) {
             $q->where(function ($subQ) use ($tag) {
                 $subQ->where('entity_type', 'tags')
                      ->where('entity_id', $tag->id);
             })
-            ->orWhere(function ($subQ) use ($tag) {
-                $taskIds = $tag->tasks()
-                    ->where(function ($q) {
-                        $q->where('creator_id', Auth::id())
-                          ->orWhereHas('assignees', function ($query) {
-                              $query->where('users.id', Auth::id());
-                          });
-                    })
-                    ->pluck('tasks.id');
+            ->orWhere(function ($subQ) use ($taskIds) {
                 $subQ->where('entity_type', 'tasks')
                      ->whereIn('entity_id', $taskIds);
             });
         })
         ->with('user')
         ->orderByDesc('date')
+        ->skip($offset)->take($perPage + 1)
         ->get();
 
-        return view('changelogs.index', compact('changeLogs', 'tag'));
+        $hasMore = $changeLogs->count() > $perPage;
+        if ($hasMore) {
+            $changeLogs = $changeLogs->slice(0, $perPage);
+        }
+
+        if ($request->ajax()) {
+            return response()->json([
+                'html'     => view('changelogs.partials.context-entries', compact('changeLogs'))->render(),
+                'hasMore'  => $hasMore,
+                'nextPage' => $page + 1,
+            ]);
+        }
+
+        return view('changelogs.index', compact('changeLogs', 'tag', 'hasMore', 'page'));
     }
 
     public function user(Request $request)
@@ -145,14 +204,15 @@ class ChangeLogController extends Controller
             $query->where('date', '<=', $dateTo . ' 23:59:59');
         }
 
+        $perPage = self::perPage();
         $page    = max(1, (int) $request->get('page', 1));
-        $offset  = ($page - 1) * self::PER_PAGE;
+        $offset  = ($page - 1) * $perPage;
 
         // Fetch one extra to know if more pages exist
-        $changeLogs = $query->skip($offset)->take(self::PER_PAGE + 1)->get();
-        $hasMore    = $changeLogs->count() > self::PER_PAGE;
+        $changeLogs = $query->skip($offset)->take($perPage + 1)->get();
+        $hasMore    = $changeLogs->count() > $perPage;
         if ($hasMore) {
-            $changeLogs = $changeLogs->slice(0, self::PER_PAGE);
+            $changeLogs = $changeLogs->slice(0, $perPage);
         }
 
         // Efficiently load related entities (3 queries instead of N)

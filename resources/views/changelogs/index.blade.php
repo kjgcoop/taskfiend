@@ -144,8 +144,18 @@
                             &larr; Back to Task
                         </a>
                     </div>
-                    <div class="space-y-2">
-                        <x-change :changes="$changeLogs" />
+                    <div x-data="changelogLoader('{{ route('changelogs.task', $task) }}', {{ $hasMore ? 'true' : 'false' }}, {{ $page + 1 }})">
+                        <div x-ref="entries" class="space-y-2">
+                            @include('changelogs.partials.context-entries')
+                        </div>
+                        <div class="mt-6 text-center" x-show="hasMore">
+                            <button @click="loadMore()" :disabled="loading"
+                                    class="px-5 py-2 bg-gray-700 hover:bg-gray-600 text-gray-200 text-sm rounded-md disabled:opacity-50 disabled:cursor-wait">
+                                <span x-show="!loading">Load more</span>
+                                <span x-show="loading">Loading…</span>
+                            </button>
+                        </div>
+                        <p x-show="!hasMore && nextPage > 2" class="mt-4 text-center text-xs text-gray-600">All events loaded.</p>
                     </div>
 
                 @elseif(isset($project))
@@ -154,8 +164,18 @@
                             &larr; Back to Project
                         </a>
                     </div>
-                    <div class="space-y-2">
-                        <x-change :changes="$changeLogs" />
+                    <div x-data="changelogLoader('{{ route('changelogs.project', $project) }}', {{ $hasMore ? 'true' : 'false' }}, {{ $page + 1 }})">
+                        <div x-ref="entries" class="space-y-2">
+                            @include('changelogs.partials.context-entries')
+                        </div>
+                        <div class="mt-6 text-center" x-show="hasMore">
+                            <button @click="loadMore()" :disabled="loading"
+                                    class="px-5 py-2 bg-gray-700 hover:bg-gray-600 text-gray-200 text-sm rounded-md disabled:opacity-50 disabled:cursor-wait">
+                                <span x-show="!loading">Load more</span>
+                                <span x-show="loading">Loading…</span>
+                            </button>
+                        </div>
+                        <p x-show="!hasMore && nextPage > 2" class="mt-4 text-center text-xs text-gray-600">All events loaded.</p>
                     </div>
 
                 @elseif(isset($tag))
@@ -164,8 +184,18 @@
                             &larr; Back to Tag
                         </a>
                     </div>
-                    <div class="space-y-2">
-                        <x-change :changes="$changeLogs" />
+                    <div x-data="changelogLoader('{{ route('changelogs.tag', $tag) }}', {{ $hasMore ? 'true' : 'false' }}, {{ $page + 1 }})">
+                        <div x-ref="entries" class="space-y-2">
+                            @include('changelogs.partials.context-entries')
+                        </div>
+                        <div class="mt-6 text-center" x-show="hasMore">
+                            <button @click="loadMore()" :disabled="loading"
+                                    class="px-5 py-2 bg-gray-700 hover:bg-gray-600 text-gray-200 text-sm rounded-md disabled:opacity-50 disabled:cursor-wait">
+                                <span x-show="!loading">Load more</span>
+                                <span x-show="loading">Loading…</span>
+                            </button>
+                        </div>
+                        <p x-show="!hasMore && nextPage > 2" class="mt-4 text-center text-xs text-gray-600">All events loaded.</p>
                     </div>
 
                 @else
@@ -196,6 +226,34 @@
             </div>
         </div>
     </div>
+
+    <script>
+    function changelogLoader(url, initialHasMore, initialNextPage) {
+        return {
+            hasMore:  initialHasMore,
+            nextPage: initialNextPage,
+            loading:  false,
+
+            async loadMore() {
+                if (this.loading || !this.hasMore) return;
+                this.loading = true;
+                try {
+                    const res  = await fetch(url + '?page=' + this.nextPage, {
+                        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                    });
+                    const data = await res.json();
+                    this.$refs.entries.insertAdjacentHTML('beforeend', data.html);
+                    this.hasMore  = data.hasMore;
+                    this.nextPage = data.nextPage;
+                } catch (e) {
+                    console.error('Failed to load more changes:', e);
+                } finally {
+                    this.loading = false;
+                }
+            },
+        };
+    }
+    </script>
 
     @if(!isset($task) && !isset($project) && !isset($tag))
     <script>

@@ -64,7 +64,19 @@ class TagController extends Controller
             ->orderBy('datetime')
             ->get();
 
-        $completedTasks = $tag->tasks()
+        $perPage = (int) env('PAGINATION_PER_PAGE', 100);
+
+        $completedTasksTotal = $tag->tasks()
+            ->where(function ($q) {
+                $q->where('creator_id', Auth::id())
+                  ->orWhereHas('assignees', function ($query) {
+                      $query->where('users.id', Auth::id());
+                  });
+            })
+            ->where('status', 'done')
+            ->count();
+
+        $completedTasksRaw = $tag->tasks()
             ->where(function ($q) {
                 $q->where('creator_id', Auth::id())
                   ->orWhereHas('assignees', function ($query) {
@@ -74,7 +86,11 @@ class TagController extends Controller
             ->where('status', 'done')
             ->with(['creator', 'project', 'assignees', 'attachments', 'comments', 'completionLog.user'])
             ->orderBy('datetime')
+            ->take($perPage + 1)
             ->get();
+
+        $completedTasksHasMore = $completedTasksRaw->count() > $perPage;
+        $completedTasks = $completedTasksHasMore ? $completedTasksRaw->slice(0, $perPage) : $completedTasksRaw;
 
         $tag->load('changeLogs.user');
 
@@ -88,7 +104,43 @@ class TagController extends Controller
 
         $allTags = Tag::orderBy('tag_name')->get(['id', 'tag_name', 'color']);
 
-        return view('tags.show', compact('tag', 'tasks', 'completedTasks', 'projects', 'allTags'));
+        return view('tags.show', compact(
+            'tag', 'tasks', 'completedTasks', 'completedTasksHasMore', 'completedTasksTotal',
+            'projects', 'allTags'
+        ));
+    }
+
+    public function completedTasks(Request $request, Tag $tag)
+    {
+        $perPage = (int) env('PAGINATION_PER_PAGE', 100);
+        $page    = max(1, (int) $request->get('page', 1));
+        $offset  = ($page - 1) * $perPage;
+
+        $tasks = $tag->tasks()
+            ->where(function ($q) {
+                $q->where('creator_id', Auth::id())
+                  ->orWhereHas('assignees', function ($query) {
+                      $query->where('users.id', Auth::id());
+                  });
+            })
+            ->where('status', 'done')
+            ->with(['creator', 'project', 'assignees', 'attachments', 'comments', 'completionLog.user'])
+            ->orderBy('datetime')
+            ->skip($offset)->take($perPage + 1)
+            ->get();
+
+        $hasMore = $tasks->count() > $perPage;
+        if ($hasMore) {
+            $tasks = $tasks->slice(0, $perPage);
+        }
+
+        $readOnly = false;
+
+        return response()->json([
+            'html'     => view('tasks.partials.completed-list', compact('tasks', 'readOnly'))->render(),
+            'hasMore'  => $hasMore,
+            'nextPage' => $page + 1,
+        ]);
     }
 
     public function edit(Tag $tag)

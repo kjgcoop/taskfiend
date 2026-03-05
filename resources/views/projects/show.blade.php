@@ -344,7 +344,14 @@
                     No tasks match your filter.
                 </div>
 
-                <x-completed-tasks-section :tasks="$completedTasks" :read-only="$isInactive" />
+                <x-completed-tasks-section
+                    :tasks="$completedTasks"
+                    :read-only="$isInactive"
+                    :total-count="$completedTasksTotal"
+                    :has-more="$completedTasksHasMore"
+                    :next-page="2"
+                    :ajax-url="$completedTasksHasMore ? route('projects.completedTasks', $project) : null"
+                />
             </div>
         </div>
     </div>

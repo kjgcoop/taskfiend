@@ -115,7 +115,15 @@ class ProjectController extends Controller
             ->orderBy('time')
             ->get();
 
-        $completedTasks = $project->tasks()
+        $perPage = (int) env('PAGINATION_PER_PAGE', 100);
+
+        $completedTasksTotal = $project->tasks()
+            ->where($visibleToUser)
+            ->where('status', 'done')
+            ->whereNull('parent_id')
+            ->count();
+
+        $completedTasksRaw = $project->tasks()
             ->where($visibleToUser)
             ->where('status', 'done')
             ->whereNull('parent_id')
@@ -135,7 +143,11 @@ class ProjectController extends Controller
                 }
             ]))
             ->orderByDesc('updated_at')
+            ->take($perPage + 1)
             ->get();
+
+        $completedTasksHasMore = $completedTasksRaw->count() > $perPage;
+        $completedTasks = $completedTasksHasMore ? $completedTasksRaw->slice(0, $perPage) : $completedTasksRaw;
 
         $project->load(['creator', 'assignees', 'changeLogs.user']);
 
@@ -153,7 +165,60 @@ class ProjectController extends Controller
 
         $tags = Tag::orderBy('tag_name')->get(['id', 'tag_name', 'color']);
 
-        return view('projects.show', compact('project', 'tasks', 'completedTasks', 'users', 'projects', 'tags'));
+        return view('projects.show', compact(
+            'project', 'tasks', 'completedTasks', 'completedTasksHasMore', 'completedTasksTotal',
+            'users', 'projects', 'tags'
+        ));
+    }
+
+    public function completedTasks(Request $request, Project $project)
+    {
+        $this->authorizeProjectAccess($project);
+
+        $perPage = (int) env('PAGINATION_PER_PAGE', 100);
+        $page    = max(1, (int) $request->get('page', 1));
+        $offset  = ($page - 1) * $perPage;
+
+        $readOnly = in_array($project->status, ['done', 'archived']);
+
+        $visibleToUser = function ($q) {
+            $q->where('creator_id', Auth::id())
+              ->orWhereHas('assignees', function ($query) {
+                  $query->where('users.id', Auth::id());
+              });
+        };
+
+        $tasks = $project->tasks()
+            ->where($visibleToUser)
+            ->where('status', 'done')
+            ->whereNull('parent_id')
+            ->with([
+                'creator', 'tags', 'assignees', 'attachments', 'comments', 'completionLog.user',
+                'children' => function ($query) {
+                    $query->where('status', 'done')
+                          ->with([
+                              'tags', 'assignees', 'attachments', 'creator',
+                              'children' => function ($q) {
+                                  $q->where('status', 'done')
+                                    ->with(['tags', 'assignees', 'attachments', 'creator', 'children']);
+                              }
+                          ]);
+                },
+            ])
+            ->orderByDesc('updated_at')
+            ->skip($offset)->take($perPage + 1)
+            ->get();
+
+        $hasMore = $tasks->count() > $perPage;
+        if ($hasMore) {
+            $tasks = $tasks->slice(0, $perPage);
+        }
+
+        return response()->json([
+            'html'     => view('tasks.partials.completed-list', compact('tasks', 'readOnly'))->render(),
+            'hasMore'  => $hasMore,
+            'nextPage' => $page + 1,
+        ]);
     }
 
     public function updateField(Request $request, Project $project)
