@@ -243,6 +243,80 @@ test.describe('Project Authorization & Privacy', () => {
     await expect(page.locator(`text=${uniqueName}`)).not.toBeVisible();
   });
 
+  test('direct project assignee sees all tasks including those not assigned to them', async ({ page }) => {
+    // User 1 creates a project
+    await login(page, testUsers.user1.email);
+    await page.goto('/projects/create');
+    await page.fill('#name', 'Project for Full Visibility Test');
+    await page.click('button[type="submit"]');
+    await page.waitForURL(/\/projects\/(\d+)/);
+    const projectId = page.url().match(/\/projects\/(\d+)/)[1];
+
+    // Assign User 2 directly to the project via inline editor
+    await page.locator('details summary').click();
+    await page.locator('[x-show="!editing.assignee_ids"]').click();
+    await page.waitForSelector(`label:has-text("${testUsers.user2.name}") input[type="checkbox"]`, { state: 'visible' });
+    await page.check(`label:has-text("${testUsers.user2.name}") input[type="checkbox"]`);
+    await page.locator('[x-show="editing.assignee_ids"] button:has-text("Save")').click();
+    await page.waitForLoadState('networkidle');
+
+    // Create a task assigned only to User 1 (auto-assigned as creator)
+    await page.goto('/tasks/create');
+    await page.fill('#name', 'Owner-Only Task');
+    await page.selectOption('select[name="project_id"]', projectId);
+    await page.click('button[type="submit"]');
+    await page.waitForURL(/\/tasks\/\d+/);
+
+    // Create a task explicitly assigned to User 2
+    await page.goto('/tasks/create');
+    await page.fill('#name', 'Explicitly Shared Task');
+    await page.selectOption('select[name="project_id"]', projectId);
+    await page.check(`label:has-text("${testUsers.user2.name}") input[name="assignee_ids[]"]`);
+    await page.click('button[type="submit"]');
+    await page.waitForURL(/\/tasks\/\d+/);
+    await logout(page);
+
+    // User 2 views the project — should see BOTH tasks because they are a direct project assignee
+    await login(page, testUsers.user2.email);
+    await page.goto(`/projects/${projectId}`);
+    await expect(page.locator('text=Owner-Only Task')).toBeVisible();
+    await expect(page.locator('text=Explicitly Shared Task')).toBeVisible();
+  });
+
+  test('task-only project access shows only assigned tasks, not all project tasks', async ({ page }) => {
+    // User 1 creates a project without assigning User 2 at the project level
+    await login(page, testUsers.user1.email);
+    await page.goto('/projects/create');
+    await page.fill('#name', 'Project for Partial Visibility Test');
+    await page.click('button[type="submit"]');
+    await page.waitForURL(/\/projects\/(\d+)/);
+    const projectId = page.url().match(/\/projects\/(\d+)/)[1];
+
+    // Create a task assigned to User 2 (gives them task-level access only)
+    await page.goto('/tasks/create');
+    await page.fill('#name', 'Task Assigned to User 2');
+    await page.selectOption('select[name="project_id"]', projectId);
+    await page.check(`label:has-text("${testUsers.user2.name}") input[name="assignee_ids[]"]`);
+    await page.click('button[type="submit"]');
+    await page.waitForURL(/\/tasks\/\d+/);
+
+    // Create a second task assigned only to User 1
+    await page.goto('/tasks/create');
+    await page.fill('#name', 'Private Task for Owner Only');
+    await page.selectOption('select[name="project_id"]', projectId);
+    await page.click('button[type="submit"]');
+    await page.waitForURL(/\/tasks\/\d+/);
+    await logout(page);
+
+    // User 2 accesses the project (granted via task assignment, not direct project membership)
+    await login(page, testUsers.user2.email);
+    await page.goto(`/projects/${projectId}`);
+
+    // Should see only their assigned task, not the owner-only task
+    await expect(page.locator('text=Task Assigned to User 2')).toBeVisible();
+    await expect(page.locator('text=Private Task for Owner Only')).not.toBeVisible();
+  });
+
   test('removing user from project hides project from their view', async ({ page }) => {
     // User 1 creates project and assigns to User 2
     await login(page, testUsers.user1.email);
