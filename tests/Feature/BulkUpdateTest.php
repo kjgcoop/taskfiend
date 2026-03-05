@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\Assignment;
 use App\Models\ChangeLog;
 use App\Models\Project;
+use App\Models\Tag;
 use App\Models\Task;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -425,5 +426,99 @@ class BulkUpdateTest extends TestCase
             'entity_id'   => $foreignTask->id,
             'user_id'     => $this->user->id,
         ]);
+    }
+
+    // -------------------------------------------------------------------------
+    // Tag bulk-add (append behaviour)
+    // -------------------------------------------------------------------------
+
+    public function test_can_bulk_add_tags(): void
+    {
+        $tag1  = Tag::create(['tag_name' => 'urgent', 'color' => '#ff0000']);
+        $tag2  = Tag::create(['tag_name' => 'q2',     'color' => '#00ff00']);
+        $task1 = $this->createOwnedTask(['name' => 'Task A']);
+        $task2 = $this->createOwnedTask(['name' => 'Task B']);
+
+        $response = $this->actingAs($this->user)
+            ->postJson('/tasks/bulk-update', [
+                'task_ids' => [$task1->id, $task2->id],
+                'tag_ids'  => [$tag1->id, $tag2->id],
+            ]);
+
+        $response->assertOk()
+            ->assertJson(['success' => true, 'updated' => 2]);
+
+        $this->assertDatabaseHas('tag_task', ['tag_id' => $tag1->id, 'task_id' => $task1->id]);
+        $this->assertDatabaseHas('tag_task', ['tag_id' => $tag2->id, 'task_id' => $task1->id]);
+        $this->assertDatabaseHas('tag_task', ['tag_id' => $tag1->id, 'task_id' => $task2->id]);
+        $this->assertDatabaseHas('tag_task', ['tag_id' => $tag2->id, 'task_id' => $task2->id]);
+    }
+
+    public function test_bulk_add_tags_does_not_remove_existing_tags(): void
+    {
+        $existingTag = Tag::create(['tag_name' => 'existing', 'color' => '#aaaaaa']);
+        $newTag      = Tag::create(['tag_name' => 'new',      'color' => '#bbbbbb']);
+        $task        = $this->createOwnedTask();
+        $task->tags()->attach($existingTag->id);
+
+        $this->actingAs($this->user)
+            ->postJson('/tasks/bulk-update', [
+                'task_ids' => [$task->id],
+                'tag_ids'  => [$newTag->id],
+            ]);
+
+        // Both old and new tags should be present
+        $this->assertDatabaseHas('tag_task', ['tag_id' => $existingTag->id, 'task_id' => $task->id]);
+        $this->assertDatabaseHas('tag_task', ['tag_id' => $newTag->id,      'task_id' => $task->id]);
+    }
+
+    public function test_bulk_add_tags_can_combine_with_other_fields(): void
+    {
+        $tag  = Tag::create(['tag_name' => 'combo', 'color' => '#cccccc']);
+        $task = $this->createOwnedTask();
+
+        $response = $this->actingAs($this->user)
+            ->postJson('/tasks/bulk-update', [
+                'task_ids' => [$task->id],
+                'status'   => 'done',
+                'tag_ids'  => [$tag->id],
+            ]);
+
+        $response->assertOk()->assertJson(['success' => true]);
+        $this->assertDatabaseHas('tasks',    ['id' => $task->id, 'status' => 'done']);
+        $this->assertDatabaseHas('tag_task', ['tag_id' => $tag->id, 'task_id' => $task->id]);
+    }
+
+    public function test_rejects_invalid_tag_id(): void
+    {
+        $task = $this->createOwnedTask();
+
+        $response = $this->actingAs($this->user)
+            ->postJson('/tasks/bulk-update', [
+                'task_ids' => [$task->id],
+                'tag_ids'  => [99999],
+            ]);
+
+        $response->assertUnprocessable()
+            ->assertJsonValidationErrors(['tag_ids.0']);
+    }
+
+    public function test_change_log_mentions_tags_when_tags_are_added(): void
+    {
+        $tag  = Tag::create(['tag_name' => 'logged', 'color' => '#dddddd']);
+        $task = $this->createOwnedTask();
+
+        $this->actingAs($this->user)
+            ->postJson('/tasks/bulk-update', [
+                'task_ids' => [$task->id],
+                'tag_ids'  => [$tag->id],
+            ]);
+
+        $log = ChangeLog::where('entity_type', 'tasks')
+            ->where('entity_id', $task->id)
+            ->first();
+
+        $this->assertNotNull($log);
+        $this->assertStringContainsString('tags', $log->description);
     }
 }

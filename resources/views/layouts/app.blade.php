@@ -156,6 +156,42 @@
                     </select>
                 </div>
 
+                <!-- Tag multi-select -->
+                <div class="flex items-center gap-1.5 relative" x-data="{ open: false }" @click.outside="open = false">
+                    <label class="text-xs text-gray-400 whitespace-nowrap">Tags</label>
+                    <button @click="open = !open"
+                            type="button"
+                            class="text-sm bg-gray-700 border border-gray-600 rounded px-2 py-1.5 text-gray-100 focus:outline-none focus:ring-1 focus:ring-blue-500 flex items-center gap-1.5 min-w-[130px]">
+                        <span x-text="tagIds.length > 0 ? tagIds.length + ' tag' + (tagIds.length > 1 ? 's' : '') : '— add tags —'"
+                              class="flex-1 text-left truncate"
+                              :class="tagIds.length > 0 ? 'text-gray-100' : 'text-gray-500'"></span>
+                        <svg class="w-3 h-3 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
+                        </svg>
+                    </button>
+                    <div x-show="open"
+                         x-cloak
+                         x-transition:enter="transition ease-out duration-100"
+                         x-transition:enter-start="opacity-0 scale-95"
+                         x-transition:enter-end="opacity-100 scale-100"
+                         class="absolute bottom-full mb-1 left-0 bg-gray-800 border border-gray-600 rounded-lg shadow-xl min-w-[180px] max-h-48 overflow-y-auto z-50"
+                         style="display:none">
+                        <template x-if="$store.bulkEdit.tags.length === 0">
+                            <p class="px-3 py-2 text-sm text-gray-500 italic">No tags available</p>
+                        </template>
+                        <template x-for="tag in $store.bulkEdit.tags" :key="tag.id">
+                            <label class="flex items-center gap-2 px-3 py-2 hover:bg-gray-700 cursor-pointer">
+                                <input type="checkbox"
+                                       :value="tag.id"
+                                       :checked="tagIds.includes(tag.id)"
+                                       @change="tagIds.includes(tag.id) ? tagIds.splice(tagIds.indexOf(tag.id), 1) : tagIds.push(tag.id)"
+                                       class="rounded border-gray-500 bg-gray-600 text-blue-500 focus:ring-blue-500 focus:ring-offset-gray-800">
+                                <span class="text-sm" :style="'color: ' + tag.color" x-text="tag.tag_name"></span>
+                            </label>
+                        </template>
+                    </div>
+                </div>
+
                 <!-- Apply button -->
                 <button @click="openConfirm()"
                         :disabled="!hasChanges"
@@ -202,21 +238,23 @@
                     date: '',
                     projectId: '',
                     status: '',
+                    tagIds: [],
                     confirming: false,
                     submitting: false,
                     confirmMessage: '',
 
                     get hasChanges() {
-                        return this.date !== '' || this.projectId !== '' || this.status !== '';
+                        return this.date !== '' || this.projectId !== '' || this.status !== '' || this.tagIds.length > 0;
                     },
 
                     openConfirm() {
                         if (!this.hasChanges) return;
                         const count = this.$store.bulkEdit.selected.length;
                         const fields = [];
-                        if (this.date)      fields.push('due date');
-                        if (this.projectId) fields.push('project');
-                        if (this.status)    fields.push('status');
+                        if (this.date)            fields.push('due date');
+                        if (this.projectId)       fields.push('project');
+                        if (this.status)          fields.push('status');
+                        if (this.tagIds.length > 0) fields.push('tags');
 
                         const fieldStr = fields.length === 1
                             ? fields[0]
@@ -239,6 +277,7 @@
                             if (this.date)      formData.append('date', this.date);
                             if (this.projectId) formData.append('project_id', this.projectId);
                             if (this.status)    formData.append('status', this.status);
+                            this.tagIds.forEach(id => formData.append('tag_ids[]', id));
 
                             const response = await fetch('/tasks/bulk-update', {
                                 method: 'POST',
