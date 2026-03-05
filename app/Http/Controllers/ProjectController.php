@@ -254,6 +254,13 @@ class ProjectController extends Controller
                     return response()->json(['success' => false, 'message' => 'Invalid status'], 400);
                 }
 
+                if ($field === 'status' && in_array($value, ['done', 'archived'])) {
+                    $isDefault = \App\Models\User::where('default_project_id', $project->id)->exists();
+                    if ($isDefault) {
+                        return response()->json(['success' => false, 'message' => 'This project is someone\'s default project. Update their profile before archiving it.'], 422);
+                    }
+                }
+
                 if ($field === 'name' && empty(trim($value))) {
                     return response()->json(['success' => false, 'message' => 'Name cannot be empty'], 400);
                 }

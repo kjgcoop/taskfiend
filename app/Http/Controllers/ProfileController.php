@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\ProfileUpdateRequest;
+use App\Models\Project;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -19,8 +20,17 @@ class ProfileController extends Controller
      */
     public function edit(Request $request): View
     {
+        $projects = Project::where(function ($q) {
+                $q->where('user_id', Auth::id())
+                  ->orWhereHas('assignees', fn ($q2) => $q2->where('users.id', Auth::id()));
+            })
+            ->where('status', 'incomplete')
+            ->orderByRaw('LOWER(name)')
+            ->get(['id', 'name', 'is_inbox']);
+
         return view('profile.edit', [
-            'user' => $request->user(),
+            'user'     => $request->user(),
+            'projects' => $projects,
         ]);
     }
 
@@ -29,7 +39,25 @@ class ProfileController extends Controller
      */
     public function update(ProfileUpdateRequest $request): RedirectResponse
     {
-        $request->user()->fill($request->validated());
+        $validated = $request->validated();
+
+        // Ensure the chosen default project is actually accessible to this user
+        if (!empty($validated['default_project_id'])) {
+            $accessible = Project::where('id', $validated['default_project_id'])
+                ->where('status', 'incomplete')
+                ->where(function ($q) {
+                    $q->where('user_id', Auth::id())
+                      ->orWhereHas('assignees', fn ($q2) => $q2->where('users.id', Auth::id()));
+                })
+                ->exists();
+
+            if (!$accessible) {
+                return Redirect::route('profile.edit')
+                    ->withErrors(['default_project_id' => 'That project is not available.']);
+            }
+        }
+
+        $request->user()->fill($validated);
 
         if ($request->user()->isDirty('email')) {
             $request->user()->email_verified_at = null;

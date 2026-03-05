@@ -61,9 +61,11 @@ class TaskController extends Controller
         $tags = Tag::orderByRaw('LOWER(tag_name)')->get();
         $users = User::whereNull('email_enabled_at')->get();
 
-        // Default to user's Inbox project if no project preselected
+        // Default to user's chosen default project, then inbox
         $inboxProject = Project::where('user_id', Auth::id())->where('is_inbox', true)->first();
-        $preselectedProjectId = $request->query('project_id') ?? ($inboxProject ? $inboxProject->id : null);
+        $preselectedProjectId = $request->query('project_id')
+            ?? Auth::user()->default_project_id
+            ?? ($inboxProject ? $inboxProject->id : null);
         $preselectedDate = $request->query('date');
 
         // Handle parent task preselection
@@ -233,23 +235,29 @@ class TaskController extends Controller
             }
         }
 
-        // project_id is NOT NULL in the database; fall back to the user's inbox project
-        // when the form was submitted without one (e.g. quick-add without a #project token).
+        // project_id is NOT NULL in the database; fall back to the user's default project,
+        // then inbox, when the form was submitted without one (e.g. quick-add without a #project token).
         if (empty($validated['project_id'])) {
-            $inbox = Project::where('user_id', Auth::id())
-                ->where('is_inbox', true)
-                ->first();
+            $defaultProjectId = Auth::user()->default_project_id;
 
-            if (!$inbox) {
-                $inbox = Project::create([
-                    'name'       => 'Inbox',
-                    'user_id'    => Auth::id(),
-                    'is_inbox'   => true,
-                    'status'     => 'incomplete',
-                ]);
+            if ($defaultProjectId) {
+                $validated['project_id'] = $defaultProjectId;
+            } else {
+                $inbox = Project::where('user_id', Auth::id())
+                    ->where('is_inbox', true)
+                    ->first();
+
+                if (!$inbox) {
+                    $inbox = Project::create([
+                        'name'       => 'Inbox',
+                        'user_id'    => Auth::id(),
+                        'is_inbox'   => true,
+                        'status'     => 'incomplete',
+                    ]);
+                }
+
+                $validated['project_id'] = $inbox->id;
             }
-
-            $validated['project_id'] = $inbox->id;
         }
 
         $task = Task::create([
