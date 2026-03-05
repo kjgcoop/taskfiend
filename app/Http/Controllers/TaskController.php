@@ -930,13 +930,16 @@ class TaskController extends Controller
             'date'       => 'nullable|date_format:Y-m-d',
             'project_id' => 'nullable|integer|exists:projects,id',
             'status'     => 'nullable|in:incomplete,done,archived',
+            'tag_ids'    => 'nullable|array',
+            'tag_ids.*'  => 'integer|exists:tags,id',
         ]);
 
         $date      = $request->input('date');
         $projectId = $request->input('project_id');
         $status    = $request->input('status');
+        $tagIds    = $request->input('tag_ids', []);
 
-        if ($date === null && $projectId === null && $status === null) {
+        if ($date === null && $projectId === null && $status === null && empty($tagIds)) {
             return response()->json(['success' => false, 'message' => 'No changes specified.'], 422);
         }
 
@@ -967,10 +970,18 @@ class TaskController extends Controller
         if ($projectId !== null) $changes['project_id'] = $projectId;
         if ($status !== null)    $changes['status']     = $status;
 
+        $changeFields = array_keys($changes);
+        if (!empty($tagIds)) $changeFields[] = 'tags';
+
         $updatedCount = 0;
         foreach ($tasks as $task) {
-            $task->update($changes);
-            $this->logChange($task, 'bulk updated: ' . implode(', ', array_keys($changes)), 'edited');
+            if (!empty($changes)) {
+                $task->update($changes);
+            }
+            if (!empty($tagIds)) {
+                $task->tags()->syncWithoutDetaching($tagIds);
+            }
+            $this->logChange($task, 'bulk updated: ' . implode(', ', $changeFields), 'edited');
             $updatedCount++;
         }
 

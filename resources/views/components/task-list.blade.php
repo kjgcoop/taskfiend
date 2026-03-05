@@ -14,6 +14,7 @@
             active: false,
             selected: [],
             projects: [],
+            tags: [],
             toggle() {
                 this.active = !this.active;
                 if (!this.active) this.selected = [];
@@ -189,9 +190,12 @@
                         Alpine.store('taskCount').filtered = false;
                         Alpine.store('taskCount').ready = true;
                     }
-                    // Make projects available to the bulk edit bar
+                    // Make projects and tags available to the bulk edit bar
                     if (this.projects && this.projects.length > 0) {
                         Alpine.store('bulkEdit').projects = this.projects;
+                    }
+                    if (this.tags && this.tags.length > 0) {
+                        Alpine.store('bulkEdit').tags = this.tags;
                     }
                 });
             },
