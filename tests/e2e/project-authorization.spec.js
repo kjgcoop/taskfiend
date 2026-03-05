@@ -134,17 +134,20 @@ test.describe('Project Authorization & Privacy', () => {
 
     // Open the inline assignee editor and add User 2
     // Projects use inline editing on the show page (no separate edit route)
+    // Assignees are inside a collapsed <details> — expand it first
+    await page.locator('details summary').click();
     const assigneeSection = page.locator('div.mt-4').filter({ hasText: 'Assigned To' });
     await assigneeSection.locator('.cursor-pointer[x-show*="assignee_ids"]').click();
     await page.waitForSelector(`label:has-text("${testUsers.user2.name}") input[type="checkbox"]`, { state: 'visible' });
     await page.check(`label:has-text("${testUsers.user2.name}") input[type="checkbox"]`);
     await assigneeSection.locator('button:has-text("Save")').click();
 
-    // saveField() reloads the page on success
+    // saveField() reloads the page on success — re-expand details
     await page.waitForLoadState('networkidle');
     await expect(page.locator(`text=${testUsers.user2.name}`).first()).toBeVisible();
 
     // Remove assignee
+    await page.locator('details summary').click();
     await assigneeSection.locator('.cursor-pointer[x-show*="assignee_ids"]').click();
     await page.waitForSelector(`label:has-text("${testUsers.user2.name}") input[type="checkbox"]`, { state: 'visible' });
     await page.uncheck(`label:has-text("${testUsers.user2.name}") input[type="checkbox"]`);
@@ -263,6 +266,8 @@ test.describe('Project Authorization & Privacy', () => {
     // User 1 removes User 2 from the project via inline editing on the show page
     await login(page, testUsers.user1.email);
     await page.goto(`/projects/${projectId}`);
+    // Assignees are inside a collapsed <details> — expand it first
+    await page.locator('details summary').click();
     const assigneeSection = page.locator('div.mt-4').filter({ hasText: 'Assigned To' });
     await assigneeSection.locator('.cursor-pointer[x-show*="assignee_ids"]').click();
     await page.waitForSelector(`label:has-text("${testUsers.user2.name}") input[type="checkbox"]`, { state: 'visible' });
