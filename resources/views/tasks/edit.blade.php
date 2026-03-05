@@ -66,9 +66,12 @@
                                             <span class="relative group inline-flex items-baseline gap-x-0.5">
                                                 <span class="text-gray-500">·</span>
                                                 <span class="underline decoration-dotted cursor-help" x-text="proj.name + ' \u00d7' + proj.count"></span>
-                                                <div class="absolute hidden group-hover:block bottom-full left-0 mb-1 bg-gray-900 border border-gray-600 rounded p-2 text-gray-200 whitespace-nowrap z-50 shadow-lg">
+                                                <div class="absolute hidden group-hover:block bottom-full left-0 mb-1 bg-gray-900 border border-gray-600 rounded p-2 text-gray-200 z-50 shadow-lg max-w-xs">
                                                     <template x-for="(task, idx) in proj.tasks" :key="idx">
-                                                        <div x-text="task" class="py-0.5"></div>
+                                                        <div class="flex gap-1.5 py-0.5">
+                                                            <span class="flex-shrink-0 text-gray-500">·</span>
+                                                            <span x-text="task"></span>
+                                                        </div>
                                                     </template>
                                                     <div x-show="proj.more > 0" x-text="'+' + proj.more + ' more'" class="text-gray-400 italic mt-1 py-0.5"></div>
                                                 </div>
