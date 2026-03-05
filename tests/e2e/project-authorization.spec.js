@@ -136,11 +136,10 @@ test.describe('Project Authorization & Privacy', () => {
     // Projects use inline editing on the show page (no separate edit route)
     // Assignees are inside a collapsed <details> — expand it first
     await page.locator('details summary').click();
-    const assigneeSection = page.locator('div.mt-4').filter({ hasText: 'Assigned To' });
-    await assigneeSection.locator('.cursor-pointer[x-show*="assignee_ids"]').click();
+    await page.locator('[x-show="!editing.assignee_ids"]').click();
     await page.waitForSelector(`label:has-text("${testUsers.user2.name}") input[type="checkbox"]`, { state: 'visible' });
     await page.check(`label:has-text("${testUsers.user2.name}") input[type="checkbox"]`);
-    await assigneeSection.locator('button:has-text("Save")').click();
+    await page.locator('[x-show="editing.assignee_ids"] button:has-text("Save")').click();
 
     // saveField() reloads the page on success — re-expand details
     await page.waitForLoadState('networkidle');
@@ -148,10 +147,10 @@ test.describe('Project Authorization & Privacy', () => {
 
     // Remove assignee
     await page.locator('details summary').click();
-    await assigneeSection.locator('.cursor-pointer[x-show*="assignee_ids"]').click();
+    await page.locator('[x-show="!editing.assignee_ids"]').click();
     await page.waitForSelector(`label:has-text("${testUsers.user2.name}") input[type="checkbox"]`, { state: 'visible' });
     await page.uncheck(`label:has-text("${testUsers.user2.name}") input[type="checkbox"]`);
-    await assigneeSection.locator('button:has-text("Save")').click();
+    await page.locator('[x-show="editing.assignee_ids"] button:has-text("Save")').click();
     await page.waitForLoadState('networkidle');
   });
 
@@ -268,11 +267,10 @@ test.describe('Project Authorization & Privacy', () => {
     await page.goto(`/projects/${projectId}`);
     // Assignees are inside a collapsed <details> — expand it first
     await page.locator('details summary').click();
-    const assigneeSection = page.locator('div.mt-4').filter({ hasText: 'Assigned To' });
-    await assigneeSection.locator('.cursor-pointer[x-show*="assignee_ids"]').click();
+    await page.locator('[x-show="!editing.assignee_ids"]').click();
     await page.waitForSelector(`label:has-text("${testUsers.user2.name}") input[type="checkbox"]`, { state: 'visible' });
     await page.uncheck(`label:has-text("${testUsers.user2.name}") input[type="checkbox"]`);
-    await assigneeSection.locator('button:has-text("Save")').click();
+    await page.locator('[x-show="editing.assignee_ids"] button:has-text("Save")').click();
     await page.waitForLoadState('networkidle');
     await logout(page);
 
