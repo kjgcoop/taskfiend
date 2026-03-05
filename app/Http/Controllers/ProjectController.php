@@ -115,7 +115,7 @@ class ProjectController extends Controller
             ]))
             ->when($sort === 'created', fn($q) => $q->orderBy('created_at', 'desc'))
             ->when($sort === 'name',    fn($q) => $q->orderByRaw('LOWER(name) ASC'))
-            ->when($sort === 'date',    fn($q) => $q->orderBy('date')->orderBy('time'))
+            ->when($sort === 'date',    fn($q) => $q->orderByRaw('date IS NULL, date ASC, time IS NULL, time ASC'))
             ->get();
 
         $perPage = (int) env('PAGINATION_PER_PAGE', 100);

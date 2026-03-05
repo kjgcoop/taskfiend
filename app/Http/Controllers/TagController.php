@@ -66,7 +66,7 @@ class TagController extends Controller
         match ($sort) {
             'created' => $tasksQuery->orderBy('created_at', 'desc'),
             'name'    => $tasksQuery->orderByRaw('LOWER(name) ASC'),
-            default   => $tasksQuery->orderByRaw('date IS NULL, date ASC, time ASC'),
+            default   => $tasksQuery->orderByRaw('date IS NULL, date ASC, time IS NULL, time ASC'),
         };
         $tasks = $tasksQuery->get();
 
