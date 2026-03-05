@@ -135,7 +135,7 @@ test.describe('Project Authorization & Privacy', () => {
     // Open the inline assignee editor and add User 2
     // Projects use inline editing on the show page (no separate edit route)
     const assigneeSection = page.locator('div.mt-4').filter({ hasText: 'Assigned To' });
-    await assigneeSection.locator('[x-show*="assignee_ids"]').click();
+    await assigneeSection.locator('.cursor-pointer[x-show*="assignee_ids"]').click();
     await page.waitForSelector(`label:has-text("${testUsers.user2.name}") input[type="checkbox"]`, { state: 'visible' });
     await page.check(`label:has-text("${testUsers.user2.name}") input[type="checkbox"]`);
     await assigneeSection.locator('button:has-text("Save")').click();
@@ -145,7 +145,7 @@ test.describe('Project Authorization & Privacy', () => {
     await expect(page.locator(`text=${testUsers.user2.name}`).first()).toBeVisible();
 
     // Remove assignee
-    await assigneeSection.locator('[x-show*="assignee_ids"]').click();
+    await assigneeSection.locator('.cursor-pointer[x-show*="assignee_ids"]').click();
     await page.waitForSelector(`label:has-text("${testUsers.user2.name}") input[type="checkbox"]`, { state: 'visible' });
     await page.uncheck(`label:has-text("${testUsers.user2.name}") input[type="checkbox"]`);
     await assigneeSection.locator('button:has-text("Save")').click();
@@ -264,7 +264,7 @@ test.describe('Project Authorization & Privacy', () => {
     await login(page, testUsers.user1.email);
     await page.goto(`/projects/${projectId}`);
     const assigneeSection = page.locator('div.mt-4').filter({ hasText: 'Assigned To' });
-    await assigneeSection.locator('[x-show*="assignee_ids"]').click();
+    await assigneeSection.locator('.cursor-pointer[x-show*="assignee_ids"]').click();
     await page.waitForSelector(`label:has-text("${testUsers.user2.name}") input[type="checkbox"]`, { state: 'visible' });
     await page.uncheck(`label:has-text("${testUsers.user2.name}") input[type="checkbox"]`);
     await assigneeSection.locator('button:has-text("Save")').click();
