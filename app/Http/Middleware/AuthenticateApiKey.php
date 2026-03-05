@@ -6,6 +6,7 @@ use App\Models\ApiKey;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
 use Symfony\Component\HttpFoundation\Response;
 
 class AuthenticateApiKey
@@ -46,6 +47,10 @@ class AuthenticateApiKey
         }
 
         if (!$validKey) {
+            Log::warning('API authentication failed: invalid key', [
+                'ip' => $request->ip(),
+                'key_prefix' => $prefix,
+            ]);
             return response()->json([
                 'success' => false,
                 'message' => 'Invalid or expired API key.',
@@ -53,6 +58,11 @@ class AuthenticateApiKey
         }
 
         if (!$validKey->user->isEnabled()) {
+            Log::warning('API authentication failed: user disabled', [
+                'ip' => $request->ip(),
+                'user_id' => $validKey->user->id,
+                'email' => $validKey->user->email,
+            ]);
             return response()->json([
                 'success' => false,
                 'message' => 'User account is disabled.',
