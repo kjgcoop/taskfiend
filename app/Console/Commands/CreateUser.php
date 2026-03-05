@@ -45,14 +45,16 @@ class CreateUser extends Command
             'email_enabled_at' => null,
         ]);
 
-        // Create Inbox project for the new user
-        Project::create([
+        // Create Inbox project for the new user and set it as the default
+        $inbox = Project::create([
             'name' => $user->name . "'s Inbox",
             'description' => 'Personal inbox for quick task capture',
             'user_id' => $user->id,
             'status' => 'incomplete',
             'is_inbox' => true,
         ]);
+
+        $user->update(['default_project_id' => $inbox->id]);
 
         $this->info("User created successfully!");
         $this->info("Email: {$user->email}");

@@ -25,6 +25,7 @@ class User extends Authenticatable
         'password',
         'email_enabled_at',
         'profile_image',
+        'default_project_id',
     ];
 
     /**
@@ -59,6 +60,11 @@ class User extends Authenticatable
     public function projects(): HasMany
     {
         return $this->hasMany(Project::class, 'user_id');
+    }
+
+    public function defaultProject(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    {
+        return $this->belongsTo(Project::class, 'default_project_id');
     }
 
     public function createdTasks(): HasMany
