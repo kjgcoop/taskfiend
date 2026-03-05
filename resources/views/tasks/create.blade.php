@@ -25,7 +25,8 @@
                                    id="name"
                                    x-ref="nameInput"
                                    required
-                                   class="w-full rounded-md bg-gray-700 border-gray-600 text-gray-100 placeholder-gray-500 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                                   :class="nameError ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : 'border-gray-600 focus:border-blue-500 focus:ring-blue-500'"
+                                   class="w-full rounded-md bg-gray-700 text-gray-100 placeholder-gray-500 shadow-sm"
                                    placeholder="e.g., Meeting #work @urgent Monday">
 
                             <!-- Autocomplete Dropdown -->
@@ -72,11 +73,17 @@
                                 </template>
                             </div>
 
-                            <p class="mt-1 text-xs text-gray-500">
-                                Natural dates: "Monday", "11/10", "every Tuesday" |
-                                Type <code class="bg-gray-700 px-1 rounded text-gray-300">#</code> for projects or
-                                <code class="bg-gray-700 px-1 rounded text-gray-300">@</code> for tags
-                            </p>
+                            <div class="mt-1 flex justify-between items-baseline">
+                                <p class="text-xs text-gray-500">
+                                    Natural dates: "Monday", "11/10", "every Tuesday" |
+                                    Type <code class="bg-gray-700 px-1 rounded text-gray-300">#</code> for projects or
+                                    <code class="bg-gray-700 px-1 rounded text-gray-300">@</code> for tags
+                                </p>
+                                <span class="text-xs ml-2 flex-shrink-0"
+                                      :class="nameError ? 'text-red-400 font-semibold' : 'text-gray-500'"
+                                      x-text="taskName.length + '/255'"></span>
+                            </div>
+                            <p x-show="nameError" x-text="nameError" class="mt-1 text-sm text-red-400"></p>
                             @error('name')<p class="mt-1 text-sm text-red-600">{{ $message }}</p>@enderror
                         </div>
 
@@ -450,6 +457,8 @@
                 selectedProjectId: @js(old('project_id', $preselectedProjectId ?? '')),
                 selectedTagIds: @js(old('tag_ids', [])),
 
+                nameError: '',
+
                 // Autocomplete state
                 showAutocomplete: false,
                 autocompleteType: null,
@@ -489,6 +498,10 @@
                 },
 
                 handleInput(event) {
+                    this.nameError = this.taskName.length > 255
+                        ? `Task name is too long (${this.taskName.length}/255 characters)`
+                        : '';
+
                     const input = this.taskName;
                     const cursorPos = event.target.selectionStart;
 
@@ -658,8 +671,11 @@
                 },
 
                 prepareSubmit(e) {
-                    // The form will submit with the cleaned task name via the hidden field
-                    // Project and tags are already selected in their respective fields
+                    if (this.taskName.length > 255) {
+                        e.preventDefault();
+                        this.nameError = `Task name is too long (${this.taskName.length}/255 characters)`;
+                        this.$refs.nameInput.focus();
+                    }
                 }
             };
         }
