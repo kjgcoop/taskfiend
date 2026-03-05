@@ -141,12 +141,12 @@ test.describe('Project Authorization & Privacy', () => {
     await page.check(`label:has-text("${testUsers.user2.name}") input[type="checkbox"]`);
     await page.locator('[x-show="editing.assignee_ids"] button:has-text("Save")').click();
 
-    // saveField() reloads the page on success — re-expand details
+    // saveField() reloads the page on success — re-expand details to verify and to remove
     await page.waitForLoadState('networkidle');
+    await page.locator('details summary').click();
     await expect(page.locator(`text=${testUsers.user2.name}`).first()).toBeVisible();
 
     // Remove assignee
-    await page.locator('details summary').click();
     await page.locator('[x-show="!editing.assignee_ids"]').click();
     await page.waitForSelector(`label:has-text("${testUsers.user2.name}") input[type="checkbox"]`, { state: 'visible' });
     await page.uncheck(`label:has-text("${testUsers.user2.name}") input[type="checkbox"]`);
