@@ -13,6 +13,15 @@
 
     <div class="py-12">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8" x-data="taskFilter(@js($projects), @js($tags))">
+            <div class="flex justify-end mb-2">
+                <label class="text-gray-400 text-sm mr-2 self-center">Sort by:</label>
+                <select onchange="(function(v){const u=new URL(window.location);u.searchParams.set('sort',v);window.location.href=u.toString()})(this.value)"
+                        class="text-sm bg-gray-700 border border-gray-600 rounded px-2 py-1 text-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <option value="date" {{ $sort === 'date' ? 'selected' : '' }}>Date & Time</option>
+                    <option value="created" {{ $sort === 'created' ? 'selected' : '' }}>Date Added</option>
+                    <option value="name" {{ $sort === 'name' ? 'selected' : '' }}>Name (A–Z)</option>
+                </select>
+            </div>
             <x-task-input-bar />
             <div x-ref="taskContainer">
                 <x-task-list :tasks="$tasks" />
