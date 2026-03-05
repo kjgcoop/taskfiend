@@ -109,7 +109,8 @@ class Task extends Model
     public function changeLogs(): HasMany
     {
         return $this->hasMany(ChangeLog::class, 'entity_id')
-            ->where('entity_type', 'tasks');
+            ->where('entity_type', 'tasks')
+            ->orderBy('date', 'desc');
     }
 
     public function rescheduleCount(): int
