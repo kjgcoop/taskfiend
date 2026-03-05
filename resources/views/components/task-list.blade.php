@@ -78,6 +78,7 @@
             query: '',
             noResults: false,
             mode: 'create',
+            nameError: '',
 
             // Autocomplete state
             projects: projects || [],
@@ -99,7 +100,22 @@
                 return this.tags.filter(t => t.tag_name.toLowerCase().includes(q));
             },
 
+            validateAndSubmit(event) {
+                const form = event.target;
+                const input = this.$refs.createInput;
+                if (!input) return;
+                const name = input.value.trim();
+                if (name.length === 0) return; // let browser/server handle required
+                if (name.length > 255) {
+                    this.nameError = `Task name is too long (${name.length}/255 characters max).`;
+                    return;
+                }
+                this.nameError = '';
+                form.submit();
+            },
+
             handleInput(event) {
+                this.nameError = '';
                 const input = event.target.value;
                 const cursorPos = event.target.selectionStart;
                 const beforeCursor = input.substring(0, cursorPos);
