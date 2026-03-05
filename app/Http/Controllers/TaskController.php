@@ -1026,7 +1026,16 @@ class TaskController extends Controller
             }
         }
 
-        if (!$isCreator && !$isAssignee && !$hasAncestorAccess) {
+        $isDirectProjectMember = false;
+        if ($task->project_id) {
+            $project = $task->relationLoaded('project') ? $task->project : \App\Models\Project::find($task->project_id);
+            if ($project) {
+                $isDirectProjectMember = $project->user_id === Auth::id()
+                    || $project->assignees()->where('users.id', Auth::id())->exists();
+            }
+        }
+
+        if (!$isCreator && !$isAssignee && !$hasAncestorAccess && !$isDirectProjectMember) {
             abort(403, 'You do not have access to this task.');
         }
     }

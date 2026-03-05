@@ -73,11 +73,16 @@ class ProjectController extends Controller
     {
         $this->authorizeProjectAccess($project);
 
-        $visibleToUser = function ($q) {
-            $q->where('creator_id', Auth::id())
-              ->orWhereHas('assignees', function ($query) {
-                  $query->where('users.id', Auth::id());
-              });
+        $isDirectMember = $project->user_id === Auth::id()
+            || $project->assignees()->where('users.id', Auth::id())->exists();
+
+        $visibleToUser = function ($q) use ($isDirectMember) {
+            if (!$isDirectMember) {
+                $q->where('creator_id', Auth::id())
+                  ->orWhereHas('assignees', function ($query) {
+                      $query->where('users.id', Auth::id());
+                  });
+            }
         };
 
         $taskEagerLoad = [
@@ -181,11 +186,16 @@ class ProjectController extends Controller
 
         $readOnly = in_array($project->status, ['done', 'archived']);
 
-        $visibleToUser = function ($q) {
-            $q->where('creator_id', Auth::id())
-              ->orWhereHas('assignees', function ($query) {
-                  $query->where('users.id', Auth::id());
-              });
+        $isDirectMember = $project->user_id === Auth::id()
+            || $project->assignees()->where('users.id', Auth::id())->exists();
+
+        $visibleToUser = function ($q) use ($isDirectMember) {
+            if (!$isDirectMember) {
+                $q->where('creator_id', Auth::id())
+                  ->orWhereHas('assignees', function ($query) {
+                      $query->where('users.id', Auth::id());
+                  });
+            }
         };
 
         $tasks = $project->tasks()
