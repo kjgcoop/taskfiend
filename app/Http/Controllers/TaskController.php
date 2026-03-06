@@ -527,6 +527,9 @@ class TaskController extends Controller
             }
 
             if ($request->has('quick_complete')) {
+                if ($request->ajax()) {
+                    return response()->json(['ok' => true]);
+                }
                 return redirect()->back()
                     ->with('success', 'Task and all subtasks marked as done.');
             }
@@ -609,6 +612,9 @@ class TaskController extends Controller
 
         // Handle quick complete from task list
         if ($request->has('quick_complete')) {
+            if ($request->ajax()) {
+                return response()->json(['ok' => true]);
+            }
             return redirect()->back()
                 ->with('success', 'Task marked as done.');
         }
