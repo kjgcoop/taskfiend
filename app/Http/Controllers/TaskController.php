@@ -206,7 +206,7 @@ class TaskController extends Controller
         // Validate explicitly provided recurrence pattern
         if ($recurrencePattern && !$dateParser->isValidRecurrencePattern($recurrencePattern)) {
             return back()->withErrors([
-                'recurrence_pattern' => "The recurrence pattern '{$recurrencePattern}' is not recognized. Supported patterns include: daily, every other day, weekdays, weekends, every Monday/Tuesday/etc., every other Monday/Tuesday/etc., every 2 weeks, every 1st (monthly), every first Monday (monthly), yearly."
+                'recurrence_pattern' => "The recurrence pattern '{$recurrencePattern}' is not recognized. Supported patterns include: daily, every other day, every 4 days, weekdays, weekends, every Monday/Tuesday/etc., every other Monday/Tuesday/etc., every 2 weeks, every 1st (monthly), every first Monday (monthly), yearly."
             ])->withInput();
         }
 
@@ -495,7 +495,7 @@ class TaskController extends Controller
             $dateParser = new DateParser();
             if (!$dateParser->isValidRecurrencePattern($validated['recurrence_pattern'])) {
                 return back()->withErrors([
-                    'recurrence_pattern' => "The recurrence pattern '{$validated['recurrence_pattern']}' is not recognized. Supported patterns include: daily, every other day, weekdays, weekends, every Monday/Tuesday/etc., every other Monday/Tuesday/etc., every 2 weeks, every 1st (monthly), every first Monday (monthly), yearly."
+                    'recurrence_pattern' => "The recurrence pattern '{$validated['recurrence_pattern']}' is not recognized. Supported patterns include: daily, every other day, every 4 days, weekdays, weekends, every Monday/Tuesday/etc., every other Monday/Tuesday/etc., every 2 weeks, every 1st (monthly), every first Monday (monthly), yearly."
                 ])->withInput();
             }
         }
