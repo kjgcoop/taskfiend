@@ -169,7 +169,9 @@ class TaskApiController extends Controller
             })
             ->where('status', '!=', 'archived')
             ->where('date', $carbonDate->format('Y-m-d'))
-            ->with(['creator', 'project', 'tags', 'assignees'])
+            ->with(['creator', 'project', 'tags', 'assignees', 'comments' => function ($q) {
+                $q->orderBy('created_at', 'asc');
+            }])
             ->orderBy('date')
             ->get();
 
