@@ -22,6 +22,13 @@ class Project extends Model
         'status' => 'incomplete',
     ];
 
+    protected $appends = ['url'];
+
+    public function getUrlAttribute(): string
+    {
+        return route('projects.show', $this->id);
+    }
+
     public function creator(): BelongsTo
     {
         return $this->belongsTo(User::class, 'user_id');

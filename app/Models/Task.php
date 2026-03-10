@@ -6,7 +6,6 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Support\Collection;
 
 class Task extends Model
@@ -37,6 +36,13 @@ class Task extends Model
     protected $attributes = [
         'status' => 'incomplete',
     ];
+
+    protected $appends = ['url'];
+
+    public function getUrlAttribute(): string
+    {
+        return route('tasks.show', $this->id);
+    }
 
     public function setDescriptionAttribute(?string $value): void
     {
@@ -104,11 +110,6 @@ class Task extends Model
     public function comments(): HasMany
     {
         return $this->hasMany(Comment::class);
-    }
-
-    public function latestComment(): HasOne
-    {
-        return $this->hasOne(Comment::class)->latestOfMany();
     }
 
     public function changeLogs(): HasMany
