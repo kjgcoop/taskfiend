@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
-use ZipArchive;
 use App\Models\Project;
 use App\Models\Task;
 use App\Models\Tag;
@@ -720,47 +719,14 @@ class DataExportController extends Controller
             copy(Storage::disk('private')->path($project->background_image), $projectBackgroundsDir . '/' . $bgFilename);
         }
 
-        // Create zip file
+        // Create zip file using the system zip binary (no php-zip extension required)
         $zipPath = storage_path('app/temp/taskfiend_template_' . $project->id . '_' . time() . '.zip');
-        $zip = new ZipArchive();
+        $returnCode = 0;
+        exec('cd ' . escapeshellarg($tempDir) . ' && zip -r ' . escapeshellarg($zipPath) . ' .', $_, $returnCode);
 
-        if ($zip->open($zipPath, ZipArchive::CREATE | ZipArchive::OVERWRITE) === true) {
-            // Add JSON file
-            $zip->addFile($jsonPath, 'template.json');
-
-            // Add all attachment files
-            if (is_dir($attachmentsDir)) {
-                $files = new \RecursiveIteratorIterator(
-                    new \RecursiveDirectoryIterator($attachmentsDir),
-                    \RecursiveIteratorIterator::LEAVES_ONLY
-                );
-
-                foreach ($files as $file) {
-                    if (!$file->isDir()) {
-                        $filePath = $file->getRealPath();
-                        $relativePath = 'attachments/' . basename($filePath);
-                        $zip->addFile($filePath, $relativePath);
-                    }
-                }
-            }
-
-            // Add project background image
-            if (is_dir($projectBackgroundsDir)) {
-                $files = new \RecursiveIteratorIterator(
-                    new \RecursiveDirectoryIterator($projectBackgroundsDir),
-                    \RecursiveIteratorIterator::LEAVES_ONLY
-                );
-
-                foreach ($files as $file) {
-                    if (!$file->isDir()) {
-                        $filePath = $file->getRealPath();
-                        $relativePath = 'project-backgrounds/' . basename($filePath);
-                        $zip->addFile($filePath, $relativePath);
-                    }
-                }
-            }
-
-            $zip->close();
+        if ($returnCode !== 0) {
+            $this->deleteDirectory($tempDir);
+            return back()->with('error', 'Failed to create export archive. Please ensure the zip utility is installed on the server.');
         }
 
         // Clean up temp directory
