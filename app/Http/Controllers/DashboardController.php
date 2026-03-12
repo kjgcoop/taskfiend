@@ -43,10 +43,19 @@ class DashboardController extends Controller
     {
         $sort = $request->input('sort', 'date');
 
-        // Get user's Inbox project
+        // Get (or create) user's Inbox project so quick-add tasks land here.
         $inboxProject = \App\Models\Project::where('user_id', Auth::id())
             ->where('is_inbox', true)
             ->first();
+
+        if (!$inboxProject) {
+            $inboxProject = \App\Models\Project::create([
+                'name'     => 'Inbox',
+                'user_id'  => Auth::id(),
+                'is_inbox' => true,
+                'status'   => 'incomplete',
+            ]);
+        }
 
         $tasksQuery = Task::query()
             ->where(function ($q) {
@@ -77,7 +86,7 @@ class DashboardController extends Controller
         $this->applySortOrder($completedTasksQuery, $sort);
         $completedTasks = $completedTasksQuery->get();
 
-        return view('dashboard.inbox', array_merge(compact('tasks', 'completedTasks', 'sort'), $this->quickAddData()));
+        return view('dashboard.inbox', array_merge(compact('tasks', 'completedTasks', 'sort', 'inboxProject'), $this->quickAddData()));
     }
 
     public function overdue(Request $request)

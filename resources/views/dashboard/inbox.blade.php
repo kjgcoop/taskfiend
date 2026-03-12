@@ -25,7 +25,7 @@
                     <option value="name" {{ $sort === 'name' ? 'selected' : '' }}>Name (A–Z)</option>
                 </select>
             </div>
-            <x-task-input-bar filter-placeholder="Filter tasks... (@ tag)" />
+            <x-task-input-bar filter-placeholder="Filter tasks... (@ tag)" :project-id="$inboxProject->id" />
             <div x-ref="taskContainer">
                 <x-task-list :tasks="$tasks" />
             </div>
