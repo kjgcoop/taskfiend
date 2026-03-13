@@ -249,63 +249,14 @@ class DataExportController extends Controller
             }
         }
 
-        // Create zip file
+        // Create zip file using the system zip binary (no php-zip extension required)
         $zipPath = storage_path('app/temp/taskfiend_export_' . $user->id . '_' . time() . '.zip');
-        $zip = new ZipArchive();
+        $returnCode = 0;
+        exec('cd ' . escapeshellarg($tempDir) . ' && zip -r ' . escapeshellarg($zipPath) . ' .', $_, $returnCode);
 
-        if ($zip->open($zipPath, ZipArchive::CREATE | ZipArchive::OVERWRITE) === true) {
-            // Add JSON file
-            $zip->addFile($jsonPath, 'data.json');
-
-            // Add all attachment files
-            if (is_dir($attachmentsDir)) {
-                $files = new \RecursiveIteratorIterator(
-                    new \RecursiveDirectoryIterator($attachmentsDir),
-                    \RecursiveIteratorIterator::LEAVES_ONLY
-                );
-
-                foreach ($files as $file) {
-                    if (!$file->isDir()) {
-                        $filePath = $file->getRealPath();
-                        $relativePath = 'attachments/' . basename($filePath);
-                        $zip->addFile($filePath, $relativePath);
-                    }
-                }
-            }
-
-            // Add project background images
-            if (is_dir($projectBackgroundsDir)) {
-                $files = new \RecursiveIteratorIterator(
-                    new \RecursiveDirectoryIterator($projectBackgroundsDir),
-                    \RecursiveIteratorIterator::LEAVES_ONLY
-                );
-
-                foreach ($files as $file) {
-                    if (!$file->isDir()) {
-                        $filePath = $file->getRealPath();
-                        $relativePath = 'project-backgrounds/' . basename($filePath);
-                        $zip->addFile($filePath, $relativePath);
-                    }
-                }
-            }
-
-            // Add profile image
-            if (is_dir($profileImageDir)) {
-                $files = new \RecursiveIteratorIterator(
-                    new \RecursiveDirectoryIterator($profileImageDir),
-                    \RecursiveIteratorIterator::LEAVES_ONLY
-                );
-
-                foreach ($files as $file) {
-                    if (!$file->isDir()) {
-                        $filePath = $file->getRealPath();
-                        $relativePath = 'profile-image/' . basename($filePath);
-                        $zip->addFile($filePath, $relativePath);
-                    }
-                }
-            }
-
-            $zip->close();
+        if ($returnCode !== 0) {
+            $this->deleteDirectory($tempDir);
+            return back()->with('error', 'Failed to create export archive. Please ensure the zip utility is installed on the server.');
         }
 
         // Clean up temp directory
@@ -341,12 +292,12 @@ class DataExportController extends Controller
         // Save uploaded file
         $zipPath = $request->file('import_file')->path();
 
-        // Extract zip
-        $zip = new ZipArchive();
-        if ($zip->open($zipPath) === true) {
-            $zip->extractTo($tempDir);
-            $zip->close();
-        } else {
+        // Extract zip using the system unzip binary (no php-zip extension required)
+        $returnCode = 0;
+        exec('unzip -o ' . escapeshellarg($zipPath) . ' -d ' . escapeshellarg($tempDir), $_, $returnCode);
+
+        if ($returnCode !== 0) {
+            $this->deleteDirectory($tempDir);
             return back()->with('error', 'Failed to extract zip file.');
         }
 
@@ -757,12 +708,12 @@ class DataExportController extends Controller
         // Save uploaded file
         $zipPath = $request->file('template_file')->path();
 
-        // Extract zip
-        $zip = new ZipArchive();
-        if ($zip->open($zipPath) === true) {
-            $zip->extractTo($tempDir);
-            $zip->close();
-        } else {
+        // Extract zip using the system unzip binary (no php-zip extension required)
+        $returnCode = 0;
+        exec('unzip -o ' . escapeshellarg($zipPath) . ' -d ' . escapeshellarg($tempDir), $_, $returnCode);
+
+        if ($returnCode !== 0) {
+            $this->deleteDirectory($tempDir);
             return back()->with('error', 'Failed to extract template file.');
         }
 
