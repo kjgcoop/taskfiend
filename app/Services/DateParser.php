@@ -41,7 +41,7 @@ class DateParser
             'next_day_of_week' => '/\bnext\s+(monday|tuesday|wednesday|thursday|friday|saturday|sunday)\b/i',
             'day_of_week' => '/\b(monday|tuesday|wednesday|thursday|friday|saturday|sunday)s?\b/i',
             'multi_days_full' => '/\b(monday|tuesday|wednesday|thursday|friday|saturday|sunday)(\s*,\s*(monday|tuesday|wednesday|thursday|friday|saturday|sunday))+\b/i',
-            'multi_days' => '/\b(mon|tue|wed|thu|fri|sat|sun)(\s*,\s*(mon|tue|wed|thu|fri|sat|sun))+\b/i',
+            'multi_days' => '/\b(mon|tues?|weds?|thurs?|fri|sat|suns?)(\s*,\s*(mon|tues?|weds?|thurs?|fri|sat|suns?))+\b/i',
             'monthly_ordinal' => '/\bevery (first|second|third|fourth|last) (monday|tuesday|wednesday|thursday|friday|saturday|sunday)\b/i',
             'monthly_day' => '/\bevery (\d{1,2})(st|nd|rd|th)?(?!\s+(days?|weeks?|months?|years?))\b/i',
             'yearly' => '/\b(yearly|every year)\b/i',
@@ -213,11 +213,11 @@ class DateParser
     protected function getNextMultiDay(string $days, Carbon $currentDate = null): Carbon
     {
         $dayMap = [
-            'sun' => Carbon::SUNDAY,
+            'sun' => Carbon::SUNDAY,  'suns' => Carbon::SUNDAY,
             'mon' => Carbon::MONDAY,
-            'tue' => Carbon::TUESDAY,
-            'wed' => Carbon::WEDNESDAY,
-            'thu' => Carbon::THURSDAY,
+            'tue' => Carbon::TUESDAY, 'tues' => Carbon::TUESDAY,
+            'wed' => Carbon::WEDNESDAY, 'weds' => Carbon::WEDNESDAY,
+            'thu' => Carbon::THURSDAY, 'thurs' => Carbon::THURSDAY,
             'fri' => Carbon::FRIDAY,
             'sat' => Carbon::SATURDAY,
         ];
@@ -324,6 +324,10 @@ class DateParser
         // Normalize pattern to lowercase and strip spaces around commas so that
         // "Mon, Tue, Wed" is treated the same as "Mon,Tue,Wed".
         $normalizedPattern = preg_replace('/\s*,\s*/', ',', strtolower($recurrencePattern));
+        // Normalize common alternate abbreviations to canonical 3-letter forms.
+        $normalizedPattern = strtr($normalizedPattern, [
+            'thurs' => 'thu', 'tues' => 'tue', 'weds' => 'wed', 'suns' => 'sun',
+        ]);
 
         if ($normalizedPattern === 'daily') {
             return $currentDate->copy()->addDay();
