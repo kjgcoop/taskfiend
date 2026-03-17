@@ -34,12 +34,15 @@ class CommentController extends Controller
                 ->withInput($request->except('attachment'));
         }
 
+        $maxFileSizeLabel = env('MAX_FILE_SIZE', '22M');
+        $maxFileSizeKb = (int) $maxFileSizeLabel * 1024;
+
         $validated = $request->validate([
             'comment' => 'required|string',
             'attachment' => [
                 'nullable',
                 'file',
-                'max:22528', // 22MB ceiling; effective limit is PHP's upload_max_filesize
+                "max:{$maxFileSizeKb}",
                 'mimetypes:' .
                     // Images
                     'image/jpeg,image/png,image/webp,image/gif,image/heic,image/heif,' .
@@ -62,7 +65,7 @@ class CommentController extends Controller
                     'text/csv,text/plain,application/json,text/json',
             ],
         ], [
-            'attachment.max' => 'File size must not exceed 22MB.',
+            'attachment.max' => "File size must not exceed {$maxFileSizeLabel}.",
             'attachment.mimetypes' => 'File type not allowed. Accepted: images (JPG, PNG, WebP, GIF, HEIC), PDF, Word, Excel, PowerPoint, LibreOffice formats, CSV, TXT, JSON.',
         ]);
 
@@ -74,12 +77,12 @@ class CommentController extends Controller
 
         if ($request->hasFile('attachment')) {
             $file = $request->file('attachment');
-            $path = $file->store('comment_attachments', 'private');
+            [$path, $fileSize, $mimeType] = $this->storeScaled($file, 'comment_attachments');
 
             $commentData['file_path'] = $path;
             $commentData['original_filename'] = $file->getClientOriginalName();
-            $commentData['mime_type'] = $file->getMimeType();
-            $commentData['file_size'] = $file->getSize();
+            $commentData['mime_type'] = $mimeType;
+            $commentData['file_size'] = $fileSize;
         }
 
         $comment = Comment::create($commentData);
@@ -150,5 +153,60 @@ class CommentController extends Controller
             $comment->file_path,
             $comment->original_filename
         );
+    }
+
+    // Store an uploaded file, scaling it down if it is an image whose largest
+    // dimension exceeds SCALE_LARGEST_TO. Returns [path, fileSize, mimeType].
+    private function storeScaled(\Illuminate\Http\UploadedFile $file, string $directory): array
+    {
+        $mime = $file->getMimeType();
+        $scalableMimes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+
+        if (in_array($mime, $scalableMimes)) {
+            $scaleTo = (int) env('SCALE_LARGEST_TO', 2048);
+            $src = @imagecreatefromstring(file_get_contents($file->getRealPath()));
+
+            if ($src) {
+                $srcW = imagesx($src);
+                $srcH = imagesy($src);
+
+                if (max($srcW, $srcH) > $scaleTo) {
+                    $ratio = $scaleTo / max($srcW, $srcH);
+                    $newW  = (int) round($srcW * $ratio);
+                    $newH  = (int) round($srcH * $ratio);
+
+                    $dst = imagecreatetruecolor($newW, $newH);
+                    if ($mime === 'image/png') {
+                        imagealphablending($dst, false);
+                        imagesavealpha($dst, true);
+                        $transparent = imagecolorallocatealpha($dst, 255, 255, 255, 127);
+                        imagefilledrectangle($dst, 0, 0, $newW, $newH, $transparent);
+                    }
+                    imagecopyresampled($dst, $src, 0, 0, 0, 0, $newW, $newH, $srcW, $srcH);
+                    imagedestroy($src);
+
+                    ob_start();
+                    match ($mime) {
+                        'image/jpeg' => imagejpeg($dst, null, 90),
+                        'image/png'  => imagepng($dst),
+                        'image/webp' => imagewebp($dst, null, 90),
+                        'image/gif'  => imagegif($dst),
+                    };
+                    $data = ob_get_clean();
+                    imagedestroy($dst);
+
+                    $ext  = ['image/jpeg' => 'jpg', 'image/png' => 'png', 'image/webp' => 'webp', 'image/gif' => 'gif'][$mime];
+                    $path = $directory . '/' . uniqid() . '.' . $ext;
+                    Storage::disk('private')->put($path, $data);
+
+                    return [$path, strlen($data), $mime];
+                }
+
+                imagedestroy($src);
+            }
+        }
+
+        $path = $file->store($directory, 'private');
+        return [$path, $file->getSize(), $mime];
     }
 }
