@@ -41,7 +41,7 @@ class DateParser
             'next_day_of_week' => '/\bnext\s+(monday|tuesday|wednesday|thursday|friday|saturday|sunday)\b/i',
             'day_of_week' => '/\b(monday|tuesday|wednesday|thursday|friday|saturday|sunday)s?\b/i',
             'multi_days_full' => '/\b(monday|tuesday|wednesday|thursday|friday|saturday|sunday)(\s*,\s*(monday|tuesday|wednesday|thursday|friday|saturday|sunday))+\b/i',
-            'multi_days' => '/\b(mon|tue|wed|thu|fri|sat|sun)(,(mon|tue|wed|thu|fri|sat|sun))+\b/i',
+            'multi_days' => '/\b(mon|tue|wed|thu|fri|sat|sun)(\s*,\s*(mon|tue|wed|thu|fri|sat|sun))+\b/i',
             'monthly_ordinal' => '/\bevery (first|second|third|fourth|last) (monday|tuesday|wednesday|thursday|friday|saturday|sunday)\b/i',
             'monthly_day' => '/\bevery (\d{1,2})(st|nd|rd|th)?(?!\s+(days?|weeks?|months?|years?))\b/i',
             'yearly' => '/\b(yearly|every year)\b/i',
@@ -226,7 +226,7 @@ class DateParser
         $targetDays = array_map(function ($day) use ($dayMap) {
             return $dayMap[trim($day)] ?? null;
         }, $dayParts);
-        $targetDays = array_filter($targetDays);
+        $targetDays = array_values(array_filter($targetDays, fn($v) => $v !== null));
 
         $date = $currentDate ? $currentDate->copy()->addDay() : Carbon::today();
         $found = false;
@@ -321,8 +321,9 @@ class DateParser
             return null;
         }
 
-        // Normalize pattern to lowercase for case-insensitive matching
-        $normalizedPattern = strtolower($recurrencePattern);
+        // Normalize pattern to lowercase and strip spaces around commas so that
+        // "Mon, Tue, Wed" is treated the same as "Mon,Tue,Wed".
+        $normalizedPattern = preg_replace('/\s*,\s*/', ',', strtolower($recurrencePattern));
 
         if ($normalizedPattern === 'daily') {
             return $currentDate->copy()->addDay();
