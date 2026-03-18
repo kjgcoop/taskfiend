@@ -115,7 +115,12 @@ class DateParser
             $result['name'] = trim(preg_replace($patterns['multi_days_full'], '', $input));
         } elseif (preg_match($patterns['day_of_week'], $input, $matches)) {
             $dayName = ucfirst(strtolower($matches[1]));
-            $result['recurrence_pattern'] = $dayName;
+            // Plural ("Thursdays") or prefixed with "every" ("every Thursday") → recurring
+            $isPlural = strlen($matches[0]) > strlen($matches[1]);
+            $hasEvery = (bool) preg_match('/\bevery\s+' . preg_quote($matches[1], '/') . '\b/i', $input);
+            if ($isPlural || $hasEvery) {
+                $result['recurrence_pattern'] = $dayName;
+            }
             $result['date'] = $this->getNextDayOfWeek($dayName)->format('Y-m-d');
             // Remove both "every" and the day name
             $result['name'] = trim(preg_replace('/\bevery\s+/i', '', preg_replace($patterns['day_of_week'], '', $input)));
