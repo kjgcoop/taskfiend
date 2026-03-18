@@ -54,12 +54,12 @@ class SearchController extends Controller
                   });
             });
 
-        // By default, exclude tasks from archived projects
+        // By default, exclude tasks from archived or done projects
         if (!$request->boolean('show_archived_projects')) {
             $baseQuery->where(function ($q) {
                 $q->whereNull('project_id')
                   ->orWhereHas('project', function ($q) {
-                      $q->where('status', '!=', 'archived');
+                      $q->whereNotIn('status', ['archived', 'done']);
                   });
             });
         }
