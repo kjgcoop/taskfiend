@@ -545,7 +545,6 @@ class TaskController extends Controller
             foreach ($descendants as $descendant) {
                 if ($descendant->status !== 'archived') {
                     $descendant->status = 'archived';
-                    $descendant->archived_at = now();
                     $descendant->save();
                     $this->logChange($descendant, 'auto-archived (parent archived)', 'archived');
                 }
@@ -564,17 +563,10 @@ class TaskController extends Controller
             }
         }
 
-        $statusChangedToArchived = isset($validated['status'])
-            && $validated['status'] === 'archived'
-            && $task->status !== 'archived';
-
         if ($statusChangedToDone) {
             $task->completed_at = now();
-        } elseif ($statusChangedToArchived) {
-            $task->archived_at = now();
         } elseif ($statusChangedToIncomplete) {
             $task->completed_at = null;
-            $task->archived_at = null;
         }
 
         $task->save();
@@ -748,7 +740,6 @@ class TaskController extends Controller
                         foreach ($descendants as $descendant) {
                             if ($descendant->status !== 'archived') {
                                 $descendant->status = 'archived';
-                                $descendant->archived_at = now();
                                 $descendant->save();
                                 $this->logChange($descendant, 'auto-archived (parent archived)', 'archived');
                             }
@@ -763,11 +754,8 @@ class TaskController extends Controller
                 if ($field === 'status') {
                     if ($value === 'done' && $previousStatus !== 'done') {
                         $task->completed_at = now();
-                    } elseif ($value === 'archived' && $previousStatus !== 'archived') {
-                        $task->archived_at = now();
                     } elseif ($value === 'incomplete') {
                         $task->completed_at = null;
-                        $task->archived_at = null;
                     }
                 }
 
