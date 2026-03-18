@@ -50,11 +50,7 @@
                             </svg>
                         </span>
                     @elseif($task->status === 'archived')
-                        <span class="inline-block w-5 h-5 rounded-full bg-gray-500 flex items-center justify-center">
-                            <svg class="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"></path>
-                            </svg>
-                        </span>
+                        <span class="inline-block w-5 h-5 rounded-full bg-gray-500 flex-shrink-0" title="Archived"></span>
                     @else
                         <form x-data="listQuickComplete()" @submit.prevent="submit()"
                               method="POST" action="{{ route('tasks.update', $task) }}" class="inline">
@@ -88,7 +84,7 @@
                 <div class="flex-1 min-w-0">
                     <div class="flex items-start justify-between gap-2">
                         <a href="{{ route('tasks.show', $task) }}" class="block hover:text-gray-100 transition min-w-0">
-                            <h4 class="font-medium text-gray-200 truncate">{{ $task->name }}</h4>
+                            <h4 class="font-medium truncate {{ $task->status === 'archived' ? 'line-through text-gray-500' : 'text-gray-200' }}">{{ $task->name }}</h4>
                         </a>
                         @if($task->assignees->count() > 0)
                             <div class="flex-shrink-0 flex space-x-1">
