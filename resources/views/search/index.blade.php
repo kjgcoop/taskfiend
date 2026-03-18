@@ -192,7 +192,7 @@
                             <label class="inline-flex items-center cursor-pointer">
                                 <input type="checkbox" name="show_archived_projects" value="1" {{ request('show_archived_projects') ? 'checked' : '' }}
                                        class="rounded border-gray-600 bg-gray-700 text-blue-600 focus:ring-blue-500">
-                                <span class="ml-2 text-sm text-gray-400">Include archived projects</span>
+                                <span class="ml-2 text-sm text-gray-400">Include completed projects</span>
                             </label>
                         </div>
                     </div>
