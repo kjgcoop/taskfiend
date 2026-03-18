@@ -261,9 +261,8 @@ class DashboardController extends Controller
             ->orderByRaw('time IS NULL, time ASC')
             ->get();
 
-        // Tasks archived on this day (via change_logs), OR tasks dated for this day
-        // that belong to an archived/done project.
-        // Done tasks stay in $completedTasks regardless of project status.
+        // Tasks archived on this day (by completed_at, status differentiates done vs archived),
+        // OR tasks dated for this day that belong to an archived/done project.
         $archivedTasks = Task::query()
             ->where(function ($q) {
                 $q->where('creator_id', Auth::id())
@@ -271,14 +270,9 @@ class DashboardController extends Controller
                       $query->where('users.id', Auth::id());
                   });
             })
-            ->where('status', '!=', 'done')
+            ->where('status', 'archived')
             ->where(function ($q) use ($dateStr) {
-                // Directly archived tasks: show on the day the status was set to 'archived'
-                $q->whereHas('changeLogs', fn($cl) => $cl
-                      ->where('field', 'status')
-                      ->where('new_value', 'archived')
-                      ->whereDate('created_at', $dateStr))
-                  // Tasks dated for this day whose project is archived/done
+                $q->whereDate('completed_at', $dateStr)
                   ->orWhere(function ($q2) use ($dateStr) {
                       $q2->where('date', $dateStr)
                          ->whereHas('project', fn($pq) => $pq->whereIn('status', ['archived', 'done']));

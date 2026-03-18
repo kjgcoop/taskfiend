@@ -516,6 +516,10 @@ class TaskController extends Controller
             && $validated['status'] === 'incomplete'
             && $task->status !== 'incomplete';
 
+        $statusChangedToArchived = isset($validated['status'])
+            && $validated['status'] === 'archived'
+            && $task->status !== 'archived';
+
         if ($statusChangedToDone && $task->hasIncompleteDescendants()) {
             // Auto-complete all descendants
             $this->completeTaskAndDescendants($task);
@@ -563,7 +567,7 @@ class TaskController extends Controller
             }
         }
 
-        if ($statusChangedToDone) {
+        if ($statusChangedToDone || $statusChangedToArchived) {
             $task->completed_at = now();
         } elseif ($statusChangedToIncomplete) {
             $task->completed_at = null;
@@ -752,7 +756,7 @@ class TaskController extends Controller
                 $task->$field = $value;
 
                 if ($field === 'status') {
-                    if ($value === 'done' && $previousStatus !== 'done') {
+                    if (in_array($value, ['done', 'archived']) && $previousStatus !== $value) {
                         $task->completed_at = now();
                     } elseif ($value === 'incomplete') {
                         $task->completed_at = null;
