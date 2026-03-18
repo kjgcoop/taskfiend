@@ -145,8 +145,8 @@ class TaskApiController extends Controller
         return response()->json([
             'success' => true,
             'date' => $date,
-            'done' => $baseQuery('done'),
-            'archived' => $baseQuery('archived'),
+            'done' => (array)$baseQuery('done'),
+            'archived' => (array)$baseQuery('archived'),
         ]);
     }
 
