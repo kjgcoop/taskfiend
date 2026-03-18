@@ -125,25 +125,28 @@ class TaskApiController extends Controller
 
         $user = $request->user();
 
-        $tasks = Task::query()
-            ->where(function ($q) use ($user) {
-                $q->where('creator_id', $user->id)
-                  ->orWhereHas('assignees', function ($query) use ($user) {
-                      $query->where('users.id', $user->id);
-                  });
-            })
-            ->where('status', 'done')
-            ->whereDate('updated_at', $carbonDate)
-            ->with(['creator', 'project', 'tags', 'assignees', 'comments' => function ($q) {
-                $q->orderBy('created_at', 'desc');
-            }])
-            ->orderBy('date')
-            ->get();
+        $baseQuery = function ($status) use ($user, $carbonDate) {
+            return Task::query()
+                ->where(function ($q) use ($user) {
+                    $q->where('creator_id', $user->id)
+                      ->orWhereHas('assignees', function ($query) use ($user) {
+                          $query->where('users.id', $user->id);
+                      });
+                })
+                ->where('status', $status)
+                ->whereDate('updated_at', $carbonDate)
+                ->with(['creator', 'project', 'tags', 'assignees', 'comments' => function ($q) {
+                    $q->orderBy('created_at', 'desc');
+                }])
+                ->orderBy('date')
+                ->get();
+        };
 
         return response()->json([
             'success' => true,
             'date' => $date,
-            'tasks' => $tasks,
+            'done' => $baseQuery('done'),
+            'archived' => $baseQuery('archived'),
         ]);
     }
 
