@@ -431,7 +431,7 @@
 
             $marginLeft = $depth * 24; // 24px per level
         @endphp
-        <div data-task-group data-task-group-id="{{ $task->id }}">
+        <div data-task-group data-task-group-id="{{ $task->id }}" x-data="{ subtasksOpen: true }">
         <div class="bg-[#202020] p-4 rounded-lg shadow hover:shadow-md transition border border-gray-700"
              data-filterable
              data-task-name="{{ strtolower($task->name) }}"
@@ -536,7 +536,13 @@
                         <span data-task-name-display>{{ $task->name }}</span>
                         @if($task->children->count() > 0)
                             <span class="text-xs text-gray-500 font-normal">
-                                ({{ $task->incompleteChildren()->count() }}/{{ $task->children->count() }} subtasks)
+                                (<span x-show="!subtasksOpen" style="display:none">{{ $task->children->count() }}</span><span x-show="subtasksOpen">{{ $task->incompleteChildren()->count() }}/{{ $task->children->count() }}</span> subtasks)
+                                <button @click.stop="subtasksOpen = !subtasksOpen"
+                                        class="inline-flex items-center justify-center w-4 h-4 ml-0.5 rounded text-gray-500 hover:text-gray-300 hover:bg-gray-700 transition"
+                                        :title="subtasksOpen ? 'Collapse subtasks' : 'Expand subtasks'">
+                                    <svg x-show="subtasksOpen" class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M20 12H4"/></svg>
+                                    <svg x-show="!subtasksOpen" class="w-3 h-3" style="display:none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/></svg>
+                                </button>
                             </span>
                         @endif
                         @php $rescheduleCount = $task->rescheduleCount(); @endphp
@@ -664,7 +670,9 @@
 
         <!-- Recursively render subtasks -->
         @if($task->children->count() > 0)
-            <x-task-list :tasks="$task->children" :depth="$depth + 1" :hide-date="$hideDate" :read-only="$readOnly" />
+            <div x-show="subtasksOpen" x-transition:leave="transition-opacity duration-150" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0">
+                <x-task-list :tasks="$task->children" :depth="$depth + 1" :hide-date="$hideDate" :read-only="$readOnly" />
+            </div>
         @endif
         </div>{{-- /data-task-group --}}
     @empty

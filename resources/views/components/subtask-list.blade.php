@@ -38,7 +38,7 @@
 
 <div class="space-y-2">
     @foreach($tasks as $task)
-        <div data-task-group>
+        <div data-task-group x-data="{ subtasksOpen: true }">
         <div class="bg-gray-700 border border-gray-600 p-3 rounded-lg hover:bg-gray-650 transition">
             <div class="flex items-start gap-3">
                 <!-- Status Indicator -->
@@ -137,8 +137,14 @@
                             </div>
                         @endif
                         @if($task->children->count() > 0)
-                            <span class="text-gray-400">
-                                {{ $task->incompleteChildren()->count() }}/{{ $task->children->count() }} subtasks
+                            <span class="text-gray-400 inline-flex items-center gap-0.5">
+                                <span x-show="!subtasksOpen" style="display:none">{{ $task->children->count() }}</span><span x-show="subtasksOpen">{{ $task->incompleteChildren()->count() }}/{{ $task->children->count() }}</span> subtasks
+                                <button @click.stop="subtasksOpen = !subtasksOpen"
+                                        class="inline-flex items-center justify-center w-4 h-4 rounded text-gray-500 hover:text-gray-300 hover:bg-gray-600 transition"
+                                        :title="subtasksOpen ? 'Collapse subtasks' : 'Expand subtasks'">
+                                    <svg x-show="subtasksOpen" class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M20 12H4"/></svg>
+                                    <svg x-show="!subtasksOpen" class="w-3 h-3" style="display:none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/></svg>
+                                </button>
                             </span>
                         @endif
                         @if($task->description)
@@ -162,7 +168,8 @@
 
             <!-- Nested Subtasks (recursive) -->
             @if($task->children->count() > 0)
-                <div class="ml-8 mt-3 space-y-2">
+                <div x-show="subtasksOpen" x-transition:leave="transition-opacity duration-150" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0"
+                     class="ml-8 mt-3 space-y-2">
                     <x-subtask-list :tasks="$task->children" :parent="$task" />
                 </div>
             @endif
