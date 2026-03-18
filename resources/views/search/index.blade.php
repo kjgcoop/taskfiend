@@ -167,12 +167,12 @@
 
                     <!-- Status Filters -->
                     @php
-                        $hasSearchParams = request()->hasAny(['q', 'tag_ids', 'project_id', 'date_from', 'date_to', 'has_date', 'assignee_id', 'creator_id', 'show_incomplete', 'show_done', 'show_archived', 'sort']);
+                        $hasSearchParams = request()->hasAny(['q', 'tag_ids', 'project_id', 'date_from', 'date_to', 'has_date', 'assignee_id', 'creator_id', 'show_incomplete', 'show_done', 'show_archived', 'show_archived_projects', 'sort']);
                         $defaultIncomplete = $hasSearchParams ? request()->boolean('show_incomplete') : true;
                     @endphp
                     <div class="mb-6">
                         <label class="block text-sm font-medium text-gray-300 mb-2">Status</label>
-                        <div class="flex items-center gap-6">
+                        <div class="flex items-center gap-6 flex-wrap">
                             <label class="inline-flex items-center cursor-pointer">
                                 <input type="checkbox" name="show_incomplete" value="1" {{ $defaultIncomplete ? 'checked' : '' }}
                                        class="rounded border-gray-600 bg-gray-700 text-blue-600 focus:ring-blue-500">
@@ -187,6 +187,12 @@
                                 <input type="checkbox" name="show_archived" value="1" {{ request('show_archived') ? 'checked' : '' }}
                                        class="rounded border-gray-600 bg-gray-700 text-blue-600 focus:ring-blue-500">
                                 <span class="ml-2 text-sm text-gray-300">Archived</span>
+                            </label>
+                            <span class="text-gray-600 select-none">|</span>
+                            <label class="inline-flex items-center cursor-pointer">
+                                <input type="checkbox" name="show_archived_projects" value="1" {{ request('show_archived_projects') ? 'checked' : '' }}
+                                       class="rounded border-gray-600 bg-gray-700 text-blue-600 focus:ring-blue-500">
+                                <span class="ml-2 text-sm text-gray-400">Include archived projects</span>
                             </label>
                         </div>
                     </div>
@@ -213,7 +219,7 @@
             </div>
 
             <!-- Search Results -->
-            @if(request()->hasAny(['q', 'tag_ids', 'project_id', 'date_from', 'date_to', 'has_date', 'assignee_id', 'creator_id', 'show_incomplete', 'show_done', 'show_archived']))
+            @if(request()->hasAny(['q', 'tag_ids', 'project_id', 'date_from', 'date_to', 'has_date', 'assignee_id', 'creator_id', 'show_incomplete', 'show_done', 'show_archived', 'show_archived_projects']))
                 <div class="bg-[#202020] border border-gray-700 overflow-hidden shadow-sm sm:rounded-lg p-6" x-data="taskFilter()">
                     <h3 class="text-lg font-semibold text-gray-100 mb-4">
                         Search Results

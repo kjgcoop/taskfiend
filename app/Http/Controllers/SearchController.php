@@ -23,8 +23,9 @@ class SearchController extends Controller
             'has_date'        => 'nullable|boolean',
             'show_incomplete' => 'nullable|boolean',
             'show_done'       => 'nullable|boolean',
-            'show_archived'   => 'nullable|boolean',
-            'assignee_id'     => 'nullable|integer|exists:users,id',
+            'show_archived'          => 'nullable|boolean',
+            'show_archived_projects' => 'nullable|boolean',
+            'assignee_id'            => 'nullable|integer|exists:users,id',
             'creator_id'      => 'nullable|integer|exists:users,id',
             'sort'            => 'nullable|in:date_asc,date_desc,name_asc,name_desc,created_desc',
         ]);
@@ -52,6 +53,16 @@ class SearchController extends Controller
                       $query->where('users.id', Auth::id());
                   });
             });
+
+        // By default, exclude tasks from archived projects
+        if (!$request->boolean('show_archived_projects')) {
+            $baseQuery->where(function ($q) {
+                $q->whereNull('project_id')
+                  ->orWhereHas('project', function ($q) {
+                      $q->where('status', '!=', 'archived');
+                  });
+            });
+        }
 
         // Status filtering is handled per-collection below
 
