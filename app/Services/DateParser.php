@@ -113,16 +113,33 @@ class DateParser
             $result['recurrence_pattern'] = $abbr;
             $result['date'] = $this->getNextMultiDay($abbr)->format('Y-m-d');
             $result['name'] = trim(preg_replace($patterns['multi_days_full'], '', $input));
-        } elseif (preg_match($patterns['day_of_week'], $input, $matches)) {
-            $dayName = ucfirst(strtolower($matches[1]));
-            // Plural ("Thursdays") or prefixed with "every" ("every Thursday") → recurring
-            $isPlural = strlen($matches[0]) > strlen($matches[1]);
-            $hasEvery = (bool) preg_match('/\bevery\s+' . preg_quote($matches[1], '/') . '\b/i', $input);
-            if ($isPlural || $hasEvery) {
+        } elseif (preg_match_all($patterns['day_of_week'], $input, $allDayMatches)) {
+            // Scan ALL day-name hits to handle two tricky cases:
+            // 1. "Friday Fridays" — preg_match alone finds "Friday" (non-recurring),
+            //    missing the plural "Fridays" that signals recurrence.
+            // 2. "letter on Sunday Tuesday" — "Sunday" is embedded in the sentence;
+            //    the scheduling day is the LAST day name in the input.
+            // Strategy: keep updating $dayName on every non-recurring hit (so we end
+            // up with the last one), but break immediately if we find a recurring hit.
+            $dayName     = null;
+            $isRecurring = false;
+            foreach ($allDayMatches[1] as $idx => $captured) {
+                $full   = $allDayMatches[0][$idx];
+                $plural = strlen($full) > strlen($captured);
+                $every  = (bool) preg_match('/\bevery\s+' . preg_quote($captured, '/') . '\b/i', $input);
+                if ($plural || $every) {
+                    $dayName     = ucfirst(strtolower($captured));
+                    $isRecurring = true;
+                    break; // first recurring indicator wins
+                }
+                // Always update so the loop leaves us with the LAST non-recurring day
+                $dayName = ucfirst(strtolower($captured));
+            }
+            if ($isRecurring) {
                 $result['recurrence_pattern'] = $dayName;
             }
             $result['date'] = $this->getNextDayOfWeek($dayName)->format('Y-m-d');
-            // Remove both "every" and the day name
+            // Remove "every" prefix and all day-name tokens from the task name
             $result['name'] = trim(preg_replace('/\bevery\s+/i', '', preg_replace($patterns['day_of_week'], '', $input)));
         } elseif (preg_match($patterns['multi_days'], $input, $matches)) {
             $result['recurrence_pattern'] = $matches[0];
