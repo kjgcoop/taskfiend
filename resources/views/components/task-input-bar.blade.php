@@ -95,19 +95,31 @@
                  x-transition:enter="transition ease-out duration-150"
                  x-transition:enter-start="opacity-0"
                  x-transition:enter-end="opacity-100"
-                 class="pl-9 flex flex-wrap items-baseline gap-x-2 gap-y-0.5 text-xs">
-                <span class="text-gray-300" x-text="'\u201c' + (preview && preview.title) + '\u201d'"></span>
+                 class="pl-9 flex flex-wrap items-baseline gap-x-1.5 gap-y-0.5 text-xs">
+                <span class="text-gray-300 whitespace-nowrap" x-text="'\u201c' + (preview && preview.title || '') + '\u201d'"></span>
                 <template x-if="preview && preview.date">
-                    <span class="text-blue-400" x-text="preview.date"></span>
+                    <span class="contents">
+                        <span class="text-gray-600" aria-hidden="true">·</span>
+                        <span class="text-blue-400 whitespace-nowrap" x-text="preview.date"></span>
+                    </span>
                 </template>
                 <template x-if="preview && preview.recurrence">
-                    <span class="text-purple-400" x-text="'repeats: ' + preview.recurrence"></span>
+                    <span class="contents">
+                        <span class="text-gray-600" aria-hidden="true">·</span>
+                        <span class="text-purple-400 whitespace-nowrap" x-text="'repeats: ' + preview.recurrence"></span>
+                    </span>
                 </template>
                 <template x-if="preview && preview.project">
-                    <span class="text-green-400" x-text="'#' + preview.project"></span>
+                    <span class="contents">
+                        <span class="text-gray-600" aria-hidden="true">·</span>
+                        <span class="text-green-400 whitespace-nowrap" x-text="'#' + preview.project"></span>
+                    </span>
                 </template>
-                <template x-if="preview && preview.tags && preview.tags.length">
-                    <span class="text-yellow-400" x-text="preview.tags.map(t => '@' + t).join(' ')"></span>
+                <template x-if="preview && preview.tags_display">
+                    <span class="contents">
+                        <span class="text-gray-600" aria-hidden="true">·</span>
+                        <span class="text-yellow-400 whitespace-nowrap" x-text="preview.tags_display"></span>
+                    </span>
                 </template>
             </div>
         </form>

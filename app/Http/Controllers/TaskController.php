@@ -934,12 +934,12 @@ class TaskController extends Controller
             || $parsed['recurrence_pattern'] !== null;
 
         return response()->json([
-            'has_special' => $hasSpecial,
-            'title'       => $title,
-            'project'     => $projectName,
-            'tags'        => $tagNames,
-            'date'        => $dateFormatted,
-            'recurrence'  => $parsed['recurrence_pattern'],
+            'has_special'  => $hasSpecial,
+            'title'        => $title,
+            'project'      => $projectName,
+            'tags_display' => implode(' ', array_map(fn($t) => '@' . $t, $tagNames)),
+            'date'         => $dateFormatted,
+            'recurrence'   => $parsed['recurrence_pattern'],
         ]);
     }
 

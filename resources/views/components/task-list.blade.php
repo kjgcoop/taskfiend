@@ -206,6 +206,7 @@
                     : beforeCursor.replace(/@\w*$/, '@' + slug + ' ');
                 inputEl.value = newBefore + afterCursor;
                 this.showAutocomplete = false;
+                this.schedulePreview(inputEl.value);
                 this.$nextTick(() => {
                     inputEl.focus();
                     inputEl.setSelectionRange(newBefore.length, newBefore.length);
