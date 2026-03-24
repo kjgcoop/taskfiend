@@ -48,10 +48,39 @@ In `app/Console/Commands/`:
 
 ### Date Parser Service (✓)
 - **DateParser** class in `app/Services/DateParser.php`
-- Parses natural language dates from task names
-- Supports: daily, weekly, monthly, yearly, specific dates, day names, weekdays, weekends
+- Parses natural language dates and recurrence from task names (quick-add bar) and validates recurrence patterns entered directly in the task edit form
 - Integrated into TaskController and API TaskApiController
 - Auto-parses task name if datetime/recurrence_pattern not explicitly provided
+
+**Supported date tokens (quick-add bar):**
+- `today`, `tomorrow`
+- Day name: `Monday`–`Sunday` → next occurrence of that day
+- `next Monday` → skips this week, uses next week's
+- `January 15`, `3/15`, `2026-03-15` → specific dates
+- Multiple day names: last one wins for scheduling; earlier ones stay in the title
+  - `"Letter on Sunday Tuesday"` → title: `"Letter on Sunday"`, date: Tuesday
+
+**Supported recurrence patterns (quick-add bar + recurrence field):**
+- `daily` / `every day`
+- `weekdays`, `weekends`
+- `every other day`
+- `Fridays` / `every Friday` → weekly on that day (plural or "every" prefix signals recurrence)
+- `every other Friday` → bi-weekly on that day
+- `Monday, Wednesday, Friday` / `mon,wed,fri` → multi-day weekly
+- `weekly` / `every week`, `every other week`, `every N weeks`
+- `every N days`
+- `monthly` / `every month`, `every N months`
+- `every 3rd Sunday` / `every third Sunday` / `third Sunday of the month` / `every 3rd Sunday of the month` → monthly ordinal (supports 1st–4th/last, word or numeric form)
+- `every 15` / `every 15th` → monthly on day-of-month
+- `yearly` / `every year`
+- `every!` prefix → floating recurrence (next occurrence relative to completion date, not scheduled date)
+- Day abbreviations in recurrence field: `Thu`, `Thurs`, `Tue`, `Tues`, `Wed`, `Weds`, `Sun`, `Suns` all accepted
+
+**Key parsing methods:**
+- `parseTaskInput(string)` → extracts name, date, recurrence_pattern, recurrence_floating
+- `getNextOccurrence(pattern, Carbon)` → returns next Carbon date for a stored recurrence pattern
+- `isValidRecurrencePattern(string)` → returns bool; used for validation in TaskController
+- `detectUnrecognizedPattern(string)` → returns error string if input looks like a recurrence attempt but doesn't parse
 
 ### Recurring Tasks (✓)
 - **Implementation** in TaskController::createRecurringTask()

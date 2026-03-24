@@ -139,8 +139,13 @@ class DateParser
                 $result['recurrence_pattern'] = $dayName;
             }
             $result['date'] = $this->getNextDayOfWeek($dayName)->format('Y-m-d');
-            // Remove "every" prefix and all day-name tokens from the task name
-            $result['name'] = trim(preg_replace('/\bevery\s+/i', '', preg_replace($patterns['day_of_week'], '', $input)));
+            // Remove only the selected day's tokens from the title so that other day
+            // names embedded in the prose ("Letter on Sunday Tuesday" → "Letter on Sunday")
+            // are left intact.  Collapse any resulting double-spaces.
+            $cap = preg_quote(strtolower($dayName), '/');
+            $result['name'] = trim(preg_replace('/\s+/', ' ',
+                preg_replace('/\bevery\s+' . $cap . 's?\b\s*|\b' . $cap . 's?\b\s*/i', '', $input)
+            ));
         } elseif (preg_match($patterns['multi_days'], $input, $matches)) {
             $result['recurrence_pattern'] = $matches[0];
             $result['date'] = $this->getNextMultiDay($matches[0])->format('Y-m-d');

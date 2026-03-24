@@ -7,7 +7,7 @@ Because I designed this for my own devious purposes, I assumed there would only 
 - **Quick-add bar** on task list views — type a task name with natural language dates, `#project`, and `@tag` to autofill fields with autocomplete suggestions
 - **Agenda view** on the day page — toggle between list and agenda (time-block) layouts; tasks can be quick-completed inline without a page reload
 - **Recurring tasks** — set a recurrence pattern on any task; completing it automatically creates the next occurrence (see `RECURRING_TASKS.md`)
-- **Natural language dates** — type "dentist next Tuesday" or "standup every weekday" and the date/recurrence is parsed automatically
+- **Natural language dates & recurrence** — type natural language in the quick-add bar and dates/recurrence are parsed automatically (see below for full syntax)
 - **Markdown** in task descriptions
 - **Changelogs** — every create/edit is logged and browsable by task, project, tag, or user
 - **API** — create and query tasks via bearer token (see Admin-Like Functions below for key management)
@@ -66,6 +66,60 @@ To add a new page:
 3. The code will turn the Markdown into HTML and spit out the contents. 
 
 If you add documentation, please consider contributing it back to this project. If it's something you/your users need documented, there's probably somebody else out there who could also use it.
+
+### Natural Language Date & Recurrence Syntax
+
+The quick-add bar parses natural language from the task name. The recurrence pattern field on the task edit page accepts the same recurrence syntax directly.
+
+#### Scheduling a date
+
+| What you type | Result |
+|---|---|
+| `today` | Today |
+| `tomorrow` | Tomorrow |
+| `Friday` | Next Friday |
+| `next Friday` | The Friday of next week (skips this week's) |
+| `January 15` | Jan 15 (next occurrence) |
+| `3/15` | March 15 (next occurrence) |
+| `2026-03-15` | Exact date |
+
+**Multiple day names:** if your task name contains more than one day name (e.g. "Letter that comes on Sunday Tuesday"), the *last* day name is used for scheduling and the earlier ones are left in the title.
+
+#### Recurrence (detected automatically in quick-add, or typed directly in the recurrence field)
+
+| What you type | Recurs… |
+|---|---|
+| `daily` / `every day` | Every day |
+| `weekdays` | Mon–Fri |
+| `weekends` | Sat–Sun |
+| `every other day` | Every 2 days |
+| `Fridays` / `every Friday` | Every Friday |
+| `every other Friday` | Every 2 weeks on Friday |
+| `Mon, Wed, Fri` / `mon,wed,fri` | Every Monday, Wednesday, and Friday |
+| `weekly` / `every week` | Every 7 days |
+| `every other week` | Every 2 weeks |
+| `every 3 weeks` | Every 3 weeks |
+| `every 10 days` | Every 10 days |
+| `monthly` / `every month` | Every month |
+| `every 3rd Sunday` / `third Sunday of the month` | Monthly on that ordinal weekday (supports 1st–4th and last; word or numeric) |
+| `every 15` / `every 15th` | Monthly on the 15th |
+| `every 3 months` | Every 3 months |
+| `yearly` / `every year` | Yearly |
+
+**Floating recurrence:** prefix `every!` (with exclamation mark) to make the next occurrence relative to *when you complete the task* rather than the scheduled date. Useful for "floss every! 3 days" where slipping a day shouldn't cause perpetual catch-up.
+
+**Recurrence field abbreviations:** day abbreviations like `Thu`, `Thurs`, `Tue`, `Tues` are accepted and treated the same as the full name.
+
+#### Quick-add extras
+
+Add a project or tags inline by name — autocomplete suggestions appear as you type:
+
+| Token | Effect |
+|---|---|
+| `#project-name` | Assigns task to that project |
+| `@tag-name` | Applies that tag |
+
+Multiple tags are supported: `Buy milk @errands @today`.
 
 ### Frontend Assets
 
