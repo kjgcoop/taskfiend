@@ -88,6 +88,28 @@
             @error('name')
                 <p class="text-xs text-red-400 pl-1">{{ $message }}</p>
             @enderror
+
+            {{-- Live parse preview: appears ~400ms after typing stops when special terms are detected --}}
+            <div x-show="preview && preview.has_special"
+                 x-cloak
+                 x-transition:enter="transition ease-out duration-150"
+                 x-transition:enter-start="opacity-0"
+                 x-transition:enter-end="opacity-100"
+                 class="pl-9 flex flex-wrap items-baseline gap-x-2 gap-y-0.5 text-xs">
+                <span class="text-gray-300" x-text="'\u201c' + (preview && preview.title) + '\u201d'"></span>
+                <template x-if="preview && preview.date">
+                    <span class="text-blue-400" x-text="preview.date"></span>
+                </template>
+                <template x-if="preview && preview.recurrence">
+                    <span class="text-purple-400" x-text="'repeats: ' + preview.recurrence"></span>
+                </template>
+                <template x-if="preview && preview.project">
+                    <span class="text-green-400" x-text="'#' + preview.project"></span>
+                </template>
+                <template x-if="preview && preview.tags && preview.tags.length">
+                    <span class="text-yellow-400" x-text="preview.tags.map(t => '@' + t).join(' ')"></span>
+                </template>
+            </div>
         </form>
         <button @click="switchToFilter()"
                 title="Filter tasks"

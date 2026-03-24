@@ -874,6 +874,76 @@ class TaskController extends Controller
     }
 
     /**
+     * Preview how the quick-add bar will interpret the typed input.
+     * Returns parsed title, date, recurrence, project, and tags as JSON.
+     * Used for the debounced live-preview line shown below the input.
+     */
+    public function previewQuickAdd(Request $request)
+    {
+        $input = trim($request->input('name', ''));
+
+        if (empty($input)) {
+            return response()->json(['has_special' => false]);
+        }
+
+        $taskName = $input;
+        $projectName = null;
+        $tagNames = [];
+
+        // Mirror the #project token parsing from store()
+        if (preg_match('/#([\w-]+)/', $taskName, $projectMatch)) {
+            $projectQuery = strtolower($projectMatch[1]);
+            $project = Project::where(function ($q) use ($projectQuery) {
+                    $q->whereRaw('LOWER(name) = ?', [$projectQuery])
+                      ->orWhereRaw('LOWER(name) LIKE ?', [$projectQuery . '%']);
+                })
+                ->where(function ($q) {
+                    $q->where('user_id', Auth::id())
+                      ->orWhereHas('assignees', fn($q2) => $q2->where('users.id', Auth::id()));
+                })
+                ->first();
+            $projectName = $project ? $project->name : $projectMatch[1];
+            $taskName = trim(preg_replace('/#[\w-]+\s*/', '', $taskName));
+        }
+
+        // Mirror the @tag token parsing from store()
+        if (preg_match_all('/@([\w-]+)/', $taskName, $tagMatches)) {
+            foreach ($tagMatches[1] as $tagSlug) {
+                $tag = Tag::where(function ($q) use ($tagSlug) {
+                        $q->whereRaw('LOWER(tag_name) = ?', [strtolower($tagSlug)])
+                          ->orWhereRaw('LOWER(tag_name) LIKE ?', [strtolower($tagSlug) . '%']);
+                    })->first();
+                $tagNames[] = $tag ? $tag->tag_name : $tagSlug;
+            }
+            $taskName = trim(preg_replace('/@[\w-]+\s*/', '', $taskName));
+        }
+
+        // Parse natural language date/recurrence from the remaining task name
+        $dateParser = new DateParser();
+        $parsed = $dateParser->parseTaskInput($taskName);
+        $title = $parsed['name'] ?: $taskName;
+
+        $dateFormatted = null;
+        if ($parsed['date']) {
+            $dateFormatted = Carbon::parse($parsed['date'])->format('D, M j');
+        }
+
+        $hasSpecial = $projectName !== null
+            || !empty($tagNames)
+            || $parsed['date'] !== null
+            || $parsed['recurrence_pattern'] !== null;
+
+        return response()->json([
+            'has_special' => $hasSpecial,
+            'title'       => $title,
+            'project'     => $projectName,
+            'tags'        => $tagNames,
+            'date'        => $dateFormatted,
+            'recurrence'  => $parsed['recurrence_pattern'],
+        ]);
+    }
+
+    /**
      * Attempt to parse a natural language date string into a Carbon date.
      * Accepts: Y-m-d, m/d, m/d/y, "tomorrow", "next friday", "march 15", etc.
      */

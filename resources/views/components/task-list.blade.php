@@ -2,6 +2,8 @@
 
 @pushOnce('scripts')
 <script>
+    window.taskPreviewUrl = '{{ route('tasks.previewQuickAdd') }}';
+
     document.addEventListener('alpine:init', () => {
         Alpine.store('taskCount', {
             total: 0,
@@ -94,6 +96,10 @@
             autocompleteQuery: '',
             autocompleteIndex: 0,
 
+            // Quick-add parse preview
+            preview: null,
+            previewTimer: null,
+
             get filteredProjects() {
                 if (!this.autocompleteQuery) return this.projects;
                 const q = this.autocompleteQuery.toLowerCase();
@@ -117,13 +123,15 @@
                     return;
                 }
                 this.nameError = '';
+                clearTimeout(this.previewTimer);
+                this.preview = null;
                 form.submit();
             },
 
             handleInput(event) {
                 const input = event.target.value;
                 this.nameError = input.length > 255
-                    ? `Task name is too long (${input.length}/255 characters max).`
+                    ? `Task name is too long (${input.length}/255 characters max.).`
                     : '';
                 const cursorPos = event.target.selectionStart;
                 const beforeCursor = input.substring(0, cursorPos);
@@ -144,6 +152,25 @@
                 } else {
                     this.showAutocomplete = false;
                 }
+
+                this.schedulePreview(input);
+            },
+
+            schedulePreview(value) {
+                clearTimeout(this.previewTimer);
+                if (!value.trim() || !window.taskPreviewUrl) {
+                    this.preview = null;
+                    return;
+                }
+                this.previewTimer = setTimeout(async () => {
+                    try {
+                        const fd = new FormData();
+                        fd.append('name', value);
+                        fd.append('_token', document.querySelector('meta[name="csrf-token"]').content);
+                        const res = await fetch(window.taskPreviewUrl, { method: 'POST', body: fd });
+                        if (res.ok) this.preview = await res.json();
+                    } catch {}
+                }, 400);
             },
 
             handleKeydown(event) {
@@ -207,6 +234,8 @@
             switchToFilter() {
                 this.mode = 'filter';
                 this.showAutocomplete = false;
+                clearTimeout(this.previewTimer);
+                this.preview = null;
                 this.$nextTick(() => this.$refs.filterInput && this.$refs.filterInput.focus());
             },
             switchToCreate() {
