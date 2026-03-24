@@ -27,7 +27,7 @@
                                    required
                                    :class="nameError ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : 'border-gray-600 focus:border-blue-500 focus:ring-blue-500'"
                                    class="w-full rounded-md bg-gray-700 text-gray-100 placeholder-gray-500 shadow-sm"
-                                   placeholder="e.g., Meeting #work @urgent Monday">
+                                   placeholder="e.g., Meeting #work @urgent">
 
                             <!-- Autocomplete Dropdown -->
                             <div x-show="showAutocomplete"
@@ -75,9 +75,9 @@
 
                             <div class="mt-1 flex justify-between items-baseline">
                                 <p class="text-xs text-gray-500">
-                                    Natural dates: "Monday", "11/10", "every Tuesday" |
                                     Type <code class="bg-gray-700 px-1 rounded text-gray-300">#</code> for projects or
-                                    <code class="bg-gray-700 px-1 rounded text-gray-300">@</code> for tags
+                                    <code class="bg-gray-700 px-1 rounded text-gray-300">@</code> for tags.
+                                    Use the Date and Recurrence fields below for scheduling.
                                 </p>
                                 <span class="text-xs ml-2 flex-shrink-0"
                                       :class="nameError ? 'text-red-400 font-semibold' : 'text-gray-500'"
@@ -149,7 +149,7 @@
                                     </span>
                                 </div>
                                 <div x-show="dateError" class="mt-1 text-xs text-red-400" x-text="dateError"></div>
-                                <p class="mt-1 text-xs text-gray-500">Leave blank to auto-detect from task name. Accepts: tomorrow, next friday, march 15, 3/15, 2026-03-15</p>
+                                <p class="mt-1 text-xs text-gray-500">Accepts: tomorrow, next friday, march 15, 3/15, 2026-03-15</p>
                                 @error('date')<p class="mt-1 text-sm text-red-600">{{ $message }}</p>@enderror
                             </div>
                             <div>
@@ -178,7 +178,7 @@
                                    class="w-full rounded-md bg-gray-700 border-gray-600 text-gray-100 placeholder-gray-500 shadow-sm focus:border-blue-500 focus:ring-blue-500"
                                    value="{{ old('recurrence_pattern') }}"
                                    placeholder="e.g., daily, every Monday, weekdays">
-                            <p class="mt-1 text-xs text-gray-500">Leave blank to auto-detect from task name. Use "every!" for floating (e.g., "every! 3 weeks").</p>
+                            <p class="mt-1 text-xs text-gray-500">Use "every!" for floating recurrence (e.g., "every! 3 weeks").</p>
                             <p class="mt-1 text-xs text-gray-400">Supported: daily, every other day, weekdays, weekends, weekly, monthly, every Monday/Tuesday/etc., every other Wednesday, every 2 weeks, every 3 months, every 15th, every first Monday, yearly</p>
                             @error('recurrence_pattern')<p class="mt-1 text-sm text-red-600">{{ $message }}</p>@enderror
                             <label class="flex items-center mt-2 text-sm text-gray-400 cursor-pointer">

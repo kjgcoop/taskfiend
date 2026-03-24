@@ -210,8 +210,9 @@ class TaskController extends Controller
             ])->withInput();
         }
 
-        // Auto-parse date and recurrence from task name if not explicitly provided
-        if (!$recurrencePattern) {
+        // Auto-parse date and recurrence from task name only for quick-add.
+        // The full Add Task form has dedicated fields; the task name is stored as-is.
+        if (!$recurrencePattern && $request->boolean('quick_add')) {
             // Check for unrecognized recurrence patterns first
             $unrecognizedError = $dateParser->detectUnrecognizedPattern($taskName);
             if ($unrecognizedError) {
@@ -220,10 +221,9 @@ class TaskController extends Controller
 
             $parsed = $dateParser->parseTaskInput($taskName);
             $taskName = $parsed['name'];
-            // For quick-add, a date keyword in the task name (e.g. "tomorrow") overrides
-            // the day-view's pre-filled hidden date. For the full form, only fill in when
-            // the date picker was left empty.
-            if (!$date || ($request->boolean('quick_add') && $parsed['date'] !== null)) {
+            // A date keyword in the task name (e.g. "tomorrow") overrides the
+            // day-view's pre-filled hidden date.
+            if (!$date || $parsed['date'] !== null) {
                 $date = $parsed['date'];
                 $time = $parsed['time'];
             }
