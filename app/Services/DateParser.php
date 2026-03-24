@@ -42,7 +42,7 @@ class DateParser
             'day_of_week' => '/\b(monday|tuesday|wednesday|thursday|friday|saturday|sunday)s?\b/i',
             'multi_days_full' => '/\b(monday|tuesday|wednesday|thursday|friday|saturday|sunday)(\s*,\s*(monday|tuesday|wednesday|thursday|friday|saturday|sunday))+\b/i',
             'multi_days' => '/\b(mon|tues?|weds?|thurs?|fri|sat|suns?)(\s*,\s*(mon|tues?|weds?|thurs?|fri|sat|suns?))+\b/i',
-            'monthly_ordinal' => '/\bevery (first|second|third|fourth|last) (monday|tuesday|wednesday|thursday|friday|saturday|sunday)\b/i',
+            'monthly_ordinal' => '/\bevery (first|1st|second|2nd|third|3rd|fourth|4th|last) (monday|tuesday|wednesday|thursday|friday|saturday|sunday)\b/i',
             'monthly_day' => '/\bevery (\d{1,2})(st|nd|rd|th)?(?!\s+(days?|weeks?|months?|years?))\b/i',
             'yearly' => '/\b(yearly|every year)\b/i',
             'date_month_day' => '/\b(january|february|march|april|may|june|july|august|september|october|november|december) (\d{1,2})\b/i',
@@ -129,7 +129,8 @@ class DateParser
             $result['date'] = $this->getNextMultiDay($matches[0])->format('Y-m-d');
             $result['name'] = trim(preg_replace($patterns['multi_days'], '', $input));
         } elseif (preg_match($patterns['monthly_ordinal'], $input, $matches)) {
-            $ordinal = $matches[1];
+            $numericOrdinals = ['1st' => 'first', '2nd' => 'second', '3rd' => 'third', '4th' => 'fourth'];
+            $ordinal = $numericOrdinals[strtolower($matches[1])] ?? strtolower($matches[1]);
             $dayName = $matches[2];
             $result['recurrence_pattern'] = "every {$ordinal} {$dayName}";
             $result['date'] = $this->getNextOrdinalDay($ordinal, $dayName)->format('Y-m-d');
@@ -410,6 +411,18 @@ class DateParser
 
         if (preg_match('/^(mon|tue|wed|thu|fri|sat|sun)(,(mon|tue|wed|thu|fri|sat|sun))+$/i', $normalizedPattern)) {
             return $this->getNextMultiDay($normalizedPattern, $currentDate);
+        }
+
+        // Normalize ordinal day-of-month variants to canonical "every {word-ordinal} {day}" form.
+        // Handles: "3rd Sunday", "every 3rd Sunday of the month", "third sunday of the month", etc.
+        $normalizedPattern = preg_replace('/\s+of\s+(the|every)\s+month\s*$/i', '', $normalizedPattern);
+        $normalizedPattern = preg_replace_callback(
+            '/\b(1st|2nd|3rd|4th)\b(?=\s+(monday|tuesday|wednesday|thursday|friday|saturday|sunday))/i',
+            fn($m) => ['1st' => 'first', '2nd' => 'second', '3rd' => 'third', '4th' => 'fourth'][strtolower($m[1])],
+            $normalizedPattern
+        );
+        if (preg_match('/^(first|second|third|fourth|last)\s+(monday|tuesday|wednesday|thursday|friday|saturday|sunday)$/i', $normalizedPattern)) {
+            $normalizedPattern = 'every ' . $normalizedPattern;
         }
 
         if (preg_match('/^every (first|second|third|fourth|last) (monday|tuesday|wednesday|thursday|friday|saturday|sunday)$/i', $normalizedPattern, $matches)) {

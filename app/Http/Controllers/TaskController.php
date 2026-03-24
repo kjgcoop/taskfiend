@@ -724,6 +724,16 @@ class TaskController extends Controller
                     }
                 }
 
+                if ($field === 'recurrence_pattern' && !empty($value)) {
+                    if ($task->parent_id) {
+                        return response()->json(['success' => false, 'message' => 'Subtasks cannot have their own recurrence pattern.'], 400);
+                    }
+                    $dateParser = new DateParser();
+                    if (!$dateParser->isValidRecurrencePattern($value)) {
+                        return response()->json(['success' => false, 'message' => "Recurrence pattern \"{$value}\" is not recognized. Try: daily, every Thursday, every other week, every third Sunday, every 3rd Sunday, etc."], 422);
+                    }
+                }
+
                 if ($field === 'status') {
                     if (!in_array($value, ['incomplete', 'done', 'archived'])) {
                         return response()->json(['success' => false, 'message' => 'Invalid status'], 400);
