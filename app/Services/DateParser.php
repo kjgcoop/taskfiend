@@ -333,6 +333,15 @@ class DateParser
         $normalizedPattern = strtr($normalizedPattern, [
             'thurs' => 'thu', 'tues' => 'tue', 'weds' => 'wed', 'suns' => 'sun',
         ]);
+        // Expand single abbreviated day names to full names so stored patterns
+        // like "Thu" or "Mon" are treated the same as "Thursday" / "Monday".
+        $abbrevToFull = [
+            'mon' => 'monday', 'tue' => 'tuesday', 'wed' => 'wednesday',
+            'thu' => 'thursday', 'fri' => 'friday', 'sat' => 'saturday', 'sun' => 'sunday',
+        ];
+        if (isset($abbrevToFull[$normalizedPattern])) {
+            $normalizedPattern = $abbrevToFull[$normalizedPattern];
+        }
 
         if ($normalizedPattern === 'daily') {
             return $currentDate->copy()->addDay();
