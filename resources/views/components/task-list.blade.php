@@ -125,6 +125,12 @@
                 this.nameError = '';
                 clearTimeout(this.previewTimer);
                 this.preview = null;
+                // Remove auto-injected tag_ids hidden inputs whose @token was deleted from the text
+                form.querySelectorAll('input[data-tag-slug]').forEach(hidden => {
+                    if (!name.includes('@' + hidden.dataset.tagSlug)) {
+                        hidden.remove();
+                    }
+                });
                 form.submit();
             },
 
@@ -187,14 +193,14 @@
                 } else if (event.key === 'Enter') {
                     event.preventDefault();
                     const item = list[this.autocompleteIndex];
-                    if (item) this.selectAutocomplete(this.autocompleteType === 'project' ? item.name : item.tag_name);
+                    if (item) this.selectAutocomplete(this.autocompleteType === 'project' ? item.name : item.tag_name, item.id);
                 } else if (event.key === 'Escape') {
                     event.preventDefault();
                     this.showAutocomplete = false;
                 }
             },
 
-            selectAutocomplete(name) {
+            selectAutocomplete(name, id = null) {
                 const inputEl = this.$refs.createInput;
                 if (!inputEl) return;
                 const cursorPos = inputEl.selectionStart;
@@ -205,6 +211,19 @@
                     ? beforeCursor.replace(/#\w*$/, '#' + slug + ' ')
                     : beforeCursor.replace(/@\w*$/, '@' + slug + ' ');
                 inputEl.value = newBefore + afterCursor;
+                // Inject the tag ID directly into the form so the server doesn't rely on
+                // slug matching (which fails when the tag name contains spaces or special chars).
+                if (this.autocompleteType === 'tag' && id) {
+                    const form = inputEl.closest('form');
+                    if (form && !form.querySelector(`input[data-tag-slug="${slug}"]`)) {
+                        const hidden = document.createElement('input');
+                        hidden.type = 'hidden';
+                        hidden.name = 'tag_ids[]';
+                        hidden.value = id;
+                        hidden.dataset.tagSlug = slug;
+                        form.appendChild(hidden);
+                    }
+                }
                 this.showAutocomplete = false;
                 this.schedulePreview(inputEl.value);
                 this.$nextTick(() => {

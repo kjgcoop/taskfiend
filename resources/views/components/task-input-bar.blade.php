@@ -65,7 +65,7 @@
                                     <div class="px-3 py-2 cursor-pointer text-sm flex items-center gap-2"
                                          :class="{ 'bg-gray-600': autocompleteIndex === i }"
                                          @mouseenter="autocompleteIndex = i"
-                                         @click.prevent="selectAutocomplete(tag.tag_name)">
+                                         @click.prevent="selectAutocomplete(tag.tag_name, tag.id)">
                                         <span class="text-xs" :style="'color: ' + tag.color">@</span>
                                         <span :style="'color: ' + tag.color" x-text="tag.tag_name"></span>
                                     </div>

@@ -175,7 +175,10 @@ class TaskController extends Controller
             $parsedTagIds = [];
             foreach ($tagMatches[1] as $tagSlug) {
                 $tag = Tag::where(function ($q) use ($tagSlug) {
+                        // Exact match, space-stripped match (handles "5 minutes" → "@5minutes"),
+                        // and prefix match as a last resort.
                         $q->whereRaw('LOWER(tag_name) = ?', [strtolower($tagSlug)])
+                          ->orWhereRaw("LOWER(REPLACE(tag_name, ' ', '')) = ?", [strtolower($tagSlug)])
                           ->orWhereRaw('LOWER(tag_name) LIKE ?', [strtolower($tagSlug) . '%']);
                     })
                     ->first();
@@ -911,6 +914,7 @@ class TaskController extends Controller
             foreach ($tagMatches[1] as $tagSlug) {
                 $tag = Tag::where(function ($q) use ($tagSlug) {
                         $q->whereRaw('LOWER(tag_name) = ?', [strtolower($tagSlug)])
+                          ->orWhereRaw("LOWER(REPLACE(tag_name, ' ', '')) = ?", [strtolower($tagSlug)])
                           ->orWhereRaw('LOWER(tag_name) LIKE ?', [strtolower($tagSlug) . '%']);
                     })->first();
                 $tagNames[] = $tag ? $tag->tag_name : $tagSlug;
