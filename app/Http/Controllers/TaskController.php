@@ -494,17 +494,21 @@ class TaskController extends Controller
         if (isset($validated['recurrence_pattern']) && !empty($validated['recurrence_pattern'])) {
             $dateParser = new DateParser();
             if (!$dateParser->isValidRecurrencePattern($validated['recurrence_pattern'])) {
-                return back()->withErrors([
-                    'recurrence_pattern' => "The recurrence pattern '{$validated['recurrence_pattern']}' is not recognized. Supported patterns include: daily, every other day, every 4 days, weekdays, weekends, every Monday/Tuesday/etc., every other Monday/Tuesday/etc., every 2 weeks, every 1st (monthly), every first Monday (monthly), yearly."
-                ])->withInput();
+                $msg = "The recurrence pattern '{$validated['recurrence_pattern']}' is not recognized. Supported patterns include: daily, every other day, every 4 days, weekdays, weekends, every Monday/Tuesday/etc., every other Monday/Tuesday/etc., every 2 weeks, every 1st (monthly), every first Monday (monthly), yearly.";
+                if ($request->ajax()) {
+                    return response()->json(['success' => false, 'message' => $msg], 422);
+                }
+                return back()->withErrors(['recurrence_pattern' => $msg])->withInput();
             }
         }
 
         // Prevent subtasks from having recurrence patterns
         if (isset($validated['recurrence_pattern']) && $validated['recurrence_pattern'] && $task->parent_id) {
-            return back()->withErrors([
-                'recurrence_pattern' => 'Subtasks cannot have their own recurrence pattern. Only root-level tasks can recur.'
-            ])->withInput();
+            $msg = 'Subtasks cannot have their own recurrence pattern. Only root-level tasks can recur.';
+            if ($request->ajax()) {
+                return response()->json(['success' => false, 'message' => $msg], 422);
+            }
+            return back()->withErrors(['recurrence_pattern' => $msg])->withInput();
         }
 
         // Check if marking as done with incomplete descendants

@@ -329,18 +329,18 @@ class DateParser
         // Normalize pattern to lowercase and strip spaces around commas so that
         // "Mon, Tue, Wed" is treated the same as "Mon,Tue,Wed".
         $normalizedPattern = preg_replace('/\s*,\s*/', ',', strtolower($recurrencePattern));
-        // Normalize common alternate abbreviations to canonical 3-letter forms.
-        $normalizedPattern = strtr($normalizedPattern, [
-            'thurs' => 'thu', 'tues' => 'tue', 'weds' => 'wed', 'suns' => 'sun',
-        ]);
-        // Expand single abbreviated day names to full names so stored patterns
-        // like "Thu" or "Mon" are treated the same as "Thursday" / "Monday".
-        $abbrevToFull = [
-            'mon' => 'monday', 'tue' => 'tuesday', 'wed' => 'wednesday',
-            'thu' => 'thursday', 'fri' => 'friday', 'sat' => 'saturday', 'sun' => 'sunday',
-        ];
-        if (isset($abbrevToFull[$normalizedPattern])) {
-            $normalizedPattern = $abbrevToFull[$normalizedPattern];
+        // Expand day name abbreviations to full names using whole-word boundaries.
+        // We cannot use strtr() here because it does substring replacement — "thursday"
+        // would become "thuday" if 'thurs' => 'thu' were applied as a substring.
+        foreach ([
+            'thurs' => 'thursday', 'tues'  => 'tuesday',
+            'weds'  => 'wednesday', 'suns'  => 'sunday',
+            'mon'   => 'monday',   'tue'   => 'tuesday',
+            'wed'   => 'wednesday', 'thu'  => 'thursday',
+            'fri'   => 'friday',   'sat'   => 'saturday',
+            'sun'   => 'sunday',
+        ] as $abbrev => $full) {
+            $normalizedPattern = preg_replace('/\b' . $abbrev . '\b/', $full, $normalizedPattern);
         }
 
         if ($normalizedPattern === 'daily') {

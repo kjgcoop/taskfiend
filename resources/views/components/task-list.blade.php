@@ -45,8 +45,10 @@
         return {
             done: false,
             loading: false,
+            error: null,
             async submit() {
                 this.loading = true;
+                this.error = null;
                 const form = this.$el;
                 try {
                     const res = await fetch(form.action, {
@@ -54,7 +56,8 @@
                         headers: { 'X-Requested-With': 'XMLHttpRequest' },
                         body: new FormData(form),
                     });
-                    if (res.ok) {
+                    const data = await res.json().catch(() => ({}));
+                    if (res.ok && data.ok !== false && data.success !== false) {
                         this.done = true;
                         // Brief pause to show filled dot, then fade out
                         await new Promise(r => setTimeout(r, 400));
@@ -64,6 +67,8 @@
                             group.style.opacity = '0';
                             setTimeout(() => group.style.display = 'none', 300);
                         }
+                    } else {
+                        this.error = data.message || 'Could not complete task. Please try again.';
                     }
                 } catch {
                     form.submit(); // network failure – fall back to full reload
@@ -513,6 +518,7 @@
                             title="{{ $titleText }}">
                     </button>
                     <div x-show="done" class="mt-1 w-6 h-6 rounded-full bg-green-600 flex-shrink-0" style="display:none"></div>
+                    <div x-show="error" x-text="error" class="mt-1 text-xs text-red-400 max-w-xs" style="display:none"></div>
                 </form>
                 @endif
 
