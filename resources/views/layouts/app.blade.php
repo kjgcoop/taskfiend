@@ -233,6 +233,45 @@
         </div>
 
         <script>
+            document.addEventListener('alpine:init', () => {
+                Alpine.store('taskCount', {
+                    total: 0,
+                    visible: 0,
+                    filtered: false,
+                    ready: false
+                });
+
+                Alpine.store('bulkEdit', {
+                    active: false,
+                    selected: [],
+                    projects: [],
+                    tags: [],
+                    toggle() {
+                        this.active = !this.active;
+                        if (!this.active) this.selected = [];
+                    },
+                    toggleTask(id) {
+                        const idx = this.selected.indexOf(id);
+                        if (idx >= 0) this.selected.splice(idx, 1);
+                        else this.selected.push(id);
+                    },
+                    isSelected(id) { return this.selected.includes(id); },
+                    selectAllVisible() {
+                        const groups = document.querySelectorAll('[data-task-group-id]');
+                        const ids = [];
+                        groups.forEach(group => {
+                            const filterable = group.querySelector('[data-filterable]');
+                            if (filterable && filterable.style.display !== 'none' && group.offsetParent !== null) {
+                                ids.push(parseInt(group.dataset.taskGroupId));
+                            }
+                        });
+                        this.selected = ids;
+                    },
+                    deselectAll() { this.selected = []; },
+                    get count() { return this.selected.length; }
+                });
+            });
+
             window.bulkEditBar = function () {
                 return {
                     date: '',
