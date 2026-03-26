@@ -80,7 +80,7 @@
 
             <!-- Page Content -->
             <main>
-                <div x-data="{}" :class="$store.bulkEdit.active && $store.bulkEdit.selected.length > 0 ? 'pb-20' : ''">
+                <div x-data="{}" :class="$store.bulkEdit.active && $store.bulkEdit.selected.length > 0 ? 'pb-32' : ''">
                     {{ $slot }}
                 </div>
             </main>
