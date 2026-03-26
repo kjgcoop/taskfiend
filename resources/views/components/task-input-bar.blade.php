@@ -48,7 +48,7 @@
                                     <div class="px-3 py-2 cursor-pointer text-sm text-gray-300 flex items-center gap-2"
                                          :class="{ 'bg-gray-600 text-gray-100': autocompleteIndex === i }"
                                          @mouseenter="autocompleteIndex = i"
-                                         @click.prevent="selectAutocomplete(project.name)">
+                                         @click.prevent="selectAutocomplete(project.name, project.id)">
                                         <span class="text-gray-500 text-xs">#</span>
                                         <span x-text="project.name"></span>
                                     </div>

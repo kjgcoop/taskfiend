@@ -131,6 +131,11 @@
                         hidden.remove();
                     }
                 });
+                // Remove auto-injected project_id if its #token was deleted from the text
+                const projectHidden = form.querySelector('input[data-project-autocomplete]');
+                if (projectHidden && !name.includes('#' + projectHidden.dataset.projectSlug)) {
+                    projectHidden.remove();
+                }
                 form.submit();
             },
 
@@ -211,8 +216,8 @@
                     ? beforeCursor.replace(/#\w*$/, '#' + slug + ' ')
                     : beforeCursor.replace(/@\w*$/, '@' + slug + ' ');
                 inputEl.value = newBefore + afterCursor;
-                // Inject the tag ID directly into the form so the server doesn't rely on
-                // slug matching (which fails when the tag name contains spaces or special chars).
+                // Inject the ID directly into the form so the server doesn't rely on
+                // slug matching (which fails when the name contains spaces or special chars).
                 if (this.autocompleteType === 'tag' && id) {
                     const form = inputEl.closest('form');
                     if (form && !form.querySelector(`input[data-tag-slug="${slug}"]`)) {
@@ -223,6 +228,19 @@
                         hidden.dataset.tagSlug = slug;
                         form.appendChild(hidden);
                     }
+                }
+                if (this.autocompleteType === 'project' && id) {
+                    const form = inputEl.closest('form');
+                    // Replace any previously injected project_id from autocomplete
+                    const prev = form.querySelector('input[data-project-autocomplete]');
+                    if (prev) prev.remove();
+                    const hidden = document.createElement('input');
+                    hidden.type = 'hidden';
+                    hidden.name = 'project_id';
+                    hidden.value = id;
+                    hidden.dataset.projectSlug = slug;
+                    hidden.dataset.projectAutocomplete = '1';
+                    form.appendChild(hidden);
                 }
                 this.showAutocomplete = false;
                 this.schedulePreview(inputEl.value);
