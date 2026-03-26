@@ -6,7 +6,7 @@
         <meta name="csrf-token" content="{{ csrf_token() }}">
         <meta name="session-check-interval" content="{{ config('session.check_interval', 60) }}">
 
-        <title>{{ config('app.name', 'Laravel') }}</title>
+        <title>{{ config('app.name', 'Laravel') }} - {{ substr(strip_tags($header), 0, 100) }}</title>
 
         <!-- Favicon -->
         <link rel="icon" type="image/svg+xml" href="{{ config('app.env') !== 'production' ? '/favicon-dev.svg' : '/favicon.svg' }}">
