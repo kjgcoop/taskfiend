@@ -154,19 +154,21 @@ class TaskController extends Controller
 
         // Parse #project and @tag tokens from the task name (quick-add inline syntax).
         // Strip these before DateParser runs so it receives a clean task name.
-        if (!isset($validated['project_id']) && preg_match('/#([\w-]+)/', $taskName, $projectMatch)) {
-            $projectQuery = strtolower($projectMatch[1]);
-            $project = Project::where(function ($q) use ($projectQuery) {
-                    $q->whereRaw('LOWER(name) = ?', [$projectQuery])
-                      ->orWhereRaw('LOWER(name) LIKE ?', [$projectQuery . '%']);
-                })
-                ->where(function ($q) {
-                    $q->where('user_id', Auth::id())
-                      ->orWhereHas('assignees', fn($q2) => $q2->where('users.id', Auth::id()));
-                })
-                ->first();
-            if ($project) {
-                $validated['project_id'] = $project->id;
+        if (preg_match('/#([\w-]+)/', $taskName, $projectMatch)) {
+            if (!isset($validated['project_id'])) {
+                $projectQuery = strtolower($projectMatch[1]);
+                $project = Project::where(function ($q) use ($projectQuery) {
+                        $q->whereRaw('LOWER(name) = ?', [$projectQuery])
+                          ->orWhereRaw('LOWER(name) LIKE ?', [$projectQuery . '%']);
+                    })
+                    ->where(function ($q) {
+                        $q->where('user_id', Auth::id())
+                          ->orWhereHas('assignees', fn($q2) => $q2->where('users.id', Auth::id()));
+                    })
+                    ->first();
+                if ($project) {
+                    $validated['project_id'] = $project->id;
+                }
             }
             $taskName = trim(preg_replace('/#[\w-]+\s*/', '', $taskName));
         }
