@@ -238,14 +238,24 @@
             selectAutocomplete(name, id = null) {
                 const inputEl = this.$refs.createInput;
                 if (!inputEl) return;
-                const cursorPos = inputEl.selectionStart;
-                const beforeCursor = inputEl.value.substring(0, cursorPos);
-                const afterCursor = inputEl.value.substring(cursorPos);
                 const slug = name.toLowerCase().replace(/[^a-z0-9-]/g, '');
-                const newBefore = this.autocompleteType === 'project'
-                    ? beforeCursor.replace(/#\w*$/, '#' + slug + ' ')
-                    : beforeCursor.replace(/@\w*$/, '@' + slug + ' ');
-                inputEl.value = newBefore + afterCursor;
+                const prefix = this.autocompleteType === 'project' ? '#' : '@';
+
+                // Use lastIndexOf on the partial token already captured in autocompleteQuery
+                // rather than relying on selectionStart, which can be 0 when the input loses
+                // focus during a mouse click on the dropdown item.
+                const partialToken = prefix + this.autocompleteQuery;
+                const currentValue = inputEl.value;
+                const insertIdx = currentValue.lastIndexOf(partialToken);
+                let newCursorPos = currentValue.length;
+                if (insertIdx >= 0) {
+                    const replacement = prefix + slug + ' ';
+                    inputEl.value = currentValue.substring(0, insertIdx)
+                        + replacement
+                        + currentValue.substring(insertIdx + partialToken.length);
+                    newCursorPos = insertIdx + replacement.length;
+                }
+
                 // Inject the ID directly into the form so the server doesn't rely on
                 // slug matching (which fails when the name contains spaces or special chars).
                 if (this.autocompleteType === 'tag' && id) {
@@ -276,7 +286,7 @@
                 this.schedulePreview(inputEl.value);
                 this.$nextTick(() => {
                     inputEl.focus();
-                    inputEl.setSelectionRange(newBefore.length, newBefore.length);
+                    inputEl.setSelectionRange(newCursorPos, newCursorPos);
                 });
             },
 
