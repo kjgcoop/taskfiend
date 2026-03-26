@@ -108,6 +108,15 @@ class DateParser
             $dayName = ucfirst(strtolower($matches[1]));
             $result['date'] = $this->getNextDayOfWeek($dayName)->format('Y-m-d');
             $result['name'] = trim(preg_replace($patterns['next_day_of_week'], '', $input));
+        } elseif (preg_match($patterns['monthly_ordinal'], $input, $matches)) {
+            // Checked before day_of_week so that "every first Monday" is not swallowed
+            // by the generic day-name branch (which can't see the ordinal qualifier).
+            $numericOrdinals = ['1st' => 'first', '2nd' => 'second', '3rd' => 'third', '4th' => 'fourth'];
+            $ordinal = $numericOrdinals[strtolower($matches[1])] ?? strtolower($matches[1]);
+            $dayName = $matches[2];
+            $result['recurrence_pattern'] = "every {$ordinal} {$dayName}";
+            $result['date'] = $this->getNextOrdinalDay($ordinal, $dayName)->format('Y-m-d');
+            $result['name'] = trim(preg_replace($patterns['monthly_ordinal'], '', $input));
         } elseif (preg_match($patterns['multi_days_full'], $input, $matches)) {
             $abbr = $this->normalizeMultiDayToAbbr($matches[0]);
             $result['recurrence_pattern'] = $abbr;
@@ -150,13 +159,6 @@ class DateParser
             $result['recurrence_pattern'] = $matches[0];
             $result['date'] = $this->getNextMultiDay($matches[0])->format('Y-m-d');
             $result['name'] = trim(preg_replace($patterns['multi_days'], '', $input));
-        } elseif (preg_match($patterns['monthly_ordinal'], $input, $matches)) {
-            $numericOrdinals = ['1st' => 'first', '2nd' => 'second', '3rd' => 'third', '4th' => 'fourth'];
-            $ordinal = $numericOrdinals[strtolower($matches[1])] ?? strtolower($matches[1]);
-            $dayName = $matches[2];
-            $result['recurrence_pattern'] = "every {$ordinal} {$dayName}";
-            $result['date'] = $this->getNextOrdinalDay($ordinal, $dayName)->format('Y-m-d');
-            $result['name'] = trim(preg_replace($patterns['monthly_ordinal'], '', $input));
         } elseif (preg_match($patterns['monthly_day'], $input, $matches)) {
             $day = (int) $matches[1];
             $result['recurrence_pattern'] = "every {$day}";
