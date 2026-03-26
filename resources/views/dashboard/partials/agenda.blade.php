@@ -109,7 +109,8 @@
                         headers: { 'X-Requested-With': 'XMLHttpRequest' },
                         body: new FormData(form),
                     });
-                    if (res.ok) {
+                    const data = await res.json().catch(() => ({}));
+                    if (res.ok && data.ok !== false) {
                         this.done = true;
                         // Brief pause to show the filled dot, then fade out the block
                         await new Promise(r => setTimeout(r, 400));
@@ -119,6 +120,8 @@
                             block.style.opacity = '0';
                             setTimeout(() => block.style.display = 'none', 300);
                         }
+                    } else {
+                        alert('Could not complete task: ' + (data.message || 'Please try again.'));
                     }
                 } catch {
                     form.submit(); // network failure – fall back to full reload
