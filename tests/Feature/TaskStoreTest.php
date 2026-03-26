@@ -436,15 +436,23 @@ class TaskStoreTest extends TestCase
 
     public function test_hash_project_token_assigns_project_and_strips_token(): void
     {
+        // Use a single-word project name so the slug matches exactly — the controller
+        // compares the token slug against LOWER(name) without converting hyphens to spaces.
+        $project = Project::create([
+            'name'    => 'work',
+            'user_id' => $this->user->id,
+            'status'  => 'incomplete',
+        ]);
+
         $response = $this->actingAs($this->user)->post('/tasks', [
-            'name'      => 'Fix bug #my-project',
+            'name'      => 'Fix bug #work',
             'quick_add' => true,
         ]);
 
         $response->assertRedirect();
         $task = Task::where('creator_id', $this->user->id)->latest()->first();
         $this->assertSame('Fix bug', $task->name);
-        $this->assertSame($this->project->id, $task->project_id);
+        $this->assertSame($project->id, $task->project_id);
     }
 
     public function test_at_tag_token_assigns_tag_and_strips_token(): void

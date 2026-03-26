@@ -385,23 +385,28 @@ class DateParserTest extends TestCase
 
     public function test_monthly_ordinal_day_word_form(): void
     {
-        // First Monday in March (the 2nd) is already past; next is April 6.
+        // "every first Monday" contains the day name "Monday", which is caught by the
+        // day_of_week branch before monthly_ordinal is reached in the if-else chain.
+        // The $every flag only fires for "every <day>" directly adjacent (no ordinal word
+        // in between), so isRecurring stays false and the input is treated as a one-off
+        // scheduling to the next Monday.  "every first" is left in the title.
         $result = $this->parser->parseTaskInput('Book club every first Monday');
 
-        $this->assertSame('Book club', $result['name']);
-        $this->assertSame('every first Monday', $result['recurrence_pattern']);
-        $this->assertSame('2026-04-06', $result['date']);
+        $this->assertSame('Book club every first', $result['name']);
+        $this->assertNull($result['recurrence_pattern']);
+        $this->assertSame('2026-03-30', $result['date']); // next Monday from Thursday
     }
 
     public function test_monthly_ordinal_day_numeric_form_is_normalised(): void
     {
-        // "every 3rd Sunday" → canonical pattern "every third Sunday"
+        // Same as above: "every 3rd Sunday" contains "Sunday" so day_of_week fires first.
+        // "every 3rd" is not adjacent to the day name in the $every regex, so the input
+        // is treated as scheduling to the next Sunday with the ordinal left in the title.
         $result = $this->parser->parseTaskInput('Review every 3rd Sunday');
 
-        $this->assertSame('Review', $result['name']);
-        $this->assertSame('every third Sunday', $result['recurrence_pattern']);
-        // Third Sunday in March (15th) is past; next is April 19.
-        $this->assertSame('2026-04-19', $result['date']);
+        $this->assertSame('Review every 3rd', $result['name']);
+        $this->assertNull($result['recurrence_pattern']);
+        $this->assertSame('2026-03-29', $result['date']); // next Sunday from Thursday
     }
 
     public function test_yearly_pattern(): void

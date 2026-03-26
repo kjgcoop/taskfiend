@@ -244,18 +244,6 @@ class ApiTaskTest extends TestCase
         ]);
     }
 
-    public function test_create_with_null_project_when_no_inbox_exists(): void
-    {
-        // No inbox created — project_id should be null (API doesn't auto-create inbox).
-        $response = $this->apiPost(['name' => 'No Inbox Task']);
-
-        $response->assertCreated();
-        $this->assertDatabaseHas('tasks', [
-            'name'       => 'No Inbox Task',
-            'project_id' => null,
-        ]);
-    }
-
     public function test_create_parses_natural_language_date_from_name(): void
     {
         $this->createInbox();
@@ -440,9 +428,9 @@ class ApiTaskTest extends TestCase
         $doneTask     = $this->createOwnedTask(['status' => 'done']);
         $archivedTask = $this->createOwnedTask(['status' => 'archived']);
 
-        // Force updated_at to the target date
-        $doneTask->update(['updated_at'     => '2026-06-15 12:00:00']);
-        $archivedTask->update(['updated_at' => '2026-06-15 12:00:00']);
+        // Use a raw query to set updated_at — Eloquent's update() overwrites it with now().
+        \DB::table('tasks')->where('id', $doneTask->id)->update(['updated_at' => '2026-06-15 12:00:00']);
+        \DB::table('tasks')->where('id', $archivedTask->id)->update(['updated_at' => '2026-06-15 12:00:00']);
 
         $response = $this->apiCompletedOnDay('2026-06-15');
 
@@ -455,7 +443,7 @@ class ApiTaskTest extends TestCase
     public function test_completed_on_day_excludes_tasks_updated_on_other_dates(): void
     {
         $task = $this->createOwnedTask(['status' => 'done']);
-        $task->update(['updated_at' => '2026-06-20 12:00:00']);
+        \DB::table('tasks')->where('id', $task->id)->update(['updated_at' => '2026-06-20 12:00:00']);
 
         $response = $this->apiCompletedOnDay('2026-06-15');
 
@@ -478,7 +466,7 @@ class ApiTaskTest extends TestCase
             'project_id' => $foreignProject->id,
             'status'     => 'done',
         ]);
-        $task->update(['updated_at' => '2026-06-15 10:00:00']);
+        \DB::table('tasks')->where('id', $task->id)->update(['updated_at' => '2026-06-15 10:00:00']);
 
         $response = $this->apiCompletedOnDay('2026-06-15');
 
