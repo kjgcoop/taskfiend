@@ -1041,6 +1041,7 @@ class TaskController extends Controller
             'task_ids'   => 'required|array|min:1',
             'task_ids.*' => 'integer',
             'date'       => 'nullable|date_format:Y-m-d',
+            'clear_date' => 'nullable|boolean',
             'project_id' => 'nullable|integer|exists:projects,id',
             'status'     => 'nullable|in:incomplete,done,archived',
             'tag_ids'    => 'nullable|array',
@@ -1048,11 +1049,12 @@ class TaskController extends Controller
         ]);
 
         $date      = $request->input('date');
+        $clearDate = $request->boolean('clear_date');
         $projectId = $request->input('project_id');
         $status    = $request->input('status');
         $tagIds    = $request->input('tag_ids', []);
 
-        if ($date === null && $projectId === null && $status === null && empty($tagIds)) {
+        if ($date === null && !$clearDate && $projectId === null && $status === null && empty($tagIds)) {
             return response()->json(['success' => false, 'message' => 'No changes specified.'], 422);
         }
 
@@ -1079,11 +1081,13 @@ class TaskController extends Controller
             ->get();
 
         $changes = [];
-        if ($date !== null)      $changes['date']       = $date;
+        if ($clearDate)          $changes['date']       = null;
+        elseif ($date !== null)  $changes['date']       = $date;
         if ($projectId !== null) $changes['project_id'] = $projectId;
         if ($status !== null)    $changes['status']     = $status;
 
         $changeFields = array_keys($changes);
+        if ($clearDate) $changeFields = array_map(fn($f) => $f === 'date' ? 'date (cleared)' : $f, $changeFields);
         if (!empty($tagIds)) $changeFields[] = 'tags';
 
         $updatedCount = 0;

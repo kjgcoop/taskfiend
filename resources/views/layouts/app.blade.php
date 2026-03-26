@@ -80,7 +80,9 @@
 
             <!-- Page Content -->
             <main>
-                {{ $slot }}
+                <div x-data="{}" :class="$store.bulkEdit.active && $store.bulkEdit.selected.length > 0 ? 'pb-20' : ''">
+                    {{ $slot }}
+                </div>
             </main>
         </div>
 
@@ -122,14 +124,19 @@
                 <!-- Date input -->
                 <div class="flex items-center gap-1.5">
                     <label class="text-xs text-gray-400 whitespace-nowrap">Date</label>
-                    <input type="date" x-model="date"
-                           class="text-sm bg-gray-700 border border-gray-600 rounded px-2 py-1.5 text-gray-100 focus:outline-none focus:ring-1 focus:ring-blue-500">
-                    <button @click="date = ''" x-show="date" title="Clear date"
+                    <input type="date" x-model="date" :disabled="clearDate"
+                           class="text-sm bg-gray-700 border border-gray-600 rounded px-2 py-1.5 text-gray-100 focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:opacity-40 disabled:cursor-not-allowed">
+                    <button @click="date = ''" x-show="date && !clearDate" title="Clear date input"
                             class="text-gray-500 hover:text-gray-300 text-xs w-5 h-5 flex items-center justify-center" style="display:none">
                         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
                         </svg>
                     </button>
+                    <label class="flex items-center gap-1 text-xs text-gray-400 cursor-pointer whitespace-nowrap ml-0.5" title="Remove date from all selected tasks">
+                        <input type="checkbox" x-model="clearDate" @change="if (clearDate) date = ''"
+                               class="rounded border-gray-500 bg-gray-600 text-blue-500 focus:ring-blue-500 focus:ring-offset-gray-900">
+                        <span>Clear</span>
+                    </label>
                 </div>
 
                 <!-- Project dropdown -->
@@ -275,6 +282,7 @@
             window.bulkEditBar = function () {
                 return {
                     date: '',
+                    clearDate: false,
                     projectId: '',
                     status: '',
                     tagIds: [],
@@ -283,7 +291,7 @@
                     confirmMessage: '',
 
                     get hasChanges() {
-                        return this.date !== '' || this.projectId !== '' || this.status !== '' || this.tagIds.length > 0;
+                        return this.date !== '' || this.clearDate || this.projectId !== '' || this.status !== '' || this.tagIds.length > 0;
                     },
 
                     openConfirm() {
@@ -291,6 +299,7 @@
                         const count = this.$store.bulkEdit.selected.length;
                         const fields = [];
                         if (this.date)            fields.push('due date');
+                        if (this.clearDate)       fields.push('due date (cleared)');
                         if (this.projectId)       fields.push('project');
                         if (this.status)          fields.push('status');
                         if (this.tagIds.length > 0) fields.push('tags');
@@ -313,9 +322,10 @@
                                 formData.append('task_ids[]', id);
                             });
 
-                            if (this.date)      formData.append('date', this.date);
-                            if (this.projectId) formData.append('project_id', this.projectId);
-                            if (this.status)    formData.append('status', this.status);
+                            if (this.clearDate)  formData.append('clear_date', '1');
+                            else if (this.date)  formData.append('date', this.date);
+                            if (this.projectId)  formData.append('project_id', this.projectId);
+                            if (this.status)     formData.append('status', this.status);
                             this.tagIds.forEach(id => formData.append('tag_ids[]', id));
 
                             const response = await fetch('/tasks/bulk-update', {
