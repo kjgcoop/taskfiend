@@ -80,7 +80,17 @@
 
             <!-- Page Content -->
             <main>
-                <div x-data="{}" :class="$store.bulkEdit.active && $store.bulkEdit.selected.length > 0 ? 'pb-32' : ''">
+                <div x-data="{
+                        pad: 0,
+                        init() {
+                            const bar = document.getElementById('bulk-edit-bar');
+                            if (!bar) return;
+                            const update = () => { this.pad = bar.offsetHeight || 0; };
+                            new ResizeObserver(update).observe(bar);
+                            this.$watch(() => Alpine.store('bulkEdit').selected.length, update);
+                        }
+                     }"
+                     :style="pad > 0 ? 'padding-bottom: ' + (pad + 16) + 'px' : ''">
                     {{ $slot }}
                 </div>
             </main>
@@ -89,7 +99,8 @@
         @stack('scripts')
 
         <!-- Bulk Edit Bottom Bar -->
-        <div x-data="bulkEditBar()"
+        <div id="bulk-edit-bar"
+             x-data="bulkEditBar()"
              x-cloak
              x-show="$store.bulkEdit.active && $store.bulkEdit.selected.length > 0"
              x-transition:enter="transition ease-out duration-200 transform"
