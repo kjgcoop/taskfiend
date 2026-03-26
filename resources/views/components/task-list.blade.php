@@ -87,6 +87,8 @@
             noResults: false,
             mode: 'create',
             nameError: '',
+            serverError: '',
+            submitting: false,
 
             // Autocomplete state
             projects: projects || [],
@@ -112,17 +114,18 @@
                 return this.tags.filter(t => t.tag_name.toLowerCase().includes(q));
             },
 
-            validateAndSubmit(event) {
+            async validateAndSubmit(event) {
                 const form = event.target;
                 const input = this.$refs.createInput;
-                if (!input) return;
+                if (!input || this.submitting) return;
                 const name = input.value.trim();
-                if (name.length === 0) return; // let browser/server handle required
+                if (name.length === 0) return;
                 if (name.length > 255) {
                     this.nameError = `Task name is too long (${name.length}/255 characters max).`;
                     return;
                 }
                 this.nameError = '';
+                this.serverError = '';
                 clearTimeout(this.previewTimer);
                 this.preview = null;
                 // Remove auto-injected tag_ids hidden inputs whose @token was deleted from the text
@@ -136,7 +139,33 @@
                 if (projectHidden && !name.includes('#' + projectHidden.dataset.projectSlug)) {
                     projectHidden.remove();
                 }
-                form.submit();
+                this.submitting = true;
+                try {
+                    const res = await fetch(form.action, {
+                        method: 'POST',
+                        headers: {
+                            'Accept': 'application/json',
+                            'X-Requested-With': 'XMLHttpRequest',
+                        },
+                        body: new FormData(form),
+                    });
+                    if (res.ok) {
+                        window.location.reload();
+                        return;
+                    }
+                    const data = await res.json().catch(() => ({}));
+                    if (data.errors) {
+                        const msgs = Object.values(data.errors).flat();
+                        this.serverError = msgs.join(' · ');
+                    } else {
+                        this.serverError = data.message || 'Could not create task. Please try again.';
+                    }
+                } catch {
+                    // Network failure — fall back to regular form submit
+                    form.submit();
+                } finally {
+                    this.submitting = false;
+                }
             },
 
             handleInput(event) {
@@ -144,6 +173,7 @@
                 this.nameError = input.length > 255
                     ? `Task name is too long (${input.length}/255 characters max.).`
                     : '';
+                if (this.serverError) this.serverError = '';
                 const cursorPos = event.target.selectionStart;
                 const beforeCursor = input.substring(0, cursorPos);
 

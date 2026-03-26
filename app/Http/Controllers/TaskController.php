@@ -127,9 +127,7 @@ class TaskController extends Controller
         if (!empty($validated['project_id'])) {
             $targetProject = Project::find($validated['project_id']);
             if ($targetProject && in_array($targetProject->status, ['done', 'archived'])) {
-                return back()->withErrors([
-                    'project_id' => 'Cannot create tasks in an inactive project.'
-                ])->withInput();
+                return $this->storeError($request, ['project_id' => 'Cannot create tasks in an inactive project.']);
             }
         }
 
@@ -140,9 +138,7 @@ class TaskController extends Controller
 
             // Prevent creating subtask under archived parent
             if ($parentTask->status === 'archived') {
-                return back()->withErrors([
-                    'parent_id' => 'Cannot create subtask under an archived task.'
-                ])->withInput();
+                return $this->storeError($request, ['parent_id' => 'Cannot create subtask under an archived task.']);
             }
         }
 
@@ -200,9 +196,9 @@ class TaskController extends Controller
         if ($date && !preg_match('/^\d{4}-\d{2}-\d{2}$/', $date)) {
             $parsedDate = $this->resolveNaturalDate($date);
             if (!$parsedDate) {
-                return back()->withErrors([
+                return $this->storeError($request, [
                     'date' => "Could not understand the date \"{$date}\". Try: tomorrow, next friday, march 15, 3/15, or 2026-03-15"
-                ])->withInput();
+                ]);
             }
             $date = $parsedDate->format('Y-m-d');
         }
@@ -211,9 +207,9 @@ class TaskController extends Controller
 
         // Validate explicitly provided recurrence pattern
         if ($recurrencePattern && !$dateParser->isValidRecurrencePattern($recurrencePattern)) {
-            return back()->withErrors([
+            return $this->storeError($request, [
                 'recurrence_pattern' => "The recurrence pattern '{$recurrencePattern}' is not recognized. Supported patterns include: daily, every other day, every 4 days, weekdays, weekends, every Monday/Tuesday/etc., every other Monday/Tuesday/etc., every 2 weeks, every 1st (monthly), every first Monday (monthly), yearly."
-            ])->withInput();
+            ]);
         }
 
         // Auto-parse date and recurrence from task name only for quick-add.
@@ -222,7 +218,7 @@ class TaskController extends Controller
             // Check for unrecognized recurrence patterns first
             $unrecognizedError = $dateParser->detectUnrecognizedPattern($taskName);
             if ($unrecognizedError) {
-                return back()->withErrors(['name' => $unrecognizedError])->withInput();
+                return $this->storeError($request, ['name' => $unrecognizedError]);
             }
 
             $parsed = $dateParser->parseTaskInput($taskName);
@@ -308,6 +304,9 @@ class TaskController extends Controller
         $this->logChange($task, 'created task', 'created');
 
         if ($request->boolean('quick_add')) {
+            if ($request->wantsJson()) {
+                return response()->json(['ok' => true]);
+            }
             return redirect()->back()->with('success', 'Task created.');
         }
 
@@ -1342,6 +1341,21 @@ class TaskController extends Controller
      *
      * Returns null for empty/unparseable input.
      */
+    /**
+     * Return an error response from store() that works for both AJAX (JSON 422)
+     * and regular (redirect back with errors) requests.
+     */
+    private function storeError(Request $request, array $errors)
+    {
+        if ($request->wantsJson()) {
+            return response()->json([
+                'ok'     => false,
+                'errors' => array_map(fn($msg) => [$msg], $errors),
+            ], 422);
+        }
+        return back()->withErrors($errors)->withInput();
+    }
+
     private function parseDurationInput(?string $input): ?int
     {
         if ($input === null || trim($input) === '') {

@@ -77,13 +77,20 @@
                     </div>
                 </div>
                 <button type="submit"
-                        class="px-3 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-sm font-medium flex-shrink-0">
-                    Add
+                        :disabled="submitting"
+                        :class="submitting ? 'opacity-60 cursor-wait' : 'hover:bg-blue-700'"
+                        class="px-3 py-2 bg-blue-600 text-white rounded-md text-sm font-medium flex-shrink-0">
+                    <span x-show="!submitting">Add</span>
+                    <span x-show="submitting" x-cloak>…</span>
                 </button>
             </div>
-            {{-- Validation error --}}
+            {{-- Client-side validation error --}}
             <div x-show="nameError" x-cloak class="pl-1">
                 <p x-text="nameError" class="text-xs text-red-400"></p>
+            </div>
+            {{-- Server-side error (AJAX) --}}
+            <div x-show="serverError" x-cloak class="pl-1">
+                <p x-text="serverError" class="text-xs text-red-400"></p>
             </div>
             @error('name')
                 <p class="text-xs text-red-400 pl-1">{{ $message }}</p>
