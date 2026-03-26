@@ -154,8 +154,12 @@ class TaskController extends Controller
             if (!isset($validated['project_id'])) {
                 $projectQuery = strtolower($projectMatch[1]);
                 $project = Project::where(function ($q) use ($projectQuery) {
+                        // Strip spaces, apostrophes, and other punctuation from the stored
+                        // name before comparing — mirrors the JS slug: /[^a-z0-9-]/g → ''.
+                        // e.g. "KJ's Inbox" → "kjsinbox" ✓
+                        $stripped = "LOWER(REPLACE(REPLACE(REPLACE(name, ' ', ''), '''', ''), '.', ''))";
                         $q->whereRaw('LOWER(name) = ?', [$projectQuery])
-                          ->orWhereRaw("LOWER(REPLACE(name, ' ', '')) = ?", [$projectQuery])
+                          ->orWhereRaw("{$stripped} = ?", [$projectQuery])
                           ->orWhereRaw('LOWER(name) LIKE ?', [$projectQuery . '%']);
                     })
                     ->where(function ($q) {
@@ -899,8 +903,9 @@ class TaskController extends Controller
         if (preg_match('/#([\w-]+)/', $taskName, $projectMatch)) {
             $projectQuery = strtolower($projectMatch[1]);
             $project = Project::where(function ($q) use ($projectQuery) {
+                    $stripped = "LOWER(REPLACE(REPLACE(REPLACE(name, ' ', ''), '''', ''), '.', ''))";
                     $q->whereRaw('LOWER(name) = ?', [$projectQuery])
-                      ->orWhereRaw("LOWER(REPLACE(name, ' ', '')) = ?", [$projectQuery])
+                      ->orWhereRaw("{$stripped} = ?", [$projectQuery])
                       ->orWhereRaw('LOWER(name) LIKE ?', [$projectQuery . '%']);
                 })
                 ->where(function ($q) {
