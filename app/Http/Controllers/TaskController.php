@@ -446,7 +446,7 @@ class TaskController extends Controller
     public function update(Request $request, Task $task)
     {
         $this->authorizeTaskAccess($task);
-        $this->assertProjectActive($task);
+        $this->assertProjectActive($task, asJson: $request->ajax() || $request->wantsJson());
 
         $validated = $request->validate([
             'name' => 'required|string|max:255',

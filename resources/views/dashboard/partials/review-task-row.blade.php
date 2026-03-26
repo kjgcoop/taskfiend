@@ -23,7 +23,8 @@
                             headers: { 'X-Requested-With': 'XMLHttpRequest' },
                             body: new FormData(this.$el),
                         });
-                        if (res.ok) {
+                        const data = await res.json().catch(() => ({}));
+                        if (res.ok && data.ok !== false) {
                             this.done = true;
                             await new Promise(r => setTimeout(r, 400));
                             const row = this.$el.closest('[data-review-row]');
@@ -32,6 +33,8 @@
                                 row.style.opacity = '0';
                                 setTimeout(() => row.style.display = 'none', 300);
                             }
+                        } else {
+                            alert('Could not complete task: ' + (data.message || 'Please try again.'));
                         }
                     } catch { this.$el.submit(); }
                     finally { this.loading = false; }
