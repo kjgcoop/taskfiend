@@ -159,6 +159,7 @@ class TaskController extends Controller
                 $projectQuery = strtolower($projectMatch[1]);
                 $project = Project::where(function ($q) use ($projectQuery) {
                         $q->whereRaw('LOWER(name) = ?', [$projectQuery])
+                          ->orWhereRaw("LOWER(REPLACE(name, ' ', '')) = ?", [$projectQuery])
                           ->orWhereRaw('LOWER(name) LIKE ?', [$projectQuery . '%']);
                     })
                     ->where(function ($q) {
@@ -900,6 +901,7 @@ class TaskController extends Controller
             $projectQuery = strtolower($projectMatch[1]);
             $project = Project::where(function ($q) use ($projectQuery) {
                     $q->whereRaw('LOWER(name) = ?', [$projectQuery])
+                      ->orWhereRaw("LOWER(REPLACE(name, ' ', '')) = ?", [$projectQuery])
                       ->orWhereRaw('LOWER(name) LIKE ?', [$projectQuery . '%']);
                 })
                 ->where(function ($q) {
@@ -907,7 +909,9 @@ class TaskController extends Controller
                       ->orWhereHas('assignees', fn($q2) => $q2->where('users.id', Auth::id()));
                 })
                 ->first();
-            $projectName = $project ? $project->name : $projectMatch[1];
+            // Only show the project badge if we actually matched a real project.
+            // Showing the raw slug as green was misleading (looked like a match when it wasn't).
+            $projectName = $project ? $project->name : null;
             $taskName = trim(preg_replace('/#[\w-]+\s*/', '', $taskName));
         }
 
