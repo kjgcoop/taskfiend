@@ -113,7 +113,7 @@
                         }
                      }"
                      :style="pad > 0 ? 'padding-bottom: ' + (pad + 16) + 'px' : ''"
-                     @keydown.escape.window="$store.bulkEdit.active && !$store.bulkEdit.confirming && $store.bulkEdit.toggle()">
+                     @keydown.escape.window="$store.bulkEdit.exitIfActive()">
                     {{ $slot }}
                 </div>
             </main>
@@ -288,10 +288,12 @@
                     selected: [],
                     projects: [],
                     tags: [],
-                    confirming: false,
                     toggle() {
                         this.active = !this.active;
                         if (!this.active) this.selected = [];
+                    },
+                    exitIfActive() {
+                        if (this.active) this.toggle();
                     },
                     toggleTask(id) {
                         const idx = this.selected.indexOf(id);
@@ -325,10 +327,6 @@
                     confirming: false,
                     submitting: false,
                     confirmMessage: '',
-
-                    init() {
-                        this.$watch('confirming', (val) => { this.$store.bulkEdit.confirming = val; });
-                    },
 
                     get hasChanges() {
                         return this.date !== '' || this.clearDate || this.projectId !== '' || this.status !== '' || this.tagIds.length > 0;
