@@ -220,7 +220,7 @@
 
             <!-- Search Results -->
             @if(request()->hasAny(['q', 'tag_ids', 'project_id', 'date_from', 'date_to', 'has_date', 'assignee_id', 'creator_id', 'show_incomplete', 'show_done', 'show_archived', 'show_archived_projects']))
-                <div class="bg-[#202020] border border-gray-700 overflow-hidden shadow-sm sm:rounded-lg p-6" x-data="taskFilter()">
+                <div class="bg-[#202020] border border-gray-700 overflow-hidden shadow-sm sm:rounded-lg p-6" x-data="taskFilter(@js($projects), @js($tags))">
                     <div class="flex items-center justify-between mb-4">
                         <h3 class="text-lg font-semibold text-gray-100">
                             Search Results
@@ -232,13 +232,50 @@
                             </a>
                         @endif
                     </div>
+                    {{-- Filter bar / bulk-edit header --}}
                     <div class="mb-4">
-                        <input type="text"
-                               x-model="query"
-                               x-on:input="filterTasks()"
-                               x-on:keydown.escape="clearFilter()"
-                               placeholder="Filter results... (# project, @ tag)"
-                               class="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-md text-gray-100 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                        {{-- Normal filter input (hidden in bulk mode) --}}
+                        <div x-show="!$store.bulkEdit.active" class="flex gap-2 items-center">
+                            <input type="text"
+                                   x-model="query"
+                                   x-on:input="filterTasks()"
+                                   x-on:keydown.escape="clearFilter()"
+                                   placeholder="Filter results... (# project, @ tag)"
+                                   class="flex-1 px-4 py-2 bg-gray-700 border border-gray-600 rounded-md text-gray-100 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                            <button @click="$store.bulkEdit.toggle()"
+                                    title="Bulk edit mode"
+                                    :class="$store.bulkEdit.active ? 'text-blue-400 bg-gray-700' : 'text-gray-500 hover:text-gray-300'"
+                                    class="flex-shrink-0 p-2 rounded-md hover:bg-gray-700 transition">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+                                </svg>
+                            </button>
+                        </div>
+                        {{-- Bulk edit header (shown in bulk mode) --}}
+                        <div x-show="$store.bulkEdit.active" x-cloak class="flex gap-3 items-center">
+                            <button @click="$store.bulkEdit.toggle()"
+                                    title="Exit bulk edit"
+                                    class="flex-shrink-0 p-2 text-blue-400 bg-gray-700 rounded-md hover:bg-gray-600 transition">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+                                </svg>
+                            </button>
+                            <span class="text-sm font-medium text-blue-400">Bulk edit</span>
+                            <span class="text-sm text-gray-400">
+                                <span x-text="$store.bulkEdit.count"></span>
+                                <span x-text="$store.bulkEdit.count === 1 ? 'task' : 'tasks'"></span>
+                                selected
+                            </span>
+                            <button @click="$store.bulkEdit.selectAllVisible()"
+                                    class="text-xs text-blue-400 hover:text-blue-300 underline">
+                                Select all visible
+                            </button>
+                            <button @click="$store.bulkEdit.deselectAll()"
+                                    x-show="$store.bulkEdit.count > 0"
+                                    class="text-xs text-gray-500 hover:text-gray-300 underline">
+                                Deselect all
+                            </button>
+                        </div>
                     </div>
                     <div x-ref="taskContainer">
                         @php
