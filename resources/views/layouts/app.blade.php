@@ -57,6 +57,21 @@
             .markdown-body th, .markdown-body td { border: 1px solid #4b5563; padding: 0.5em 0.75em; text-align: left; }
             .markdown-body th { background-color: #374151; color: #f3f4f6; font-weight: 600; }
         </style>
+        <style>
+            /* Drag-and-drop task ordering */
+            .task-drop-indicator {
+                height: 2px;
+                background: #3b82f6;
+                border-radius: 1px;
+                margin: -1px 0;
+                display: none;
+                pointer-events: none;
+            }
+            .task-dragging > .bg-\[\#202020\] {
+                opacity: 0.4;
+                box-shadow: none;
+            }
+        </style>
     </head>
     <body class="font-sans antialiased bg-black text-gray-100">
         <div class="min-h-screen bg-black">
@@ -552,6 +567,109 @@
             window.reloadTaskPanel = function (taskId) {
                 window.dispatchEvent(new CustomEvent('reload-task-panel', { detail: { taskId } }));
             };
+
+            // ─── Drag-and-drop task reordering ───────────────────────────────────────
+            window.initTaskSortable = function (container) {
+                let draggedEl = null;
+
+                // Blue drop-position indicator line
+                const indicator = document.createElement('div');
+                indicator.className = 'task-drop-indicator';
+
+                function isBulkActive() {
+                    try { return Alpine.store('bulkEdit').active; } catch { return false; }
+                }
+
+                // Only set draggable when the user grabs the handle specifically,
+                // so clicks anywhere else on the card work normally.
+                container.addEventListener('mousedown', (e) => {
+                    if (isBulkActive()) return;
+                    const handle = e.target.closest('.drag-handle');
+                    if (!handle) return;
+                    const group = handle.closest('[data-task-group]');
+                    if (group) group.setAttribute('draggable', 'true');
+                });
+
+                // Clear draggable on release so stray clicks never trigger a drag.
+                const clearDraggable = () => {
+                    container.querySelectorAll('[data-task-group][draggable]').forEach(el => {
+                        el.removeAttribute('draggable');
+                    });
+                };
+                container.addEventListener('mouseup', clearDraggable);
+
+                container.addEventListener('dragstart', (e) => {
+                    if (isBulkActive()) { e.preventDefault(); return; }
+                    const group = e.target.closest('[data-task-group]');
+                    if (!group || !group.hasAttribute('draggable')) { e.preventDefault(); return; }
+                    draggedEl = group;
+                    e.dataTransfer.effectAllowed = 'move';
+                    e.dataTransfer.setData('text/plain', ''); // required by Firefox
+                    // Brief rAF delay so the browser captures the ghost before we dim the element
+                    requestAnimationFrame(() => { if (draggedEl) draggedEl.classList.add('task-dragging'); });
+                });
+
+                container.addEventListener('dragover', (e) => {
+                    if (!draggedEl) return;
+                    e.preventDefault();
+                    e.dataTransfer.dropEffect = 'move';
+
+                    const target = e.target.closest('[data-task-group]');
+                    if (!target || target === draggedEl) return;
+
+                    const rect = target.getBoundingClientRect();
+                    if (e.clientY < rect.top + rect.height / 2) {
+                        container.insertBefore(indicator, target);
+                    } else {
+                        container.insertBefore(indicator, target.nextSibling);
+                    }
+                    indicator.style.display = 'block';
+                });
+
+                container.addEventListener('dragleave', (e) => {
+                    if (!container.contains(e.relatedTarget)) {
+                        indicator.style.display = 'none';
+                        if (indicator.parentNode) indicator.parentNode.removeChild(indicator);
+                    }
+                });
+
+                container.addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    if (!draggedEl) return;
+                    if (indicator.parentNode) {
+                        container.insertBefore(draggedEl, indicator);
+                    }
+                    cleanup();
+                    saveOrder();
+                });
+
+                container.addEventListener('dragend', () => {
+                    cleanup();
+                    // Don't save on dragend without a drop (e.g. dropped outside list)
+                });
+
+                function cleanup() {
+                    if (draggedEl) { draggedEl.classList.remove('task-dragging'); draggedEl = null; }
+                    indicator.style.display = 'none';
+                    if (indicator.parentNode) indicator.parentNode.removeChild(indicator);
+                    clearDraggable();
+                }
+
+                function saveOrder() {
+                    const ids = [...container.querySelectorAll(':scope > [data-task-group-id]')]
+                        .map(el => el.dataset.taskGroupId);
+                    fetch('/tasks/reorder', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                            'X-Requested-With': 'XMLHttpRequest',
+                        },
+                        body: JSON.stringify({ ids }),
+                    }).catch(() => {});
+                }
+            };
+            // ─────────────────────────────────────────────────────────────────────────
         </script>
 
         <script>
