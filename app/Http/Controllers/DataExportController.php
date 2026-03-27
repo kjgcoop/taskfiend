@@ -847,6 +847,79 @@ class DataExportController extends Controller
     }
 
     /**
+     * Export a single project as a Markdown file with tasks grouped by status.
+     */
+    public function exportMarkdown(Request $request, Project $project)
+    {
+        $user = $request->user();
+
+        $isCreator = $project->user_id === $user->id;
+        $isAssignee = $project->tasks()->whereHas('assignments', function($q) use ($user) {
+            $q->where('assignee_id', $user->id);
+        })->exists();
+
+        if (!$isCreator && !$isAssignee) {
+            abort(403, 'You do not have permission to export this project.');
+        }
+
+        // Load all top-level tasks with their children
+        $tasks = Task::where('project_id', $project->id)
+            ->whereNull('parent_id')
+            ->orderBy('created_at')
+            ->with(['children' => function($q) {
+                $q->orderBy('created_at');
+            }])
+            ->get();
+
+        $incomplete = $tasks->where('status', 'incomplete');
+        $done       = $tasks->where('status', 'done');
+        $archived   = $tasks->where('status', 'archived');
+
+        $lines = [];
+        $lines[] = '# ' . $project->name;
+
+        if ($project->description) {
+            $lines[] = '';
+            $lines[] = $project->description;
+        }
+
+        $renderGroup = function($group) use (&$lines) {
+            foreach ($group as $task) {
+                $lines[] = '* ' . $task->name;
+                foreach ($task->children as $child) {
+                    $lines[] = '    * ' . $child->name;
+                }
+            }
+        };
+
+        if ($incomplete->isNotEmpty()) {
+            $lines[] = '';
+            $lines[] = '## Incomplete';
+            $renderGroup($incomplete);
+        }
+
+        if ($done->isNotEmpty()) {
+            $lines[] = '';
+            $lines[] = '## Done';
+            $renderGroup($done);
+        }
+
+        if ($archived->isNotEmpty()) {
+            $lines[] = '';
+            $lines[] = '## Archived';
+            $renderGroup($archived);
+        }
+
+        $content  = implode("\n", $lines) . "\n";
+        $filename = 'project_' . preg_replace('/[^a-z0-9]+/', '_', strtolower($project->name)) . '_' . now()->format('Y-m-d') . '.md';
+
+        return response($content, 200, [
+            'Content-Type'        => 'text/markdown; charset=UTF-8',
+            'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+        ]);
+    }
+
+    /**
      * Helper function to recursively delete a directory.
      */
     private function deleteDirectory($dir)

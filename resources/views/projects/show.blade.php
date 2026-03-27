@@ -5,6 +5,9 @@
                 {{ $project->name }}
             </h2>
             <div class="flex gap-2">
+                <a href="{{ route('projects.export-markdown', $project) }}" class="px-4 py-2 bg-gray-700 border border-gray-600 text-gray-100 rounded hover:bg-gray-600">
+                    Export as Markdown
+                </a>
                 <a href="{{ route('projects.export-template', $project) }}" class="px-4 py-2 bg-gray-700 border border-gray-600 text-gray-100 rounded hover:bg-gray-600">
                     Export as Template
                 </a>

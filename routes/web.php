@@ -76,6 +76,7 @@ Route::middleware('auth')->group(function () {
     // Route::post('/import', [DataExportController::class, 'importAll'])->name('import.all');
 
     Route::get('/projects/{project}/export-template', [DataExportController::class, 'exportProjectTemplate'])->name('projects.export-template');
+    Route::get('/projects/{project}/export-markdown', [DataExportController::class, 'exportMarkdown'])->name('projects.export-markdown');
     Route::post('/projects/import-template', [DataExportController::class, 'importProjectTemplate'])->name('projects.import-template');
 });
 
