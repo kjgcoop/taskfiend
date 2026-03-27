@@ -117,6 +117,16 @@
                     :next-page="2"
                     :ajax-url="$completedTasksHasMore ? route('tags.completedTasks', $tag) : null"
                 />
+                <x-completed-tasks-section
+                    :tasks="$archivedTasks"
+                    label="Show archived tasks"
+                    :read-only="true"
+                    :show-as-archived="true"
+                    :total-count="$archivedTasksTotal"
+                    :has-more="$archivedTasksHasMore"
+                    :next-page="2"
+                    :ajax-url="$archivedTasksHasMore ? route('tags.archivedTasks', $tag) : null"
+                />
             </div>
         </div>
     </div>

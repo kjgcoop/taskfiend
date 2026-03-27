@@ -1,1 +1,1 @@
-<x-task-list :tasks="$tasks" :read-only="$readOnly ?? false" />
+<x-task-list :tasks="$tasks" :read-only="$readOnly ?? false" :show-as-archived="$showAsArchived ?? false" />
