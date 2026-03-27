@@ -72,35 +72,50 @@ class DashboardController extends Controller
         $this->applySortOrder($tasksQuery, $sort);
         $tasks = $tasksQuery->get();
 
-        $completedTasksQuery = Task::query()
-            ->where(function ($q) {
-                $q->where('creator_id', Auth::id())
-                  ->orWhereHas('assignees', function ($query) {
-                      $query->where('users.id', Auth::id());
-                  });
-            })
+        $perPage = (int) env('PAGINATION_PER_PAGE', 100);
+
+        $userConstraint = function ($q) {
+            $q->where('creator_id', Auth::id())
+              ->orWhereHas('assignees', fn($q2) => $q2->where('users.id', Auth::id()));
+        };
+
+        $completedTasksTotal = Task::query()->where($userConstraint)
             ->where('status', 'done')
             ->where('project_id', $inboxProject?->id)
-            ->with(['creator', 'tags', 'assignees', 'attachments', 'comments', 'completionLog.user']);
+            ->count();
 
-        $this->applySortOrder($completedTasksQuery, $sort);
-        $completedTasks = $completedTasksQuery->get();
+        $completedTasksRaw = Task::query()->where($userConstraint)
+            ->where('status', 'done')
+            ->where('project_id', $inboxProject?->id)
+            ->with(['creator', 'tags', 'assignees', 'attachments', 'comments', 'completionLog.user'])
+            ->orderByDesc('updated_at')
+            ->take($perPage + 1)
+            ->get();
 
-        $archivedTasksQuery = Task::query()
-            ->where(function ($q) {
-                $q->where('creator_id', Auth::id())
-                  ->orWhereHas('assignees', function ($query) {
-                      $query->where('users.id', Auth::id());
-                  });
-            })
+        $completedTasksHasMore = $completedTasksRaw->count() > $perPage;
+        $completedTasks = $completedTasksHasMore ? $completedTasksRaw->slice(0, $perPage) : $completedTasksRaw;
+
+        $archivedTasksTotal = Task::query()->where($userConstraint)
             ->where('status', 'archived')
             ->where('project_id', $inboxProject?->id)
-            ->with(['creator', 'tags', 'assignees', 'attachments', 'comments', 'completionLog.user']);
+            ->count();
 
-        $this->applySortOrder($archivedTasksQuery, $sort);
-        $archivedTasks = $archivedTasksQuery->get();
+        $archivedTasksRaw = Task::query()->where($userConstraint)
+            ->where('status', 'archived')
+            ->where('project_id', $inboxProject?->id)
+            ->with(['creator', 'tags', 'assignees', 'attachments', 'comments', 'completionLog.user'])
+            ->orderByDesc('updated_at')
+            ->take($perPage + 1)
+            ->get();
 
-        return view('dashboard.inbox', array_merge(compact('tasks', 'completedTasks', 'archivedTasks', 'sort', 'inboxProject'), $this->quickAddData()));
+        $archivedTasksHasMore = $archivedTasksRaw->count() > $perPage;
+        $archivedTasks = $archivedTasksHasMore ? $archivedTasksRaw->slice(0, $perPage) : $archivedTasksRaw;
+
+        return view('dashboard.inbox', array_merge(compact(
+            'tasks', 'sort', 'inboxProject',
+            'completedTasks', 'completedTasksTotal', 'completedTasksHasMore',
+            'archivedTasks', 'archivedTasksTotal', 'archivedTasksHasMore'
+        ), $this->quickAddData()));
     }
 
     public function overdue(Request $request)
@@ -305,28 +320,34 @@ class DashboardController extends Controller
         $this->applySortOrder($tasksQuery, $sort);
         $tasks = $tasksQuery->get();
 
-        $completedTasks = Task::query()
-            ->where(function ($q) {
-                $q->where('creator_id', Auth::id())
-                  ->orWhereHas('assignees', function ($query) {
-                      $query->where('users.id', Auth::id());
-                  });
-            })
+        $perPage = (int) env('PAGINATION_PER_PAGE', 100);
+
+        $userConstraint = function ($q) {
+            $q->where('creator_id', Auth::id())
+              ->orWhereHas('assignees', fn($q2) => $q2->where('users.id', Auth::id()));
+        };
+
+        $dayWith = ['creator', 'project', 'tags', 'assignees', 'attachments', 'comments', 'completionLog.user'];
+
+        $completedTasksTotal = Task::query()->where($userConstraint)
             ->where('status', 'done')
             ->whereDate('completed_at', $dateStr)
-            ->with(['creator', 'project', 'tags', 'assignees', 'attachments', 'comments', 'completionLog.user'])
+            ->count();
+
+        $completedTasksRaw = Task::query()->where($userConstraint)
+            ->where('status', 'done')
+            ->whereDate('completed_at', $dateStr)
+            ->with($dayWith)
             ->orderByRaw('time IS NULL, time ASC')
+            ->take($perPage + 1)
             ->get();
+
+        $completedTasksHasMore = $completedTasksRaw->count() > $perPage;
+        $completedTasks = $completedTasksHasMore ? $completedTasksRaw->slice(0, $perPage) : $completedTasksRaw;
 
         // Tasks archived on this day (by completed_at, status differentiates done vs archived),
         // OR tasks dated for this day that belong to an archived/done project.
-        $archivedTasks = Task::query()
-            ->where(function ($q) {
-                $q->where('creator_id', Auth::id())
-                  ->orWhereHas('assignees', function ($query) {
-                      $query->where('users.id', Auth::id());
-                  });
-            })
+        $archivedTasksTotal = Task::query()->where($userConstraint)
             ->where('status', 'archived')
             ->where(function ($q) use ($dateStr) {
                 $q->whereDate('completed_at', $dateStr)
@@ -335,9 +356,24 @@ class DashboardController extends Controller
                          ->whereHas('project', fn($pq) => $pq->whereIn('status', ['archived', 'done']));
                   });
             })
-            ->with(['creator', 'project', 'tags', 'assignees', 'attachments', 'comments', 'completionLog.user'])
+            ->count();
+
+        $archivedTasksRaw = Task::query()->where($userConstraint)
+            ->where('status', 'archived')
+            ->where(function ($q) use ($dateStr) {
+                $q->whereDate('completed_at', $dateStr)
+                  ->orWhere(function ($q2) use ($dateStr) {
+                      $q2->where('date', $dateStr)
+                         ->whereHas('project', fn($pq) => $pq->whereIn('status', ['archived', 'done']));
+                  });
+            })
+            ->with($dayWith)
             ->orderByRaw('time IS NULL, time ASC')
+            ->take($perPage + 1)
             ->get();
+
+        $archivedTasksHasMore = $archivedTasksRaw->count() > $perPage;
+        $archivedTasks = $archivedTasksHasMore ? $archivedTasksRaw->slice(0, $perPage) : $archivedTasksRaw;
 
         $overdueCount = 0;
         if ($carbonDate->isToday()) {
@@ -356,7 +392,157 @@ class DashboardController extends Controller
                 ->count();
         }
 
-        return view('dashboard.day', array_merge(compact('tasks', 'completedTasks', 'archivedTasks', 'date', 'carbonDate', 'overdueCount', 'sort'), $this->quickAddData()));
+        return view('dashboard.day', array_merge(compact(
+            'tasks', 'date', 'carbonDate', 'overdueCount', 'sort',
+            'completedTasks', 'completedTasksTotal', 'completedTasksHasMore',
+            'archivedTasks', 'archivedTasksTotal', 'archivedTasksHasMore'
+        ), $this->quickAddData()));
+    }
+
+    public function dayCompletedTasks(Request $request)
+    {
+        $perPage = (int) env('PAGINATION_PER_PAGE', 100);
+        $page    = max(1, (int) $request->get('page', 1));
+        $offset  = ($page - 1) * $perPage;
+        $dateStr = $request->get('date', today()->format('Y-m-d'));
+
+        $userConstraint = function ($q) {
+            $q->where('creator_id', Auth::id())
+              ->orWhereHas('assignees', fn($q2) => $q2->where('users.id', Auth::id()));
+        };
+
+        $tasks = Task::query()->where($userConstraint)
+            ->where('status', 'done')
+            ->whereDate('completed_at', $dateStr)
+            ->with(['creator', 'project', 'tags', 'assignees', 'attachments', 'comments', 'completionLog.user'])
+            ->orderByRaw('time IS NULL, time ASC')
+            ->skip($offset)->take($perPage + 1)
+            ->get();
+
+        $hasMore = $tasks->count() > $perPage;
+        if ($hasMore) {
+            $tasks = $tasks->slice(0, $perPage);
+        }
+
+        $hideDate = true;
+        return response()->json([
+            'html'     => view('tasks.partials.completed-list', compact('tasks', 'hideDate'))->render(),
+            'hasMore'  => $hasMore,
+            'nextPage' => $page + 1,
+        ]);
+    }
+
+    public function dayArchivedTasks(Request $request)
+    {
+        $perPage = (int) env('PAGINATION_PER_PAGE', 100);
+        $page    = max(1, (int) $request->get('page', 1));
+        $offset  = ($page - 1) * $perPage;
+        $dateStr = $request->get('date', today()->format('Y-m-d'));
+
+        $userConstraint = function ($q) {
+            $q->where('creator_id', Auth::id())
+              ->orWhereHas('assignees', fn($q2) => $q2->where('users.id', Auth::id()));
+        };
+
+        $tasks = Task::query()->where($userConstraint)
+            ->where('status', 'archived')
+            ->where(function ($q) use ($dateStr) {
+                $q->whereDate('completed_at', $dateStr)
+                  ->orWhere(function ($q2) use ($dateStr) {
+                      $q2->where('date', $dateStr)
+                         ->whereHas('project', fn($pq) => $pq->whereIn('status', ['archived', 'done']));
+                  });
+            })
+            ->with(['creator', 'project', 'tags', 'assignees', 'attachments', 'comments', 'completionLog.user'])
+            ->orderByRaw('time IS NULL, time ASC')
+            ->skip($offset)->take($perPage + 1)
+            ->get();
+
+        $hasMore = $tasks->count() > $perPage;
+        if ($hasMore) {
+            $tasks = $tasks->slice(0, $perPage);
+        }
+
+        $readOnly = true;
+        $showAsArchived = true;
+        $hideDate = true;
+        return response()->json([
+            'html'     => view('tasks.partials.completed-list', compact('tasks', 'readOnly', 'showAsArchived', 'hideDate'))->render(),
+            'hasMore'  => $hasMore,
+            'nextPage' => $page + 1,
+        ]);
+    }
+
+    public function inboxCompletedTasks(Request $request)
+    {
+        $perPage = (int) env('PAGINATION_PER_PAGE', 100);
+        $page    = max(1, (int) $request->get('page', 1));
+        $offset  = ($page - 1) * $perPage;
+
+        $inboxProject = \App\Models\Project::where('user_id', Auth::id())
+            ->where('is_inbox', true)
+            ->first();
+
+        $userConstraint = function ($q) {
+            $q->where('creator_id', Auth::id())
+              ->orWhereHas('assignees', fn($q2) => $q2->where('users.id', Auth::id()));
+        };
+
+        $tasks = Task::query()->where($userConstraint)
+            ->where('status', 'done')
+            ->where('project_id', $inboxProject?->id)
+            ->with(['creator', 'tags', 'assignees', 'attachments', 'comments', 'completionLog.user'])
+            ->orderByDesc('updated_at')
+            ->skip($offset)->take($perPage + 1)
+            ->get();
+
+        $hasMore = $tasks->count() > $perPage;
+        if ($hasMore) {
+            $tasks = $tasks->slice(0, $perPage);
+        }
+
+        return response()->json([
+            'html'     => view('tasks.partials.completed-list', compact('tasks'))->render(),
+            'hasMore'  => $hasMore,
+            'nextPage' => $page + 1,
+        ]);
+    }
+
+    public function inboxArchivedTasks(Request $request)
+    {
+        $perPage = (int) env('PAGINATION_PER_PAGE', 100);
+        $page    = max(1, (int) $request->get('page', 1));
+        $offset  = ($page - 1) * $perPage;
+
+        $inboxProject = \App\Models\Project::where('user_id', Auth::id())
+            ->where('is_inbox', true)
+            ->first();
+
+        $userConstraint = function ($q) {
+            $q->where('creator_id', Auth::id())
+              ->orWhereHas('assignees', fn($q2) => $q2->where('users.id', Auth::id()));
+        };
+
+        $tasks = Task::query()->where($userConstraint)
+            ->where('status', 'archived')
+            ->where('project_id', $inboxProject?->id)
+            ->with(['creator', 'tags', 'assignees', 'attachments', 'comments', 'completionLog.user'])
+            ->orderByDesc('updated_at')
+            ->skip($offset)->take($perPage + 1)
+            ->get();
+
+        $hasMore = $tasks->count() > $perPage;
+        if ($hasMore) {
+            $tasks = $tasks->slice(0, $perPage);
+        }
+
+        $readOnly = true;
+        $showAsArchived = true;
+        return response()->json([
+            'html'     => view('tasks.partials.completed-list', compact('tasks', 'readOnly', 'showAsArchived'))->render(),
+            'hasMore'  => $hasMore,
+            'nextPage' => $page + 1,
+        ]);
     }
 
     private function dayReview(Carbon $carbonDate, string $dateStr)

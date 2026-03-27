@@ -32,8 +32,19 @@
             <div x-show="noResults" x-cloak class="bg-[#202020] p-8 rounded-lg text-center text-gray-400 border border-gray-700">
                 No tasks match your filter.
             </div>
-            <x-completed-tasks-section :tasks="$completedTasks" />
-            <x-completed-tasks-section :tasks="$archivedTasks" label="Show archived tasks" :read-only="true" :show-as-archived="true" />
+            <x-completed-tasks-section
+                :tasks="$completedTasks"
+                :total-count="$completedTasksTotal"
+                :has-more="$completedTasksHasMore"
+                :ajax-url="$completedTasksHasMore ? route('inbox.completedTasks') : null" />
+            <x-completed-tasks-section
+                :tasks="$archivedTasks"
+                label="Show archived tasks"
+                :read-only="true"
+                :show-as-archived="true"
+                :total-count="$archivedTasksTotal"
+                :has-more="$archivedTasksHasMore"
+                :ajax-url="$archivedTasksHasMore ? route('inbox.archivedTasks') : null" />
         </div>
     </div>
 </x-app-layout>

@@ -27,9 +27,14 @@ Route::middleware('auth')->group(function () {
     Route::get('/calendar', [DashboardController::class, 'calendar'])->name('calendar');
     Route::get('/day', [DashboardController::class, 'day'])->name('day');
     Route::get('/day/export-markdown', [DashboardController::class, 'exportDayMarkdown'])->name('day.export-markdown');
+    Route::get('/day/completed-tasks', [DashboardController::class, 'dayCompletedTasks'])->name('day.completedTasks');
+    Route::get('/day/archived-tasks', [DashboardController::class, 'dayArchivedTasks'])->name('day.archivedTasks');
+    Route::get('/inbox/completed-tasks', [DashboardController::class, 'inboxCompletedTasks'])->name('inbox.completedTasks');
+    Route::get('/inbox/archived-tasks', [DashboardController::class, 'inboxArchivedTasks'])->name('inbox.archivedTasks');
 
 
-    Route::resource('tasks', TaskController::class);
+    // /tasks index is retired — route removed to prevent access, controller code left intact
+    Route::resource('tasks', TaskController::class)->except(['index']);
     Route::get('/tasks/{task}/panel', [TaskController::class, 'panel'])->name('tasks.panel');
     Route::post('/tasks/{task}/update-field', [TaskController::class, 'updateField'])->name('tasks.updateField');
     Route::post('/tasks/parse-date', [TaskController::class, 'parseDate'])->name('tasks.parseDate');

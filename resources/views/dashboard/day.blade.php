@@ -96,8 +96,21 @@
                 <div x-show="noResults" x-cloak class="bg-[#202020] p-8 rounded-lg text-center text-gray-400 border border-gray-700">
                     No tasks match your filter.
                 </div>
-                <x-completed-tasks-section :tasks="$completedTasks" :hide-date="true" />
-                <x-completed-tasks-section :tasks="$archivedTasks" label="Show archived tasks" :hide-date="true" :read-only="true" :show-as-archived="true" />
+                <x-completed-tasks-section
+                    :tasks="$completedTasks"
+                    :hide-date="true"
+                    :total-count="$completedTasksTotal"
+                    :has-more="$completedTasksHasMore"
+                    :ajax-url="$completedTasksHasMore ? route('day.completedTasks') . '?date=' . $date : null" />
+                <x-completed-tasks-section
+                    :tasks="$archivedTasks"
+                    label="Show archived tasks"
+                    :hide-date="true"
+                    :read-only="true"
+                    :show-as-archived="true"
+                    :total-count="$archivedTasksTotal"
+                    :has-more="$archivedTasksHasMore"
+                    :ajax-url="$archivedTasksHasMore ? route('day.archivedTasks') . '?date=' . $date : null" />
             </div>
 
         </div>
