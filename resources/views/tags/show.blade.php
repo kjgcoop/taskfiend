@@ -96,11 +96,12 @@
                     <h3 class="text-lg font-semibold text-gray-100">Tagged Tasks
                         <span class="text-sm text-gray-500 font-normal" x-text="$store.taskCount.ready ? ($store.taskCount.filtered ? 'showing ' + $store.taskCount.visible + ' of ' + $store.taskCount.total : $store.taskCount.total) : ''"></span>
                     </h3>
-                    <select onchange="(function(v){const p=new URLSearchParams(window.location.search);p.set('sort',v);window.location.href=window.location.pathname+'?'+p.toString()})(this.value)"
+                    <select id="sort-select" onchange="(function(v){const p=new URLSearchParams(window.location.search);p.set('sort',v);localStorage.setItem('task_sort_'+window.location.pathname,v);window.location.href=window.location.pathname+'?'+p.toString()})(this.value)"
                             class="text-sm bg-gray-700 border border-gray-600 rounded px-2 py-1 text-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500">
                         <option value="date" {{ $sort === 'date' ? 'selected' : '' }}>Date & Time</option>
                         <option value="created" {{ $sort === 'created' ? 'selected' : '' }}>Date Added</option>
                         <option value="name" {{ $sort === 'name' ? 'selected' : '' }}>Name (A–Z)</option>
+                        <option value="custom" {{ $sort === 'custom' ? 'selected' : '' }}>Custom Sort</option>
                     </select>
                 </div>
                 <x-task-input-bar :tag-id="$tag->id" filter-placeholder="Filter tasks... (# project)" />

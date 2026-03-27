@@ -560,8 +560,7 @@
 
             $marginLeft = $depth * 24; // 24px per level
         @endphp
-        <div data-task-group data-task-group-id="{{ $task->id }}" x-data="{ subtasksOpen: true }"
-             @if(!$readOnly && $depth === 0) draggable="true" @endif>
+        <div data-task-group data-task-group-id="{{ $task->id }}" x-data="{ subtasksOpen: true }">
         <div class="bg-[#202020] p-4 rounded-lg shadow hover:shadow-md transition border border-gray-700 group"
              data-filterable
              data-task-name="{{ strtolower($task->name) }}"

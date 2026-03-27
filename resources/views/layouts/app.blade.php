@@ -6,6 +6,9 @@
         <meta name="csrf-token" content="{{ csrf_token() }}">
         <meta name="session-check-interval" content="{{ config('session.check_interval', 60) }}">
 
+        <!-- Restore saved sort preference before page renders (avoids visible re-sort) -->
+        <script>(function(){var p=new URLSearchParams(window.location.search);if(!p.has('sort')){var s=localStorage.getItem('task_sort_'+window.location.pathname);if(s){p.set('sort',s);location.replace(location.pathname+'?'+p.toString());}}}());</script>
+
         <title>{{ config('app.name', 'Laravel') }} - {{ substr(strip_tags($header), 0, 100) }}</title>
 
         <!-- Favicon -->
@@ -74,9 +77,9 @@
                 display: none;
                 pointer-events: none;
             }
-            .task-dragging > .bg-\[\#202020\] {
-                opacity: 0.4;
-                box-shadow: none;
+            /* Show drag handle on touch devices (no hover state) */
+            @media (hover: none) {
+                .drag-handle { opacity: 0.4 !important; }
             }
         </style>
     </head>
@@ -602,12 +605,13 @@
                 window.dispatchEvent(new CustomEvent('reload-task-panel', { detail: { taskId } }));
             };
 
-            // ─── Drag-and-drop task reordering ───────────────────────────────────────
+            // ─── Drag-and-drop task reordering (pointer events — works on touch too) ──
             window.initTaskSortable = function (container) {
                 let draggedEl = null;
-                let pointerdownTarget = null; // tracks where the pointer went down
+                let ghost = null;
+                let offsetY = 0;
+                let isDragging = false;
 
-                // Blue drop-position indicator line
                 const indicator = document.createElement('div');
                 indicator.className = 'task-drop-indicator';
 
@@ -615,39 +619,44 @@
                     try { return Alpine.store('bulkEdit').active; } catch { return false; }
                 }
 
-                // Record where every pointer-press lands so dragstart can verify
-                // the drag originated on the handle (not on the card body).
                 container.addEventListener('pointerdown', (e) => {
-                    pointerdownTarget = e.target;
-                });
+                    if (isBulkActive()) return;
+                    const handle = e.target.closest('.drag-handle');
+                    if (!handle) return;
+                    const group = handle.closest('[data-task-group]');
+                    if (!group) return;
 
-                // Task groups have draggable="true" set in the template.
-                // Gate all drags here: only proceed if not in bulk mode and the
-                // pointer went down on the drag handle.
-                container.addEventListener('dragstart', (e) => {
-                    const fromHandle = pointerdownTarget && pointerdownTarget.closest('.drag-handle');
-                    if (isBulkActive() || !fromHandle) {
-                        e.preventDefault();
-                        return;
-                    }
-                    const group = e.target.closest('[data-task-group]');
-                    if (!group) { e.preventDefault(); return; }
-
+                    e.preventDefault(); // prevents scroll on touch while on handle
                     draggedEl = group;
-                    e.dataTransfer.effectAllowed = 'move';
-                    e.dataTransfer.setData('text/plain', ''); // required by Firefox
-                    container.style.userSelect = 'none';
-                    // Brief rAF so the browser captures the ghost before we dim the element
-                    requestAnimationFrame(() => { if (draggedEl) draggedEl.classList.add('task-dragging'); });
+                    isDragging = false;
+
+                    const rect = group.getBoundingClientRect();
+                    offsetY = e.clientY - rect.top;
+
+                    ghost = group.cloneNode(true);
+                    ghost.style.cssText = 'position:fixed;left:' + rect.left + 'px;top:' + rect.top + 'px;width:' + rect.width + 'px;opacity:0.5;pointer-events:none;z-index:9999;box-sizing:border-box;';
+                    document.body.appendChild(ghost);
+                    draggedEl.style.opacity = '0.3';
+
+                    try { container.setPointerCapture(e.pointerId); } catch (_) {}
+                    container.addEventListener('pointermove', onMove);
+                    container.addEventListener('pointerup', onUp);
+                    container.addEventListener('pointercancel', onCancel);
                 });
 
-                container.addEventListener('dragover', (e) => {
+                function onMove(e) {
                     if (!draggedEl) return;
-                    e.preventDefault();
-                    e.dataTransfer.dropEffect = 'move';
+                    isDragging = true;
+                    ghost.style.top = (e.clientY - offsetY) + 'px';
 
-                    const target = e.target.closest('[data-task-group]');
-                    if (!target || target === draggedEl) return;
+                    // Temporarily hide ghost so elementFromPoint can see what's underneath
+                    ghost.style.visibility = 'hidden';
+                    const el = document.elementFromPoint(e.clientX, e.clientY);
+                    ghost.style.visibility = '';
+                    if (!el) return;
+
+                    const target = el.closest('[data-task-group]');
+                    if (!target || target === draggedEl || !container.contains(target)) return;
 
                     const rect = target.getBoundingClientRect();
                     if (e.clientY < rect.top + rect.height / 2) {
@@ -656,33 +665,33 @@
                         container.insertBefore(indicator, target.nextSibling);
                     }
                     indicator.style.display = 'block';
-                });
+                }
 
-                container.addEventListener('dragleave', (e) => {
-                    if (!container.contains(e.relatedTarget)) {
-                        indicator.style.display = 'none';
-                        if (indicator.parentNode) indicator.parentNode.removeChild(indicator);
-                    }
-                });
-
-                container.addEventListener('drop', (e) => {
-                    e.preventDefault();
+                function onUp() {
                     if (!draggedEl) return;
-                    if (indicator.parentNode) {
+                    container.removeEventListener('pointermove', onMove);
+                    container.removeEventListener('pointerup', onUp);
+                    container.removeEventListener('pointercancel', onCancel);
+                    if (isDragging && indicator.parentNode) {
                         container.insertBefore(draggedEl, indicator);
+                        cleanup();
+                        saveOrder();
+                    } else {
+                        cleanup();
                     }
-                    cleanup();
-                    saveOrder();
-                });
+                }
 
-                container.addEventListener('dragend', () => {
+                function onCancel() {
+                    container.removeEventListener('pointermove', onMove);
+                    container.removeEventListener('pointerup', onUp);
+                    container.removeEventListener('pointercancel', onCancel);
                     cleanup();
-                    // Don't save on dragend without a drop (e.g. dropped outside list)
-                });
+                }
 
                 function cleanup() {
-                    if (draggedEl) { draggedEl.classList.remove('task-dragging'); draggedEl = null; }
-                    container.style.userSelect = '';
+                    if (ghost) { ghost.remove(); ghost = null; }
+                    if (draggedEl) { draggedEl.style.opacity = ''; draggedEl = null; }
+                    isDragging = false;
                     indicator.style.display = 'none';
                     if (indicator.parentNode) indicator.parentNode.removeChild(indicator);
                 }
@@ -698,6 +707,17 @@
                             'X-Requested-With': 'XMLHttpRequest',
                         },
                         body: JSON.stringify({ ids }),
+                    }).then(() => {
+                        // Auto-switch to Custom Sort after a drag so the order is preserved on reload
+                        const key = 'task_sort_' + window.location.pathname;
+                        localStorage.setItem(key, 'custom');
+                        const params = new URLSearchParams(window.location.search);
+                        if (params.get('sort') !== 'custom') {
+                            params.set('sort', 'custom');
+                            history.replaceState({}, '', window.location.pathname + '?' + params.toString());
+                        }
+                        const sel = document.getElementById('sort-select');
+                        if (sel) sel.value = 'custom';
                     }).catch(() => {});
                 }
             };

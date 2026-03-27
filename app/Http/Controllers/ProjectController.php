@@ -129,7 +129,8 @@ class ProjectController extends Controller
             ]))
             ->when($sort === 'created', fn($q) => $q->orderBy('created_at', 'desc'))
             ->when($sort === 'name',    fn($q) => $q->orderByRaw('LOWER(name) ASC'))
-            ->when($sort === 'date',    fn($q) => $q->orderByRaw('date IS NULL, date ASC, CASE WHEN sort_order IS NULL THEN 1 ELSE 0 END, sort_order, time IS NULL, time ASC'))
+            ->when($sort === 'custom',  fn($q) => $q->orderByRaw('CASE WHEN sort_order IS NULL THEN 1 ELSE 0 END, sort_order ASC, date IS NULL, date ASC, time IS NULL, time ASC'))
+            ->when($sort === 'date' || (!in_array($sort, ['created', 'name', 'custom'])), fn($q) => $q->orderByRaw('date IS NULL, date ASC, CASE WHEN sort_order IS NULL THEN 1 ELSE 0 END, sort_order, time IS NULL, time ASC'))
 //            ->orderBy('date')
 //            ->orderBy('time')
             ->get();
