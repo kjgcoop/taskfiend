@@ -25,6 +25,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/undated', [DashboardController::class, 'undated'])->name('undated');
     Route::get('/calendar', [DashboardController::class, 'calendar'])->name('calendar');
     Route::get('/day', [DashboardController::class, 'day'])->name('day');
+    Route::get('/day/export-markdown', [DashboardController::class, 'exportDayMarkdown'])->name('day.export-markdown');
 
 
     Route::resource('tasks', TaskController::class);

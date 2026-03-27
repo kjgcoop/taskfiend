@@ -71,13 +71,20 @@
                                         &middot; {{ $project->done_tasks_count }} completed
                                     @endif
                                 </span>
-                                @if($project->status !== 'incomplete')
-                                <span class="inline-block px-2 py-1 text-xs rounded
-                                    @if($project->status === 'done') bg-green-100 text-green-800
-                                    @else bg-blue-100 text-blue-800 @endif">
-                                    {{ ucfirst($project->status) }}
-                                </span>
-                                @endif
+                                <div class="flex items-center gap-2">
+                                    @if($project->status !== 'incomplete')
+                                    <span class="inline-block px-2 py-1 text-xs rounded
+                                        @if($project->status === 'done') bg-green-100 text-green-800
+                                        @else bg-blue-100 text-blue-800 @endif">
+                                        {{ ucfirst($project->status) }}
+                                    </span>
+                                    @endif
+                                    <a href="{{ route('projects.export-markdown', $project) }}"
+                                       onclick="event.stopPropagation()"
+                                       class="text-xs {{ $hasBg ? 'text-gray-300 hover:text-white' : 'text-gray-500 hover:text-gray-300' }}">
+                                        Export .md
+                                    </a>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -108,13 +115,18 @@
                                 @if($project->description)
                                     <p class="text-sm text-gray-600 mt-2">{{ Str::limit($project->description, 100) }}</p>
                                 @endif
-                                <div class="mt-4">
+                                <div class="flex items-center justify-between mt-4">
                                     <span class="text-sm text-gray-600">
                                         {{ $project->open_tasks_count }} open
                                         @if($project->done_tasks_count > 0)
                                             &middot; {{ $project->done_tasks_count }} completed
                                         @endif
                                     </span>
+                                    <a href="{{ route('projects.export-markdown', $project) }}"
+                                       onclick="event.stopPropagation()"
+                                       class="text-xs text-gray-600 hover:text-gray-400">
+                                        Export .md
+                                    </a>
                                 </div>
                             </div>
                         @endforeach
