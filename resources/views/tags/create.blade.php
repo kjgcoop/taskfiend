@@ -20,12 +20,24 @@
                             @error('tag_name')<p class="mt-1 text-sm text-red-600">{{ $message }}</p>@enderror
                         </div>
 
-                        <div class="mb-6">
-                            <label for="color" class="block text-sm font-medium text-gray-300 mb-2">Color</label>
-                            <input type="color" name="color" id="color" required
-                                   class="h-10 w-24 rounded-md border-gray-600 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                                   value="{{ old('color', '#3B82F6') }}">
-                            <p class="mt-1 text-xs text-gray-500">Choose a color for this tag</p>
+                        <div class="mb-6" x-data="{ selected: '{{ old('color', '#3B82F6') }}' }">
+                            <label class="block text-sm font-medium text-gray-300 mb-2">Color</label>
+                            <input type="hidden" name="color" :value="selected">
+                            <div class="flex flex-wrap gap-2">
+                                @foreach(['#EF4444','#F97316','#F59E0B','#EAB308','#84CC16','#22C55E','#10B981','#14B8A6','#06B6D4','#3B82F6','#6366F1','#8B5CF6','#A855F7','#EC4899','#F43F5E','#78716C','#6B7280','#64748B','#0EA5E9','#0D9488','#15803D','#B45309','#C2410C','#9F1239'] as $c)
+                                <button type="button"
+                                    @click="selected = '{{ $c }}'"
+                                    :class="selected === '{{ $c }}' ? 'ring-2 ring-offset-2 ring-offset-[#202020] ring-white scale-110' : 'hover:scale-110'"
+                                    class="w-8 h-8 rounded-full transition-transform"
+                                    style="background-color: {{ $c }};"
+                                    title="{{ $c }}">
+                                </button>
+                                @endforeach
+                            </div>
+                            <div class="mt-2 flex items-center gap-2">
+                                <div class="w-5 h-5 rounded-full border border-gray-600" :style="'background-color:' + selected"></div>
+                                <span class="text-xs text-gray-400" x-text="selected"></span>
+                            </div>
                             @error('color')<p class="mt-1 text-sm text-red-600">{{ $message }}</p>@enderror
                         </div>
 
