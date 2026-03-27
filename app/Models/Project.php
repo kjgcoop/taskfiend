@@ -16,6 +16,7 @@ class Project extends Model
         'user_id',
         'status',
         'is_inbox',
+        'template_id',
     ];
 
     protected $attributes = [
@@ -49,5 +50,10 @@ class Project extends Model
     {
         return $this->belongsToMany(User::class, 'project_user')
             ->withTimestamps();
+    }
+
+    public function template(): BelongsTo
+    {
+        return $this->belongsTo(ProjectTemplate::class, 'template_id');
     }
 }

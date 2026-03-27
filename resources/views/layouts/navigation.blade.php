@@ -53,6 +53,9 @@
                     <x-nav-link :href="route('tags.index')" :active="request()->routeIs('tags.*')">
                         {{ __('Tags') }}
                     </x-nav-link>
+                    <x-nav-link :href="route('templates.index')" :active="request()->routeIs('templates.*')">
+                        {{ __('Templates') }}
+                    </x-nav-link>
                     <x-nav-link :href="route('changelogs.user')" :active="request()->routeIs('changelogs.*')">
                         {{ __('Activity') }}
                     </x-nav-link>
@@ -167,6 +170,9 @@
             </x-responsive-nav-link>
             <x-responsive-nav-link :href="route('tags.index')" :active="request()->routeIs('tags.*')">
                 {{ __('Tags') }}
+            </x-responsive-nav-link>
+            <x-responsive-nav-link :href="route('templates.index')" :active="request()->routeIs('templates.*')">
+                {{ __('Templates') }}
             </x-responsive-nav-link>
             <x-responsive-nav-link :href="route('changelogs.user')" :active="request()->routeIs('changelogs.*')">
                 {{ __('Activity') }}

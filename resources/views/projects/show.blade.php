@@ -1,6 +1,6 @@
 <x-app-layout>
     <x-slot name="header">
-        <div class="flex justify-between items-center">
+        <div class="flex justify-between items-center" x-data="{ showSaveTemplate: false }">
             <h2 class="font-semibold text-xl text-gray-100 leading-tight">
                 {{ $project->name }}
             </h2>
@@ -9,8 +9,56 @@
                     Export as Markdown
                 </a>
                 <a href="{{ route('projects.export-template', $project) }}" class="px-4 py-2 bg-gray-700 border border-gray-600 text-gray-100 rounded hover:bg-gray-600">
-                    Export as Template
+                    Download Template
                 </a>
+                @if($project->user_id === Auth::id())
+                    <button @click="showSaveTemplate = true"
+                            class="px-4 py-2 bg-gray-700 border border-gray-600 text-gray-100 rounded hover:bg-gray-600">
+                        Save as Template
+                    </button>
+                @endif
+            </div>
+
+            <!-- Save as Template Modal -->
+            <div x-show="showSaveTemplate" x-cloak
+                 class="fixed inset-0 z-50 flex items-center justify-center bg-black/60"
+                 @keydown.escape.window="showSaveTemplate = false">
+                <div class="bg-gray-800 border border-gray-600 rounded-lg p-6 w-full max-w-md shadow-xl"
+                     @click.stop>
+                    <h4 class="text-gray-100 font-semibold mb-4">Save as Template</h4>
+                    <form method="POST" action="{{ route('templates.store', $project) }}">
+                        @csrf
+                        <div class="mb-4">
+                            <label class="block text-sm text-gray-300 mb-1" for="template_name">Template Name</label>
+                            <input id="template_name" type="text" name="template_name"
+                                   value="{{ $project->name }}"
+                                   required
+                                   class="w-full bg-gray-700 border border-gray-600 text-gray-100 rounded px-3 py-2 text-sm focus:outline-none focus:border-blue-500">
+                        </div>
+                        <div class="mb-4">
+                            <label class="block text-sm text-gray-300 mb-1" for="template_description">Description <span class="text-gray-500">(optional)</span></label>
+                            <textarea id="template_description" name="template_description" rows="2"
+                                      class="w-full bg-gray-700 border border-gray-600 text-gray-100 rounded px-3 py-2 text-sm focus:outline-none focus:border-blue-500 placeholder-gray-500"
+                                      placeholder="What is this template for?"></textarea>
+                        </div>
+                        <div class="mb-5 flex items-center gap-2">
+                            <input id="is_public" type="checkbox" name="is_public" value="1"
+                                   class="rounded border-gray-600 bg-gray-700 text-blue-600 focus:ring-blue-500">
+                            <label for="is_public" class="text-sm text-gray-300">Make public (visible to all users)</label>
+                        </div>
+                        <p class="text-xs text-gray-500 mb-4">Only incomplete tasks are included in the template.</p>
+                        <div class="flex justify-end gap-2">
+                            <button type="button" @click="showSaveTemplate = false"
+                                    class="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-gray-300 rounded text-sm">
+                                Cancel
+                            </button>
+                            <button type="submit"
+                                    class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded text-sm">
+                                Save Template
+                            </button>
+                        </div>
+                    </form>
+                </div>
             </div>
         </div>
     </x-slot>

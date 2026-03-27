@@ -12,6 +12,7 @@ use App\Http\Controllers\TaskAttachmentController;
 use App\Http\Controllers\TaskController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\OtherLinksController;
+use App\Http\Controllers\ProjectTemplateController;
 
 Route::middleware('auth')->group(function () {
     Route::get('/other-links', [OtherLinksController::class, 'index'])->name('other.links');
@@ -71,6 +72,11 @@ Route::middleware('auth')->group(function () {
     Route::delete('/profile/sessions', [ProfileController::class, 'destroySessions'])->name('profile.sessions.destroy');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
     Route::get('/profile-image/{user}', [ProfileController::class, 'showImage'])->name('profile.image.show');
+
+    Route::get('/templates', [ProjectTemplateController::class, 'index'])->name('templates.index');
+    Route::post('/projects/{project}/save-as-template', [ProjectTemplateController::class, 'store'])->name('templates.store');
+    Route::post('/templates/{template}/create-project', [ProjectTemplateController::class, 'createFromTemplate'])->name('templates.createFromTemplate');
+    Route::delete('/templates/{template}', [ProjectTemplateController::class, 'destroy'])->name('templates.destroy');
 
     Route::get('/export', [DataExportController::class, 'exportAll'])->name('export.all');
     // TODO: importAll is disabled — the ID-based upsert has no ownership checks, so importing
