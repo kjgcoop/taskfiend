@@ -85,7 +85,7 @@ return [
     'faker_locale' => env('APP_FAKER_LOCALE', 'en_US'),
 
     // Milliseconds the undo toast stays on screen before auto-dismissing
-    'undo_toast_duration' => (int) env('TOAST_UNDO_DURATION', 2000),
+    'undo_toast_duration' => (int) env('TOAST_UNDO_DURATION_MS', 2000),
 
     /*
     |--------------------------------------------------------------------------
