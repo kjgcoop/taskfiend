@@ -707,17 +707,6 @@
                             'X-Requested-With': 'XMLHttpRequest',
                         },
                         body: JSON.stringify({ ids }),
-                    }).then(() => {
-                        // Auto-switch to Custom Sort after a drag so the order is preserved on reload
-                        const key = 'task_sort_' + window.location.pathname;
-                        localStorage.setItem(key, 'custom');
-                        const params = new URLSearchParams(window.location.search);
-                        if (params.get('sort') !== 'custom') {
-                            params.set('sort', 'custom');
-                            history.replaceState({}, '', window.location.pathname + '?' + params.toString());
-                        }
-                        const sel = document.getElementById('sort-select');
-                        if (sel) sel.value = 'custom';
                     }).catch(() => {});
                 }
             };

@@ -31,7 +31,7 @@
             </div>
             <x-task-input-bar filter-placeholder="Filter tasks... (@ tag)" :project-id="$inboxProject->id" />
             <div x-ref="taskContainer">
-                <x-task-list :tasks="$tasks" />
+                <x-task-list :tasks="$tasks" :sortable="$sort === 'custom'" />
             </div>
             <div x-show="noResults" x-cloak class="bg-[#202020] p-8 rounded-lg text-center text-gray-400 border border-gray-700">
                 No tasks match your filter.

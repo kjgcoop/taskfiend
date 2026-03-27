@@ -1,4 +1,4 @@
-@props(['tasks', 'depth' => 0, 'hideDate' => false, 'readOnly' => false, 'viewDate' => null, 'showAsArchived' => false])
+@props(['tasks', 'depth' => 0, 'hideDate' => false, 'readOnly' => false, 'viewDate' => null, 'showAsArchived' => false, 'sortable' => false])
 
 @pushOnce('scripts')
 <script>
@@ -522,7 +522,7 @@
 </script>
 @endPushOnce
 
-@if(!$readOnly && $depth === 0)
+@if($sortable && !$readOnly && $depth === 0)
 <div class="space-y-2"
      x-data
      x-init="initTaskSortable($el)"
@@ -569,8 +569,8 @@
              style="margin-left: {{ $marginLeft }}px;"
              :class="$store.bulkEdit.active && $store.bulkEdit.isSelected({{ $task->id }}) ? 'ring-2 ring-blue-500 ring-inset' : ''">
             <div class="flex items-start gap-4">
-                <!-- Drag handle (only on root-level, non-read-only tasks) -->
-                @if(!$readOnly && $depth === 0)
+                <!-- Drag handle (only in custom sort mode on root-level, non-read-only tasks) -->
+                @if($sortable && !$readOnly && $depth === 0)
                 <div class="drag-handle mt-1.5 flex-shrink-0 touch-none
                             opacity-0 group-hover:opacity-100 transition-opacity"
                      style="cursor: grab"
