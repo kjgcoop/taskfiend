@@ -34,7 +34,7 @@ class DashboardController extends Controller
             ->orderBy('name')
             ->get(['id', 'name']);
 
-        $tags = Tag::orderBy('tag_name')->get(['id', 'tag_name', 'color']);
+        $tags = Tag::orderByRaw('LOWER(tag_name)')->get(['id', 'tag_name', 'color']);
 
         return compact('projects', 'tags');
     }
