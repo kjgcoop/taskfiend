@@ -221,10 +221,17 @@
             <!-- Search Results -->
             @if(request()->hasAny(['q', 'tag_ids', 'project_id', 'date_from', 'date_to', 'has_date', 'assignee_id', 'creator_id', 'show_incomplete', 'show_done', 'show_archived', 'show_archived_projects']))
                 <div class="bg-[#202020] border border-gray-700 overflow-hidden shadow-sm sm:rounded-lg p-6" x-data="taskFilter()">
-                    <h3 class="text-lg font-semibold text-gray-100 mb-4">
-                        Search Results
-                        <span class="text-sm font-normal text-gray-500" x-data x-text="$store.taskCount.ready ? ($store.taskCount.filtered ? '(showing ' + $store.taskCount.visible + ' of ' + $store.taskCount.total + ' found)' : '(' + $store.taskCount.total + ' found)') : '({{ $tasks->count() + $completedTasks->count() + $archivedTasks->count() }} found)'">({{ $tasks->count() + $completedTasks->count() + $archivedTasks->count() }} found)</span>
-                    </h3>
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-lg font-semibold text-gray-100">
+                            Search Results
+                            <span class="text-sm font-normal text-gray-500" x-data x-text="$store.taskCount.ready ? ($store.taskCount.filtered ? '(showing ' + $store.taskCount.visible + ' of ' + $store.taskCount.total + ' found)' : '(' + $store.taskCount.total + ' found)') : '({{ $tasks->count() + $completedTasks->count() + $archivedTasks->count() }} found)'">({{ $tasks->count() + $completedTasks->count() + $archivedTasks->count() }} found)</span>
+                        </h3>
+                        @if($tasks->isNotEmpty() || $completedTasks->isNotEmpty() || $archivedTasks->isNotEmpty())
+                            <a href="{{ request()->fullUrlWithQuery(['export' => 'markdown']) }}" class="px-3 py-1.5 bg-gray-700 border border-gray-600 text-xs text-gray-100 rounded hover:bg-gray-600">
+                                Export .md
+                            </a>
+                        @endif
+                    </div>
                     <div class="mb-4">
                         <input type="text"
                                x-model="query"

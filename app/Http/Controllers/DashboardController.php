@@ -220,6 +220,49 @@ class DashboardController extends Controller
         return view('dashboard.calendar', compact('tasks', 'month', 'year', 'startDate', 'overdueCount', 'undatedCount'));
     }
 
+    public function exportDayMarkdown(Request $request)
+    {
+        $date = $request->input('date', today()->format('Y-m-d'));
+        $carbonDate = Carbon::parse($date);
+        $dateStr = $carbonDate->format('Y-m-d');
+
+        $userConstraint = function ($q) {
+            $q->where('creator_id', Auth::id())
+              ->orWhereHas('assignees', function ($query) {
+                  $query->where('users.id', Auth::id());
+              });
+        };
+
+        $incomplete = Task::query()->where($userConstraint)
+            ->where('status', 'incomplete')->where('date', $dateStr)
+            ->orderByRaw('time IS NULL, time ASC')->get();
+
+        $done = Task::query()->where($userConstraint)
+            ->where('status', 'done')->whereDate('completed_at', $dateStr)
+            ->orderByRaw('time IS NULL, time ASC')->get();
+
+        $archived = Task::query()->where($userConstraint)
+            ->where('status', 'archived')->where('date', $dateStr)
+            ->orderByRaw('time IS NULL, time ASC')->get();
+
+        $lines = ['# ' . $carbonDate->format('l, F j, Y')];
+
+        foreach ([['## Incomplete', $incomplete], ['## Done', $done], ['## Archived', $archived]] as [$heading, $group]) {
+            if ($group->isNotEmpty()) {
+                $lines[] = '';
+                $lines[] = $heading;
+                foreach ($group as $task) {
+                    $lines[] = '* ' . $task->name;
+                }
+            }
+        }
+
+        return response(implode("\n", $lines) . "\n", 200, [
+            'Content-Type'        => 'text/markdown; charset=UTF-8',
+            'Content-Disposition' => 'attachment; filename="tasks_' . $dateStr . '.md"',
+        ]);
+    }
+
     public function day(Request $request)
     {
         $date = $request->input('date', today()->format('Y-m-d'));

@@ -159,6 +159,23 @@ class SearchController extends Controller
                 ->get();
         }
 
+        if ($request->input('export') === 'markdown') {
+            $lines = ['# Search Results'];
+            foreach ([['## Incomplete', $tasks], ['## Done', $completedTasks], ['## Archived', $archivedTasks]] as [$heading, $group]) {
+                if ($group->isNotEmpty()) {
+                    $lines[] = '';
+                    $lines[] = $heading;
+                    foreach ($group as $task) {
+                        $lines[] = '* ' . $task->name;
+                    }
+                }
+            }
+            return response(implode("\n", $lines) . "\n", 200, [
+                'Content-Type'        => 'text/markdown; charset=UTF-8',
+                'Content-Disposition' => 'attachment; filename="search_results_' . now()->format('Y-m-d') . '.md"',
+            ]);
+        }
+
         return view('search.index', compact('tasks', 'completedTasks', 'archivedTasks', 'projects', 'tags', 'users'));
     }
 }
