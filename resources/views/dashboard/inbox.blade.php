@@ -33,6 +33,7 @@
                 No tasks match your filter.
             </div>
             <x-completed-tasks-section :tasks="$completedTasks" />
+            <x-completed-tasks-section :tasks="$archivedTasks" label="Show archived tasks" :read-only="true" :show-as-archived="true" />
         </div>
     </div>
 </x-app-layout>

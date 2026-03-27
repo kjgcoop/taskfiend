@@ -1,6 +1,6 @@
 @props([
     'tasks',
-    'label' => 'Show completed tasks',
+    'label' => 'Show done tasks',
     'hideDate' => false,
     'readOnly' => false,
     'showAsArchived' => false,

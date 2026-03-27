@@ -86,7 +86,21 @@ class DashboardController extends Controller
         $this->applySortOrder($completedTasksQuery, $sort);
         $completedTasks = $completedTasksQuery->get();
 
-        return view('dashboard.inbox', array_merge(compact('tasks', 'completedTasks', 'sort', 'inboxProject'), $this->quickAddData()));
+        $archivedTasksQuery = Task::query()
+            ->where(function ($q) {
+                $q->where('creator_id', Auth::id())
+                  ->orWhereHas('assignees', function ($query) {
+                      $query->where('users.id', Auth::id());
+                  });
+            })
+            ->where('status', 'archived')
+            ->where('project_id', $inboxProject?->id)
+            ->with(['creator', 'tags', 'assignees', 'attachments', 'comments', 'completionLog.user']);
+
+        $this->applySortOrder($archivedTasksQuery, $sort);
+        $archivedTasks = $archivedTasksQuery->get();
+
+        return view('dashboard.inbox', array_merge(compact('tasks', 'completedTasks', 'archivedTasks', 'sort', 'inboxProject'), $this->quickAddData()));
     }
 
     public function overdue(Request $request)
