@@ -168,6 +168,35 @@ class ProjectController extends Controller
         $completedTasksHasMore = $completedTasksRaw->count() > $perPage;
         $completedTasks = $completedTasksHasMore ? $completedTasksRaw->slice(0, $perPage) : $completedTasksRaw;
 
+        $archivedTasksTotal = $project->tasks()
+            ->where($visibleToUser)
+            ->where('status', 'archived')
+            ->whereNull('parent_id')
+            ->count();
+
+        $archivedTasksRaw = $project->tasks()
+            ->where($visibleToUser)
+            ->where('status', 'archived')
+            ->whereNull('parent_id')
+            ->with(array_merge($taskEagerLoad, [
+                'children' => function ($query) {
+                    $query->where('status', 'archived')
+                          ->with([
+                              'tags', 'assignees', 'attachments', 'creator',
+                              'children' => function ($q) {
+                                  $q->where('status', 'archived')
+                                    ->with(['tags', 'assignees', 'attachments', 'creator', 'children']);
+                              }
+                          ]);
+                },
+            ]))
+            ->orderByDesc('updated_at')
+            ->take($perPage + 1)
+            ->get();
+
+        $archivedTasksHasMore = $archivedTasksRaw->count() > $perPage;
+        $archivedTasks = $archivedTasksHasMore ? $archivedTasksRaw->slice(0, $perPage) : $archivedTasksRaw;
+
         $project->load(['creator', 'assignees', 'changeLogs.user']);
 
         $users = User::where('email_enabled_at', null)
@@ -186,6 +215,7 @@ class ProjectController extends Controller
 
         return view('projects.show', compact(
             'project', 'tasks', 'completedTasks', 'completedTasksHasMore', 'completedTasksTotal',
+            'archivedTasks', 'archivedTasksHasMore', 'archivedTasksTotal',
             'users', 'projects', 'tags', 'sort'
         ));
     }
@@ -240,6 +270,62 @@ class ProjectController extends Controller
 
         return response()->json([
             'html'     => view('tasks.partials.completed-list', compact('tasks', 'readOnly'))->render(),
+            'hasMore'  => $hasMore,
+            'nextPage' => $page + 1,
+        ]);
+    }
+
+    public function archivedTasks(Request $request, Project $project)
+    {
+        $this->authorizeProjectAccess($project);
+
+        $perPage = (int) env('PAGINATION_PER_PAGE', 100);
+        $page    = max(1, (int) $request->get('page', 1));
+        $offset  = ($page - 1) * $perPage;
+
+        $isDirectMember = $project->user_id === Auth::id()
+            || $project->assignees()->where('users.id', Auth::id())->exists();
+
+        $visibleToUser = function ($q) use ($isDirectMember) {
+            if (!$isDirectMember) {
+                $q->where('creator_id', Auth::id())
+                    ->orWhereHas('assignees', function ($query) {
+                        $query->where('users.id', Auth::id());
+                    });
+            }
+        };
+
+        $tasks = $project->tasks()
+            ->where($visibleToUser)
+            ->where('status', 'archived')
+            ->whereNull('parent_id')
+            ->with([
+                'creator', 'tags', 'assignees', 'attachments', 'comments', 'completionLog.user',
+                'children' => function ($query) {
+                    $query->where('status', 'archived')
+                          ->with([
+                              'tags', 'assignees', 'attachments', 'creator',
+                              'children' => function ($q) {
+                                  $q->where('status', 'archived')
+                                    ->with(['tags', 'assignees', 'attachments', 'creator', 'children']);
+                              }
+                          ]);
+                },
+            ])
+            ->orderByDesc('updated_at')
+            ->skip($offset)->take($perPage + 1)
+            ->get();
+
+        $hasMore = $tasks->count() > $perPage;
+        if ($hasMore) {
+            $tasks = $tasks->slice(0, $perPage);
+        }
+
+        $readOnly = true;
+        $showAsArchived = true;
+
+        return response()->json([
+            'html'     => view('tasks.partials.completed-list', compact('tasks', 'readOnly', 'showAsArchived'))->render(),
             'hasMore'  => $hasMore,
             'nextPage' => $page + 1,
         ]);

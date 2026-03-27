@@ -40,6 +40,7 @@ Route::middleware('auth')->group(function () {
 
     Route::resource('projects', ProjectController::class)->except(['edit', 'update']);
     Route::get('/projects/{project}/completed-tasks', [ProjectController::class, 'completedTasks'])->name('projects.completedTasks');
+    Route::get('/projects/{project}/archived-tasks', [ProjectController::class, 'archivedTasks'])->name('projects.archivedTasks');
     Route::post('/projects/{project}/update-field', [ProjectController::class, 'updateField'])->name('projects.updateField');
     Route::get('/projects/{project}/background', [ProjectController::class, 'showBackground'])->name('projects.background');
     Route::post('/projects/{project}/background', [ProjectController::class, 'uploadBackground'])->name('projects.background.upload');
@@ -47,6 +48,7 @@ Route::middleware('auth')->group(function () {
     Route::resource('tags', TagController::class)->except(['edit', 'update']);
     Route::post('/tags/{tag}/update-field', [TagController::class, 'updateField'])->name('tags.updateField');
     Route::get('/tags/{tag}/completed-tasks', [TagController::class, 'completedTasks'])->name('tags.completedTasks');
+    Route::get('/tags/{tag}/archived-tasks', [TagController::class, 'archivedTasks'])->name('tags.archivedTasks');
     Route::post('/tags/quick-create', [TagController::class, 'quickStore'])->name('tags.quickStore');
 
     Route::post('/tasks/{task}/comments', [CommentController::class, 'store'])->name('comments.store');
