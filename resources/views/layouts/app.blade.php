@@ -571,6 +571,7 @@
             // ─── Drag-and-drop task reordering ───────────────────────────────────────
             window.initTaskSortable = function (container) {
                 let draggedEl = null;
+                let pointerdownTarget = null; // tracks where the pointer went down
 
                 // Blue drop-position indicator line
                 const indicator = document.createElement('div');
@@ -580,36 +581,29 @@
                     try { return Alpine.store('bulkEdit').active; } catch { return false; }
                 }
 
-                // Only set draggable when the user grabs the handle specifically,
-                // so clicks anywhere else on the card work normally.
-                container.addEventListener('mousedown', (e) => {
-                    if (isBulkActive()) return;
-                    const handle = e.target.closest('.drag-handle');
-                    if (!handle) return;
-                    // Prevent the browser from starting text-selection on mousedown,
-                    // which would swallow the drag gesture.
-                    e.preventDefault();
-                    const group = handle.closest('[data-task-group]');
-                    if (group) group.setAttribute('draggable', 'true');
+                // Record where every pointer-press lands so dragstart can verify
+                // the drag originated on the handle (not on the card body).
+                container.addEventListener('pointerdown', (e) => {
+                    pointerdownTarget = e.target;
                 });
 
-                // Clear draggable on release so stray clicks never trigger a drag.
-                const clearDraggable = () => {
-                    container.querySelectorAll('[data-task-group][draggable]').forEach(el => {
-                        el.removeAttribute('draggable');
-                    });
-                };
-                container.addEventListener('mouseup', clearDraggable);
-
+                // Task groups have draggable="true" set in the template.
+                // Gate all drags here: only proceed if not in bulk mode and the
+                // pointer went down on the drag handle.
                 container.addEventListener('dragstart', (e) => {
-                    if (isBulkActive()) { e.preventDefault(); return; }
+                    const fromHandle = pointerdownTarget && pointerdownTarget.closest('.drag-handle');
+                    if (isBulkActive() || !fromHandle) {
+                        e.preventDefault();
+                        return;
+                    }
                     const group = e.target.closest('[data-task-group]');
-                    if (!group || !group.hasAttribute('draggable')) { e.preventDefault(); return; }
+                    if (!group) { e.preventDefault(); return; }
+
                     draggedEl = group;
                     e.dataTransfer.effectAllowed = 'move';
                     e.dataTransfer.setData('text/plain', ''); // required by Firefox
                     container.style.userSelect = 'none';
-                    // Brief rAF delay so the browser captures the ghost before we dim the element
+                    // Brief rAF so the browser captures the ghost before we dim the element
                     requestAnimationFrame(() => { if (draggedEl) draggedEl.classList.add('task-dragging'); });
                 });
 
@@ -657,7 +651,6 @@
                     container.style.userSelect = '';
                     indicator.style.display = 'none';
                     if (indicator.parentNode) indicator.parentNode.removeChild(indicator);
-                    clearDraggable();
                 }
 
                 function saveOrder() {
