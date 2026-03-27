@@ -709,7 +709,10 @@
                             </span>
                         @endif
                         @if($task->project)
-                            <span class="text-blue-400" data-task-project-display>{{ $task->project->name }}</span>
+                            <a href="{{ route('projects.show', $task->project) }}"
+                               onclick="event.stopPropagation()"
+                               class="text-blue-400 hover:text-blue-300 hover:underline"
+                               data-task-project-display>{{ $task->project->name }}</a>
                         @endif
                         @if($task->recurrence_pattern)
                             <span class="text-purple-400" data-task-recurrence-display>{{ $task->recurrence_pattern }}</span>
@@ -740,10 +743,12 @@
                     <div class="flex gap-1 mt-2 flex-wrap" data-task-tags-display
                          @if($task->tags->count() === 0) style="display:none" @endif>
                         @foreach($task->tags as $tag)
-                            <span class="inline-block px-2 py-1 text-xs rounded"
-                                  style="background-color: {{ $tag->color }}22; color: {{ $tag->color }}">
+                            <a href="{{ route('tags.show', $tag) }}"
+                               onclick="event.stopPropagation()"
+                               class="inline-block px-2 py-1 text-xs rounded hover:opacity-75"
+                               style="background-color: {{ $tag->color }}22; color: {{ $tag->color }}">
                                 {{ $tag->tag_name }}
-                            </span>
+                            </a>
                         @endforeach
                     </div>
                 </div>

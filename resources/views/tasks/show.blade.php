@@ -296,6 +296,9 @@
                     <!-- Project -->
                     <div>
                         <span class="text-sm font-medium text-gray-500">Project</span>
+                        @if($task->project)
+                            <a href="{{ route('projects.show', $task->project) }}" class="ml-1 text-gray-600 hover:text-gray-300 text-xs" title="Go to project">↗</a>
+                        @endif
                         <div @if(!$isInactive) @click="startEdit('project_id')" @endif x-show="!editing.project_id" class="mt-1 p-2 rounded {{ !$isInactive ? 'cursor-pointer hover:bg-gray-700' : '' }}">
                             <p class="text-gray-300">{{ $task->project ? $task->project->name : 'Inbox' }}</p>
                         </div>
@@ -458,10 +461,12 @@
                         @if($task->tags->count() > 0)
                             <div class="flex gap-2 flex-wrap">
                                 @foreach($task->tags as $tag)
-                                    <span class="inline-block px-2 py-1 text-xs rounded"
-                                          style="background-color: {{ $tag->color }}22; color: {{ $tag->color }}">
+                                    <a href="{{ route('tags.show', $tag) }}"
+                                       @click.stop
+                                       class="inline-block px-2 py-1 text-xs rounded hover:opacity-75"
+                                       style="background-color: {{ $tag->color }}22; color: {{ $tag->color }}">
                                         {{ $tag->tag_name }}
-                                    </span>
+                                    </a>
                                 @endforeach
                             </div>
                         @else
