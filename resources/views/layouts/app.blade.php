@@ -124,6 +124,7 @@
         <div id="bulk-edit-bar"
              x-data="bulkEditBar()"
              x-cloak
+             @keydown.escape.window="if ($store.bulkEdit.active && !confirming) $store.bulkEdit.toggle()"
              x-show="$store.bulkEdit.active && $store.bulkEdit.selected.length > 0"
              x-transition:enter="transition ease-out duration-200 transform"
              x-transition:enter-start="translate-y-full opacity-0"
