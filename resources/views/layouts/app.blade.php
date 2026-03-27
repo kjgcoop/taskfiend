@@ -58,6 +58,13 @@
             .markdown-body th { background-color: #374151; color: #f3f4f6; font-weight: 600; }
         </style>
         <style>
+            /* Undo-completion toast */
+            @keyframes toast-countdown {
+                from { width: 100%; }
+                to   { width: 0%; }
+            }
+            .toast-countdown-bar { animation: toast-countdown linear forwards; }
+
             /* Drag-and-drop task ordering */
             .task-drop-indicator {
                 height: 2px;
@@ -668,6 +675,110 @@
                 }
             };
             // ─────────────────────────────────────────────────────────────────────────
+        </script>
+
+        <!-- Undo-completion toast stack -->
+        <div x-data="undoToastManager()"
+             @task-completed.window="add($event.detail)"
+             class="fixed bottom-4 right-4 z-50 flex flex-col-reverse gap-2 items-end pointer-events-none"
+             aria-live="polite">
+            <template x-for="toast in toasts" :key="toast.id">
+                <div class="pointer-events-auto w-72 bg-gray-800 border border-gray-700 rounded-lg shadow-2xl overflow-hidden"
+                     x-show="toast.visible"
+                     x-transition:enter="transition ease-out duration-200"
+                     x-transition:enter-start="opacity-0 translate-y-1"
+                     x-transition:enter-end="opacity-100 translate-y-0"
+                     x-transition:leave="transition ease-in duration-150"
+                     x-transition:leave-start="opacity-100"
+                     x-transition:leave-end="opacity-0">
+                    <div class="flex items-center gap-3 px-3 py-2.5">
+                        <div class="w-5 h-5 rounded-full bg-green-600 flex-shrink-0 flex items-center justify-center">
+                            <svg class="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
+                                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+                            </svg>
+                        </div>
+                        <p class="flex-1 text-sm text-gray-300 truncate min-w-0" x-text="toast.taskName"></p>
+                        <button @click="undo(toast)"
+                                class="flex-shrink-0 px-2.5 py-1 text-xs font-medium bg-gray-700 hover:bg-gray-600 text-gray-200 rounded transition-colors">
+                            Undo
+                        </button>
+                    </div>
+                    <div class="h-0.5 bg-gray-700">
+                        <div class="h-full bg-green-500 toast-countdown-bar"
+                             :style="`animation-duration: ${toast.duration}ms`"></div>
+                    </div>
+                </div>
+            </template>
+        </div>
+
+        <script>
+            window.undoToastManager = function () {
+                return {
+                    toasts: [],
+
+                    add({ taskId, taskName, undoUrl, group, form }) {
+                        const duration = 5000;
+                        const toast = {
+                            id: Date.now() + Math.random(),
+                            taskId, taskName, undoUrl, group, form,
+                            duration,
+                            visible: true,
+                            timer: null,
+                        };
+                        toast.timer = setTimeout(() => this._expire(toast), duration);
+                        this.toasts.push(toast);
+                    },
+
+                    _expire(toast) {
+                        // Countdown finished — fully hide the task row
+                        if (toast.group) {
+                            toast.group.style.opacity = '0';
+                            setTimeout(() => { toast.group.style.display = 'none'; }, 300);
+                        }
+                        this._dismiss(toast);
+                    },
+
+                    _dismiss(toast) {
+                        toast.visible = false;
+                        clearTimeout(toast.timer);
+                        setTimeout(() => {
+                            this.toasts = this.toasts.filter(t => t.id !== toast.id);
+                        }, 200);
+                    },
+
+                    async undo(toast) {
+                        // Restore the task row immediately
+                        if (toast.group) {
+                            toast.group.style.opacity = '1';
+                            toast.group.style.pointerEvents = '';
+                        }
+                        // Reset the filled circle back to the empty "incomplete" state
+                        if (toast.form) {
+                            toast.form.dispatchEvent(new CustomEvent('undo-complete', { bubbles: false }));
+                        }
+                        this._dismiss(toast);
+
+                        // Tell the server
+                        try {
+                            const fd = new FormData();
+                            fd.append('_token', document.querySelector('meta[name="csrf-token"]').content);
+                            fd.append('field', 'status');
+                            fd.append('value', 'incomplete');
+                            await fetch(toast.undoUrl, {
+                                method: 'POST',
+                                headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                                body: fd,
+                            });
+                        } catch {
+                            // Server call failed — re-dim the row so the user knows it didn't save
+                            if (toast.group) {
+                                toast.group.style.opacity = '0.3';
+                                toast.group.style.pointerEvents = 'none';
+                            }
+                        }
+                    },
+                };
+            };
         </script>
 
         <script>

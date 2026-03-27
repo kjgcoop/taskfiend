@@ -61,14 +61,23 @@
                     const data = await res.json().catch(() => ({}));
                     if (res.ok && data.ok !== false && data.success !== false) {
                         this.done = true;
-                        // Brief pause to show filled dot, then fade out
+                        // Brief pause to show filled dot, then hand off to the undo toast
                         await new Promise(r => setTimeout(r, 400));
                         const group = form.closest('[data-task-group]');
                         if (group) {
                             group.style.transition = 'opacity 0.3s';
-                            group.style.opacity = '0';
-                            setTimeout(() => group.style.display = 'none', 300);
+                            group.style.opacity = '0.3';
+                            group.style.pointerEvents = 'none';
                         }
+                        window.dispatchEvent(new CustomEvent('task-completed', {
+                            detail: {
+                                taskId:   form.dataset.taskId,
+                                taskName: form.dataset.taskName,
+                                undoUrl:  form.dataset.undoUrl,
+                                group,
+                                form,
+                            }
+                        }));
                     } else {
                         this.error = data.message || 'Could not complete task. Please try again.';
                     }
@@ -548,7 +557,11 @@
                 @else
                 <form x-show="!$store.bulkEdit.active"
                       x-data="listQuickComplete()" @submit.prevent="submit()"
-                      method="POST" action="{{ route('tasks.update', $task) }}" onclick="event.stopPropagation()">
+                      @undo-complete.stop="done = false"
+                      method="POST" action="{{ route('tasks.update', $task) }}" onclick="event.stopPropagation()"
+                      data-task-id="{{ $task->id }}"
+                      data-task-name="{{ $task->name }}"
+                      data-undo-url="{{ route('tasks.updateField', $task) }}">
                     @csrf
                     @method('PUT')
                     <input type="hidden" name="status" value="done">
