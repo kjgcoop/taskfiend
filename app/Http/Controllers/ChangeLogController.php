@@ -231,7 +231,7 @@ class ChangeLogController extends Controller
               ->orWhereHas('assignees', fn($sq) => $sq->where('users.id', Auth::id()));
         })->orderBy('name')->get();
 
-        $availableTags = Tag::orderBy('tag_name')->get();
+        $availableTags = Tag::orderByRaw('LOWER(tag_name)')->get();
 
         return view('changelogs.index', compact(
             'changeLogs', 'hasMore', 'page', 'availableProjects', 'availableTags'

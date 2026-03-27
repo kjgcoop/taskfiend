@@ -182,7 +182,7 @@ class ProjectController extends Controller
             ->orderBy('name')
             ->get(['id', 'name']);
 
-        $tags = Tag::orderBy('tag_name')->get(['id', 'tag_name', 'color']);
+        $tags = Tag::orderByRaw('LOWER(tag_name)')->get(['id', 'tag_name', 'color']);
 
         return view('projects.show', compact(
             'project', 'tasks', 'completedTasks', 'completedTasksHasMore', 'completedTasksTotal',

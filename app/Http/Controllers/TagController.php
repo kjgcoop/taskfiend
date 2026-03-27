@@ -108,7 +108,7 @@ class TagController extends Controller
             ->orderBy('name')
             ->get(['id', 'name']);
 
-        $allTags = Tag::orderBy('tag_name')->get(['id', 'tag_name', 'color']);
+        $allTags = Tag::orderByRaw('LOWER(tag_name)')->get(['id', 'tag_name', 'color']);
 
         return view('tags.show', compact(
             'tag', 'tasks', 'completedTasks', 'completedTasksHasMore', 'completedTasksTotal',
