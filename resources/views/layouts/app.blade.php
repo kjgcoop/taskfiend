@@ -124,7 +124,6 @@
         <div id="bulk-edit-bar"
              x-data="bulkEditBar()"
              x-cloak
-             @keydown.escape.window="if ($store.bulkEdit.active && !confirming) $store.bulkEdit.toggle()"
              x-show="$store.bulkEdit.active && $store.bulkEdit.selected.length > 0"
              x-transition:enter="transition ease-out duration-200 transform"
              x-transition:enter-start="translate-y-full opacity-0"
@@ -288,6 +287,7 @@
                     selected: [],
                     projects: [],
                     tags: [],
+                    confirming: false,
                     toggle() {
                         this.active = !this.active;
                         if (!this.active) this.selected = [];
@@ -324,6 +324,10 @@
                     confirming: false,
                     submitting: false,
                     confirmMessage: '',
+
+                    init() {
+                        this.$watch('confirming', (val) => { this.$store.bulkEdit.confirming = val; });
+                    },
 
                     get hasChanges() {
                         return this.date !== '' || this.clearDate || this.projectId !== '' || this.status !== '' || this.tagIds.length > 0;
@@ -387,6 +391,13 @@
                     },
                 };
             };
+
+            // Escape key exits bulk edit mode (but not while the confirm dialog is open)
+            window.addEventListener('keydown', function (e) {
+                if (e.key !== 'Escape') return;
+                var store = Alpine.store('bulkEdit');
+                if (store && store.active && !store.confirming) store.toggle();
+            });
         </script>
 
         <!-- Task Side Panel Overlay -->
