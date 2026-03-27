@@ -697,8 +697,12 @@
                                 <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
                             </svg>
                         </div>
-                        <p class="flex-1 text-sm text-gray-300 truncate min-w-0" x-text="toast.taskName"></p>
-                        <button @click="undo(toast)"
+                        <div class="flex-1 min-w-0">
+                            <p class="text-sm text-gray-300 truncate" x-text="toast.taskName"></p>
+                            <p x-show="toast.recurring" class="text-xs text-purple-400 mt-0.5">Next instance created</p>
+                        </div>
+                        <button x-show="!toast.recurring"
+                                @click="undo(toast)"
                                 class="flex-shrink-0 px-2.5 py-1 text-xs font-medium bg-gray-700 hover:bg-gray-600 text-gray-200 rounded transition-colors">
                             Undo
                         </button>
@@ -716,11 +720,11 @@
                 return {
                     toasts: [],
 
-                    add({ taskId, taskName, undoUrl, group, form }) {
+                    add({ taskId, taskName, undoUrl, recurring, group, form }) {
                         const duration = 5000;
                         const toast = {
                             id: Date.now() + Math.random(),
-                            taskId, taskName, undoUrl, group, form,
+                            taskId, taskName, undoUrl, recurring, group, form,
                             duration,
                             visible: true,
                             timer: null,

@@ -71,9 +71,10 @@
                         }
                         window.dispatchEvent(new CustomEvent('task-completed', {
                             detail: {
-                                taskId:   form.dataset.taskId,
-                                taskName: form.dataset.taskName,
-                                undoUrl:  form.dataset.undoUrl,
+                                taskId:    form.dataset.taskId,
+                                taskName:  form.dataset.taskName,
+                                undoUrl:   form.dataset.undoUrl,
+                                recurring: form.dataset.recurring === 'true',
                                 group,
                                 form,
                             }
@@ -561,7 +562,8 @@
                       method="POST" action="{{ route('tasks.update', $task) }}" onclick="event.stopPropagation()"
                       data-task-id="{{ $task->id }}"
                       data-task-name="{{ $task->name }}"
-                      data-undo-url="{{ route('tasks.updateField', $task) }}">
+                      data-undo-url="{{ route('tasks.updateField', $task) }}"
+                      data-recurring="{{ $task->recurrence_pattern ? 'true' : 'false' }}">
                     @csrf
                     @method('PUT')
                     <input type="hidden" name="status" value="done">
