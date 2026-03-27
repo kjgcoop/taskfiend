@@ -66,19 +66,20 @@ test.describe('Tag Visibility & Global Access', () => {
     const tagId = tagUrl.match(/\/tags\/(\d+)/)[1];
     await logout(page);
 
-    // User 2 edits the tag
+    // User 2 edits the tag inline on the show page
     await login(page, testUsers.user2.email);
-    await page.goto(`/tags/${tagId}/edit`);
+    await page.goto(`/tags/${tagId}`);
 
-    // Should be able to access edit page
-    await expect(page.locator('input[name="tag_name"]')).toBeVisible();
+    // Click tag name display area to start inline editing
+    await page.locator('[x-show="!editing.tag_name"]').click();
 
-    // Edit the tag
-    await page.fill('#tag_name', 'Editable Tag Updated');
-    await page.click('button:has-text("Update Tag")');
+    // Fill new name and save
+    const input = page.locator('input[x-model="fields.tag_name"]');
+    await input.fill('Editable Tag Updated');
+    await input.press('Enter');
 
-    // Verify the update
-    await page.waitForURL(/\/tags\/\d+/);
+    // Wait for page reload after save
+    await page.waitForLoadState('networkidle');
     await expect(page.locator('text=Editable Tag Updated').first()).toBeVisible();
   });
 
@@ -176,10 +177,10 @@ test.describe('Tag Visibility & Global Access', () => {
 
     // User 3 deletes the tag (if deletion is allowed)
     await login(page, testUsers.user3.email);
-    await page.goto(`/tags/${tagId}/edit`);
+    await page.goto(`/tags/${tagId}`);
 
-    // Attempt to delete (if there's a delete button)
-    const deleteButton = page.locator('button:has-text("Delete"), form[method="post"]:has(input[name="_method"][value="delete"]) button');
+    // Attempt to delete (if there's a delete button on the show page)
+    const deleteButton = page.locator('button:has-text("Delete Tag")');
     const hasDeleteButton = await deleteButton.count() > 0;
 
     if (hasDeleteButton) {
@@ -211,11 +212,15 @@ test.describe('Tag Visibility & Global Access', () => {
     const tagId = tagUrl.match(/\/tags\/(\d+)/)[1];
     await logout(page);
 
-    // User 2 edits the tag name
+    // User 2 edits the tag name inline on the show page
     await login(page, testUsers.user2.email);
-    await page.goto(`/tags/${tagId}/edit`);
-    await page.fill('#tag_name', 'Mutable Tag Modified');
-    await page.click('button:has-text("Update Tag")');
+    await page.goto(`/tags/${tagId}`);
+
+    await page.locator('[x-show="!editing.tag_name"]').click();
+    const input = page.locator('input[x-model="fields.tag_name"]');
+    await input.fill('Mutable Tag Modified');
+    await input.press('Enter');
+    await page.waitForLoadState('networkidle');
     await logout(page);
 
     // User 1 should see the changes made by User 2

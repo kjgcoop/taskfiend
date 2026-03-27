@@ -149,34 +149,37 @@ class TagController extends Controller
         ]);
     }
 
-    public function edit(Tag $tag)
+    public function updateField(Request $request, Tag $tag)
     {
-        return view('tags.edit', compact('tag'));
-    }
+        $field = $request->input('field');
+        $allowedFields = ['tag_name', 'color'];
 
-    public function update(Request $request, Tag $tag)
-    {
-        $validated = $request->validate([
-            'tag_name' => 'required|string|max:255|unique:tags,tag_name,' . $tag->id,
-            'color' => 'required|string|size:7|regex:/^#[0-9A-Fa-f]{6}$/',
-        ]);
+        if (!in_array($field, $allowedFields)) {
+            return response()->json(['success' => false, 'message' => 'Invalid field'], 400);
+        }
 
-        $changes = [];
-        foreach (['tag_name', 'color'] as $field) {
-            if ($tag->$field != $validated[$field]) {
-                $changes[$field] = ['old' => $tag->$field, 'new' => $validated[$field]];
-                $tag->$field = $validated[$field];
+        $value = $request->input('value');
+
+        if ($field === 'tag_name') {
+            if (empty(trim($value))) {
+                return response()->json(['success' => false, 'message' => 'Name cannot be empty'], 400);
+            }
+            if (Tag::where('tag_name', $value)->where('id', '!=', $tag->id)->exists()) {
+                return response()->json(['success' => false, 'message' => 'A tag with that name already exists'], 422);
             }
         }
 
-        $tag->save();
-
-        foreach ($changes as $field => $change) {
-            $this->logChange($tag, "changed {$field} from {$change['old']} to {$change['new']}");
+        if ($field === 'color' && !preg_match('/^#[0-9A-Fa-f]{6}$/', $value)) {
+            return response()->json(['success' => false, 'message' => 'Invalid color format'], 400);
         }
 
-        return redirect()->route('tags.show', $tag)
-            ->with('success', 'Tag updated successfully.');
+        $old = $tag->$field;
+        $tag->$field = $value;
+        $tag->save();
+
+        $this->logChange($tag, "changed {$field} from {$old} to {$value}");
+
+        return response()->json(['success' => true]);
     }
 
     public function quickStore(Request $request)
