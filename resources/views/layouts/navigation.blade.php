@@ -18,9 +18,6 @@
                     <x-nav-link :href="route('inbox')" :active="request()->routeIs('inbox')">
                         {{ __('Inbox') }}
                     </x-nav-link>
-                    <x-nav-link :href="route('all-tasks')" :active="request()->routeIs('all-tasks')">
-                        {{ __('All Tasks') }}
-                    </x-nav-link>
                     <div class="flex items-center">
                         <x-dropdown align="left" width="48">
                             <x-slot name="trigger">
@@ -152,9 +149,6 @@
             </x-responsive-nav-link>
             <x-responsive-nav-link :href="route('inbox')" :active="request()->routeIs('inbox')">
                 {{ __('Inbox') }}
-            </x-responsive-nav-link>
-            <x-responsive-nav-link :href="route('all-tasks')" :active="request()->routeIs('all-tasks')">
-                {{ __('All Tasks') }}
             </x-responsive-nav-link>
             <x-responsive-nav-link :href="route('calendar')" :active="request()->routeIs('calendar')">
                 {{ __('Calendar') }}
