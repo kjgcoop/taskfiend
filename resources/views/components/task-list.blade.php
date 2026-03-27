@@ -503,8 +503,9 @@
             <div class="flex items-start gap-4">
                 <!-- Drag handle (only on root-level, non-read-only tasks) -->
                 @if(!$readOnly && $depth === 0)
-                <div class="drag-handle mt-1.5 flex-shrink-0 cursor-grab active:cursor-grabbing touch-none
+                <div class="drag-handle mt-1.5 flex-shrink-0 touch-none
                             opacity-0 group-hover:opacity-100 transition-opacity"
+                     style="cursor: grab"
                      :class="{ 'invisible pointer-events-none': $store.bulkEdit.active }"
                      @click.stop
                      title="Drag to reorder">

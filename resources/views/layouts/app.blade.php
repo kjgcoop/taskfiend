@@ -586,6 +586,9 @@
                     if (isBulkActive()) return;
                     const handle = e.target.closest('.drag-handle');
                     if (!handle) return;
+                    // Prevent the browser from starting text-selection on mousedown,
+                    // which would swallow the drag gesture.
+                    e.preventDefault();
                     const group = handle.closest('[data-task-group]');
                     if (group) group.setAttribute('draggable', 'true');
                 });
@@ -605,6 +608,7 @@
                     draggedEl = group;
                     e.dataTransfer.effectAllowed = 'move';
                     e.dataTransfer.setData('text/plain', ''); // required by Firefox
+                    container.style.userSelect = 'none';
                     // Brief rAF delay so the browser captures the ghost before we dim the element
                     requestAnimationFrame(() => { if (draggedEl) draggedEl.classList.add('task-dragging'); });
                 });
@@ -650,6 +654,7 @@
 
                 function cleanup() {
                     if (draggedEl) { draggedEl.classList.remove('task-dragging'); draggedEl = null; }
+                    container.style.userSelect = '';
                     indicator.style.display = 'none';
                     if (indicator.parentNode) indicator.parentNode.removeChild(indicator);
                     clearDraggable();
