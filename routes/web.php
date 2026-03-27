@@ -66,6 +66,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/tasks/{task}/attachments/{attachment}/view', [TaskAttachmentController::class, 'view'])->name('attachments.view');
 
     Route::get('/search', [SearchController::class, 'index'])->name('search');
+    Route::get('/search/more', [SearchController::class, 'more'])->name('search.more');
 
     Route::get('/changelogs/task/{task}', [ChangeLogController::class, 'task'])->name('changelogs.task');
     Route::get('/changelogs/project/{project}', [ChangeLogController::class, 'project'])->name('changelogs.project');

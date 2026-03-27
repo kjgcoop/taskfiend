@@ -220,13 +220,19 @@
 
             <!-- Search Results -->
             @if(request()->hasAny(['q', 'tag_ids', 'project_id', 'date_from', 'date_to', 'has_date', 'assignee_id', 'creator_id', 'show_incomplete', 'show_done', 'show_archived', 'show_archived_projects']))
+                @php
+                    $multipleStatuses = (request('show_incomplete') ? 1 : 0) + (request('show_done') ? 1 : 0) + (request('show_archived') ? 1 : 0) > 1;
+                    $totalFound = $tasksTotal + $completedTasksTotal + $archivedTasksTotal;
+                    // Base URL for load-more AJAX calls — all current search params minus export/page/status
+                    $moreBaseUrl = route('search.more') . '?' . http_build_query(request()->except(['export', 'page', 'status']));
+                @endphp
                 <div class="bg-[#202020] border border-gray-700 overflow-hidden shadow-sm sm:rounded-lg p-6" x-data="taskFilter(@js($projects), @js($tags))">
                     <div class="flex items-center justify-between mb-4">
                         <h3 class="text-lg font-semibold text-gray-100">
                             Search Results
-                            <span class="text-sm font-normal text-gray-500" x-data x-text="$store.taskCount.ready ? ($store.taskCount.filtered ? '(showing ' + $store.taskCount.visible + ' of ' + $store.taskCount.total + ' found)' : '(' + $store.taskCount.total + ' found)') : '({{ $tasks->count() + $completedTasks->count() + $archivedTasks->count() }} found)'">({{ $tasks->count() + $completedTasks->count() + $archivedTasks->count() }} found)</span>
+                            <span class="text-sm font-normal text-gray-500">({{ $totalFound }} found)</span>
                         </h3>
-                        @if($tasks->isNotEmpty() || $completedTasks->isNotEmpty() || $archivedTasks->isNotEmpty())
+                        @if($tasksTotal > 0 || $completedTasksTotal > 0 || $archivedTasksTotal > 0)
                             <a href="{{ request()->fullUrlWithQuery(['export' => 'markdown']) }}" class="px-3 py-1.5 bg-gray-700 border border-gray-600 text-xs text-gray-100 rounded hover:bg-gray-600">
                                 Export .md
                             </a>
@@ -278,36 +284,72 @@
                         </div>
                     </div>
                     <div x-ref="taskContainer">
-                        @php
-                            $multipleStatuses = (request('show_incomplete') ? 1 : 0) + (request('show_done') ? 1 : 0) + (request('show_archived') ? 1 : 0) > 1;
-                        @endphp
-
-                        @if($tasks->isNotEmpty())
-                            @if($multipleStatuses)
-                                <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Incomplete</p>
-                            @endif
-                            <x-task-list :tasks="$tasks" />
-                        @endif
-
-                        @if($completedTasks->isNotEmpty())
-                            <div class="{{ $tasks->isNotEmpty() ? 'mt-6 border-t border-gray-700 pt-4' : '' }}">
+                        @if($tasksTotal > 0)
+                            <div x-data="searchSectionLoader({{ $tasksHasMore ? 'true' : 'false' }}, {{ json_encode($moreBaseUrl . '&status=incomplete') }})">
                                 @if($multipleStatuses)
-                                    <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Done</p>
+                                    <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
+                                        Incomplete
+                                        @if($tasksTotal > $tasks->count())
+                                            <span class="font-normal normal-case text-gray-600">({{ $tasksTotal }} total)</span>
+                                        @endif
+                                    </p>
                                 @endif
-                                <x-task-list :tasks="$completedTasks" />
+                                <div x-ref="list"><x-task-list :tasks="$tasks" /></div>
+                                <div class="mt-4 text-center" x-show="hasMore">
+                                    <button @click="loadMore()" :disabled="loading"
+                                            class="px-5 py-2 bg-gray-700 hover:bg-gray-600 text-gray-200 text-sm rounded-md disabled:opacity-50 disabled:cursor-wait">
+                                        <span x-show="!loading">Load more</span>
+                                        <span x-show="loading">Loading…</span>
+                                    </button>
+                                </div>
                             </div>
                         @endif
 
-                        @if($archivedTasks->isNotEmpty())
-                            <div class="{{ ($tasks->isNotEmpty() || $completedTasks->isNotEmpty()) ? 'mt-6 border-t border-gray-700 pt-4' : '' }}">
+                        @if($completedTasksTotal > 0)
+                            <div class="{{ $tasksTotal > 0 ? 'mt-6 border-t border-gray-700 pt-4' : '' }}"
+                                 x-data="searchSectionLoader({{ $completedTasksHasMore ? 'true' : 'false' }}, {{ json_encode($moreBaseUrl . '&status=done') }})">
                                 @if($multipleStatuses)
-                                    <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Archived</p>
+                                    <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
+                                        Done
+                                        @if($completedTasksTotal > $completedTasks->count())
+                                            <span class="font-normal normal-case text-gray-600">({{ $completedTasksTotal }} total)</span>
+                                        @endif
+                                    </p>
                                 @endif
-                                <x-task-list :tasks="$archivedTasks" :show-as-archived="true" />
+                                <div x-ref="list"><x-task-list :tasks="$completedTasks" /></div>
+                                <div class="mt-4 text-center" x-show="hasMore">
+                                    <button @click="loadMore()" :disabled="loading"
+                                            class="px-5 py-2 bg-gray-700 hover:bg-gray-600 text-gray-200 text-sm rounded-md disabled:opacity-50 disabled:cursor-wait">
+                                        <span x-show="!loading">Load more</span>
+                                        <span x-show="loading">Loading…</span>
+                                    </button>
+                                </div>
                             </div>
                         @endif
 
-                        @if($tasks->isEmpty() && $completedTasks->isEmpty() && $archivedTasks->isEmpty())
+                        @if($archivedTasksTotal > 0)
+                            <div class="{{ ($tasksTotal > 0 || $completedTasksTotal > 0) ? 'mt-6 border-t border-gray-700 pt-4' : '' }}"
+                                 x-data="searchSectionLoader({{ $archivedTasksHasMore ? 'true' : 'false' }}, {{ json_encode($moreBaseUrl . '&status=archived') }})">
+                                @if($multipleStatuses)
+                                    <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
+                                        Archived
+                                        @if($archivedTasksTotal > $archivedTasks->count())
+                                            <span class="font-normal normal-case text-gray-600">({{ $archivedTasksTotal }} total)</span>
+                                        @endif
+                                    </p>
+                                @endif
+                                <div x-ref="list"><x-task-list :tasks="$archivedTasks" :show-as-archived="true" /></div>
+                                <div class="mt-4 text-center" x-show="hasMore">
+                                    <button @click="loadMore()" :disabled="loading"
+                                            class="px-5 py-2 bg-gray-700 hover:bg-gray-600 text-gray-200 text-sm rounded-md disabled:opacity-50 disabled:cursor-wait">
+                                        <span x-show="!loading">Load more</span>
+                                        <span x-show="loading">Loading…</span>
+                                    </button>
+                                </div>
+                            </div>
+                        @endif
+
+                        @if($tasksTotal === 0 && $completedTasksTotal === 0 && $archivedTasksTotal === 0)
                             <p class="text-gray-500 text-center py-8 italic">No tasks found matching your criteria.</p>
                         @endif
                     </div>
@@ -321,6 +363,31 @@
 
     @push('scripts')
     <script>
+        function searchSectionLoader(initialHasMore, ajaxUrl) {
+            return {
+                hasMore: initialHasMore,
+                nextPage: 2,
+                loading: false,
+                async loadMore() {
+                    if (this.loading || !this.hasMore) return;
+                    this.loading = true;
+                    try {
+                        const res  = await fetch(ajaxUrl + '&page=' + this.nextPage, {
+                            headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                        });
+                        const data = await res.json();
+                        this.$refs.list.insertAdjacentHTML('beforeend', data.html);
+                        this.hasMore  = data.hasMore;
+                        this.nextPage = data.nextPage;
+                    } catch (e) {
+                        console.error('Failed to load more search results:', e);
+                    } finally {
+                        this.loading = false;
+                    }
+                },
+            };
+        }
+
         function searchFilter(projects, tags) {
             return {
                 projects: projects,

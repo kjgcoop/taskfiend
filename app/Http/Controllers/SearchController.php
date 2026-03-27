@@ -6,12 +6,13 @@ use App\Models\Project;
 use App\Models\Tag;
 use App\Models\Task;
 use App\Models\User;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 class SearchController extends Controller
 {
-    public function index(Request $request)
+    private function validateSearchRequest(Request $request): void
     {
         $request->validate([
             'q'               => 'nullable|string|max:255',
@@ -29,23 +30,10 @@ class SearchController extends Controller
             'creator_id'      => 'nullable|integer|exists:users,id',
             'sort'            => 'nullable|in:date_asc,date_desc,name_asc,name_desc,created_desc',
         ]);
+    }
 
-        // Get all projects and tags for the UI (exclude Inbox projects - they're handled separately)
-        $projects = Project::where(function ($q) {
-                $q->where('user_id', Auth::id())
-                  ->orWhereHas('tasks.assignees', function ($query) {
-                      $query->where('users.id', Auth::id());
-                  });
-            })
-            ->where('status', '!=', 'archived')
-            ->where('is_inbox', false)
-            ->orderByRaw('LOWER(name)')
-            ->get();
-
-        $tags = Tag::orderByRaw('LOWER(tag_name)')->get();
-
-        $users = User::whereNull('email_enabled_at')->orderBy('name')->get();
-
+    private function buildSearchQuery(Request $request): Builder
+    {
         $baseQuery = Task::query()
             ->where(function ($q) {
                 $q->where('creator_id', Auth::id())
@@ -54,7 +42,6 @@ class SearchController extends Controller
                   });
             });
 
-        // By default, exclude tasks from archived or done projects
         if (!$request->boolean('show_archived_projects')) {
             $baseQuery->where(function ($q) {
                 $q->whereNull('project_id')
@@ -64,9 +51,6 @@ class SearchController extends Controller
             });
         }
 
-        // Status filtering is handled per-collection below
-
-        // Handle search text (searches in name and description)
         if ($request->filled('q')) {
             $searchText = $request->q;
             $baseQuery->where(function ($q) use ($searchText) {
@@ -75,7 +59,6 @@ class SearchController extends Controller
             });
         }
 
-        // Handle tag filtering
         if ($request->filled('tag_ids')) {
             $tagIds = is_array($request->tag_ids) ? $request->tag_ids : [$request->tag_ids];
             foreach ($tagIds as $tagId) {
@@ -85,10 +68,9 @@ class SearchController extends Controller
             }
         }
 
-        // Handle project filtering
         if ($request->filled('project_id')) {
             if ($request->project_id === 'none') {
-                // Search all tasks regardless of project
+                // no filter
             } elseif ($request->project_id === 'inbox') {
                 $inboxProject = Project::where('user_id', Auth::id())
                     ->where('is_inbox', true)
@@ -101,7 +83,6 @@ class SearchController extends Controller
             }
         }
 
-        // Handle date filters
         if ($request->boolean('has_date')) {
             $baseQuery->whereNotNull('date');
         }
@@ -114,7 +95,6 @@ class SearchController extends Controller
             $baseQuery->where('date', '<=', $request->date_to);
         }
 
-        // Handle person filters
         if ($request->filled('assignee_id')) {
             $baseQuery->whereHas('assignees', function ($q) use ($request) {
                 $q->where('users.id', $request->assignee_id);
@@ -125,41 +105,49 @@ class SearchController extends Controller
             $baseQuery->where('creator_id', $request->creator_id);
         }
 
-        $with = ['creator', 'project', 'tags', 'assignees', 'attachments', 'comments'];
+        return $baseQuery;
+    }
 
-        $sort = $request->input('sort', 'date_asc');
-        $applySort = function ($query) use ($sort) {
-            return match ($sort) {
-                'date_desc'    => $query->orderByRaw('(date IS NULL) ASC, date DESC, CASE WHEN sort_order IS NULL THEN 1 ELSE 0 END, sort_order, time ASC'),
-                'name_asc'     => $query->orderByRaw('LOWER(name) ASC'),
-                'name_desc'    => $query->orderByRaw('LOWER(name) DESC'),
-                'created_desc' => $query->orderBy('created_at', 'desc'),
-                default        => $query->orderByRaw('date IS NULL, date ASC, CASE WHEN sort_order IS NULL THEN 1 ELSE 0 END, sort_order, time IS NULL, time ASC'),
-            };
+    private function applySort(Builder $query, string $sort): Builder
+    {
+        return match ($sort) {
+            'date_desc'    => $query->orderByRaw('(date IS NULL) ASC, date DESC, CASE WHEN sort_order IS NULL THEN 1 ELSE 0 END, sort_order, time ASC'),
+            'name_asc'     => $query->orderByRaw('LOWER(name) ASC'),
+            'name_desc'    => $query->orderByRaw('LOWER(name) DESC'),
+            'created_desc' => $query->orderBy('created_at', 'desc'),
+            default        => $query->orderByRaw('date IS NULL, date ASC, CASE WHEN sort_order IS NULL THEN 1 ELSE 0 END, sort_order, time IS NULL, time ASC'),
         };
+    }
 
-        $tasks = collect();
-        if ($request->boolean('show_incomplete')) {
-            $tasks = $applySort((clone $baseQuery)->where('status', 'incomplete'))
-                ->with($with)
-                ->get();
-        }
+    public function index(Request $request)
+    {
+        $this->validateSearchRequest($request);
 
-        $completedTasks = collect();
-        if ($request->boolean('show_done')) {
-            $completedTasks = $applySort((clone $baseQuery)->where('status', 'done'))
-                ->with($with)
-                ->get();
-        }
+        $projects = Project::where(function ($q) {
+                $q->where('user_id', Auth::id())
+                  ->orWhereHas('tasks.assignees', function ($query) {
+                      $query->where('users.id', Auth::id());
+                  });
+            })
+            ->where('status', '!=', 'archived')
+            ->where('is_inbox', false)
+            ->orderByRaw('LOWER(name)')
+            ->get();
 
-        $archivedTasks = collect();
-        if ($request->boolean('show_archived')) {
-            $archivedTasks = $applySort((clone $baseQuery)->where('status', 'archived'))
-                ->with($with)
-                ->get();
-        }
+        $tags  = Tag::orderByRaw('LOWER(tag_name)')->get();
+        $users = User::whereNull('email_enabled_at')->orderBy('name')->get();
 
+        $with = ['creator', 'project', 'tags', 'assignees', 'attachments', 'comments'];
+        $sort = $request->input('sort', 'date_asc');
+
+        $baseQuery = $this->buildSearchQuery($request);
+
+        // Markdown export uses unbounded queries
         if ($request->input('export') === 'markdown') {
+            $tasks          = $request->boolean('show_incomplete') ? $this->applySort((clone $baseQuery)->where('status', 'incomplete'), $sort)->with($with)->get() : collect();
+            $completedTasks = $request->boolean('show_done')       ? $this->applySort((clone $baseQuery)->where('status', 'done'),       $sort)->with($with)->get() : collect();
+            $archivedTasks  = $request->boolean('show_archived')   ? $this->applySort((clone $baseQuery)->where('status', 'archived'),   $sort)->with($with)->get() : collect();
+
             $lines = ['# Search Results'];
             foreach ([['## Incomplete', $tasks], ['## Done', $completedTasks], ['## Archived', $archivedTasks]] as [$heading, $group]) {
                 if ($group->isNotEmpty()) {
@@ -176,6 +164,68 @@ class SearchController extends Controller
             ]);
         }
 
-        return view('search.index', compact('tasks', 'completedTasks', 'archivedTasks', 'projects', 'tags', 'users'));
+        $perPage = (int) env('PAGINATION_PER_PAGE', 100);
+
+        [$tasks, $tasksHasMore, $tasksTotal]                         = $this->fetchPage($baseQuery, 'incomplete', $sort, $with, $perPage, $request->boolean('show_incomplete'));
+        [$completedTasks, $completedTasksHasMore, $completedTasksTotal] = $this->fetchPage($baseQuery, 'done',       $sort, $with, $perPage, $request->boolean('show_done'));
+        [$archivedTasks,  $archivedTasksHasMore,  $archivedTasksTotal]  = $this->fetchPage($baseQuery, 'archived',   $sort, $with, $perPage, $request->boolean('show_archived'));
+
+        return view('search.index', compact(
+            'tasks', 'tasksHasMore', 'tasksTotal',
+            'completedTasks', 'completedTasksHasMore', 'completedTasksTotal',
+            'archivedTasks', 'archivedTasksHasMore', 'archivedTasksTotal',
+            'projects', 'tags', 'users'
+        ));
+    }
+
+    /** Fetch the first page for a given status; returns [$collection, $hasMore, $total]. */
+    private function fetchPage(Builder $baseQuery, string $status, string $sort, array $with, int $perPage, bool $enabled): array
+    {
+        if (!$enabled) {
+            return [collect(), false, 0];
+        }
+
+        $total = (clone $baseQuery)->where('status', $status)->count();
+        $raw   = $this->applySort((clone $baseQuery)->where('status', $status), $sort)
+            ->with($with)
+            ->take($perPage + 1)
+            ->get();
+
+        $hasMore = $raw->count() > $perPage;
+        return [$hasMore ? $raw->slice(0, $perPage) : $raw, $hasMore, $total];
+    }
+
+    public function more(Request $request)
+    {
+        $this->validateSearchRequest($request);
+        $request->validate([
+            'status' => 'required|in:incomplete,done,archived',
+            'page'   => 'nullable|integer|min:1',
+        ]);
+
+        $perPage = (int) env('PAGINATION_PER_PAGE', 100);
+        $page    = max(1, (int) $request->get('page', 1));
+        $offset  = ($page - 1) * $perPage;
+        $status  = $request->status;
+        $sort    = $request->input('sort', 'date_asc');
+        $with    = ['creator', 'project', 'tags', 'assignees', 'attachments', 'comments'];
+
+        $baseQuery = $this->buildSearchQuery($request);
+
+        $raw = $this->applySort((clone $baseQuery)->where('status', $status), $sort)
+            ->with($with)
+            ->skip($offset)->take($perPage + 1)
+            ->get();
+
+        $hasMore = $raw->count() > $perPage;
+        $tasks   = $hasMore ? $raw->slice(0, $perPage) : $raw;
+
+        $showAsArchived = $status === 'archived';
+
+        return response()->json([
+            'html'     => view('tasks.partials.completed-list', compact('tasks', 'showAsArchived'))->render(),
+            'hasMore'  => $hasMore,
+            'nextPage' => $page + 1,
+        ]);
     }
 }
