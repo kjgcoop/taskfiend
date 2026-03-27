@@ -35,9 +35,14 @@
                                 </button>
                                 @endforeach
                             </div>
-                            <div class="mt-2 flex items-center gap-2">
-                                <div class="w-5 h-5 rounded-full border border-gray-600" :style="'background-color:' + selected"></div>
-                                <span class="text-xs text-gray-400" x-text="selected"></span>
+                            <div class="mt-3 flex items-center gap-2">
+                                <div class="w-5 h-5 rounded-full border border-gray-600 flex-shrink-0" :style="'background-color:' + selected"></div>
+                                <span class="text-gray-400 text-sm">#</span>
+                                <input type="text" maxlength="6"
+                                    :value="selected.replace('#', '')"
+                                    @input="if ($event.target.value.match(/^[0-9a-fA-F]{6}$/)) selected = '#' + $event.target.value"
+                                    class="w-24 rounded-md bg-gray-700 border-gray-600 text-gray-100 text-sm px-2 py-1 focus:border-blue-500 focus:ring-blue-500"
+                                    placeholder="3B82F6">
                             </div>
                             @error('color')<p class="mt-1 text-sm text-red-600">{{ $message }}</p>@enderror
                         </div>
