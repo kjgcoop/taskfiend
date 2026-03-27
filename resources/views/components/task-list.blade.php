@@ -512,7 +512,14 @@
 </script>
 @endPushOnce
 
+@if(!$readOnly && $depth === 0)
+<div class="space-y-2"
+     x-data
+     x-init="initTaskSortable($el)"
+     @if($viewDate) data-view-date="{{ $viewDate }}" @endif>
+@else
 <div class="space-y-2" @if($viewDate) data-view-date="{{ $viewDate }}" @endif>
+@endif
     @forelse($tasks as $task)
         @php
             // Find first image attachment from task or comments
@@ -543,8 +550,9 @@
 
             $marginLeft = $depth * 24; // 24px per level
         @endphp
-        <div data-task-group data-task-group-id="{{ $task->id }}" x-data="{ subtasksOpen: true }">
-        <div class="bg-[#202020] p-4 rounded-lg shadow hover:shadow-md transition border border-gray-700"
+        <div data-task-group data-task-group-id="{{ $task->id }}" x-data="{ subtasksOpen: true }"
+             @if(!$readOnly && $depth === 0) draggable="true" @endif>
+        <div class="bg-[#202020] p-4 rounded-lg shadow hover:shadow-md transition border border-gray-700 group"
              data-filterable
              data-task-name="{{ strtolower($task->name) }}"
              data-project="{{ strtolower($task->project?->name ?? '') }}"
@@ -552,6 +560,22 @@
              style="margin-left: {{ $marginLeft }}px;"
              :class="$store.bulkEdit.active && $store.bulkEdit.isSelected({{ $task->id }}) ? 'ring-2 ring-blue-500 ring-inset' : ''">
             <div class="flex items-start gap-4">
+                <!-- Drag handle (only on root-level, non-read-only tasks) -->
+                @if(!$readOnly && $depth === 0)
+                <div class="drag-handle mt-1.5 flex-shrink-0 touch-none
+                            opacity-0 group-hover:opacity-100 transition-opacity"
+                     style="cursor: grab"
+                     :class="{ 'invisible pointer-events-none': $store.bulkEdit.active }"
+                     @click.stop
+                     title="Drag to reorder">
+                    <svg class="w-4 h-4 text-gray-600" viewBox="0 0 16 24" fill="currentColor" aria-hidden="true">
+                        <circle cx="5" cy="6" r="1.5"/><circle cx="11" cy="6" r="1.5"/>
+                        <circle cx="5" cy="12" r="1.5"/><circle cx="11" cy="12" r="1.5"/>
+                        <circle cx="5" cy="18" r="1.5"/><circle cx="11" cy="18" r="1.5"/>
+                    </svg>
+                </div>
+                @endif
+
                 <!-- Bulk edit: square selector (shown in bulk mode for all tasks) -->
                 @if(!$readOnly)
                 <button x-show="$store.bulkEdit.active"

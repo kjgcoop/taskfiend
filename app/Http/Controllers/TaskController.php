@@ -44,7 +44,7 @@ class TaskController extends Controller
         match ($sort) {
             'created' => $query->orderBy('created_at', 'desc'),
             'name'    => $query->orderByRaw('LOWER(name) ASC'),
-            default   => $query->orderByRaw('date IS NULL, date ASC, time ASC'),
+            default   => $query->orderByRaw('date IS NULL, date ASC, CASE WHEN sort_order IS NULL THEN 1 ELSE 0 END, sort_order, time ASC'),
         };
 
         $tasks = $query->with(['creator', 'project', 'tags', 'assignees', 'attachments', 'comments', 'completionLog.user'])
@@ -1043,6 +1043,33 @@ class TaskController extends Controller
     public function destroy(Task $task)
     {
         abort(403, 'Tasks cannot be deleted. Please archive instead.');
+    }
+
+    public function reorder(Request $request)
+    {
+        $request->validate([
+            'ids'   => 'required|array|min:1',
+            'ids.*' => 'integer',
+        ]);
+
+        $userId = Auth::id();
+
+        // Only reorder tasks the user has access to (creator or assignee)
+        $accessibleIds = Task::where(function ($q) use ($userId) {
+                $q->where('creator_id', $userId)
+                  ->orWhereHas('assignees', fn($q2) => $q2->where('users.id', $userId));
+            })
+            ->whereIn('id', $request->ids)
+            ->pluck('id')
+            ->flip(); // id => index for O(1) lookup
+
+        foreach ($request->ids as $position => $id) {
+            if ($accessibleIds->has($id)) {
+                Task::where('id', $id)->update(['sort_order' => $position]);
+            }
+        }
+
+        return response()->json(['ok' => true]);
     }
 
     public function bulkUpdate(Request $request)

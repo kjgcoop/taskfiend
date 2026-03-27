@@ -22,6 +22,7 @@ class Task extends Model
         'duration_minutes',
         'project_id',
         'parent_id',
+        'sort_order',
         'recurrence_pattern',
         'recurrence_floating',
     ];
@@ -76,16 +77,14 @@ class Task extends Model
     public function children(): HasMany
     {
         return $this->hasMany(Task::class, 'parent_id')
-                    ->orderBy('date')
-                    ->orderBy('created_at');
+                    ->orderByRaw('CASE WHEN sort_order IS NULL THEN 1 ELSE 0 END, sort_order, date, created_at');
     }
 
     public function incompleteChildren(): HasMany
     {
         return $this->hasMany(Task::class, 'parent_id')
                     ->where('status', 'incomplete')
-                    ->orderBy('date')
-                    ->orderBy('created_at');
+                    ->orderByRaw('CASE WHEN sort_order IS NULL THEN 1 ELSE 0 END, sort_order, date, created_at');
     }
 
     public function tags(): BelongsToMany
