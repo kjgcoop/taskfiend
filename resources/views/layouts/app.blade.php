@@ -112,7 +112,8 @@
                             this.$watch(() => Alpine.store('bulkEdit').selected.length, update);
                         }
                      }"
-                     :style="pad > 0 ? 'padding-bottom: ' + (pad + 16) + 'px' : ''">
+                     :style="pad > 0 ? 'padding-bottom: ' + (pad + 16) + 'px' : ''"
+                     @keydown.escape.window="$store.bulkEdit.exitIfActive()">
                     {{ $slot }}
                 </div>
             </main>
@@ -291,6 +292,9 @@
                         this.active = !this.active;
                         if (!this.active) this.selected = [];
                     },
+                    exitIfActive() {
+                        if (this.active) this.toggle();
+                    },
                     toggleTask(id) {
                         const idx = this.selected.indexOf(id);
                         if (idx >= 0) this.selected.splice(idx, 1);
@@ -386,6 +390,7 @@
                     },
                 };
             };
+
         </script>
 
         <!-- Task Side Panel Overlay -->
