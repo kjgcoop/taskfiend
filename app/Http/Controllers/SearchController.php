@@ -130,11 +130,11 @@ class SearchController extends Controller
         $sort = $request->input('sort', 'date_asc');
         $applySort = function ($query) use ($sort) {
             return match ($sort) {
-                'date_desc'    => $query->orderByRaw('(date IS NULL) ASC, date DESC')->orderBy('time'),
+                'date_desc'    => $query->orderByRaw('(date IS NULL) ASC, date DESC, CASE WHEN sort_order IS NULL THEN 1 ELSE 0 END, sort_order, time ASC'),
                 'name_asc'     => $query->orderByRaw('LOWER(name) ASC'),
                 'name_desc'    => $query->orderByRaw('LOWER(name) DESC'),
                 'created_desc' => $query->orderBy('created_at', 'desc'),
-                default        => $query->orderBy('date')->orderBy('time'),
+                default        => $query->orderByRaw('date IS NULL, date ASC, CASE WHEN sort_order IS NULL THEN 1 ELSE 0 END, sort_order, time IS NULL, time ASC'),
             };
         };
 
