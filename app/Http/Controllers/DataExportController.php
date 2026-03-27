@@ -581,6 +581,12 @@ class DataExportController extends Controller
             ->where('status', 'incomplete')
             ->get();
 
+        // Build a map from task ID to its position in the export array so we
+        // can store parent_index for subtasks.
+        $taskIdToIndex = $tasks->values()->mapWithKeys(function ($task, $index) {
+            return [$task->id => $index];
+        })->all();
+
         $tagIds = [];
         $taskAttachmentPaths = [];
 
@@ -591,6 +597,7 @@ class DataExportController extends Controller
                 'date' => $task->date,
                 'time' => $task->time,
                 'recurrence_pattern' => $task->recurrence_pattern,
+                'parent_index' => isset($taskIdToIndex[$task->parent_id]) ? $taskIdToIndex[$task->parent_id] : null,
                 'tags' => $task->tags->pluck('id')->toArray(),
                 'assignees' => $task->assignments->pluck('assignee_id')->toArray(),
             ];
@@ -769,8 +776,9 @@ class DataExportController extends Controller
             }
         }
 
-        // Create tasks
+        // Create tasks — track index → new task ID so we can wire up parent_id afterwards
         $attachmentsDir = $tempDir . '/attachments';
+        $indexToTaskId = [];
         foreach ($data['tasks'] ?? [] as $index => $taskData) {
             $task = Task::create([
                 'name' => $taskData['name'],
@@ -782,6 +790,8 @@ class DataExportController extends Controller
                 'project_id' => $project->id,
                 'creator_id' => $user->id,
             ]);
+
+            $indexToTaskId[$index] = $task->id;
 
             // Log task creation
             $task->changeLogs()->create([
@@ -837,6 +847,15 @@ class DataExportController extends Controller
                         ]);
                     }
                 }
+            }
+        }
+
+        // Second pass: restore parent/child relationships
+        foreach ($data['tasks'] ?? [] as $index => $taskData) {
+            $parentIndex = $taskData['parent_index'] ?? null;
+            if ($parentIndex !== null && isset($indexToTaskId[$parentIndex], $indexToTaskId[$index])) {
+                Task::where('id', $indexToTaskId[$index])
+                    ->update(['parent_id' => $indexToTaskId[$parentIndex]]);
             }
         }
 
