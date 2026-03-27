@@ -222,7 +222,6 @@ Test user already created with API key generated.
 
 ### High Priority
 - **API Testing**: Test API endpoints with generated key
-- **Drag-and-drop task ordering**: The one remaining Alpine.js feature from the original spec not yet implemented
 
 ### Medium Priority (Code Quality)
 - Form Request classes for validation (currently inline in controllers)
@@ -237,6 +236,12 @@ Test user already created with API key generated.
 - Accessibility audit
 
 ## Important Notes
+
+### Session Summary (Mar 27, 2026)
+- **Drag-and-drop task ordering** implemented (was last remaining Alpine.js feature from spec)
+- **Multi-select mode** added to task list views
+  - Activated via clipboard icon next to the quick-add bar
+  - Allows bulk operations on selected tasks
 
 ### Session Summary (Feb 19, 2026)
 - **Quick-add bar** added to task list views
@@ -304,11 +309,6 @@ Test user already created with API key generated.
 - API/Storage: YYYY-MM-DD
 - Timezone: Pacific Standard Time
 
-### Recurring Task Logic (TODO)
-- When task marked done with recurrence_pattern, create new task for next occurrence
-- Don't create duplicate occurrences (if overdue, leave in overdue pile)
-- Copy: title, description, attachments, assignees
-- Don't copy: comments, comment attachments
 
 ## Quick Start Commands
 ```bash
@@ -331,5 +331,5 @@ php artisan serve
 - Controllers: `app/Http/Controllers/`
 - Commands: `app/Console/Commands/`
 - Migrations: `database/migrations/`
-- Views (TODO): `resources/views/`
-- Routes (TODO): `routes/web.php`, `routes/api.php`
+- Views: `resources/views/`
+- Routes: `routes/web.php`, `routes/api.php`
