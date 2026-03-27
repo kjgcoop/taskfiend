@@ -112,7 +112,8 @@
                             this.$watch(() => Alpine.store('bulkEdit').selected.length, update);
                         }
                      }"
-                     :style="pad > 0 ? 'padding-bottom: ' + (pad + 16) + 'px' : ''">
+                     :style="pad > 0 ? 'padding-bottom: ' + (pad + 16) + 'px' : ''"
+                     @keydown.escape.window="$store.bulkEdit.active && !$store.bulkEdit.confirming && $store.bulkEdit.toggle()">
                     {{ $slot }}
                 </div>
             </main>
@@ -392,12 +393,6 @@
                 };
             };
 
-            // Escape key exits bulk edit mode (but not while the confirm dialog is open)
-            window.addEventListener('keydown', function (e) {
-                if (e.key !== 'Escape') return;
-                var store = Alpine.store('bulkEdit');
-                if (store && store.active && !store.confirming) store.toggle();
-            });
         </script>
 
         <!-- Task Side Panel Overlay -->
