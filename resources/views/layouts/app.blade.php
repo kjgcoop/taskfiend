@@ -743,7 +743,7 @@
                     toasts: [],
 
                     add({ taskId, taskName, undoUrl, recurring, group, form }) {
-                        const duration = 5000;
+                        const duration = {{ config('app.undo_toast_duration') }};
                         const toast = {
                             id: Date.now() + Math.random(),
                             taskId, taskName, undoUrl, recurring, group, form,
