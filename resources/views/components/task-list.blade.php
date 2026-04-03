@@ -1,4 +1,4 @@
-@props(['tasks', 'depth' => 0, 'hideDate' => false, 'readOnly' => false, 'viewDate' => null, 'showAsArchived' => false, 'sortable' => false])
+@props(['tasks', 'depth' => 0, 'hideDate' => false, 'readOnly' => false, 'viewDate' => null, 'showAsArchived' => false, 'sortable' => false, 'reorderUrl' => null])
 
 @pushOnce('scripts')
 <script>
@@ -526,6 +526,7 @@
 <div class="space-y-2"
      x-data
      x-init="initTaskSortable($el)"
+     @if($reorderUrl) data-reorder-url="{{ $reorderUrl }}" @endif
      @if($viewDate) data-view-date="{{ $viewDate }}" @endif>
 @else
 <div class="space-y-2" @if($viewDate) data-view-date="{{ $viewDate }}" @endif>

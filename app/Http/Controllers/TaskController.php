@@ -591,6 +591,10 @@ class TaskController extends Controller
             $task->completed_at = null;
         }
 
+        if (isset($changes['project_id'])) {
+            $task->project_sort_order = null;
+        }
+
         $task->save();
 
         if (isset($validated['tag_ids'])) {
@@ -782,6 +786,10 @@ class TaskController extends Controller
                 $previousValue = $task->$field;
                 $previousStatus = $task->status;
                 $task->$field = $value;
+
+                if ($field === 'project_id') {
+                    $task->project_sort_order = null;
+                }
 
                 if ($field === 'status') {
                     if (in_array($value, ['done', 'archived']) && $previousStatus !== $value) {
@@ -1125,7 +1133,10 @@ class TaskController extends Controller
         $changes = [];
         if ($clearDate)          $changes['date']       = null;
         elseif ($date !== null)  $changes['date']       = $date;
-        if ($projectId !== null) $changes['project_id'] = $projectId;
+        if ($projectId !== null) {
+            $changes['project_id'] = $projectId;
+            $changes['project_sort_order'] = null;
+        }
         if ($status !== null)    $changes['status']     = $status;
 
         $changeFields = array_keys($changes);

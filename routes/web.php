@@ -44,6 +44,7 @@ Route::middleware('auth')->group(function () {
     Route::post('/tasks/{task}/duplicate', [TaskController::class, 'duplicate'])->name('tasks.duplicate');
 
     Route::resource('projects', ProjectController::class)->except(['edit', 'update']);
+    Route::post('/projects/{project}/reorder-tasks', [ProjectController::class, 'reorderTasks'])->name('projects.reorderTasks');
     Route::get('/projects/{project}/completed-tasks', [ProjectController::class, 'completedTasks'])->name('projects.completedTasks');
     Route::get('/projects/{project}/archived-tasks', [ProjectController::class, 'archivedTasks'])->name('projects.archivedTasks');
     Route::post('/projects/{project}/update-field', [ProjectController::class, 'updateField'])->name('projects.updateField');

@@ -399,7 +399,7 @@
                     </div>
                 @endif
                 <div x-ref="taskContainer">
-                    <x-task-list :tasks="$tasks" :read-only="$isInactive" :sortable="$sort === 'custom'" />
+                    <x-task-list :tasks="$tasks" :read-only="$isInactive" :sortable="$sort === 'custom'" :reorder-url="route('projects.reorderTasks', $project)" />
                 </div>
                 <div x-show="noResults" x-cloak class="bg-[#202020] p-8 rounded-lg text-center text-gray-400 border border-gray-700">
                     No tasks match your filter.

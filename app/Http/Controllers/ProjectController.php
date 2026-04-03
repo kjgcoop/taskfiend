@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Project;
 use App\Models\Tag;
+use App\Models\Task;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -129,7 +130,7 @@ class ProjectController extends Controller
             ]))
             ->when($sort === 'created',  fn($q) => $q->orderBy('created_at', 'desc'))
             ->when($sort === 'name',     fn($q) => $q->orderByRaw('LOWER(name) ASC'))
-            ->when($sort === 'custom',   fn($q) => $q->orderByRaw('CASE WHEN sort_order IS NULL THEN 1 ELSE 0 END, sort_order ASC, date IS NULL, date ASC, time IS NULL, time ASC'))
+            ->when($sort === 'custom',   fn($q) => $q->orderByRaw('CASE WHEN project_sort_order IS NULL THEN 1 ELSE 0 END, project_sort_order ASC, date IS NULL, date ASC, time IS NULL, time ASC'))
             ->when($sort === 'location', fn($q) => $q->orderByRaw('(location IS NULL OR location = \'\') ASC, LOWER(location) ASC'))
             ->when(!in_array($sort, ['created', 'name', 'custom', 'location']), fn($q) => $q->orderByRaw('date IS NULL, date ASC, time IS NULL, time ASC'))
 //            ->orderBy('date')
@@ -387,6 +388,36 @@ class ProjectController extends Controller
         } catch (\Exception $e) {
             return response()->json(['success' => false, 'message' => 'An error occurred'], 500);
         }
+    }
+
+    public function reorderTasks(Request $request, Project $project)
+    {
+        $this->authorizeProjectAccess($project);
+
+        $request->validate([
+            'ids'   => 'required|array|min:1',
+            'ids.*' => 'integer',
+        ]);
+
+        $userId = Auth::id();
+
+        // Only update tasks within this project that the user can access
+        $accessibleIds = Task::where('project_id', $project->id)
+            ->where(function ($q) use ($userId) {
+                $q->where('creator_id', $userId)
+                  ->orWhereHas('assignees', fn($q2) => $q2->where('users.id', $userId));
+            })
+            ->whereIn('id', $request->ids)
+            ->pluck('id')
+            ->flip();
+
+        foreach ($request->ids as $position => $id) {
+            if ($accessibleIds->has($id)) {
+                Task::where('id', $id)->update(['project_sort_order' => $position]);
+            }
+        }
+
+        return response()->json(['ok' => true]);
     }
 
     public function destroy(Project $project)

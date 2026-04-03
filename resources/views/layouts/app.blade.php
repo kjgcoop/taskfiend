@@ -699,7 +699,8 @@
                 function saveOrder() {
                     const ids = [...container.querySelectorAll(':scope > [data-task-group-id]')]
                         .map(el => el.dataset.taskGroupId);
-                    fetch('/tasks/reorder', {
+                    const url = container.dataset.reorderUrl || '/tasks/reorder';
+                    fetch(url, {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
