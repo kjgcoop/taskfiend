@@ -61,13 +61,13 @@
                     const data = await res.json().catch(() => ({}));
                     if (res.ok && data.ok !== false && data.success !== false) {
                         this.done = true;
-                        // Brief pause to show filled dot, then hand off to the undo toast
+                        // Brief pause to show filled dot, then disappear and hand off to the undo toast
                         await new Promise(r => setTimeout(r, 400));
                         const group = form.closest('[data-task-group]');
                         if (group) {
-                            group.style.transition = 'opacity 0.3s';
-                            group.style.opacity = '0.3';
-                            group.style.pointerEvents = 'none';
+                            group.style.transition = 'opacity 0.2s';
+                            group.style.opacity = '0';
+                            setTimeout(() => { group.style.display = 'none'; }, 200);
                         }
                         window.dispatchEvent(new CustomEvent('task-completed', {
                             detail: {
