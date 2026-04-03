@@ -5,10 +5,13 @@
         </h2>
     </x-slot>
 
+    @php
+        $hasSearchParams = request()->hasAny(['q', 'tag_ids', 'project_id', 'location', 'has_location', 'date_from', 'date_to', 'has_date', 'assignee_id', 'creator_id', 'show_incomplete', 'show_done', 'show_archived', 'show_archived_projects', 'sort']);
+    @endphp
     <div class="py-12">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-6">
             <!-- Search Form -->
-            <div class="bg-[#202020] border border-gray-700 overflow-hidden shadow-sm sm:rounded-lg p-6" x-data="searchFilter(@js($projects), @js($tags))">
+            <div class="bg-[#202020] border border-gray-700 overflow-hidden shadow-sm sm:rounded-lg p-6" x-data="searchFilter(@js($projects), @js($tags), {{ $hasSearchParams ? 'false' : 'true' }})">
                 <form method="GET" action="{{ route('search') }}" @submit="prepareSubmit">
                     <!-- Main Search Input -->
                     <div class="mb-4 relative">
@@ -80,6 +83,24 @@
                     <template x-for="tagId in selectedTagIds" :key="tagId">
                         <input type="hidden" name="tag_ids[]" :value="tagId">
                     </template>
+
+                    <!-- Filters toggle -->
+                    <div class="mb-4">
+                        <button type="button"
+                                @click="expanded = !expanded"
+                                class="inline-flex items-center gap-1 text-sm text-gray-400 hover:text-gray-200 transition-colors">
+                            <svg xmlns="http://www.w3.org/2000/svg"
+                                 class="h-4 w-4 transition-transform duration-200"
+                                 :class="expanded ? 'rotate-180' : ''"
+                                 fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+                            </svg>
+                            <span x-text="expanded ? 'Hide filters' : 'Show filters'"></span>
+                        </button>
+                    </div>
+
+                    <!-- Collapsible filters -->
+                    <div x-show="expanded" x-transition:enter="transition ease-out duration-150" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" x-transition:leave="transition ease-in duration-100" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0">
 
                     <!-- Project Filter -->
                     <div class="mb-4">
@@ -235,6 +256,8 @@
                             </select>
                         </div>
                     </div>
+
+                    </div>{{-- end collapsible filters --}}
                 </form>
             </div>
 
@@ -408,10 +431,11 @@
             };
         }
 
-        function searchFilter(projects, tags) {
+        function searchFilter(projects, tags, initialExpanded) {
             return {
                 projects: projects,
                 tags: tags,
+                expanded: initialExpanded,
                 searchInput: @js(request('q', '')),
                 queryText: @js(request('q', '')),
                 selectedProjectId: @js(request('project_id', 'none')),
