@@ -42,10 +42,11 @@ class TaskController extends Controller
         $sort = $request->input('sort', 'date');
 
         match ($sort) {
-            'created' => $query->orderBy('created_at', 'desc'),
-            'name'    => $query->orderByRaw('LOWER(name) ASC'),
-            'custom'  => $query->orderByRaw('CASE WHEN sort_order IS NULL THEN 1 ELSE 0 END, sort_order ASC, date IS NULL, date ASC, time IS NULL, time ASC'),
-            default   => $query->orderByRaw('date IS NULL, date ASC, time IS NULL, time ASC'),
+            'created'  => $query->orderBy('created_at', 'desc'),
+            'name'     => $query->orderByRaw('LOWER(name) ASC'),
+            'custom'   => $query->orderByRaw('CASE WHEN sort_order IS NULL THEN 1 ELSE 0 END, sort_order ASC, date IS NULL, date ASC, time IS NULL, time ASC'),
+            'location' => $query->orderByRaw('(location IS NULL OR location = \'\') ASC, LOWER(location) ASC'),
+            default    => $query->orderByRaw('date IS NULL, date ASC, time IS NULL, time ASC'),
         };
 
         $tasks = $query->with(['creator', 'project', 'tags', 'assignees', 'attachments', 'comments', 'completionLog.user'])

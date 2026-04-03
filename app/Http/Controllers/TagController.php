@@ -64,10 +64,11 @@ class TagController extends Controller
             ->where('status', '!=', 'done')
             ->with(['creator', 'project', 'assignees', 'attachments', 'comments', 'completionLog.user']);
         match ($sort) {
-            'created' => $tasksQuery->orderBy('created_at', 'desc'),
-            'name'    => $tasksQuery->orderByRaw('LOWER(name) ASC'),
-            'custom'  => $tasksQuery->orderByRaw('CASE WHEN sort_order IS NULL THEN 1 ELSE 0 END, sort_order ASC, date IS NULL, date ASC, time IS NULL, time ASC'),
-            default   => $tasksQuery->orderByRaw('date IS NULL, date ASC, time IS NULL, time ASC'),
+            'created'  => $tasksQuery->orderBy('created_at', 'desc'),
+            'name'     => $tasksQuery->orderByRaw('LOWER(name) ASC'),
+            'custom'   => $tasksQuery->orderByRaw('CASE WHEN sort_order IS NULL THEN 1 ELSE 0 END, sort_order ASC, date IS NULL, date ASC, time IS NULL, time ASC'),
+            'location' => $tasksQuery->orderByRaw('(location IS NULL OR location = \'\') ASC, LOWER(location) ASC'),
+            default    => $tasksQuery->orderByRaw('date IS NULL, date ASC, time IS NULL, time ASC'),
         };
         $tasks = $tasksQuery->get();
 

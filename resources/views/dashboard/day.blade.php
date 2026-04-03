@@ -53,6 +53,7 @@
                         <option value="date" {{ $sort === 'date' ? 'selected' : '' }}>Date & Time</option>
                         <option value="created" {{ $sort === 'created' ? 'selected' : '' }}>Date Added</option>
                         <option value="name" {{ $sort === 'name' ? 'selected' : '' }}>Name (A–Z)</option>
+                        <option value="location" {{ $sort === 'location' ? 'selected' : '' }}>Location (A–Z)</option>
                         <option value="custom" {{ $sort === 'custom' ? 'selected' : '' }}>Custom Sort</option>
                     </select>
                 </div>

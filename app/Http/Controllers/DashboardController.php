@@ -20,6 +20,7 @@ class DashboardController extends Controller
             'created'  => $query->orderBy('created_at', 'desc'),
             'name'     => $query->orderByRaw('LOWER(name) ASC'),
             'custom'   => $query->orderByRaw('CASE WHEN sort_order IS NULL THEN 1 ELSE 0 END, sort_order ASC, date IS NULL, date ASC, time IS NULL, time ASC'),
+            'location' => $query->orderByRaw('(location IS NULL OR location = \'\') ASC, LOWER(location) ASC'),
             default    => $query->orderByRaw('date IS NULL, date ASC, time IS NULL, time ASC'),
         };
     }

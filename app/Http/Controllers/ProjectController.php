@@ -127,10 +127,11 @@ class ProjectController extends Controller
                           ]);
                 }
             ]))
-            ->when($sort === 'created', fn($q) => $q->orderBy('created_at', 'desc'))
-            ->when($sort === 'name',    fn($q) => $q->orderByRaw('LOWER(name) ASC'))
-            ->when($sort === 'custom',  fn($q) => $q->orderByRaw('CASE WHEN sort_order IS NULL THEN 1 ELSE 0 END, sort_order ASC, date IS NULL, date ASC, time IS NULL, time ASC'))
-            ->when(!in_array($sort, ['created', 'name', 'custom']), fn($q) => $q->orderByRaw('date IS NULL, date ASC, time IS NULL, time ASC'))
+            ->when($sort === 'created',  fn($q) => $q->orderBy('created_at', 'desc'))
+            ->when($sort === 'name',     fn($q) => $q->orderByRaw('LOWER(name) ASC'))
+            ->when($sort === 'custom',   fn($q) => $q->orderByRaw('CASE WHEN sort_order IS NULL THEN 1 ELSE 0 END, sort_order ASC, date IS NULL, date ASC, time IS NULL, time ASC'))
+            ->when($sort === 'location', fn($q) => $q->orderByRaw('(location IS NULL OR location = \'\') ASC, LOWER(location) ASC'))
+            ->when(!in_array($sort, ['created', 'name', 'custom', 'location']), fn($q) => $q->orderByRaw('date IS NULL, date ASC, time IS NULL, time ASC'))
 //            ->orderBy('date')
 //            ->orderBy('time')
             ->get();
