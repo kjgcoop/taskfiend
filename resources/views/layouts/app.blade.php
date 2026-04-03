@@ -789,6 +789,8 @@
                     async undo(toast) {
                         // Restore the task row immediately
                         if (toast.group) {
+                            toast.group.style.transition = '';
+                            toast.group.style.display = '';
                             toast.group.style.opacity = '1';
                             toast.group.style.pointerEvents = '';
                         }
