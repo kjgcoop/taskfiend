@@ -97,6 +97,15 @@
                             @error('description')<p class="mt-1 text-sm text-red-600">{{ $message }}</p>@enderror
                         </div>
 
+                        <div class="mb-4">
+                            <label for="location" class="block text-sm font-medium text-gray-300 mb-2">Location (Optional)</label>
+                            <input type="text" name="location" id="location"
+                                   class="w-full rounded-md bg-gray-700 border-gray-600 text-gray-100 placeholder-gray-500 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                                   value="{{ old('location') }}"
+                                   placeholder="e.g., Conference Room B, Zoom, 123 Main St">
+                            @error('location')<p class="mt-1 text-sm text-red-600">{{ $message }}</p>@enderror
+                        </div>
+
                         <div class="mb-4 grid grid-cols-2 gap-4" x-data="dateInput('{{ old('date', $preselectedDate) }}')">
                             <div>
                                 <label for="date" class="block text-sm font-medium text-gray-300 mb-2">Date (Optional)</label>

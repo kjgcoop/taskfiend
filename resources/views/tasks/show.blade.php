@@ -293,6 +293,43 @@
                         @endif
                     </div>
 
+                    <!-- Location -->
+                    <div>
+                        <span class="text-sm font-medium text-gray-500">Location</span>
+                        <div @if(!$isInactive) @click="startEdit('location')" @endif x-show="!editing.location" class="mt-1 p-2 rounded min-h-[40px] {{ !$isInactive ? 'cursor-pointer hover:bg-gray-700' : '' }}">
+                            @if($task->location)
+                                <p class="text-gray-300">{{ $task->location }}</p>
+                            @else
+                                <p class="text-gray-400 italic">{{ $isInactive ? 'No location set' : 'Click to set location (optional)' }}</p>
+                            @endif
+                        </div>
+                        @if(!$isInactive)
+                        <div x-show="editing.location" class="mt-1">
+                            <input type="text" x-model="fields.location"
+                                   @keydown.enter="saveField('location')"
+                                   @keydown.escape="cancelEdit('location')"
+                                   placeholder="e.g., Conference Room B, Zoom, 123 Main St"
+                                   class="w-full rounded-md bg-gray-700 border-gray-600 text-gray-100 placeholder-gray-500 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                            <div class="flex gap-2 mt-2">
+                                <button @click="saveField('location')"
+                                        class="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700">
+                                    Save
+                                </button>
+                                <button @click="cancelEdit('location')"
+                                        class="px-3 py-1 bg-gray-700 text-gray-300 text-sm rounded hover:bg-gray-600">
+                                    Cancel
+                                </button>
+                                @if($task->location)
+                                <button @click="fields.location = ''; saveField('location')"
+                                        class="px-3 py-1 bg-gray-700 text-red-400 text-sm rounded hover:bg-gray-600">
+                                    Clear
+                                </button>
+                                @endif
+                            </div>
+                        </div>
+                        @endif
+                    </div>
+
                     <!-- Project -->
                     <div>
                         <span class="text-sm font-medium text-gray-500">Project</span>
@@ -744,6 +781,7 @@
                 fields: {
                     name: @js($task->name),
                     description: @js($task->description ?? ''),
+                    location: @js($task->location ?? ''),
                     status: @js($task->status),
                     date: @js($task->date ?? ''),
                     time: @js($task->time ?? ''),

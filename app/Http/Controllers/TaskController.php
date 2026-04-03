@@ -111,6 +111,7 @@ class TaskController extends Controller
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'description' => 'nullable|string',
+            'location' => 'nullable|string|max:255',
             'date' => 'nullable|string|max:255',
             'time' => 'nullable|date_format:H:i',
             'duration_minutes' => 'nullable|string|max:20',
@@ -277,6 +278,7 @@ class TaskController extends Controller
         $task = Task::create([
             'name' => $taskName,
             'description' => $validated['description'] ?? null,
+            'location' => $validated['location'] ?? null,
             'date' => $date,
             'time' => $time,
             'duration_minutes' => $this->parseDurationInput($validated['duration_minutes'] ?? null),
@@ -452,6 +454,7 @@ class TaskController extends Controller
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'description' => 'nullable|string',
+            'location' => 'nullable|string|max:255',
             'date' => 'nullable|string|max:255',
             'time' => 'nullable|date_format:H:i',
             'duration_minutes' => 'nullable|string|max:20',
@@ -574,7 +577,7 @@ class TaskController extends Controller
         }
 
         $changes = [];
-        foreach (['name', 'description', 'date', 'time', 'duration_minutes', 'project_id', 'parent_id', 'recurrence_pattern', 'recurrence_floating', 'status'] as $field) {
+        foreach (['name', 'description', 'location', 'date', 'time', 'duration_minutes', 'project_id', 'parent_id', 'recurrence_pattern', 'recurrence_floating', 'status'] as $field) {
             if (isset($validated[$field]) && $task->$field != $validated[$field]) {
                 $changes[$field] = ['old' => $task->$field, 'new' => $validated[$field]];
                 $task->$field = $validated[$field];
@@ -647,7 +650,7 @@ class TaskController extends Controller
         $this->assertProjectActive($task, asJson: true);
 
         $field = $request->input('field');
-        $allowedFields = ['name', 'description', 'status', 'date', 'time', 'duration_minutes', 'project_id', 'parent_id', 'recurrence_pattern', 'recurrence_floating', 'tag_ids', 'assignee_ids'];
+        $allowedFields = ['name', 'description', 'location', 'status', 'date', 'time', 'duration_minutes', 'project_id', 'parent_id', 'recurrence_pattern', 'recurrence_floating', 'tag_ids', 'assignee_ids'];
 
         if (!in_array($field, $allowedFields)) {
             return response()->json(['success' => false, 'message' => 'Invalid field'], 400);
