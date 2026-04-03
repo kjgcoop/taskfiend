@@ -107,7 +107,7 @@
                 </div>
                 <x-task-input-bar :tag-id="$tag->id" filter-placeholder="Filter tasks... (# project)" />
                 <div x-ref="taskContainer">
-                    <x-task-list :tasks="$tasks" :sortable="$sort === 'custom'" />
+                    <x-task-list :tasks="$tasks" :sortable="$sort === 'custom'" :reorder-url="route('tags.reorderTasks', $tag)" />
                 </div>
                 <div x-show="noResults" x-cloak class="bg-[#202020] p-8 rounded-lg text-center text-gray-400 border border-gray-700">
                     No tasks match your filter.

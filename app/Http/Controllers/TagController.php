@@ -4,8 +4,10 @@ namespace App\Http\Controllers;
 
 use App\Models\Project;
 use App\Models\Tag;
+use App\Models\Task;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 class TagController extends Controller
 {
@@ -66,7 +68,7 @@ class TagController extends Controller
         match ($sort) {
             'created'  => $tasksQuery->orderBy('created_at', 'desc'),
             'name'     => $tasksQuery->orderByRaw('LOWER(name) ASC'),
-            'custom'   => $tasksQuery->orderByRaw('CASE WHEN sort_order IS NULL THEN 1 ELSE 0 END, sort_order ASC, date IS NULL, date ASC, time IS NULL, time ASC'),
+            'custom'   => $tasksQuery->orderByRaw('CASE WHEN tag_task.sort_order IS NULL THEN 1 ELSE 0 END, tag_task.sort_order ASC, tasks.date IS NULL, tasks.date ASC, tasks.time IS NULL, tasks.time ASC'),
             'location' => $tasksQuery->orderByRaw('(location IS NULL OR location = \'\') ASC, LOWER(location) ASC'),
             default    => $tasksQuery->orderByRaw('date IS NULL, date ASC, time IS NULL, time ASC'),
         };
@@ -266,6 +268,37 @@ class TagController extends Controller
             'tag_name' => $tag->tag_name,
             'color' => $tag->color,
         ]);
+    }
+
+    public function reorderTasks(Request $request, Tag $tag)
+    {
+        $request->validate([
+            'ids'   => 'required|array|min:1',
+            'ids.*' => 'integer',
+        ]);
+
+        $userId = Auth::id();
+
+        // Only update pivot rows for tasks the user can access that belong to this tag
+        $accessibleIds = Task::whereHas('tags', fn($q) => $q->where('tags.id', $tag->id))
+            ->where(function ($q) use ($userId) {
+                $q->where('creator_id', $userId)
+                  ->orWhereHas('assignees', fn($q2) => $q2->where('users.id', $userId));
+            })
+            ->whereIn('id', $request->ids)
+            ->pluck('id')
+            ->flip();
+
+        foreach ($request->ids as $position => $id) {
+            if ($accessibleIds->has($id)) {
+                DB::table('tag_task')
+                    ->where('tag_id', $tag->id)
+                    ->where('task_id', $id)
+                    ->update(['sort_order' => $position]);
+            }
+        }
+
+        return response()->json(['ok' => true]);
     }
 
     public function destroy(Tag $tag)

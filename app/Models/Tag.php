@@ -15,7 +15,7 @@ class Tag extends Model
 
     public function tasks(): BelongsToMany
     {
-        return $this->belongsToMany(Task::class, 'tag_task');
+        return $this->belongsToMany(Task::class, 'tag_task')->withPivot('sort_order');
     }
 
     public function changeLogs(): HasMany
