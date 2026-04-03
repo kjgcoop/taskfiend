@@ -19,6 +19,8 @@ class SearchController extends Controller
             'tag_ids'         => 'nullable|array',
             'tag_ids.*'       => 'integer|exists:tags,id',
             'project_id'      => 'nullable|string|max:20',
+            'location'        => 'nullable|string|max:255',
+            'has_location'    => 'nullable|boolean',
             'date_from'       => 'nullable|date',
             'date_to'         => 'nullable|date',
             'has_date'        => 'nullable|boolean',
@@ -28,7 +30,7 @@ class SearchController extends Controller
             'show_archived_projects' => 'nullable|boolean',
             'assignee_id'            => 'nullable|integer|exists:users,id',
             'creator_id'      => 'nullable|integer|exists:users,id',
-            'sort'            => 'nullable|in:date_asc,date_desc,name_asc,name_desc,created_desc',
+            'sort'            => 'nullable|in:date_asc,date_desc,name_asc,name_desc,created_desc,location_asc,location_desc',
         ]);
     }
 
@@ -105,17 +107,27 @@ class SearchController extends Controller
             $baseQuery->where('creator_id', $request->creator_id);
         }
 
+        if ($request->filled('location')) {
+            $baseQuery->where('location', 'like', '%' . $request->location . '%');
+        }
+
+        if ($request->boolean('has_location')) {
+            $baseQuery->whereNotNull('location')->where('location', '!=', '');
+        }
+
         return $baseQuery;
     }
 
     private function applySort(Builder $query, string $sort): Builder
     {
         return match ($sort) {
-            'date_desc'    => $query->orderByRaw('(date IS NULL) ASC, date DESC, CASE WHEN sort_order IS NULL THEN 1 ELSE 0 END, sort_order, time ASC'),
-            'name_asc'     => $query->orderByRaw('LOWER(name) ASC'),
-            'name_desc'    => $query->orderByRaw('LOWER(name) DESC'),
-            'created_desc' => $query->orderBy('created_at', 'desc'),
-            default        => $query->orderByRaw('date IS NULL, date ASC, CASE WHEN sort_order IS NULL THEN 1 ELSE 0 END, sort_order, time IS NULL, time ASC'),
+            'date_desc'     => $query->orderByRaw('(date IS NULL) ASC, date DESC, CASE WHEN sort_order IS NULL THEN 1 ELSE 0 END, sort_order, time ASC'),
+            'name_asc'      => $query->orderByRaw('LOWER(name) ASC'),
+            'name_desc'     => $query->orderByRaw('LOWER(name) DESC'),
+            'created_desc'  => $query->orderBy('created_at', 'desc'),
+            'location_asc'  => $query->orderByRaw('(location IS NULL OR location = \'\') ASC, LOWER(location) ASC'),
+            'location_desc' => $query->orderByRaw('(location IS NULL OR location = \'\') ASC, LOWER(location) DESC'),
+            default         => $query->orderByRaw('date IS NULL, date ASC, CASE WHEN sort_order IS NULL THEN 1 ELSE 0 END, sort_order, time IS NULL, time ASC'),
         };
     }
 

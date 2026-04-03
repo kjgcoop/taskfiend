@@ -165,9 +165,27 @@
                         </div>
                     </div>
 
+                    <!-- Location Filter -->
+                    <div class="mb-4 grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        <div class="sm:col-span-2">
+                            <label for="location" class="block text-sm font-medium text-gray-300 mb-2">Location</label>
+                            <input type="text" name="location" id="location"
+                                   value="{{ request('location') }}"
+                                   placeholder="e.g., Home, Zoom, Conference Room B"
+                                   class="w-full rounded-md bg-gray-700 border-gray-600 text-gray-100 placeholder-gray-500 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                        </div>
+                        <div class="flex items-end pb-1">
+                            <label class="inline-flex items-center cursor-pointer">
+                                <input type="checkbox" name="has_location" value="1" {{ request('has_location') ? 'checked' : '' }}
+                                       class="rounded border-gray-600 bg-gray-700 text-blue-600 focus:ring-blue-500">
+                                <span class="ml-2 text-sm text-gray-300">Has a location</span>
+                            </label>
+                        </div>
+                    </div>
+
                     <!-- Status Filters -->
                     @php
-                        $hasSearchParams = request()->hasAny(['q', 'tag_ids', 'project_id', 'date_from', 'date_to', 'has_date', 'assignee_id', 'creator_id', 'show_incomplete', 'show_done', 'show_archived', 'show_archived_projects', 'sort']);
+                        $hasSearchParams = request()->hasAny(['q', 'tag_ids', 'project_id', 'location', 'has_location', 'date_from', 'date_to', 'has_date', 'assignee_id', 'creator_id', 'show_incomplete', 'show_done', 'show_archived', 'show_archived_projects', 'sort']);
                         $defaultIncomplete = $hasSearchParams ? request()->boolean('show_incomplete') : true;
                     @endphp
                     <div class="mb-6">
@@ -212,6 +230,8 @@
                                 <option value="name_asc" {{ request('sort') === 'name_asc' ? 'selected' : '' }}>Name (A–Z)</option>
                                 <option value="name_desc" {{ request('sort') === 'name_desc' ? 'selected' : '' }}>Name (Z–A)</option>
                                 <option value="created_desc" {{ request('sort') === 'created_desc' ? 'selected' : '' }}>Recently created</option>
+                                <option value="location_asc" {{ request('sort') === 'location_asc' ? 'selected' : '' }}>Location (A–Z)</option>
+                                <option value="location_desc" {{ request('sort') === 'location_desc' ? 'selected' : '' }}>Location (Z–A)</option>
                             </select>
                         </div>
                     </div>
