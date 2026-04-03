@@ -626,6 +626,7 @@
                     <input type="hidden" name="status" value="done">
                     <input type="hidden" name="name" value="{{ $task->name }}">
                     <input type="hidden" name="description" value="{{ $task->description }}">
+                    <input type="hidden" name="location" value="{{ $task->location }}">
                     <input type="hidden" name="date" value="{{ $task->date }}">
                     <input type="hidden" name="time" value="{{ $task->time }}">
                     <input type="hidden" name="project_id" value="{{ $task->project_id }}">
@@ -730,6 +731,9 @@
                         @endif
                         @if($task->recurrence_pattern)
                             <span class="text-purple-400" data-task-recurrence-display>{{ $task->recurrence_pattern }}</span>
+                        @endif
+                        @if($task->location)
+                            <span class="border border-gray-400 text-gray-400 rounded px-1.5 py-0.5" data-task-location-display>{{ $task->location }}</span>
                         @endif
                         @if($task->description)
                             <span class="flex items-center gap-1 text-gray-500" title="Has description">
