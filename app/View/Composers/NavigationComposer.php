@@ -40,7 +40,7 @@ class NavigationComposer
             $navProjects = Project::activeForUser(Auth::id())
                 ->where('is_inbox', false)
                 ->orderBy('name')
-                ->get(['id', 'name']);
+                ->get(['id', 'name', 'background_image']);
         }
 
         $view->with('otherLinksFiles', $otherLinksFiles);

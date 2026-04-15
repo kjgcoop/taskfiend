@@ -77,8 +77,16 @@
                              @click="open = false">
                             <div class="rounded-md ring-1 ring-black ring-opacity-5 py-1 bg-[#202020] max-h-64 overflow-y-auto">
                                 @forelse($navProjects as $project)
-                                    <a href="{{ route('projects.show', $project) }}" class="block w-full px-4 py-2 text-start text-sm leading-5 text-gray-300 hover:bg-gray-700 focus:outline-none transition duration-150 ease-in-out">
-                                        {{ $project->name }}
+                                    @php $hasBg = !empty($project->background_image); @endphp
+                                    <a href="{{ route('projects.show', $project) }}"
+                                       class="relative block w-full text-start text-sm leading-5 focus:outline-none transition duration-150 ease-in-out overflow-hidden {{ $hasBg ? '' : 'px-4 py-2 text-gray-300 hover:bg-gray-700' }}"
+                                       @if($hasBg)
+                                       style="background-image: url('{{ route('projects.background', $project) }}'); background-size: cover; background-position: center;"
+                                       @endif>
+                                        @if($hasBg)
+                                            <div class="absolute inset-0 bg-black/60 hover:bg-black/45 transition duration-150 ease-in-out"></div>
+                                        @endif
+                                        <span class="relative px-4 py-2 block {{ $hasBg ? 'text-white' : '' }}">{{ $project->name }}</span>
                                     </a>
                                 @empty
                                     <span class="block px-4 py-2 text-sm text-gray-500 italic">No active projects</span>
@@ -228,9 +236,17 @@
                 </div>
                 <div x-show="projectsOpen" x-transition class="bg-[#101010]">
                     @forelse($navProjects as $project)
-                        <x-responsive-nav-link :href="route('projects.show', $project)">
-                            {{ $project->name }}
-                        </x-responsive-nav-link>
+                        @php $hasBg = !empty($project->background_image); @endphp
+                        <a href="{{ route('projects.show', $project) }}"
+                           class="relative block w-full ps-3 pe-4 py-2 border-l-4 border-transparent text-base font-medium focus:outline-none transition duration-150 ease-in-out overflow-hidden {{ $hasBg ? '' : 'text-gray-400 hover:text-gray-100 hover:bg-gray-700 hover:border-gray-500' }}"
+                           @if($hasBg)
+                           style="background-image: url('{{ route('projects.background', $project) }}'); background-size: cover; background-position: center;"
+                           @endif>
+                            @if($hasBg)
+                                <div class="absolute inset-0 bg-black/60 hover:bg-black/45 transition duration-150 ease-in-out"></div>
+                            @endif
+                            <span class="relative {{ $hasBg ? 'text-white' : '' }}">{{ $project->name }}</span>
+                        </a>
                     @empty
                         <span class="block ps-6 pe-4 py-2 text-sm text-gray-500 italic">No active projects</span>
                     @endforelse
