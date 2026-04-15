@@ -351,6 +351,7 @@ class ProjectController extends Controller
             return response()->json(['success' => false, 'message' => 'Only the project creator can edit it.'], 403);
         }
 
+        // @todo Yes they can. Or they should be, anyway.
         if ($project->is_inbox) {
             return response()->json(['success' => false, 'message' => 'Inbox projects cannot be edited.'], 403);
         }
@@ -433,6 +434,7 @@ class ProjectController extends Controller
 
     public function destroy(Project $project)
     {
+        // @todo Switch to checking if default rather than checking if inbox.
         if ($project->is_inbox) {
             abort(403, 'Inbox projects cannot be deleted or archived.');
         }

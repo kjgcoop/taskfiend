@@ -256,6 +256,8 @@ class TodoistImport extends Command
         $isTodoistInbox = !empty($todoistProject['inbox_project']);
 
         // If this is the Todoist Inbox, map it to the user's Task Fiend inbox project
+        // @todo Instead of hard-coding inbox, use whatever project the user
+        // has specified as their default in their profile.
         if ($isTodoistInbox) {
             $inboxProject = Project::where('user_id', $this->user->id)
                 ->where('is_inbox', true)
@@ -268,6 +270,7 @@ class TodoistImport extends Command
             }
 
             // No inbox project exists yet — create one
+            // @todo Inbox creation implemented in serveral places.
             try {
                 $inboxProject = Project::create([
                     'name' => $this->user->name . "'s Inbox",
