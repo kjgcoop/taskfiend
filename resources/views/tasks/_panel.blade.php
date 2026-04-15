@@ -163,7 +163,7 @@
                                class="absolute inset-0 opacity-0 w-full h-full cursor-pointer">
                     </div>
                 </div>
-                <div x-show="datePreview" class="mt-1 text-xs text-green-400 flex flex-wrap items-baseline gap-x-1">
+                <div x-show="datePreview" :class="datePast ? 'text-red-400' : 'text-green-400'" class="mt-1 text-xs flex flex-wrap items-baseline gap-x-1">
                     <span x-text="datePreview"></span>
                     <span x-show="projects && projects.length > 0" class="flex flex-wrap items-baseline gap-x-1">
                         <span class="text-gray-500">&mdash;</span>
@@ -689,6 +689,7 @@
             dateText: @js($task->date ? \Carbon\Carbon::parse($task->date)->format('l, F j, Y') : ''),
             datePreview: '',
             dateError: '',
+            datePast: false,
             projects: null,
 
             init() {
@@ -703,6 +704,7 @@
                 this.editing.date = true;
                 this.datePreview = '';
                 this.dateError = '';
+                this.datePast = false;
                 this.$nextTick(() => {
                     if (this.$refs.dateInput) {
                         this.$refs.dateInput.focus();
@@ -717,6 +719,7 @@
                     this.dateText = @js($task->date ? \Carbon\Carbon::parse($task->date)->format('l, F j, Y') : '');
                     this.datePreview = '';
                     this.dateError = '';
+                    this.datePast = false;
                     this.projects = null;
                 }
                 this.resetField(field);
@@ -746,16 +749,29 @@
                     });
                     const data = await response.json();
                     if (data.success) {
-                        this.projects = data.projects ?? null;
-                        this.datePreview = data.formatted;
-                        this.dateError = '';
-                        this.fields.date = data.date;
+                        const today = new Date();
+                        today.setHours(0, 0, 0, 0);
+                        const resolved = new Date(data.date + 'T00:00:00');
+                        if (resolved < today) {
+                            this.datePast = true;
+                            this.datePreview = 'Proposed date is in the past';
+                            this.fields.date = data.date;
+                            this.projects = null;
+                        } else {
+                            this.datePast = false;
+                            this.projects = data.projects ?? null;
+                            this.datePreview = data.formatted;
+                            this.dateError = '';
+                            this.fields.date = data.date;
+                        }
                     } else {
+                        this.datePast = false;
                         this.datePreview = '';
                         this.dateError = 'Could not parse this date';
                         this.projects = null;
                     }
                 } catch (e) {
+                    this.datePast = false;
                     this.datePreview = '';
                     this.dateError = '';
                     this.projects = null;
@@ -805,6 +821,7 @@
                 this.fields.date = '';
                 this.datePreview = '';
                 this.dateError = '';
+                this.datePast = false;
                 this.projects = null;
                 await this.saveField('date');
             },
