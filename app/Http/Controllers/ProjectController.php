@@ -480,13 +480,29 @@ class ProjectController extends Controller
         }
 
         $disk = Storage::disk('private');
+        $path = $project->background_image;
 
-        if (!$disk->exists($project->background_image)) {
+        if (!$disk->exists($path)) {
             abort(404);
         }
 
-        return response($disk->get($project->background_image))
-            ->header('Content-Type', $disk->mimeType($project->background_image))
+        $contents = $disk->get($path);
+        if ($contents === null) {
+            abort(404);
+        }
+
+        $mimeType = $disk->mimeType($path) ?: match (strtolower(pathinfo($path, PATHINFO_EXTENSION))) {
+            'jpg', 'jpeg' => 'image/jpeg',
+            'png'         => 'image/png',
+            'gif'         => 'image/gif',
+            'webp'        => 'image/webp',
+            'avif'        => 'image/avif',
+            'heic', 'heif' => 'image/heic',
+            default       => 'application/octet-stream',
+        };
+
+        return response($contents)
+            ->header('Content-Type', $mimeType)
             ->header('Cache-Control', 'private, max-age=86400');
     }
 
