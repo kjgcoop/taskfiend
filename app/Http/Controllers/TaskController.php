@@ -882,7 +882,11 @@ class TaskController extends Controller
             }
 
             $task->load(['project', 'tags']);
-            return response()->json(['success' => true, 'taskData' => $this->buildTaskData($task)]);
+            $response = ['success' => true, 'taskData' => $this->buildTaskData($task)];
+            if ($field === 'description') {
+                $response['rendered_description'] = render_body($task->description ?? '');
+            }
+            return response()->json($response);
         } catch (\Exception $e) {
             return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
         }

@@ -347,7 +347,7 @@
              x-show="!editing.description"
              class="mt-1 p-2 rounded min-h-[40px] {{ !$isInactive ? 'cursor-pointer hover:bg-gray-700' : '' }}">
             <div class="markdown-body" x-show="fields.description"
-                 x-html="fields.description && typeof marked !== 'undefined' ? marked.parse(fields.description) : fields.description"></div>
+                 x-html="renderedDescription"></div>
             <p x-show="!fields.description" class="text-sm text-gray-400 italic">
                 {{ $isInactive ? 'No description' : 'Click to add description' }}
             </p>
@@ -550,7 +550,7 @@
                                     @endif
                                 </div>
                             </div>
-                            <div x-data="{ comment: @js($comment->comment) }" class="markdown-body mt-0.5 text-sm" x-html="marked.parse(comment)"></div>
+                            <div class="markdown-body mt-0.5 text-sm">{!! render_body($comment->comment) !!}</div>
                             @if($comment->file_path)
                                 <p class="mt-0.5 text-xs">
                                     <a href="{{ route('comments.download', [$task, $comment]) }}"
@@ -683,6 +683,7 @@
         return {
             taskId: taskId,
             editing: {},
+            renderedDescription: @js(render_body($task->description ?? '')),
             fields: {
                 name: @js($task->name),
                 description: @js($task->description ?? ''),
@@ -873,6 +874,9 @@
                     this.editing[field] = false;
                     if (data.taskData) {
                         window.dispatchEvent(new CustomEvent('task-panel-updated', { detail: data.taskData }));
+                    }
+                    if (field === 'description' && data.rendered_description !== undefined) {
+                        this.renderedDescription = data.rendered_description;
                     }
                     return true;
                 } else {

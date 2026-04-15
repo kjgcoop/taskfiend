@@ -126,9 +126,12 @@
                     <div class="mt-4">
                         <span class="text-sm font-medium text-gray-500">Description</span>
                         @if(!$isInactive)
-                            <div @click="startEdit('description')" x-show="!editing.description" class="mt-1 cursor-pointer hover:bg-gray-700 p-2 rounded min-h-[40px]">
-                                <p x-show="fields.description" class="text-gray-300" x-text="fields.description"></p>
-                                <p x-show="!fields.description" class="text-gray-400 italic">Click to add description</p>
+                            <div @click="startEdit('description')" x-show="!editing.description" class="markdown-body mt-1 cursor-pointer hover:bg-gray-700 p-2 rounded min-h-[40px]">
+                                @if($project->description)
+                                    {!! render_body($project->description) !!}
+                                @else
+                                    <p class="text-gray-400 italic">Click to add description</p>
+                                @endif
                             </div>
                             <div x-show="editing.description" class="mt-1">
                                 <textarea x-model="fields.description" rows="3"
@@ -149,9 +152,9 @@
                                 </div>
                             </div>
                         @else
-                            <div class="mt-1 p-2 min-h-[40px]">
+                            <div class="markdown-body mt-1 p-2 min-h-[40px]">
                                 @if($project->description)
-                                    <p class="text-gray-300">{{ $project->description }}</p>
+                                    {!! render_body($project->description) !!}
                                 @else
                                     <p class="text-gray-600 italic">No description</p>
                                 @endif
@@ -320,7 +323,7 @@
                     @if($project->description)
                         <div class="mb-4">
                             <span class="text-sm font-medium text-gray-500">Description</span>
-                            <p class="mt-1 text-gray-300">{{ $project->description }}</p>
+                            <div class="markdown-body mt-1 text-gray-300">{!! render_body($project->description) !!}</div>
                         </div>
                     @endif
 

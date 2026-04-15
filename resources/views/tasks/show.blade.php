@@ -457,7 +457,7 @@
                 <div class="mt-4">
                     <span class="text-sm font-medium text-gray-500">Description</span>
                     <div @if(!$isInactive) @click="startEdit('description')" @endif x-show="!editing.description" class="mt-1 p-2 rounded min-h-[40px] {{ !$isInactive ? 'cursor-pointer hover:bg-gray-700' : '' }}">
-                        <div class="markdown-body" x-show="fields.description" x-html="fields.description ? marked.parse(fields.description) : ''"></div>
+                        <div class="markdown-body" x-show="fields.description" x-html="renderedDescription"></div>
                         <p x-show="!fields.description" class="text-gray-400 italic">{{ $isInactive ? 'No description' : 'Click to add description' }}</p>
                     </div>
                     @if(!$isInactive)
@@ -684,7 +684,7 @@
                                             @endif
                                         </div>
                                     </div>
-                                    <div x-data="{ comment: @js($comment->comment) }" class="markdown-body mt-1 text-sm" x-html="marked.parse(comment)"></div>
+                                    <div class="markdown-body mt-1 text-sm">{!! render_body($comment->comment) !!}</div>
                                     @if($comment->file_path)
                                         <p class="mt-1 text-xs">
                                             <a href="{{ route('comments.download', [$task, $comment]) }}" class="text-blue-400 hover:text-blue-300 hover:underline">
@@ -815,6 +815,7 @@
             return {
                 taskId: taskId,
                 editing: {},
+                renderedDescription: @js(render_body($task->description ?? '')),
                 fields: {
                     name: @js($task->name),
                     description: @js($task->description ?? ''),
@@ -1035,6 +1036,9 @@
                     if (data.success) {
                         this.original[field] = JSON.parse(JSON.stringify(this.fields[field]));
                         this.editing[field] = false;
+                        if (field === 'description' && data.rendered_description !== undefined) {
+                            this.renderedDescription = data.rendered_description;
+                        }
                         return true;
                     } else {
                         alert('Error saving ' + field + ': ' + (data.message || 'Failed to update'));
