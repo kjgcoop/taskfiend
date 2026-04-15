@@ -20,13 +20,7 @@ class ProfileController extends Controller
      */
     public function edit(Request $request): View
     {
-        $projects = Project::where(function ($q) {
-                $q->where('user_id', Auth::id())
-                  ->orWhereHas('assignees', fn ($q2) => $q2->where('users.id', Auth::id()));
-            })
-            ->where('status', 'incomplete')
-            ->orderByRaw('LOWER(name)')
-            ->get(['id', 'name', 'is_inbox']);
+        $projects = Project::activeForUser(Auth::id())->orderByRaw('LOWER(name)')->get(['id', 'name', 'is_inbox']);
 
         return view('profile.edit', [
             'user'     => $request->user(),

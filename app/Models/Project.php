@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -55,5 +56,15 @@ class Project extends Model
     public function template(): BelongsTo
     {
         return $this->belongsTo(ProjectTemplate::class, 'template_id');
+    }
+
+    /** Scope to incomplete projects the given user owns or is assigned to. */
+    public function scopeActiveForUser(Builder $query, int $userId): Builder
+    {
+        return $query->where('status', 'incomplete')
+                     ->where(function ($q) use ($userId) {
+                         $q->where('user_id', $userId)
+                           ->orWhereHas('assignees', fn($q2) => $q2->where('users.id', $userId));
+                     });
     }
 }

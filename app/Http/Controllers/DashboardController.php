@@ -28,13 +28,7 @@ class DashboardController extends Controller
     /** Projects + tags needed by the quick-add autocomplete. */
     private function quickAddData(): array
     {
-        $projects = Project::where(function ($q) {
-                $q->where('user_id', Auth::id())
-                  ->orWhereHas('assignees', fn($q2) => $q2->where('users.id', Auth::id()));
-            })
-            ->where('status', 'incomplete')
-            ->orderBy('name')
-            ->get(['id', 'name']);
+        $projects = Project::activeForUser(Auth::id())->orderBy('name')->get(['id', 'name']);
 
         $tags = Tag::orderByRaw('LOWER(tag_name)')->get(['id', 'tag_name', 'color']);
 

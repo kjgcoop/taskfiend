@@ -57,15 +57,7 @@ class TaskController extends Controller
 
     public function create(Request $request)
     {
-        $projects = Project::where(function ($query) {
-                $query->where('user_id', Auth::id())
-                    ->orWhereHas('tasks.assignees', function ($q) {
-                        $q->where('users.id', Auth::id());
-                    });
-            })
-            ->where('status', 'incomplete')
-            ->orderByRaw('LOWER(name)')
-            ->get();
+        $projects = Project::activeForUser(Auth::id())->orderByRaw('LOWER(name)')->get();
 
         $tags = Tag::orderByRaw('LOWER(tag_name)')->get();
         $users = User::whereNull('email_enabled_at')->get();
@@ -156,20 +148,16 @@ class TaskController extends Controller
         if (preg_match('/#([\w-]+)/', $taskName, $projectMatch)) {
             if (!isset($validated['project_id'])) {
                 $projectQuery = strtolower($projectMatch[1]);
-                $project = Project::where(function ($q) use ($projectQuery) {
+                $stripped = "LOWER(REPLACE(REPLACE(REPLACE(name, ' ', ''), '''', ''), '.', ''))";
+                $project = Project::where(function ($q) use ($projectQuery, $stripped) {
                         // Strip spaces, apostrophes, and other punctuation from the stored
                         // name before comparing — mirrors the JS slug: /[^a-z0-9-]/g → ''.
                         // e.g. "KJ's Inbox" → "kjsinbox" ✓
-                        $stripped = "LOWER(REPLACE(REPLACE(REPLACE(name, ' ', ''), '''', ''), '.', ''))";
                         $q->whereRaw('LOWER(name) = ?', [$projectQuery])
                           ->orWhereRaw("{$stripped} = ?", [$projectQuery])
                           ->orWhereRaw('LOWER(name) LIKE ?', [$projectQuery . '%']);
                     })
-                    ->where(function ($q) {
-                        $q->where('user_id', Auth::id())
-                          ->orWhereHas('assignees', fn($q2) => $q2->where('users.id', Auth::id()));
-                    })
-                    ->where('status', 'incomplete')
+                    ->activeForUser(Auth::id())
                     ->first();
                 if ($project) {
                     $validated['project_id'] = $project->id;
@@ -330,15 +318,7 @@ class TaskController extends Controller
         $task->load(['creator', 'project', 'tags', 'assignees', 'assignments.assignedBy',
                      'attachments', 'comments.user', 'changeLogs.user', 'children', 'parent']);
 
-        $projects = Project::where(function ($query) {
-                $query->where('user_id', Auth::id())
-                    ->orWhereHas('tasks.assignees', function ($q) {
-                        $q->where('users.id', Auth::id());
-                    });
-            })
-            ->where('status', 'incomplete')
-            ->orderByRaw('LOWER(name)')
-            ->get();
+        $projects = Project::activeForUser(Auth::id())->orderByRaw('LOWER(name)')->get();
 
         $tags = Tag::orderByRaw('LOWER(tag_name)')->get();
         $users = User::whereNull('email_enabled_at')->get();
@@ -382,15 +362,7 @@ class TaskController extends Controller
         $task->load(['creator', 'project', 'tags', 'assignees', 'assignments.assignedBy',
                      'attachments', 'comments.user', 'changeLogs.user', 'children', 'parent']);
 
-        $projects = Project::where(function ($query) {
-                $query->where('user_id', Auth::id())
-                    ->orWhereHas('tasks.assignees', function ($q) {
-                        $q->where('users.id', Auth::id());
-                    });
-            })
-            ->where('status', 'incomplete')
-            ->orderByRaw('LOWER(name)')
-            ->get();
+        $projects = Project::activeForUser(Auth::id())->orderByRaw('LOWER(name)')->get();
 
         $tags = Tag::orderByRaw('LOWER(tag_name)')->get();
         $users = User::whereNull('email_enabled_at')->get();
@@ -416,15 +388,7 @@ class TaskController extends Controller
         $this->authorizeTaskAccess($task);
         $this->assertProjectActive($task);
 
-        $projects = Project::where(function ($query) {
-                $query->where('user_id', Auth::id())
-                    ->orWhereHas('tasks.assignees', function ($q) {
-                        $q->where('users.id', Auth::id());
-                    });
-            })
-            ->where('status', 'incomplete')
-            ->orderByRaw('LOWER(name)')
-            ->get();
+        $projects = Project::activeForUser(Auth::id())->orderByRaw('LOWER(name)')->get();
 
         $tags = Tag::orderByRaw('LOWER(tag_name)')->get();
         $users = User::whereNull('email_enabled_at')->get();
@@ -916,17 +880,13 @@ class TaskController extends Controller
         // Mirror the #project token parsing from store()
         if (preg_match('/#([\w-]+)/', $taskName, $projectMatch)) {
             $projectQuery = strtolower($projectMatch[1]);
-            $project = Project::where(function ($q) use ($projectQuery) {
-                    $stripped = "LOWER(REPLACE(REPLACE(REPLACE(name, ' ', ''), '''', ''), '.', ''))";
+            $stripped = "LOWER(REPLACE(REPLACE(REPLACE(name, ' ', ''), '''', ''), '.', ''))";
+            $project = Project::where(function ($q) use ($projectQuery, $stripped) {
                     $q->whereRaw('LOWER(name) = ?', [$projectQuery])
                       ->orWhereRaw("{$stripped} = ?", [$projectQuery])
                       ->orWhereRaw('LOWER(name) LIKE ?', [$projectQuery . '%']);
                 })
-                ->where(function ($q) {
-                    $q->where('user_id', Auth::id())
-                      ->orWhereHas('assignees', fn($q2) => $q2->where('users.id', Auth::id()));
-                })
-                ->where('status', 'incomplete')
+                ->activeForUser(Auth::id())
                 ->first();
             // Only show the project badge if we actually matched a real project.
             // Showing the raw slug as green was misleading (looked like a match when it wasn't).

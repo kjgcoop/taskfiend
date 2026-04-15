@@ -135,16 +135,7 @@ class SearchController extends Controller
     {
         $this->validateSearchRequest($request);
 
-        $projects = Project::where(function ($q) {
-                $q->where('user_id', Auth::id())
-                  ->orWhereHas('tasks.assignees', function ($query) {
-                      $query->where('users.id', Auth::id());
-                  });
-            })
-            ->where('status', 'incomplete')
-            ->where('is_inbox', false)
-            ->orderByRaw('LOWER(name)')
-            ->get();
+        $projects = Project::activeForUser(Auth::id())->where('is_inbox', false)->orderByRaw('LOWER(name)')->get();
 
         $tags  = Tag::orderByRaw('LOWER(tag_name)')->get();
         $users = User::whereNull('email_enabled_at')->orderBy('name')->get();
