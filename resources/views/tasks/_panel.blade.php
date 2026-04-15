@@ -343,7 +343,7 @@
     <!-- Description -->
     <div>
         <span class="text-xs font-medium text-gray-500 uppercase tracking-wide">Description</span>
-        <div @if(!$isInactive) @click="startEdit('description')" @endif
+        <div @if(!$isInactive) @click="if (!$event.target.closest('a')) startEdit('description')" @endif
              x-show="!editing.description"
              class="mt-1 p-2 rounded min-h-[40px] {{ !$isInactive ? 'cursor-pointer hover:bg-gray-700' : '' }}">
             <div class="markdown-body" x-show="fields.description"

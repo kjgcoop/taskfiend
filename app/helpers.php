@@ -135,9 +135,12 @@ if (! function_exists('render_body')) {
         }, $text);
 
         // ── Render GFM markdown (escapes raw HTML, disallows unsafe links) ───
-        return \Illuminate\Support\Str::markdown($text, [
+        $html = \Illuminate\Support\Str::markdown($text, [
             'html_input'         => 'escape',
             'allow_unsafe_links' => false,
         ]);
+
+        // Open all links in a new tab
+        return preg_replace('/<a\s/', '<a target="_blank" rel="noopener noreferrer" ', $html);
     }
 }
