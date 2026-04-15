@@ -2,7 +2,9 @@
 
 namespace App\View\Composers;
 
+use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
+use App\Models\Project;
 
 class NavigationComposer
 {
@@ -33,6 +35,15 @@ class NavigationComposer
             }
         }
 
+        $navProjects = collect();
+        if (Auth::check()) {
+            $navProjects = Project::activeForUser(Auth::id())
+                ->where('is_inbox', false)
+                ->orderBy('name')
+                ->get(['id', 'name']);
+        }
+
         $view->with('otherLinksFiles', $otherLinksFiles);
+        $view->with('navProjects', $navProjects);
     }
 }
