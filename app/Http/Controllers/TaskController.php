@@ -526,8 +526,12 @@ class TaskController extends Controller
             $validated['date'] = $parsedDate->format('Y-m-d');
         }
 
-        // Reject dates in the past (today is always valid)
-        if (!empty($validated['date']) && Carbon::parse($validated['date'])->startOfDay()->lt(Carbon::today())) {
+        // Reject dates in the past (today is always valid), but only when the
+        // date is actually being changed — not when saving a task that already
+        // has a past due date (e.g. marking it done).
+        if (!empty($validated['date'])
+            && $validated['date'] !== $task->date
+            && Carbon::parse($validated['date'])->startOfDay()->lt(Carbon::today())) {
             $msg = 'Task date cannot be in the past.';
             if ($request->ajax()) {
                 return response()->json(['success' => false, 'message' => $msg], 422);
