@@ -448,7 +448,57 @@ class ProjectController extends Controller
             Storage::disk('private')->delete($project->background_image);
         }
 
-        $path = $request->file('background_image')->store("project-backgrounds/{$project->id}", 'private');
+        $file      = $request->file('background_image');
+        $mime      = $file->getMimeType();
+        $directory = "project-backgrounds/{$project->id}";
+        $path      = null;
+
+        if (in_array($mime, ['image/jpeg', 'image/png', 'image/webp', 'image/gif'])) {
+            $scaleTo = (int) env('SCALE_LARGEST_TO', 2048);
+            $src = @imagecreatefromstring(file_get_contents($file->getRealPath()));
+
+            if ($src) {
+                $srcW = imagesx($src);
+                $srcH = imagesy($src);
+
+                if (max($srcW, $srcH) > $scaleTo) {
+                    $ratio = $scaleTo / max($srcW, $srcH);
+                    $newW  = (int) round($srcW * $ratio);
+                    $newH  = (int) round($srcH * $ratio);
+
+                    $dst = imagecreatetruecolor($newW, $newH);
+                    if ($mime === 'image/png') {
+                        imagealphablending($dst, false);
+                        imagesavealpha($dst, true);
+                        $transparent = imagecolorallocatealpha($dst, 255, 255, 255, 127);
+                        imagefilledrectangle($dst, 0, 0, $newW, $newH, $transparent);
+                    }
+                    imagecopyresampled($dst, $src, 0, 0, 0, 0, $newW, $newH, $srcW, $srcH);
+                    imagedestroy($src);
+
+                    ob_start();
+                    match ($mime) {
+                        'image/jpeg' => imagejpeg($dst, null, 90),
+                        'image/png'  => imagepng($dst),
+                        'image/webp' => imagewebp($dst, null, 90),
+                        'image/gif'  => imagegif($dst),
+                    };
+                    $data = ob_get_clean();
+                    imagedestroy($dst);
+
+                    $ext  = ['image/jpeg' => 'jpg', 'image/png' => 'png', 'image/webp' => 'webp', 'image/gif' => 'gif'][$mime];
+                    $path = $directory . '/' . uniqid() . '.' . $ext;
+                    Storage::disk('private')->put($path, $data);
+                } else {
+                    imagedestroy($src);
+                }
+            }
+        }
+
+        if ($path === null) {
+            $path = $file->store($directory, 'private');
+        }
+
         $project->background_image = $path;
         $project->save();
 
