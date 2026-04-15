@@ -49,9 +49,9 @@ if (! function_exists('render_body')) {
         // Bare app URLs — any host, path must contain /tasks/N etc.
         // Negative lookbehind (?<!\]\() skips URLs already inside ]( link syntax.
         // Uses # as delimiter to avoid conflicts with the / chars in URLs.
-        preg_match_all('#(?<!\]\()https?://[^\s\])"\'<>]+/tasks/(\d+)#i',    $text, $utm);
-        preg_match_all('#(?<!\]\()https?://[^\s\])"\'<>]+/projects/(\d+)#i', $text, $upm);
-        preg_match_all('#(?<!\]\()https?://[^\s\])"\'<>]+/tags/(\d+)#i',     $text, $ugm);
+        preg_match_all('#(?<!\]\()https?://[^\s\])"\'<>#]+/tasks/(\d+)#i',    $text, $utm);
+        preg_match_all('#(?<!\]\()https?://[^\s\])"\'<>#]+/projects/(\d+)#i', $text, $upm);
+        preg_match_all('#(?<!\]\()https?://[^\s\])"\'<>#]+/tags/(\d+)#i',     $text, $ugm);
 
         $taskIds    = array_unique(array_merge($tm[1],  $utm[1]));
         $projectIds = array_unique(array_merge($pm[1],  $upm[1]));
@@ -129,7 +129,7 @@ if (! function_exists('render_body')) {
 
         // ── Bare app URLs: /tasks/N[/…] ─────────────────────────────────────
         $text = preg_replace_callback(
-            '#(?<!\]\()https?://[^\s\])"\'<>]*/tasks/(\d+)[^\s\])"\'<>]*#i',
+            '#(?<!\]\()https?://[^\s\])"\'<>#]*/tasks/(\d+)[^\s\])"\'<>#]*#i',
             function ($m) use ($tasks, $userId, $mdText) {
                 $task = $tasks->get((int) $m[1]);
                 if (! $task) return $m[0];
@@ -154,7 +154,7 @@ if (! function_exists('render_body')) {
 
         // ── Bare app URLs: /projects/N[/…] ──────────────────────────────────
         $text = preg_replace_callback(
-            '#(?<!\]\()https?://[^\s\])"\'<>]*/projects/(\d+)[^\s\])"\'<>]*#i',
+            '#(?<!\]\()https?://[^\s\])"\'<>#]*/projects/(\d+)[^\s\])"\'<>#]*#i',
             function ($m) use ($projects, $userId, $mdText) {
                 $project = $projects->get((int) $m[1]);
                 if (! $project) return $m[0];
@@ -179,7 +179,7 @@ if (! function_exists('render_body')) {
 
         // ── Bare app URLs: /tags/N[/…] ───────────────────────────────────────
         $text = preg_replace_callback(
-            '#(?<!\]\()https?://[^\s\])"\'<>]*/tags/(\d+)[^\s\])"\'<>]*#i',
+            '#(?<!\]\()https?://[^\s\])"\'<>#]*/tags/(\d+)[^\s\])"\'<>#]*#i',
             function ($m) use ($tags, $mdText) {
                 $tag = $tags->get((int) $m[1]);
                 if (! $tag) return $m[0];
