@@ -78,6 +78,8 @@ class TaskApiController extends Controller
 
         $projectId = $validated['project_id'] ?? null;
         if (!$projectId) {
+            // @todo Don't use inbox, use default project they specified in
+            // profile.
             $inbox = Project::where('user_id', $user->id)->where('is_inbox', true)->first();
             $projectId = $inbox?->id;
         }

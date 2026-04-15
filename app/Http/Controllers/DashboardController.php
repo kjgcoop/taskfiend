@@ -64,6 +64,8 @@ class DashboardController extends Controller
         return compact('projects', 'tags', 'users', 'locations');
     }
 
+    // @todo Really need own inbox function? Can't we use the same function
+    // that gets other projects?
     public function inbox(Request $request)
     {
         $sort = $request->input('sort', 'date');
@@ -73,6 +75,8 @@ class DashboardController extends Controller
             ->where('is_inbox', true)
             ->first();
 
+        // @todo This is different from a bunch of other places where the
+        // inbox is created.
         if (!$inboxProject) {
             $inboxProject = \App\Models\Project::create([
                 'name'     => 'Inbox',
@@ -511,6 +515,7 @@ class DashboardController extends Controller
         ]);
     }
 
+    // @todo Why does inbox have its own created tasks function?
     public function inboxCompletedTasks(Request $request)
     {
         $perPage = (int) env('PAGINATION_PER_PAGE', 100);
@@ -546,6 +551,7 @@ class DashboardController extends Controller
         ]);
     }
 
+    // @todo Why does inbox have its own list of archived tasks?
     public function inboxArchivedTasks(Request $request)
     {
         $perPage = (int) env('PAGINATION_PER_PAGE', 100);

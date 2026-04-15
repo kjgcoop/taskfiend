@@ -70,6 +70,8 @@ class TaskController extends Controller
         $users = User::whereNull('email_enabled_at')->get();
 
         // Default to user's chosen default project, then inbox
+        // @todo Can we simplify this by only returning the default? That's a
+        // not null column, so we can be sure it will return data.
         $inboxProject = Project::where('user_id', Auth::id())->where('is_inbox', true)->first();
         $preselectedProjectId = $request->query('project_id')
             ?? Auth::user()->default_project_id
@@ -320,6 +322,8 @@ class TaskController extends Controller
 
         // project_id is NOT NULL in the database; fall back to the user's default project,
         // then inbox, when the form was submitted without one (e.g. quick-add without a #project token).
+        // @todo Given that default is not null, can't we just skip the inbox
+        // check?
         if (empty($validated['project_id'])) {
             $defaultProjectId = Auth::user()->default_project_id;
 
@@ -330,6 +334,8 @@ class TaskController extends Controller
                     ->where('is_inbox', true)
                     ->first();
 
+                // @todo This should have been created on user creation; why is
+                // is it here too?
                 if (!$inbox) {
                     $inbox = Project::create([
                         'name'       => 'Inbox',
@@ -401,6 +407,7 @@ class TaskController extends Controller
 
         $tags = Tag::orderByRaw('LOWER(tag_name)')->get();
         $users = User::whereNull('email_enabled_at')->get();
+        // @todo Use default project ID instead?
         $inboxProjectId = Project::where('user_id', Auth::id())->where('is_inbox', true)->value('id');
 
         // Calculate next due date for recurring tasks
@@ -445,6 +452,7 @@ class TaskController extends Controller
 
         $tags = Tag::orderByRaw('LOWER(tag_name)')->get();
         $users = User::whereNull('email_enabled_at')->get();
+        // @todo Use default project ID instead?
         $inboxProjectId = Project::where('user_id', Auth::id())->where('is_inbox', true)->value('id');
 
         $nextDueDate = null;
@@ -471,6 +479,7 @@ class TaskController extends Controller
 
         $tags = Tag::orderByRaw('LOWER(tag_name)')->get();
         $users = User::whereNull('email_enabled_at')->get();
+        // @todo Use default inbox ID instead?
         $inboxProjectId = Project::where('user_id', Auth::id())->where('is_inbox', true)->value('id');
 
         // Get available parent tasks (exclude self and descendants to prevent cycles)
@@ -1850,12 +1859,15 @@ class TaskController extends Controller
 
         // ── Fallback project (same logic as single-task store()) ────────────────────
         if (empty($projectId)) {
+            // @todo Just use default project ID - it's not null; no need for
+            // inbox.
             $defaultProjectId = Auth::user()->default_project_id;
             if ($defaultProjectId) {
                 $projectId = $defaultProjectId;
             } else {
                 $inbox = Project::where('user_id', Auth::id())->where('is_inbox', true)->first();
                 if (!$inbox) {
+                    // @todo Why are we creating inboxes all over the code?
                     $inbox = Project::create([
                         'name'     => 'Inbox',
                         'user_id'  => Auth::id(),

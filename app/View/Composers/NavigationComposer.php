@@ -39,7 +39,6 @@ class NavigationComposer
         $navProjects = collect();
         if (Auth::check()) {
             $navProjects = Project::activeForUser(Auth::id())
-//                ->where('is_inbox', false)
                 ->orderBy('name')
                 ->get(['id', 'name', 'background_image']);
         }

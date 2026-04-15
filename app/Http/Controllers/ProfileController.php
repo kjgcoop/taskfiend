@@ -20,6 +20,7 @@ class ProfileController extends Controller
      */
     public function edit(Request $request): View
     {
+        // @todo Why do we need to know if this is an inbox?
         $projects = Project::activeForUser(Auth::id())->orderByRaw('LOWER(name)')->get(['id', 'name', 'is_inbox']);
 
         return view('profile.edit', [

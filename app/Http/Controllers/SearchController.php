@@ -74,6 +74,8 @@ class SearchController extends Controller
             if ($request->project_id === 'none') {
                 // no filter
             } elseif ($request->project_id === 'inbox') {
+                // @todo Why does the inbox require a special query? can't it
+                // be queried like all the other projects?
                 $inboxProject = Project::where('user_id', Auth::id())
                     ->where('is_inbox', true)
                     ->first();
@@ -135,6 +137,7 @@ class SearchController extends Controller
     {
         $this->validateSearchRequest($request);
 
+        // @todo Why don't we want the inbox?
         $projects = Project::activeForUser(Auth::id())->where('is_inbox', false)->orderByRaw('LOWER(name)')->get();
 
         $tags  = Tag::orderByRaw('LOWER(tag_name)')->get();
