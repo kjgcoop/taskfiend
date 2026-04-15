@@ -669,7 +669,6 @@
         return {
             taskId: taskId,
             editing: {},
-            openEdits: [],
             fields: {
                 name: @js($task->name),
                 description: @js($task->description ?? ''),
@@ -697,12 +696,10 @@
 
             startEdit(field) {
                 this.editing[field] = true;
-                if (!this.openEdits.includes(field)) this.openEdits.push(field);
             },
 
             startEditDate() {
                 this.editing.date = true;
-                if (!this.openEdits.includes('date')) this.openEdits.push('date');
                 this.datePreview = '';
                 this.dateError = '';
                 this.$nextTick(() => {
@@ -715,7 +712,6 @@
 
             cancelEdit(field) {
                 this.editing[field] = false;
-                this.openEdits = this.openEdits.filter(f => f !== field);
                 if (field === 'date') {
                     this.dateText = @js($task->date ? \Carbon\Carbon::parse($task->date)->format('l, F j, Y') : '');
                     this.datePreview = '';
@@ -844,7 +840,6 @@
                 if (data.success) {
                     this.original[field] = JSON.parse(JSON.stringify(this.fields[field]));
                     this.editing[field] = false;
-                    this.openEdits = this.openEdits.filter(f => f !== field);
                     if (data.taskData) {
                         window.dispatchEvent(new CustomEvent('task-panel-updated', { detail: data.taskData }));
                     }
@@ -867,12 +862,11 @@
                         if (!confirmed) {
                             this.resetField(field);
                             this.editing[field] = false;
-                            this.openEdits = this.openEdits.filter(f => f !== field);
                             return;
                         }
                     }
 
-                    const otherEditingFields = this.openEdits.filter(f => f !== field);
+                    const otherEditingFields = Object.keys(this.editing).filter(f => this.editing[f] && f !== field);
                     for (const otherField of otherEditingFields) {
                         await this._saveFieldRequest(otherField);
                     }
