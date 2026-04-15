@@ -832,7 +832,14 @@
                     <div x-show="error" x-text="error" class="mt-1 text-xs text-red-400 max-w-xs" style="display:none"></div>
                 </form>
                 @endif
-                    <span class="text-[10px] text-gray-600 mt-1 leading-none">#{{ $task->id }}</span>
+                    <button x-data="{ copied: false }"
+                            @click.prevent.stop="navigator.clipboard.writeText('{{ route('tasks.show', $task) }}'); copied = true; setTimeout(() => copied = false, 1500)"
+                            title="Copy link to this task"
+                            class="text-[10px] leading-none mt-1 transition-colors cursor-pointer"
+                            :class="copied ? 'text-green-500' : 'text-gray-600 hover:text-gray-400'">
+                        <span x-show="!copied">#{{ $task->id }}</span>
+                        <span x-show="copied" style="display:none">✓</span>
+                    </button>
                 </div>
 
                 <!-- Task Content -->
