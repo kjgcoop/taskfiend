@@ -1029,7 +1029,10 @@
 
                         // Save any other fields that are currently open in edit mode,
                         // so their changes aren't lost when the page reloads.
-                        const otherEditingFields = Object.keys(this.editing).filter(
+                        // Use Object.keys(this.fields) rather than this.editing because
+                        // Alpine's reactive proxy doesn't reliably expose dynamically-added
+                        // keys (editing starts as {} and gets keys added at runtime).
+                        const otherEditingFields = Object.keys(this.fields).filter(
                             f => this.editing[f] && f !== field
                         );
                         for (const otherField of otherEditingFields) {
