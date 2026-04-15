@@ -63,7 +63,7 @@
         </div>
     </x-slot>
 
-    <div class="py-12 relative" @if($project->user_id === Auth::id() && !$project->is_inbox) x-data="projectEditor({{ $project->id }})" @endif>
+    <div class="py-12 relative" @if($project->user_id === Auth::id()) x-data="projectEditor({{ $project->id }})" @endif>
         @if($project->background_image)
             <div class="absolute inset-0" style="background-image: url('{{ route('projects.background', $project) }}'); background-attachment: fixed; background-position: center; background-size: cover; background-repeat: no-repeat;"></div>
             <div class="absolute inset-0 bg-black/65"></div>
@@ -91,7 +91,7 @@
             <div class="bg-[#202020] border border-gray-700 overflow-hidden shadow-sm sm:rounded-lg p-6">
                 @php $isInactive = in_array($project->status, ['done', 'archived']); @endphp
 
-                @if($project->user_id === Auth::id() && !$project->is_inbox)
+                @if($project->user_id === Auth::id())
                     <!-- Project name -->
                     <div class="mb-4">
                         <span class="text-sm font-medium text-gray-500">Project Name</span>
@@ -427,7 +427,7 @@
         </div>
     </div>
 
-    @if($project->user_id === Auth::id() && !$project->is_inbox)
+    @if($project->user_id === Auth::id())
     @push('scripts')
     <script>
         function projectEditor(projectId) {
