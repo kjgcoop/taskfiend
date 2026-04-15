@@ -11,7 +11,7 @@
                 </div>
 
                 <!-- Navigation Links -->
-                <div class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex">
+                <div class="hidden space-x-4 lg:space-x-8 sm:-my-px sm:ms-10 sm:flex">
                     <x-nav-link :href="route('day')" :active="request()->routeIs('today') || request()->routeIs('dashboard') || (request()->routeIs('day') && !request()->has('date'))">
                         {{ __('Today') }}
                     </x-nav-link>
@@ -129,34 +129,39 @@
                     <x-nav-link :href="route('templates.index')" :active="request()->routeIs('templates.*')">
                         {{ __('Templates') }}
                     </x-nav-link>
-                    <x-nav-link :href="route('changelogs.user')" :active="request()->routeIs('changelogs.*')">
-                        {{ __('Activity') }}
-                    </x-nav-link>
-
-                    @if($otherLinksFiles->isNotEmpty())
-                        <!-- Other Links Dropdown -->
-                        <div class="hidden sm:flex sm:items-center">
-                            <x-dropdown align="left" width="48">
-                                <x-slot name="trigger">
-                                    <button class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-gray-400 hover:text-gray-100 focus:outline-none transition ease-in-out duration-150">
-                                        <div>{{ __('Other Links') }}</div>
-                                        <div class="ms-1">
-                                            <svg class="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
-                                                <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
-                                            </svg>
-                                        </div>
-                                    </button>
-                                </x-slot>
-                                <x-slot name="content">
+                    <!-- More Dropdown (Activity + Other Links) -->
+                    <div class="relative flex items-center" x-data="{ open: false }" @click.outside="open = false" @close.stop="open = false">
+                        <button @click="open = !open" class="inline-flex items-center px-1 pt-1 border-b-2 border-transparent text-sm font-medium leading-5 text-gray-400 hover:text-gray-100 hover:border-gray-500 focus:outline-none transition duration-150 ease-in-out {{ request()->routeIs('changelogs.*') || request()->routeIs('other.links.*') ? 'border-indigo-400 text-gray-100' : '' }}">
+                            {{ __('More') }}
+                            <svg class="ms-1 fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
+                            </svg>
+                        </button>
+                        <div x-show="open"
+                             x-transition:enter="transition ease-out duration-200"
+                             x-transition:enter-start="opacity-0 scale-95"
+                             x-transition:enter-end="opacity-100 scale-100"
+                             x-transition:leave="transition ease-in duration-75"
+                             x-transition:leave-start="opacity-100 scale-100"
+                             x-transition:leave-end="opacity-0 scale-95"
+                             class="absolute z-50 top-full mt-2 w-48 rounded-md shadow-lg ltr:origin-top-left start-0"
+                             style="display: none;"
+                             @click="open = false">
+                            <div class="rounded-md ring-1 ring-black ring-opacity-5 py-1 bg-[#202020]">
+                                <a href="{{ route('changelogs.user') }}" class="block w-full px-4 py-2 text-start text-sm leading-5 text-gray-300 hover:bg-gray-700 focus:outline-none transition duration-150 ease-in-out {{ request()->routeIs('changelogs.*') ? 'bg-gray-700 text-gray-100' : '' }}">
+                                    {{ __('Activity') }}
+                                </a>
+                                @if($otherLinksFiles->isNotEmpty())
+                                    <div class="border-t border-gray-700 my-1"></div>
                                     @foreach($otherLinksFiles as $filename => $displayName)
-                                        <x-dropdown-link href="/other-links/{{ $filename }}">
+                                        <a href="/other-links/{{ $filename }}" class="block w-full px-4 py-2 text-start text-sm leading-5 text-gray-300 hover:bg-gray-700 focus:outline-none transition duration-150 ease-in-out {{ request()->routeIs('other.links.link') && request()->route('path') === $filename ? 'bg-gray-700 text-gray-100' : '' }}">
                                             {{ $displayName }}
-                                        </x-dropdown-link>
+                                        </a>
                                     @endforeach
-                                </x-slot>
-                            </x-dropdown>
+                                @endif
+                            </div>
                         </div>
-                    @endif
+                    </div>
 
                     <x-nav-link :href="route('tasks.create')" :active="request()->routeIs('tasks.create')" class="inline-flex items-center px-4 py-2 bg-blue-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-blue-700">
                         +
