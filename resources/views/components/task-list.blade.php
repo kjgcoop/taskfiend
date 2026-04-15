@@ -240,25 +240,21 @@
                     this.showAutocomplete = false;
                 }
 
-                this.schedulePreview(input, el);
+                this.schedulePreview(input);
             },
 
-            schedulePreview(value, el = null) {
+            schedulePreview(value) {
                 clearTimeout(this.previewTimer);
 
-                // In multi-line mode show a preview for the line the cursor is on,
-                // not the whole textarea value.
-                let previewValue = value;
-                if (el && value.includes('\n')) {
-                    const cursorPos = el.selectionStart ?? value.length;
-                    const lineStart = value.lastIndexOf('\n', cursorPos - 1) + 1;
-                    const lineEnd   = value.indexOf('\n', cursorPos);
-                    previewValue    = lineEnd === -1
-                        ? value.substring(lineStart)
-                        : value.substring(lineStart, lineEnd);
+                // In multi-line mode the "N tasks will be created" badge is sufficient
+                // feedback — hide the parse preview to avoid confusing partial results.
+                const lineCount = value.split('\n').filter(l => l.trim().length > 0).length;
+                if (lineCount > 1) {
+                    this.preview = null;
+                    return;
                 }
 
-                if (!previewValue.trim() || !window.taskPreviewUrl) {
+                if (!value.trim() || !window.taskPreviewUrl) {
                     this.preview = null;
                     return;
                 }
