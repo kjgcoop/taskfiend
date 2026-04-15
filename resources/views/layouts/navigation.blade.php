@@ -86,7 +86,7 @@
                     @endif
 
                     <x-nav-link :href="route('tasks.create')" :active="request()->routeIs('tasks.create')" class="inline-flex items-center px-4 py-2 bg-blue-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-blue-700">
-                        Add Task
+                        +
                     </x-nav-link>
                 </div>
             </div>
