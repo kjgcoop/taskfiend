@@ -846,6 +846,7 @@
                 startEdit(field) {
                     this.editing[field] = true;
                     if (!this.openEdits.includes(field)) this.openEdits.push(field);
+                    console.log('[taskEditor] startEdit', field, 'openEdits now:', JSON.stringify(this.openEdits));
                 },
 
                 startEditDate() {
@@ -1038,7 +1039,9 @@
                         // openEdits is a plain Array maintained alongside editing{} because
                         // Alpine's reactive proxy doesn't reliably expose dynamically-added
                         // object keys via Object.keys() in method context.
+                        console.log('[taskEditor] saveField', field, 'openEdits:', JSON.stringify(this.openEdits));
                         const otherEditingFields = this.openEdits.filter(f => f !== field);
+                        console.log('[taskEditor] otherEditingFields:', JSON.stringify(otherEditingFields));
                         for (const otherField of otherEditingFields) {
                             await this._saveFieldRequest(otherField);
                         }
