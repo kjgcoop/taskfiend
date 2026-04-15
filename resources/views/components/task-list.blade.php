@@ -240,35 +240,35 @@
                     this.showAutocomplete = false;
                 }
 
-                this.schedulePreview(el);
+                // Use $nextTick so the browser fully settles cursor position
+                // before we sample it (important for paste events).
+                this.$nextTick(() => this.schedulePreview(el.value, el.selectionStart));
             },
 
-            // Pass the textarea element; cursor position is read *inside* the timer so
-            // the browser has 400 ms to settle after paste or rapid input.
-            schedulePreview(el) {
+            // value and cursorPos are captured at call time so the timer only
+            // needs to do the fetch — no stale DOM references inside the closure.
+            schedulePreview(value, cursorPos = null) {
                 clearTimeout(this.previewTimer);
-                if (!el || !window.taskPreviewUrl) {
+                if (!value || !value.trim() || !window.taskPreviewUrl) {
                     this.preview = null;
                     return;
                 }
+
+                // In multi-line mode, restrict the preview to the line the cursor is on.
+                let previewValue = value;
+                const nonEmptyLines = value.split('\n').filter(l => l.trim().length > 0);
+                if (nonEmptyLines.length > 1 && cursorPos !== null) {
+                    const lineStart = value.lastIndexOf('\n', cursorPos - 1) + 1;
+                    const lineEnd   = value.indexOf('\n', cursorPos);
+                    const line      = lineEnd === -1
+                        ? value.substring(lineStart)
+                        : value.substring(lineStart, lineEnd);
+                    // Fall back to first non-empty line if cursor is on a blank line
+                    previewValue = line.trim() ? line : nonEmptyLines[0];
+                }
+
                 this.previewTimer = setTimeout(async () => {
                     try {
-                        const value = el.value;
-                        if (!value.trim()) { this.preview = null; return; }
-
-                        // In multi-line mode preview only the line the cursor is on.
-                        let previewValue = value;
-                        const nonEmptyLines = value.split('\n').filter(l => l.trim().length > 0);
-                        if (nonEmptyLines.length > 1) {
-                            const cursorPos = el.selectionStart;
-                            const lineStart = value.lastIndexOf('\n', cursorPos - 1) + 1;
-                            const lineEnd   = value.indexOf('\n', cursorPos);
-                            previewValue    = lineEnd === -1
-                                ? value.substring(lineStart)
-                                : value.substring(lineStart, lineEnd);
-                            if (!previewValue.trim()) { this.preview = null; return; }
-                        }
-
                         const fd = new FormData();
                         fd.append('name', previewValue);
                         fd.append('_token', document.querySelector('meta[name="csrf-token"]').content);
@@ -302,9 +302,12 @@
                     event.preventDefault();
                     this.validateAndSubmit({ target: event.target.closest('form') });
                 } else if (event.key === 'ArrowUp' || event.key === 'ArrowDown') {
-                    // Arrow keys move the cursor between lines — update the preview after the
-                    // browser has repositioned the cursor.
-                    this.$nextTick(() => this.schedulePreview(event.target));
+                    // Arrow keys move the cursor between lines — wait for the browser to
+                    // reposition the cursor before sampling it.
+                    this.$nextTick(() => {
+                        const t = event.target;
+                        this.schedulePreview(t.value, t.selectionStart);
+                    });
                 }
             },
 
@@ -356,10 +359,10 @@
                     form.appendChild(hidden);
                 }
                 this.showAutocomplete = false;
-                this.schedulePreview(inputEl);
                 this.$nextTick(() => {
                     inputEl.focus();
                     inputEl.setSelectionRange(newCursorPos, newCursorPos);
+                    this.schedulePreview(inputEl.value, newCursorPos);
                 });
             },
 
