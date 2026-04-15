@@ -68,8 +68,8 @@
         <span class="text-xs font-medium text-gray-500 uppercase tracking-wide">Task Name</span>
         <div @if(!$isInactive) @click="startEdit('name')" @endif
              x-show="!editing.name"
-             class="mt-1 p-2 rounded text-lg font-semibold text-gray-100 {{ !$isInactive ? 'cursor-pointer hover:bg-gray-700' : '' }}">
-            {{ $task->name }}
+             class="mt-1 p-2 rounded text-lg font-semibold text-gray-100 task-title {{ !$isInactive ? 'cursor-pointer hover:bg-gray-700' : '' }}">
+            {!! render_title($task->name) !!}
         </div>
         @if(!$isInactive)
         <div x-show="editing.name" class="mt-1">

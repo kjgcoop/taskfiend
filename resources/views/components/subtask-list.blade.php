@@ -84,7 +84,7 @@
                 <div class="flex-1 min-w-0">
                     <div class="flex items-start justify-between gap-2">
                         <a href="{{ route('tasks.show', $task) }}" class="block hover:text-gray-100 transition min-w-0">
-                            <h4 class="font-medium truncate {{ $task->status === 'archived' ? 'line-through text-gray-500' : 'text-gray-200' }}">{{ $task->name }}</h4>
+                            <h4 class="font-medium truncate task-title {{ $task->status === 'archived' ? 'line-through text-gray-500' : 'text-gray-200' }}">{!! render_title($task->name) !!}</h4>
                         </a>
                         @if($task->assignees->count() > 0)
                             <div class="flex-shrink-0 flex space-x-1">

@@ -852,7 +852,7 @@
                     @endif
 
                     <h3 class="font-semibold {{ ($showAsArchived || $task->status === 'archived') ? 'text-gray-500 line-through' : 'text-gray-100' }}">
-                        <span data-task-name-display>{{ $task->name }}</span>
+                        <span data-task-name-display class="task-title">{!! render_title($task->name) !!}</span>
                         @if($task->children->count() > 0)
                             <span class="text-xs text-gray-500 font-normal">
                                 (<span x-show="!subtasksOpen" style="display:none">{{ $task->children->count() }}</span><span x-show="subtasksOpen">{{ $task->incompleteChildren()->count() }}/{{ $task->children->count() }}</span> subtasks)

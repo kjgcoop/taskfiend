@@ -77,8 +77,8 @@
     <div class="flex-1 min-w-0">
         <div class="flex items-start justify-between gap-2">
             <a href="{{ route('tasks.show', $task) }}"
-               class="font-medium leading-snug hover:underline {{ $dimName ? 'text-gray-500 line-through' : 'text-gray-100' }}">
-                {{ $task->name }}
+               class="font-medium leading-snug hover:underline task-title {{ $dimName ? 'text-gray-500 line-through' : 'text-gray-100' }}">
+                {!! render_title($task->name) !!}
             </a>
 
             {{-- Assignee avatars --}}

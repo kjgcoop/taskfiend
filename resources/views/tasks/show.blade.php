@@ -1,8 +1,8 @@
 <x-app-layout>
     <x-slot name="header">
         <div class="flex justify-between items-center">
-            <h2 class="font-semibold text-xl text-gray-100 leading-tight">
-                {{ $task->name }}
+            <h2 class="font-semibold text-xl text-gray-100 leading-tight task-title">
+                {!! render_title($task->name) !!}
             </h2>
             @if(!$isInactive)
             <form method="POST" action="{{ route('tasks.duplicate', $task) }}">
@@ -28,7 +28,7 @@
                     </a>
                     <span class="text-gray-600">/</span>
                 @endforeach
-                <span class="text-gray-200 font-semibold">{{ $task->name }}</span>
+                <span class="text-gray-200 font-semibold task-title">{!! render_title($task->name) !!}</span>
             </nav>
         </div>
     </div>
@@ -42,7 +42,7 @@
                 <div class="mb-4">
                     <span class="text-sm font-medium text-gray-500">Task Name</span>
                     <div @if(!$isInactive) @click="startEdit('name')" @endif x-show="!editing.name" class="mt-1 p-2 rounded {{ !$isInactive ? 'cursor-pointer hover:bg-gray-700' : '' }}">
-                        <p class="text-lg font-semibold text-gray-100">{{ $task->name }}</p>
+                        <p class="text-lg font-semibold text-gray-100 task-title">{!! render_title($task->name) !!}</p>
                     </div>
                     @if(!$isInactive)
                     <div x-show="editing.name" class="mt-1">

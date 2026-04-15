@@ -176,7 +176,7 @@
                         </form>
                     @endif
                     <a href="{{ route('tasks.show', $task) }}"
-                       class="text-xs font-medium text-gray-200 truncate">{{ $task->name }}</a>
+                       class="text-xs font-medium text-gray-200 truncate task-title">{!! render_title($task->name) !!}</a>
                 </span>
             @endforeach
         </div>
@@ -297,7 +297,7 @@
                        class="block h-full px-2 py-1 pr-6"
                        title="{{ $task->name }} ({{ $timeLabel }})">
                         <div class="flex flex-col justify-start overflow-hidden h-full">
-                            <div class="text-xs font-semibold leading-tight truncate">{{ $task->name }}</div>
+                            <div class="text-xs font-semibold leading-tight truncate task-title">{!! render_title($task->name) !!}</div>
                             @if($heightPx >= 40)
                             <div class="text-xs opacity-75 leading-tight truncate mt-0.5">{{ $timeLabel }}</div>
                             @endif

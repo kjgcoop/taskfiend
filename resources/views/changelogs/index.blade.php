@@ -1,8 +1,8 @@
 <x-app-layout>
     <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-100 leading-tight">
+        <h2 class="font-semibold text-xl text-gray-100 leading-tight task-title">
             @if(isset($task))
-                Change Log - {{ $task->name }}
+                Change Log - {!! render_title($task->name) !!}
             @elseif(isset($project))
                 Change Log - {{ $project->name }}
             @elseif(isset($tag))

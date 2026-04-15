@@ -59,8 +59,8 @@
                                         <button type="button"
                                                 data-task-group-id="{{ $task->id }}"
                                                 onclick="openTaskPanel({{ $task->id }})"
-                                                class="block w-full text-left text-xs p-1 bg-blue-900 text-blue-200 rounded truncate hover:bg-blue-800">
-                                            {{ $task->name }}
+                                                class="block w-full text-left text-xs p-1 bg-blue-900 text-blue-200 rounded truncate hover:bg-blue-800 task-title">
+                                            {!! render_title($task->name) !!}
                                         </button>
                                     @endforeach
                                     @if($dayTasks->count() > 3)

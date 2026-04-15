@@ -41,3 +41,13 @@ main {
     padding-bottom: 1em;
     padding-top: 1em;
 }
+
+/* Inline code spans rendered in task titles */
+.task-title code {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    font-size: 0.875em;
+    background-color: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 3px;
+    padding: 0.1em 0.35em;
+}
