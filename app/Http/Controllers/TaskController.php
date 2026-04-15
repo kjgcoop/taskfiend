@@ -110,7 +110,7 @@ class TaskController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'name' => 'required|string|max:255',
+            'name' => 'required|string',  // max enforced per-line below to support bulk (multi-line) input
             'description' => 'nullable|string',
             'location' => 'nullable|string|max:255',
             'date' => 'nullable|string|max:255',
@@ -143,6 +143,19 @@ class TaskController extends Controller
             if ($parentTask->status === 'archived') {
                 return $this->storeError($request, ['parent_id' => 'Cannot create subtask under an archived task.']);
             }
+        }
+
+        // Detect bulk (multi-line) input. Each non-empty line becomes a separate task.
+        $lines = array_values(array_filter(array_map('trim', explode("\n", $validated['name']))));
+        $isQuickAdd = $request->boolean('quick_add');
+
+        if (count($lines) > 1) {
+            return $this->storeBulk($request, $validated, $lines, $isQuickAdd);
+        }
+
+        // Single-task path: enforce 255-char limit that was removed from the validation rule.
+        if (strlen($validated['name']) > 255) {
+            return $this->storeError($request, ['name' => 'Task name is too long (' . strlen($validated['name']) . '/255 characters max).']);
         }
 
         $taskName = $validated['name'];
@@ -1438,5 +1451,271 @@ class TaskController extends Controller
         }
 
         return null;
+    }
+
+    /**
+     * Handle bulk (multi-line) task creation.
+     * Each non-empty line is treated as a separate task name.
+     * The form-level project, date, tags, assignees, etc. act as fallbacks / additions.
+     * On partial success the successfully created tasks are kept and the failed
+     * lines are returned to the form so the user can fix and resubmit them.
+     */
+    private function storeBulk(Request $request, array $validated, array $lines, bool $isQuickAdd)
+    {
+        // Pre-validate shared fields once so every line benefits from the same parsed values.
+
+        // Resolve natural-language date (shared fallback for lines without an inline date).
+        $globalDate = $validated['date'] ?? null;
+        if ($globalDate && !preg_match('/^\d{4}-\d{2}-\d{2}$/', $globalDate)) {
+            $parsedDate = $this->resolveNaturalDate($globalDate);
+            if (!$parsedDate) {
+                return $this->storeError($request, [
+                    'date' => "Could not understand the date \"{$globalDate}\". Try: tomorrow, next friday, march 15, 3/15, or 2026-03-15",
+                ]);
+            }
+            $globalDate = $parsedDate->format('Y-m-d');
+        }
+
+        // Validate recurrence pattern (shared for all lines).
+        $globalRecurrence = $validated['recurrence_pattern'] ?? null;
+        if ($globalRecurrence) {
+            $dateParser = new DateParser();
+            if (!$dateParser->isValidRecurrencePattern($globalRecurrence)) {
+                return $this->storeError($request, [
+                    'recurrence_pattern' => "The recurrence pattern '{$globalRecurrence}' is not recognized. Supported patterns include: daily, every other day, every 4 days, weekdays, weekends, every Monday/Tuesday/etc., every other Monday/Tuesday/etc., every 2 weeks, every 1st (monthly), every first Monday (monthly), yearly.",
+                ]);
+            }
+        }
+
+        $successes = [];
+        $errors    = [];
+
+        foreach ($lines as $i => $line) {
+            try {
+                $task = $this->createSingleTaskFromLine($line, $validated, $globalDate, $globalRecurrence, $isQuickAdd);
+                $successes[] = $task;
+            } catch (\Exception $e) {
+                $errors[] = [
+                    'line'  => $i + 1,
+                    'input' => $line,
+                    'error' => $e->getMessage(),
+                ];
+            }
+        }
+
+        $totalLines   = count($lines);
+        $successCount = count($successes);
+        $hasErrors    = !empty($errors);
+
+        // ── Quick-add (AJAX) response ────────────────────────────────────────────────
+        if ($isQuickAdd) {
+            if (!$hasErrors) {
+                if ($request->wantsJson()) {
+                    return response()->json(['ok' => true, 'count' => $successCount]);
+                }
+                return redirect()->back()->with('success', "{$successCount} tasks created.");
+            }
+
+            $errorMsg = $successCount > 0
+                ? "Created {$successCount} of {$totalLines} tasks. Issues with remaining:"
+                : 'Could not create tasks:';
+            foreach ($errors as $err) {
+                $errorMsg .= "\n• Line {$err['line']} \"{$err['input']}\": {$err['error']}";
+            }
+
+            if ($request->wantsJson()) {
+                return response()->json([
+                    'ok'      => $successCount > 0,
+                    'partial' => $successCount > 0,
+                    'count'   => $successCount,
+                    'errors'  => $errors,
+                    'message' => $errorMsg,
+                ], $successCount > 0 ? 200 : 422);
+            }
+            return redirect()->back()->with($successCount > 0 ? 'warning' : 'error', $errorMsg);
+        }
+
+        // ── Full-form response ───────────────────────────────────────────────────────
+        if (!$hasErrors) {
+            return redirect()->route('tasks.index')
+                ->with('success', "Created {$successCount} task" . ($successCount === 1 ? '' : 's') . " successfully.");
+        }
+
+        // Partial (or full) failure: put just the failed lines back into the form.
+        $failedLines = implode("\n", array_map(fn($e) => $e['input'], $errors));
+        $request->merge(['name' => $failedLines]);
+
+        $response = back()->with('bulk_errors', $errors)->withInput();
+        if ($successCount > 0) {
+            $response = $response->with('success', "{$successCount} task" . ($successCount === 1 ? '' : 's') . " created successfully.");
+        }
+        return $response;
+    }
+
+    /**
+     * Create a single task from a raw line of text.
+     * Mirrors store() logic but throws exceptions instead of returning HTTP responses,
+     * allowing storeBulk() to collect per-line errors and continue.
+     *
+     * @param  string       $rawName              The raw line (may contain #project / @tag tokens).
+     * @param  array        $validated            Validated form data for shared fields.
+     * @param  string|null  $resolvedGlobalDate   Already-resolved YYYY-MM-DD fallback date (or null).
+     * @param  string|null  $globalRecurrence     Pre-validated recurrence pattern (or null).
+     * @param  bool         $isQuickAdd           Whether to parse dates/recurrence from the task name.
+     */
+    private function createSingleTaskFromLine(
+        string  $rawName,
+        array   $validated,
+        ?string $resolvedGlobalDate,
+        ?string $globalRecurrence,
+        bool    $isQuickAdd
+    ): Task {
+        $taskName = trim($rawName);
+
+        if (strlen($taskName) > 255) {
+            throw new \InvalidArgumentException(
+                'Task name is too long (' . strlen($taskName) . '/255 characters max).'
+            );
+        }
+
+        $date              = $resolvedGlobalDate;
+        $time              = $validated['time'] ?? null;
+        $recurrencePattern = $globalRecurrence;
+        $recurrenceFloat   = !empty($validated['recurrence_floating']);
+        $projectId         = $validated['project_id'] ?? null;
+        $tagIds            = $validated['tag_ids'] ?? [];
+
+        // ── Parse #project token (overrides the form-level fallback project) ─────────
+        if (preg_match('/#([\w-]+)/', $taskName, $projectMatch)) {
+            $projectQuery = strtolower($projectMatch[1]);
+            $project = Project::where(function ($q) use ($projectQuery) {
+                    $stripped = "LOWER(REPLACE(REPLACE(REPLACE(name, ' ', ''), '''', ''), '.', ''))";
+                    $q->whereRaw('LOWER(name) = ?', [$projectQuery])
+                      ->orWhereRaw("{$stripped} = ?", [$projectQuery])
+                      ->orWhereRaw('LOWER(name) LIKE ?', [$projectQuery . '%']);
+                })
+                ->where(function ($q) {
+                    $q->where('user_id', Auth::id())
+                      ->orWhereHas('assignees', fn($q2) => $q2->where('users.id', Auth::id()));
+                })
+                ->first();
+
+            if ($project) {
+                if (in_array($project->status, ['done', 'archived'])) {
+                    throw new \InvalidArgumentException("Project \"{$project->name}\" is inactive.");
+                }
+                $projectId = $project->id;
+            }
+            $taskName = trim(preg_replace('/#[\w-]+\s*/', '', $taskName));
+        }
+
+        // ── Parse @tag tokens (additive with form-level tags) ────────────────────────
+        if (preg_match_all('/@([\w-]+)/', $taskName, $tagMatches)) {
+            foreach ($tagMatches[1] as $tagSlug) {
+                $tag = Tag::where(function ($q) use ($tagSlug) {
+                        $q->whereRaw('LOWER(tag_name) = ?', [strtolower($tagSlug)])
+                          ->orWhereRaw("LOWER(REPLACE(tag_name, ' ', '')) = ?", [strtolower($tagSlug)])
+                          ->orWhereRaw('LOWER(tag_name) LIKE ?', [strtolower($tagSlug) . '%']);
+                    })
+                    ->first();
+                if ($tag) {
+                    $tagIds[] = $tag->id;
+                }
+            }
+            $tagIds   = array_unique($tagIds);
+            $taskName = trim(preg_replace('/@[\w-]+\s*/', '', $taskName));
+        }
+
+        // ── Quick-add: parse date / recurrence out of the task name ─────────────────
+        if ($isQuickAdd && !$recurrencePattern) {
+            $dateParser = new DateParser();
+            $unrecognizedError = $dateParser->detectUnrecognizedPattern($taskName);
+            if ($unrecognizedError) {
+                throw new \InvalidArgumentException($unrecognizedError);
+            }
+
+            $parsed    = $dateParser->parseTaskInput($taskName);
+            $taskName  = $parsed['name'];
+            if (!$date || $parsed['date'] !== null) {
+                $date = $parsed['date'];
+                $time = $parsed['time'];
+            }
+            $recurrencePattern = $parsed['recurrence_pattern'];
+            if ($parsed['recurrence_floating']) {
+                $recurrenceFloat = true;
+            }
+        }
+
+        // ── Auto-populate date from recurrence when no date specified ────────────────
+        if ($recurrencePattern && !$date) {
+            $dateParser = new DateParser();
+            $next = $dateParser->getNextOccurrence($recurrencePattern, now());
+            if ($next) {
+                $date = $next->format('Y-m-d');
+            }
+        }
+
+        // ── Guard against empty name after token stripping ───────────────────────────
+        if ($taskName === '') {
+            throw new \InvalidArgumentException('Task name is empty after removing inline tokens.');
+        }
+
+        // ── Fallback project (same logic as single-task store()) ────────────────────
+        if (empty($projectId)) {
+            $defaultProjectId = Auth::user()->default_project_id;
+            if ($defaultProjectId) {
+                $projectId = $defaultProjectId;
+            } else {
+                $inbox = Project::where('user_id', Auth::id())->where('is_inbox', true)->first();
+                if (!$inbox) {
+                    $inbox = Project::create([
+                        'name'     => 'Inbox',
+                        'user_id'  => Auth::id(),
+                        'is_inbox' => true,
+                        'status'   => 'incomplete',
+                    ]);
+                }
+                $projectId = $inbox->id;
+            }
+        }
+
+        // ── Create the task ──────────────────────────────────────────────────────────
+        $task = Task::create([
+            'name'                => $taskName,
+            'description'         => $validated['description'] ?? null,
+            'location'            => $validated['location'] ?? null,
+            'date'                => $date,
+            'time'                => $time,
+            'duration_minutes'    => $this->parseDurationInput($validated['duration_minutes'] ?? null),
+            'project_id'          => $projectId,
+            'parent_id'           => $validated['parent_id'] ?? null,
+            'recurrence_pattern'  => $recurrencePattern,
+            'recurrence_floating' => $recurrenceFloat,
+            'creator_id'          => Auth::id(),
+            'status'              => 'incomplete',
+        ]);
+
+        if (!empty($tagIds)) {
+            $task->tags()->sync(array_unique($tagIds));
+        }
+
+        // ── Assignees ────────────────────────────────────────────────────────────────
+        if (!empty($validated['parent_id']) && empty($validated['assignee_ids'])) {
+            $parentTask  = Task::find($validated['parent_id']);
+            $assigneeIds = $parentTask ? $parentTask->assignees->pluck('id')->toArray() : [Auth::id()];
+        } else {
+            $assigneeIds = $validated['assignee_ids'] ?? [Auth::id()];
+        }
+
+        foreach ($assigneeIds as $assigneeId) {
+            $task->assignments()->create([
+                'assignee_id'    => $assigneeId,
+                'assigned_by_id' => Auth::id(),
+            ]);
+        }
+
+        $this->logChange($task, 'created task', 'created');
+
+        return $task;
     }
 }

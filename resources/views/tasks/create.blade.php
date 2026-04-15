@@ -9,6 +9,32 @@
         <div class="max-w-3xl mx-auto sm:px-6 lg:px-8">
             <div class="bg-[#202020] overflow-hidden shadow-sm sm:rounded-lg border border-gray-700">
                 <div class="p-6" x-data="taskCreator(@js($projects), @js($tags))">
+                    {{-- Bulk-creation result banner (shown after partial success redirect) --}}
+                    @if(session('bulk_errors'))
+                    <div class="mb-6 p-4 bg-red-900/30 border border-red-700 rounded-md">
+                        @if(session('success'))
+                        <p class="text-sm font-medium text-green-400 mb-2">{{ session('success') }}</p>
+                        @endif
+                        <p class="text-sm font-medium text-red-300 mb-2">
+                            The following {{ count(session('bulk_errors')) === 1 ? 'line' : 'lines' }} could not be created:
+                        </p>
+                        <ul class="text-sm text-red-400 space-y-1">
+                            @foreach(session('bulk_errors') as $err)
+                            <li>
+                                <span class="font-mono bg-gray-800 px-1 rounded text-xs">Line {{ $err['line'] }}</span>
+                                <span class="font-medium">"{{ $err['input'] }}"</span>:
+                                {{ $err['error'] }}
+                            </li>
+                            @endforeach
+                        </ul>
+                        <p class="text-xs text-gray-500 mt-2">The failed lines are pre-filled below. Fix them and try again.</p>
+                    </div>
+                    @elseif(session('success'))
+                    <div class="mb-6 p-4 bg-green-900/30 border border-green-700 rounded-md">
+                        <p class="text-sm text-green-400">{{ session('success') }}</p>
+                    </div>
+                    @endif
+
                     <form method="POST" action="{{ route('tasks.store') }}" @submit="prepareSubmit">
                         @csrf
 
@@ -17,17 +43,18 @@
                                 Task Name
                                 <span class="text-xs text-gray-500 font-normal">(use #project or @tag to auto-select)</span>
                             </label>
-                            <input type="text"
-                                   x-model="taskName"
-                                   @input="handleInput"
-                                   @keydown="handleKeydown($event)"
-                                   @blur="hideAutocomplete"
-                                   id="name"
-                                   x-ref="nameInput"
-                                   required
-                                   :class="nameError ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : 'border-gray-600 focus:border-blue-500 focus:ring-blue-500'"
-                                   class="w-full rounded-md bg-gray-700 text-gray-100 placeholder-gray-500 shadow-sm"
-                                   placeholder="e.g., Meeting #work @urgent">
+                            <textarea x-model="taskName"
+                                      @input="handleInput"
+                                      @keydown="handleKeydown($event)"
+                                      @blur="hideAutocomplete"
+                                      id="name"
+                                      x-ref="nameInput"
+                                      required
+                                      rows="1"
+                                      :class="nameError ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : 'border-gray-600 focus:border-blue-500 focus:ring-blue-500'"
+                                      style="resize: none; overflow: hidden;"
+                                      class="w-full rounded-md bg-gray-700 text-gray-100 placeholder-gray-500 shadow-sm"
+                                      placeholder="e.g., Meeting #work @urgent&#10;Paste or Shift+Enter for multiple tasks"></textarea>
 
                             <!-- Autocomplete Dropdown -->
                             <div x-show="showAutocomplete"
@@ -73,22 +100,27 @@
                                 </template>
                             </div>
 
-                            <div class="mt-1 flex justify-between items-baseline">
+                            <div class="mt-1 flex justify-between items-baseline gap-2">
                                 <p class="text-xs text-gray-500">
                                     Type <code class="bg-gray-700 px-1 rounded text-gray-300">#</code> for projects or
                                     <code class="bg-gray-700 px-1 rounded text-gray-300">@</code> for tags.
-                                    Use the Date and Recurrence fields below for scheduling.
+                                    <span x-show="lineCount <= 1">Use the Date and Recurrence fields below for scheduling.</span>
+                                    <span x-show="lineCount > 1" x-cloak class="text-blue-400">Each line becomes a separate task. The Project, Date, and other fields below apply to any task without inline overrides.</span>
                                 </p>
-                                <span class="text-xs ml-2 flex-shrink-0"
+                                <span x-show="lineCount <= 1"
+                                      class="text-xs ml-2 flex-shrink-0"
                                       :class="nameError ? 'text-red-400 font-semibold' : 'text-gray-500'"
                                       x-text="taskName.length + '/255'"></span>
+                                <span x-show="lineCount > 1" x-cloak
+                                      class="text-xs ml-2 flex-shrink-0 text-blue-400 font-medium"
+                                      x-text="lineCount + ' tasks'"></span>
                             </div>
                             <p x-show="nameError" x-text="nameError" class="mt-1 text-sm text-red-400"></p>
                             @error('name')<p class="mt-1 text-sm text-red-600">{{ $message }}</p>@enderror
                         </div>
 
-                        <!-- Hidden field to submit cleaned task name -->
-                        <input type="hidden" name="name" x-model="cleanedTaskName">
+                        <!-- Hidden field to submit the (cleaned) task name -->
+                        <input type="hidden" name="name" x-model="submittableName">
 
                         <div class="mb-4">
                             <label for="description" class="block text-sm font-medium text-gray-300 mb-2">Description</label>
@@ -351,7 +383,8 @@
 
                         <div class="flex items-center gap-4">
                             <button type="submit" class="inline-flex items-center px-4 py-2 bg-blue-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-blue-700">
-                                Create Task
+                                <span x-show="lineCount <= 1">Create Task</span>
+                                <span x-show="lineCount > 1" x-cloak x-text="'Create ' + lineCount + ' Tasks'"></span>
                             </button>
                             <a href="{{ route('day') }}" class="text-sm text-gray-400 hover:text-gray-100">
                                 Cancel
@@ -478,6 +511,11 @@
                 autocompleteQuery: '',
                 confirmedTagSlugs: [],
 
+                // Number of non-empty lines — drives multi-task UI
+                get lineCount() {
+                    return this.taskName.split('\n').filter(l => l.trim().length > 0).length;
+                },
+
                 get cleanedTaskName() {
                     let name = this.taskName;
                     // Only remove @slugs that were actually selected as tags
@@ -486,6 +524,24 @@
                     }
                     name = name.replace(/#\w+/g, '');
                     return name.trim().replace(/\s+/g, ' ');
+                },
+
+                // What gets submitted: raw multi-line text in bulk mode (server handles all
+                // per-line parsing); cleaned single-line text in normal mode.
+                get submittableName() {
+                    if (this.lineCount > 1) return this.taskName;
+                    return this.cleanedTaskName;
+                },
+
+                init() {
+                    // Auto-resize the textarea when the page loads with a pre-filled value
+                    this.$nextTick(() => {
+                        const el = this.$refs.nameInput;
+                        if (el && el.value) {
+                            el.style.height = 'auto';
+                            el.style.height = Math.min(el.scrollHeight, 240) + 'px';
+                        }
+                    });
                 },
 
                 get filteredProjects() {
@@ -510,16 +566,26 @@
                 },
 
                 handleInput(event) {
-                    this.nameError = this.taskName.length > 255
-                        ? `Task name is too long (${this.taskName.length}/255 characters)`
+                    const el = event.target;
+
+                    // Auto-resize textarea to fit content
+                    el.style.height = 'auto';
+                    el.style.height = Math.min(el.scrollHeight, 240) + 'px';
+
+                    // Per-line length validation
+                    const lines = this.taskName.split('\n').filter(l => l.trim().length > 0);
+                    const tooLong = lines.find(l => l.trim().length > 255);
+                    this.nameError = tooLong
+                        ? `A task name is too long (${tooLong.trim().length}/255 characters max).`
                         : '';
 
                     const input = this.taskName;
-                    const cursorPos = event.target.selectionStart;
+                    const cursorPos = el.selectionStart;
 
-                    const beforeCursor = input.substring(0, cursorPos);
+                    // Scope autocomplete detection to the current line before the cursor
+                    const lineStart = input.lastIndexOf('\n', cursorPos - 1) + 1;
+                    const beforeCursor = input.substring(lineStart, cursorPos);
 
-                    // Check if we're typing a project (#) or tag (@)
                     const projectMatch = beforeCursor.match(/#(\w*)$/);
                     const tagMatch = beforeCursor.match(/@(\w*)$/);
 
@@ -583,6 +649,7 @@
                     const cursorPos = inputEl.selectionStart;
                     const beforeCursor = input.substring(0, cursorPos);
                     const afterCursor = input.substring(cursorPos);
+                    const isMultiLine = this.lineCount > 1;
 
                     // Replace the incomplete word with the selected name
                     let newBefore;
@@ -591,24 +658,30 @@
                     if (this.autocompleteType === 'project') {
                         newBefore = beforeCursor.replace(/#\w*$/, '#' + slug + ' ');
 
-                        // Auto-select the project in the dropdown
-                        const project = this.projects.find(p =>
-                            p.name.toLowerCase().replace(/[^a-z0-9]/g, '') === slug
-                        );
-                        if (project) {
-                            this.selectedProjectId = project.id;
+                        // In single-line mode, also auto-select the project dropdown.
+                        // In multi-line mode the server handles per-line project assignment.
+                        if (!isMultiLine) {
+                            const project = this.projects.find(p =>
+                                p.name.toLowerCase().replace(/[^a-z0-9]/g, '') === slug
+                            );
+                            if (project) {
+                                this.selectedProjectId = project.id;
+                            }
                         }
                     } else {
                         newBefore = beforeCursor.replace(/@\w*$/, '@' + slug + ' ');
 
-                        // Auto-select the tag checkbox
-                        const tag = this.tags.find(t =>
-                            t.tag_name.toLowerCase().replace(/[^a-z0-9]/g, '') === slug
-                        );
-                        if (tag && !this.selectedTagIds.includes(tag.id)) {
-                            this.selectedTagIds.push(tag.id);
+                        // In single-line mode, also tick the tag checkbox.
+                        // In multi-line mode the server parses @tags per line additively.
+                        if (!isMultiLine) {
+                            const tag = this.tags.find(t =>
+                                t.tag_name.toLowerCase().replace(/[^a-z0-9]/g, '') === slug
+                            );
+                            if (tag && !this.selectedTagIds.includes(tag.id)) {
+                                this.selectedTagIds.push(tag.id);
+                            }
+                            this.confirmedTagSlugs.push(slug);
                         }
-                        this.confirmedTagSlugs.push(slug);
                     }
 
                     this.taskName = newBefore + afterCursor;
@@ -683,7 +756,15 @@
                 },
 
                 prepareSubmit(e) {
-                    if (this.taskName.length > 255) {
+                    const lines = this.taskName.split('\n').filter(l => l.trim().length > 0);
+                    if (lines.length > 1) {
+                        const tooLong = lines.find(l => l.trim().length > 255);
+                        if (tooLong) {
+                            e.preventDefault();
+                            this.nameError = `A task name is too long (${tooLong.trim().length}/255 characters max).`;
+                            this.$refs.nameInput.focus();
+                        }
+                    } else if (this.taskName.length > 255) {
                         e.preventDefault();
                         this.nameError = `Task name is too long (${this.taskName.length}/255 characters)`;
                         this.$refs.nameInput.focus();

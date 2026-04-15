@@ -124,31 +124,50 @@
                 return this.tags.filter(t => t.tag_name.toLowerCase().includes(q));
             },
 
+            // Number of non-empty task lines currently in the textarea
+            get lineCount() {
+                const input = this.$refs.createInput;
+                if (!input) return 1;
+                return input.value.split('\n').filter(l => l.trim().length > 0).length;
+            },
+
             async validateAndSubmit(event) {
                 const form = event.target;
                 const input = this.$refs.createInput;
                 if (!input || this.submitting) return;
-                const name = input.value.trim();
-                if (name.length === 0) return;
-                if (name.length > 255) {
-                    this.nameError = `Task name is too long (${name.length}/255 characters max).`;
+                const fullValue = input.value;
+                const lines = fullValue.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+                if (lines.length === 0) return;
+
+                // Per-line length validation
+                const tooLong = lines.find(l => l.length > 255);
+                if (tooLong) {
+                    this.nameError = `A task name is too long (${tooLong.length}/255 characters max).`;
                     return;
                 }
+
                 this.nameError = '';
                 this.serverError = '';
                 clearTimeout(this.previewTimer);
                 this.preview = null;
-                // Remove auto-injected tag_ids hidden inputs whose @token was deleted from the text
-                form.querySelectorAll('input[data-tag-slug]').forEach(hidden => {
-                    if (!name.includes('@' + hidden.dataset.tagSlug)) {
-                        hidden.remove();
+
+                if (lines.length === 1) {
+                    // Single task: remove autocomplete-injected hidden inputs whose token was deleted
+                    form.querySelectorAll('input[data-tag-slug]').forEach(hidden => {
+                        if (!fullValue.includes('@' + hidden.dataset.tagSlug)) hidden.remove();
+                    });
+                    const projectHidden = form.querySelector('input[data-project-autocomplete]');
+                    if (projectHidden && !fullValue.includes('#' + projectHidden.dataset.projectSlug)) {
+                        projectHidden.remove();
                     }
-                });
-                // Remove auto-injected project_id if its #token was deleted from the text
-                const projectHidden = form.querySelector('input[data-project-autocomplete]');
-                if (projectHidden && !name.includes('#' + projectHidden.dataset.projectSlug)) {
-                    projectHidden.remove();
+                } else {
+                    // Multi-line: server parses each line independently; drop autocomplete
+                    // injected inputs so they don't erroneously apply to every task.
+                    form.querySelectorAll('input[data-tag-slug]').forEach(h => h.remove());
+                    const projectHidden = form.querySelector('input[data-project-autocomplete]');
+                    if (projectHidden) projectHidden.remove();
                 }
+
                 this.submitting = true;
                 try {
                     const res = await fetch(form.action, {
@@ -160,6 +179,11 @@
                         body: new FormData(form),
                     });
                     if (res.ok) {
+                        const data = await res.json().catch(() => ({}));
+                        // Partial bulk success: persist the error message across the reload
+                        if (data.partial && data.message) {
+                            sessionStorage.setItem('quickAddBulkError', data.message);
+                        }
                         window.location.reload();
                         return;
                     }
@@ -179,13 +203,25 @@
             },
 
             handleInput(event) {
-                const input = event.target.value;
-                this.nameError = input.length > 255
-                    ? `Task name is too long (${input.length}/255 characters max.).`
-                    : '';
+                const el = event.target;
+                const input = el.value;
                 if (this.serverError) this.serverError = '';
-                const cursorPos = event.target.selectionStart;
-                const beforeCursor = input.substring(0, cursorPos);
+
+                // Per-line length validation (each task name ≤ 255)
+                const lines = input.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+                const tooLong = lines.find(l => l.length > 255);
+                this.nameError = tooLong
+                    ? `A task name is too long (${tooLong.length}/255 characters max).`
+                    : '';
+
+                // Auto-resize textarea to fit content
+                el.style.height = 'auto';
+                el.style.height = Math.min(el.scrollHeight, 200) + 'px';
+
+                // Autocomplete: scope to the text on the current line before the cursor
+                const cursorPos = el.selectionStart;
+                const lineStart = input.lastIndexOf('\n', cursorPos - 1) + 1;
+                const beforeCursor = input.substring(lineStart, cursorPos);
 
                 const projectMatch = beforeCursor.match(/#(\w*)$/);
                 const tagMatch = beforeCursor.match(/@(\w*)$/);
@@ -204,19 +240,32 @@
                     this.showAutocomplete = false;
                 }
 
-                this.schedulePreview(input);
+                this.schedulePreview(input, el);
             },
 
-            schedulePreview(value) {
+            schedulePreview(value, el = null) {
                 clearTimeout(this.previewTimer);
-                if (!value.trim() || !window.taskPreviewUrl) {
+
+                // In multi-line mode show a preview for the line the cursor is on,
+                // not the whole textarea value.
+                let previewValue = value;
+                if (el && value.includes('\n')) {
+                    const cursorPos = el.selectionStart ?? value.length;
+                    const lineStart = value.lastIndexOf('\n', cursorPos - 1) + 1;
+                    const lineEnd   = value.indexOf('\n', cursorPos);
+                    previewValue    = lineEnd === -1
+                        ? value.substring(lineStart)
+                        : value.substring(lineStart, lineEnd);
+                }
+
+                if (!previewValue.trim() || !window.taskPreviewUrl) {
                     this.preview = null;
                     return;
                 }
                 this.previewTimer = setTimeout(async () => {
                     try {
                         const fd = new FormData();
-                        fd.append('name', value);
+                        fd.append('name', previewValue);
                         fd.append('_token', document.querySelector('meta[name="csrf-token"]').content);
                         const res = await fetch(window.taskPreviewUrl, { method: 'POST', body: fd });
                         if (res.ok) this.preview = await res.json();
@@ -225,23 +274,28 @@
             },
 
             handleKeydown(event) {
-                if (!this.showAutocomplete) return;
-                const list = this.autocompleteType === 'project' ? this.filteredProjects : this.filteredTags;
-                const maxIndex = Math.max(0, list.length - 1);
+                if (this.showAutocomplete) {
+                    const list = this.autocompleteType === 'project' ? this.filteredProjects : this.filteredTags;
+                    const maxIndex = Math.max(0, list.length - 1);
 
-                if (event.key === 'ArrowDown') {
+                    if (event.key === 'ArrowDown') {
+                        event.preventDefault();
+                        this.autocompleteIndex = Math.min(this.autocompleteIndex + 1, maxIndex);
+                    } else if (event.key === 'ArrowUp') {
+                        event.preventDefault();
+                        this.autocompleteIndex = Math.max(this.autocompleteIndex - 1, 0);
+                    } else if (event.key === 'Enter') {
+                        event.preventDefault();
+                        const item = list[this.autocompleteIndex];
+                        if (item) this.selectAutocomplete(this.autocompleteType === 'project' ? item.name : item.tag_name, item.id);
+                    } else if (event.key === 'Escape') {
+                        event.preventDefault();
+                        this.showAutocomplete = false;
+                    }
+                } else if (event.key === 'Enter' && !event.shiftKey) {
+                    // Enter without Shift submits; Shift+Enter inserts a newline (textarea default).
                     event.preventDefault();
-                    this.autocompleteIndex = Math.min(this.autocompleteIndex + 1, maxIndex);
-                } else if (event.key === 'ArrowUp') {
-                    event.preventDefault();
-                    this.autocompleteIndex = Math.max(this.autocompleteIndex - 1, 0);
-                } else if (event.key === 'Enter') {
-                    event.preventDefault();
-                    const item = list[this.autocompleteIndex];
-                    if (item) this.selectAutocomplete(this.autocompleteType === 'project' ? item.name : item.tag_name, item.id);
-                } else if (event.key === 'Escape') {
-                    event.preventDefault();
-                    this.showAutocomplete = false;
+                    this.validateAndSubmit({ target: event.target.closest('form') });
                 }
             },
 
@@ -302,6 +356,13 @@
 
             init() {
                 this.$nextTick(() => {
+                    // Display any error message carried over from a partial bulk quick-add
+                    const bulkErr = sessionStorage.getItem('quickAddBulkError');
+                    if (bulkErr) {
+                        sessionStorage.removeItem('quickAddBulkError');
+                        this.serverError = bulkErr;
+                    }
+
                     const container = this.$refs.taskContainer;
                     if (container) {
                         const total = container.querySelectorAll('[data-filterable]').length;
