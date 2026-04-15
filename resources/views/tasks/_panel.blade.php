@@ -217,6 +217,9 @@
                 <div class="flex gap-2 mt-2">
                     <button @click="saveField('time')" class="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700">Save</button>
                     <button @click="cancelEdit('time')" class="px-3 py-1 bg-gray-700 text-gray-300 text-sm rounded hover:bg-gray-600">Cancel</button>
+                    @if($task->time)
+                    <button @click="fields.time = ''; saveField('time')" class="px-3 py-1 bg-gray-700 text-red-400 text-sm rounded hover:bg-gray-600">Clear</button>
+                    @endif
                 </div>
             </div>
             @endif
@@ -666,6 +669,7 @@
         return {
             taskId: taskId,
             editing: {},
+            openEdits: [],
             fields: {
                 name: @js($task->name),
                 description: @js($task->description ?? ''),
@@ -693,10 +697,12 @@
 
             startEdit(field) {
                 this.editing[field] = true;
+                if (!this.openEdits.includes(field)) this.openEdits.push(field);
             },
 
             startEditDate() {
                 this.editing.date = true;
+                if (!this.openEdits.includes('date')) this.openEdits.push('date');
                 this.datePreview = '';
                 this.dateError = '';
                 this.$nextTick(() => {
@@ -709,6 +715,7 @@
 
             cancelEdit(field) {
                 this.editing[field] = false;
+                this.openEdits = this.openEdits.filter(f => f !== field);
                 if (field === 'date') {
                     this.dateText = @js($task->date ? \Carbon\Carbon::parse($task->date)->format('l, F j, Y') : '');
                     this.datePreview = '';
@@ -805,6 +812,50 @@
                 await this.saveField('date');
             },
 
+            async _saveFieldRequest(field) {
+                if (field === 'date') {
+                    const input = this.dateText.trim();
+                    if (!input) {
+                        this.fields.date = '';
+                    } else {
+                        this.fields.date = input;
+                    }
+                }
+
+                const formData = new FormData();
+                formData.append('_token', document.querySelector('meta[name="csrf-token"]').content);
+                formData.append('field', field);
+
+                if (Array.isArray(this.fields[field])) {
+                    this.fields[field].forEach(value => {
+                        formData.append(field + '[]', value);
+                    });
+                } else {
+                    formData.append('value', this.fields[field]);
+                }
+
+                const response = await fetch(`/tasks/${this.taskId}/update-field`, {
+                    method: 'POST',
+                    body: formData,
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    this.original[field] = JSON.parse(JSON.stringify(this.fields[field]));
+                    this.editing[field] = false;
+                    this.openEdits = this.openEdits.filter(f => f !== field);
+                    if (data.taskData) {
+                        window.dispatchEvent(new CustomEvent('task-panel-updated', { detail: data.taskData }));
+                    }
+                    return true;
+                } else {
+                    alert('Error saving ' + field + ': ' + (data.message || 'Failed to update'));
+                    this.resetField(field);
+                    return false;
+                }
+            },
+
             async saveField(field) {
                 try {
                     if (field === 'status' && this.fields.status === 'done' && this.fields.recurrence_pattern) {
@@ -816,41 +867,19 @@
                         if (!confirmed) {
                             this.resetField(field);
                             this.editing[field] = false;
+                            this.openEdits = this.openEdits.filter(f => f !== field);
                             return;
                         }
                     }
 
-                    const formData = new FormData();
-                    formData.append('_token', document.querySelector('meta[name="csrf-token"]').content);
-                    formData.append('field', field);
-
-                    if (Array.isArray(this.fields[field])) {
-                        this.fields[field].forEach(value => {
-                            formData.append(field + '[]', value);
-                        });
-                    } else {
-                        formData.append('value', this.fields[field]);
+                    const otherEditingFields = this.openEdits.filter(f => f !== field);
+                    for (const otherField of otherEditingFields) {
+                        await this._saveFieldRequest(otherField);
                     }
 
-                    const response = await fetch(`/tasks/${this.taskId}/update-field`, {
-                        method: 'POST',
-                        body: formData,
-                    });
-
-                    const data = await response.json();
-
-                    if (data.success) {
-                        this.original[field] = JSON.parse(JSON.stringify(this.fields[field]));
-                        this.editing[field] = false;
-                        // Update the background list row immediately
-                        if (data.taskData) {
-                            window.dispatchEvent(new CustomEvent('task-panel-updated', { detail: data.taskData }));
-                        }
-                        // Reload the panel with fresh data instead of full page reload
+                    const ok = await this._saveFieldRequest(field);
+                    if (ok) {
                         window.reloadTaskPanel(this.taskId);
-                    } else {
-                        alert('Error: ' + (data.message || 'Failed to update'));
-                        this.resetField(field);
                     }
                 } catch (error) {
                     console.error('Error:', error);
