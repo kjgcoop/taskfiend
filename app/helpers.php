@@ -21,10 +21,15 @@ if (! function_exists('render_body')) {
      * Resolves inline reference syntax before passing through GitHub-flavoured
      * Markdown:
      *   [task:5]              → link to task 5 (name; ✓ if done; strikethrough if archived)
-     *   [project:3]           → link to project 3 (name; strikethrough if archived)
+     *   [project:3]           → link to project 3 (name; ✓ if done; strikethrough if archived)
      *   [tag:2]               → link to tag 2 (tag_name)
      *   [date:2026-04-15]     → link to the day view for that date
      *   [location:Home Office]→ link to search filtered by that location (trimmed)
+     *
+     * Also recognises bare app URLs for tasks, projects, and tags and renders
+     * them the same way. Any host is accepted so URLs copied from production
+     * resolve correctly in development (and vice versa). URLs already inside a
+     * markdown link [text](url) are left untouched.
      *
      * Unresolvable or access-denied references are left as raw text.
      * Returns an HTML string safe for use with {!! !!}.
@@ -36,13 +41,21 @@ if (! function_exists('render_body')) {
         $userId = auth()->id();
 
         // ── Collect all reference IDs so we can batch-load ──────────────────
+        // Bracket notation
         preg_match_all('/\[task:(\d+)\]/',    $text, $tm);
         preg_match_all('/\[project:(\d+)\]/', $text, $pm);
         preg_match_all('/\[tag:(\d+)\]/',     $text, $gm);
 
-        $taskIds    = array_unique($tm[1]);
-        $projectIds = array_unique($pm[1]);
-        $tagIds     = array_unique($gm[1]);
+        // Bare app URLs — any host, path must contain /tasks/N etc.
+        // Negative lookbehind (?<!\]\() skips URLs already inside ]( link syntax.
+        $urlBase = 'https?://[^\s\])"\'<>]+';
+        preg_match_all('/(?<!\]\()' . $urlBase . '\/tasks\/(\d+)/i',    $text, $utm);
+        preg_match_all('/(?<!\]\()' . $urlBase . '\/projects\/(\d+)/i', $text, $upm);
+        preg_match_all('/(?<!\]\()' . $urlBase . '\/tags\/(\d+)/i',     $text, $ugm);
+
+        $taskIds    = array_unique(array_merge($tm[1],  $utm[1]));
+        $projectIds = array_unique(array_merge($pm[1],  $upm[1]));
+        $tagIds     = array_unique(array_merge($gm[1],  $ugm[1]));
 
         // ── Batch-load entities with relationships needed for access checks ──
         $tasks    = $taskIds    ? \App\Models\Task::with('assignees')
@@ -113,6 +126,70 @@ if (! function_exists('render_body')) {
             $url  = route('tags.show', $tag);
             return "[{$name}]({$url})";
         }, $text);
+
+        // ── Bare app URLs: /tasks/N[/…] ─────────────────────────────────────
+        $text = preg_replace_callback(
+            '/(?<!\]\()https?:\/\/[^\s\])"\'<>]*\/tasks\/(\d+)[^\s\])"\'<>]*/i',
+            function ($m) use ($tasks, $userId, $mdText) {
+                $task = $tasks->get((int) $m[1]);
+                if (! $task) return $m[0];
+
+                if ($userId) {
+                    $isCreator  = $task->creator_id === $userId;
+                    $isAssignee = $task->assignees->contains('id', $userId);
+                    if (! $isCreator && ! $isAssignee) return $m[0];
+                }
+
+                $name = $mdText($task->name);
+                $url  = $m[0];
+
+                if ($task->status === 'archived') {
+                    return "~~[{$name}]({$url})~~";
+                }
+                $suffix = $task->status === 'done' ? ' ✓' : '';
+                return "[{$name}{$suffix}]({$url})";
+            },
+            $text
+        );
+
+        // ── Bare app URLs: /projects/N[/…] ──────────────────────────────────
+        $text = preg_replace_callback(
+            '/(?<!\]\()https?:\/\/[^\s\])"\'<>]*\/projects\/(\d+)[^\s\])"\'<>]*/i',
+            function ($m) use ($projects, $userId, $mdText) {
+                $project = $projects->get((int) $m[1]);
+                if (! $project) return $m[0];
+
+                if ($userId) {
+                    $isCreator  = $project->user_id === $userId;
+                    $isAssignee = $project->assignees->contains('id', $userId);
+                    if (! $isCreator && ! $isAssignee) return $m[0];
+                }
+
+                $name = $mdText($project->name);
+                $url  = $m[0];
+
+                if ($project->status === 'archived') {
+                    return "~~[{$name}]({$url})~~";
+                }
+                $suffix = $project->status === 'done' ? ' ✓' : '';
+                return "[{$name}{$suffix}]({$url})";
+            },
+            $text
+        );
+
+        // ── Bare app URLs: /tags/N[/…] ───────────────────────────────────────
+        $text = preg_replace_callback(
+            '/(?<!\]\()https?:\/\/[^\s\])"\'<>]*\/tags\/(\d+)[^\s\])"\'<>]*/i',
+            function ($m) use ($tags, $mdText) {
+                $tag = $tags->get((int) $m[1]);
+                if (! $tag) return $m[0];
+
+                $name = $mdText($tag->tag_name);
+                $url  = $m[0];
+                return "[{$name}]({$url})";
+            },
+            $text
+        );
 
         // ── [date:YYYY-MM-DD] ────────────────────────────────────────────────
         $text = preg_replace_callback('/\[date:(\d{4}-\d{2}-\d{2})\]/', function ($m) {
