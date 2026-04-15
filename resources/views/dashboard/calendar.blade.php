@@ -40,14 +40,14 @@
                         @endphp
 
                         @for($i = 0; $i < 42; $i++)
-                            <div class="border border-gray-600 rounded p-2 min-h-24 {{ $date->month != $month ? 'bg-[#101010] text-gray-500' : 'bg-[#202020]' }}"
+                            <div class="border rounded p-2 min-h-24 {{ $date->isToday() ? 'border-blue-500 bg-blue-950/20' : ($date->month != $month ? 'border-gray-600 bg-[#101010] text-gray-500' : 'border-gray-600 bg-[#202020]') }}"
                                  data-cal-cell="{{ $date->format('Y-m-d') }}">
                                 @php
                                     $dateKey = $date->format('Y-m-d');
                                     $dayTasks = $tasks->get($dateKey) ?? collect();
                                 @endphp
                                 <div class="flex items-center justify-between mb-1">
-                                    <a href="{{ route('day', ['date' => $dateKey]) }}" class="font-semibold text-sm text-gray-300 hover:text-blue-400 hover:underline">
+                                    <a href="{{ route('day', ['date' => $dateKey]) }}" class="{{ $date->isToday() ? 'flex items-center justify-center w-6 h-6 bg-blue-600 text-white rounded-full text-xs leading-none font-bold' : 'font-semibold text-sm text-gray-300 hover:text-blue-400 hover:underline' }}">
                                         {{ $date->day }}
                                     </a>
                                     @if($dayTasks->count() > 0)
