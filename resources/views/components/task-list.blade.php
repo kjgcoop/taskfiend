@@ -240,26 +240,35 @@
                     this.showAutocomplete = false;
                 }
 
-                this.schedulePreview(input);
+                this.schedulePreview(el);
             },
 
-            schedulePreview(value) {
+            // Pass the textarea element; cursor position is read *inside* the timer so
+            // the browser has 400 ms to settle after paste or rapid input.
+            schedulePreview(el) {
                 clearTimeout(this.previewTimer);
-
-                // In multi-line mode the "N tasks will be created" badge is sufficient
-                // feedback — hide the parse preview to avoid confusing partial results.
-                const lineCount = value.split('\n').filter(l => l.trim().length > 0).length;
-                if (lineCount > 1) {
-                    this.preview = null;
-                    return;
-                }
-
-                if (!value.trim() || !window.taskPreviewUrl) {
+                if (!el || !window.taskPreviewUrl) {
                     this.preview = null;
                     return;
                 }
                 this.previewTimer = setTimeout(async () => {
                     try {
+                        const value = el.value;
+                        if (!value.trim()) { this.preview = null; return; }
+
+                        // In multi-line mode preview only the line the cursor is on.
+                        let previewValue = value;
+                        const nonEmptyLines = value.split('\n').filter(l => l.trim().length > 0);
+                        if (nonEmptyLines.length > 1) {
+                            const cursorPos = el.selectionStart;
+                            const lineStart = value.lastIndexOf('\n', cursorPos - 1) + 1;
+                            const lineEnd   = value.indexOf('\n', cursorPos);
+                            previewValue    = lineEnd === -1
+                                ? value.substring(lineStart)
+                                : value.substring(lineStart, lineEnd);
+                            if (!previewValue.trim()) { this.preview = null; return; }
+                        }
+
                         const fd = new FormData();
                         fd.append('name', previewValue);
                         fd.append('_token', document.querySelector('meta[name="csrf-token"]').content);
@@ -292,6 +301,10 @@
                     // Enter without Shift submits; Shift+Enter inserts a newline (textarea default).
                     event.preventDefault();
                     this.validateAndSubmit({ target: event.target.closest('form') });
+                } else if (event.key === 'ArrowUp' || event.key === 'ArrowDown') {
+                    // Arrow keys move the cursor between lines — update the preview after the
+                    // browser has repositioned the cursor.
+                    this.$nextTick(() => this.schedulePreview(event.target));
                 }
             },
 
@@ -343,7 +356,7 @@
                     form.appendChild(hidden);
                 }
                 this.showAutocomplete = false;
-                this.schedulePreview(inputEl.value);
+                this.schedulePreview(inputEl);
                 this.$nextTick(() => {
                     inputEl.focus();
                     inputEl.setSelectionRange(newCursorPos, newCursorPos);

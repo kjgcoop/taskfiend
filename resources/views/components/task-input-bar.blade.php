@@ -29,6 +29,7 @@
                               rows="1"
                               x-on:input="handleInput($event)"
                               x-on:keydown="handleKeydown($event)"
+                              x-on:click="schedulePreview($refs.createInput)"
                               x-on:paste="$nextTick(() => { $refs.createInput.style.height = 'auto'; $refs.createInput.style.height = Math.min($refs.createInput.scrollHeight, 200) + 'px'; })"
                               :class="nameError ? 'border-red-500 focus:ring-red-500' : 'border-gray-600 focus:ring-blue-500'"
                               style="resize: none; overflow: hidden;"
