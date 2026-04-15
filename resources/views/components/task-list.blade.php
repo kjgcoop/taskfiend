@@ -908,8 +908,8 @@
                                 <a href="{{ $mapUrl }}" target="_blank" rel="noopener"
                                    onclick="event.stopPropagation()"
                                    title="{{ $task->location }}"
-                                   class="border border-orange-400 text-orange-400 rounded px-1.5 py-0.5 hover:bg-orange-400/10 hover:underline"
-                                   data-task-location-display>{{ $locDisplay }}</a>
+                                   class="inline-flex items-center gap-0.5 border border-orange-400 text-orange-400 rounded px-1.5 py-0.5 hover:bg-orange-400/10 hover:underline"
+                                   data-task-location-display>{{ $locDisplay }}<svg class="inline w-2.5 h-2.5 opacity-70 flex-shrink-0" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M1 9L9 1M9 1H4M9 1V6"/></svg></a>
                             @else
                                 <span class="border border-gray-400 text-gray-400 rounded px-1.5 py-0.5"
                                       title="{{ mb_strlen($task->location) > $truncLen && $truncLen > 0 ? $task->location : '' }}"
