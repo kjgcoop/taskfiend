@@ -96,10 +96,11 @@ if (! function_exists('render_body')) {
             $name = $mdText($project->name);
             $url  = route('projects.show', $project);
 
-            if ($project->status !== 'incomplete') {
+            if ($project->status === 'archived') {
                 return "~~[{$name}]({$url})~~";
             }
-            return "[{$name}]({$url})";
+            $suffix = $project->status === 'done' ? ' ✓' : '';
+            return "[{$name}{$suffix}]({$url})";
         }, $text);
 
         // ── [tag:N] ──────────────────────────────────────────────────────────
