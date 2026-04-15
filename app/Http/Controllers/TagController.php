@@ -158,8 +158,16 @@ class TagController extends Controller
             ->orderByRaw('LOWER(location)')
             ->pluck('location');
 
+        $breakdown = $tasks
+            ->groupBy(fn($t) => optional($t->project)->name ?? 'No Project')
+            ->map(fn($g, $name) => ['name' => $name, 'count' => $g->count()])
+            ->sortByDesc('count')
+            ->values()
+            ->toArray();
+
         return view('tags.show', compact(
-            'tag', 'tasks', 'completedTasks', 'completedTasksHasMore', 'completedTasksTotal',
+            'tag', 'tasks', 'breakdown',
+            'completedTasks', 'completedTasksHasMore', 'completedTasksTotal',
             'archivedTasks', 'archivedTasksHasMore', 'archivedTasksTotal',
             'projects', 'allTags', 'users', 'locations', 'sort'
         ));

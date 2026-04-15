@@ -223,8 +223,12 @@ class ProjectController extends Controller
             ->orderByRaw('LOWER(location)')
             ->pluck('location');
 
+        // All tasks here belong to one project, so no breakdown tooltip is needed.
+        $breakdown = [];
+
         return view('projects.show', compact(
-            'project', 'tasks', 'completedTasks', 'completedTasksHasMore', 'completedTasksTotal',
+            'project', 'tasks', 'breakdown',
+            'completedTasks', 'completedTasksHasMore', 'completedTasksTotal',
             'archivedTasks', 'archivedTasksHasMore', 'archivedTasksTotal',
             'users', 'projects', 'tags', 'locations', 'sort'
         ));

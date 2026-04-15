@@ -14,6 +14,17 @@ use Illuminate\Support\Facades\Auth;
 
 class DashboardController extends Controller
 {
+    /** Build a project-breakdown array from a task collection for the count tooltip. */
+    private function projectBreakdown(\Illuminate\Support\Collection $tasks): array
+    {
+        return $tasks
+            ->groupBy(fn($t) => optional($t->project)->name ?? 'No Project')
+            ->map(fn($g, $name) => ['name' => $name, 'count' => $g->count()])
+            ->sortByDesc('count')
+            ->values()
+            ->toArray();
+    }
+
     /** Apply sort ordering to a task query based on the sort parameter. */
     private function applySortOrder($query, string $sort): void
     {
@@ -125,8 +136,13 @@ class DashboardController extends Controller
         $archivedTasksHasMore = $archivedTasksRaw->count() > $perPage;
         $archivedTasks = $archivedTasksHasMore ? $archivedTasksRaw->slice(0, $perPage) : $archivedTasksRaw;
 
+        // Inbox tasks all belong to one project; build the breakdown directly.
+        $breakdown = $tasks->isNotEmpty()
+            ? [['name' => $inboxProject->name, 'count' => $tasks->count()]]
+            : [];
+
         return view('dashboard.inbox', array_merge(compact(
-            'tasks', 'sort', 'inboxProject',
+            'tasks', 'sort', 'inboxProject', 'breakdown',
             'completedTasks', 'completedTasksTotal', 'completedTasksHasMore',
             'archivedTasks', 'archivedTasksTotal', 'archivedTasksHasMore'
         ), $this->quickAddData()));
@@ -153,7 +169,9 @@ class DashboardController extends Controller
         $this->applySortOrder($tasksQuery, $sort);
         $tasks = $tasksQuery->get();
 
-        return view('dashboard.overdue', array_merge(compact('tasks', 'sort'), $this->quickAddData()));
+        $breakdown = $this->projectBreakdown($tasks);
+
+        return view('dashboard.overdue', array_merge(compact('tasks', 'sort', 'breakdown'), $this->quickAddData()));
     }
 
     public function undated(Request $request)
@@ -176,7 +194,9 @@ class DashboardController extends Controller
         $this->applySortOrder($tasksQuery, $sort);
         $tasks = $tasksQuery->get();
 
-        return view('dashboard.undated', array_merge(compact('tasks', 'sort'), $this->quickAddData()));
+        $breakdown = $this->projectBreakdown($tasks);
+
+        return view('dashboard.undated', array_merge(compact('tasks', 'sort', 'breakdown'), $this->quickAddData()));
     }
 
     public function all(Request $request)
@@ -198,7 +218,9 @@ class DashboardController extends Controller
         $this->applySortOrder($tasksQuery, $sort);
         $tasks = $tasksQuery->get();
 
-        return view('dashboard.all', array_merge(compact('tasks', 'sort'), $this->quickAddData()));
+        $breakdown = $this->projectBreakdown($tasks);
+
+        return view('dashboard.all', array_merge(compact('tasks', 'sort', 'breakdown'), $this->quickAddData()));
     }
 
     public function calendar(Request $request)
@@ -406,8 +428,10 @@ class DashboardController extends Controller
                 ->count();
         }
 
+        $breakdown = $this->projectBreakdown($tasks);
+
         return view('dashboard.day', array_merge(compact(
-            'tasks', 'date', 'carbonDate', 'overdueCount', 'sort',
+            'tasks', 'date', 'carbonDate', 'overdueCount', 'sort', 'breakdown',
             'completedTasks', 'completedTasksTotal', 'completedTasksHasMore',
             'archivedTasks', 'archivedTasksTotal', 'archivedTasksHasMore'
         ), $this->quickAddData()));

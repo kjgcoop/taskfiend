@@ -52,7 +52,14 @@ class TaskController extends Controller
         $tasks = $query->with(['creator', 'project', 'tags', 'assignees', 'attachments', 'comments', 'completionLog.user'])
             ->get();
 
-        return view('tasks.index', compact('tasks', 'sort'));
+        $breakdown = $tasks
+            ->groupBy(fn($t) => optional($t->project)->name ?? 'No Project')
+            ->map(fn($g, $name) => ['name' => $name, 'count' => $g->count()])
+            ->sortByDesc('count')
+            ->values()
+            ->toArray();
+
+        return view('tasks.index', compact('tasks', 'sort', 'breakdown'));
     }
 
     public function create(Request $request)
