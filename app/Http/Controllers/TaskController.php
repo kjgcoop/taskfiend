@@ -63,7 +63,7 @@ class TaskController extends Controller
                         $q->where('users.id', Auth::id());
                     });
             })
-            ->where('status', '!=', 'archived')
+            ->where('status', 'incomplete')
             ->orderByRaw('LOWER(name)')
             ->get();
 
@@ -169,6 +169,7 @@ class TaskController extends Controller
                         $q->where('user_id', Auth::id())
                           ->orWhereHas('assignees', fn($q2) => $q2->where('users.id', Auth::id()));
                     })
+                    ->where('status', 'incomplete')
                     ->first();
                 if ($project) {
                     $validated['project_id'] = $project->id;
@@ -335,7 +336,7 @@ class TaskController extends Controller
                         $q->where('users.id', Auth::id());
                     });
             })
-            ->where('status', '!=', 'archived')
+            ->where('status', 'incomplete')
             ->orderByRaw('LOWER(name)')
             ->get();
 
@@ -421,7 +422,7 @@ class TaskController extends Controller
                         $q->where('users.id', Auth::id());
                     });
             })
-            ->where('status', '!=', 'archived')
+            ->where('status', 'incomplete')
             ->orderByRaw('LOWER(name)')
             ->get();
 
@@ -925,6 +926,7 @@ class TaskController extends Controller
                     $q->where('user_id', Auth::id())
                       ->orWhereHas('assignees', fn($q2) => $q2->where('users.id', Auth::id()));
                 })
+                ->where('status', 'incomplete')
                 ->first();
             // Only show the project badge if we actually matched a real project.
             // Showing the raw slug as green was misleading (looked like a match when it wasn't).

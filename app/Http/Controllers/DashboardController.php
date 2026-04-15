@@ -32,7 +32,7 @@ class DashboardController extends Controller
                 $q->where('user_id', Auth::id())
                   ->orWhereHas('assignees', fn($q2) => $q2->where('users.id', Auth::id()));
             })
-            ->where('status', '!=', 'archived')
+            ->where('status', 'incomplete')
             ->orderBy('name')
             ->get(['id', 'name']);
 

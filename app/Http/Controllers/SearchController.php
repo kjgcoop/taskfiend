@@ -141,7 +141,7 @@ class SearchController extends Controller
                       $query->where('users.id', Auth::id());
                   });
             })
-            ->where('status', '!=', 'archived')
+            ->where('status', 'incomplete')
             ->where('is_inbox', false)
             ->orderByRaw('LOWER(name)')
             ->get();
