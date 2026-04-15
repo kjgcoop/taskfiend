@@ -388,7 +388,7 @@ class TaskController extends Controller
                         $q->where('users.id', Auth::id());
                     });
             })
-            ->where('status', '!=', 'archived')
+            ->where('status', 'incomplete')
             ->orderByRaw('LOWER(name)')
             ->get();
 
