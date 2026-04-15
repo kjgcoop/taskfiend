@@ -703,7 +703,7 @@
                         @endif
                         @php $rescheduleCount = $task->rescheduleCount(); @endphp
                         @if($rescheduleCount >= config('app.reschedule_badge_threshold'))
-                            <span class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-amber-900 bg-opacity-40 text-amber-400 border border-amber-700"
+                            <span class="ml-3 inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-amber-900 bg-opacity-40 text-amber-400 border border-amber-700"
                                   title="Rescheduled {{ $rescheduleCount }} time{{ $rescheduleCount === 1 ? '' : 's' }}">
                                 ↻ {{ $rescheduleCount }}
                             </span>
