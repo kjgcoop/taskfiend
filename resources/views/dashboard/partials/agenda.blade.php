@@ -1,7 +1,7 @@
 @php
     use Carbon\Carbon;
 
-    $hourHeightPx = 80; // px per hour; 40px per 30-min slot
+    $hourHeightPx = 80; // px per hour; 20px per 15-min slot
 
     // Separate tasks into all-day (no time) and timed
     $allDayTasks  = $tasks->filter(fn($t) => !$t->time);
@@ -41,9 +41,9 @@
         ? ((Carbon::now()->hour * 60 + Carbon::now()->minute) / 60 * $hourHeightPx)
         : null;
 
-    // Helper: snap minutes to nearest 30; returns [snappedH, snappedM]
+    // Helper: snap minutes to nearest 15; returns [snappedH, snappedM]
     $snapTime = function (int $h, int $m) {
-        $snappedM = (int) (round($m / 30) * 30);
+        $snappedM = (int) (round($m / 15) * 15);
         if ($snappedM === 60) { $h++; $snappedM = 0; }
         return [$h, $snappedM];
     };
@@ -72,7 +72,7 @@
         $topPx    = ($sh * 60 + $sm) / 60 * $hourHeightPx;
 
         foreach ($group as $colIndex => $task) {
-            $displayDuration = max($task->duration_minutes ?? 30, 30);
+            $displayDuration = max($task->duration_minutes ?? 15, 15);
             $heightPx = max(20, ($displayDuration / 60) * $hourHeightPx);
 
             $taskLayout[$task->id] = [
@@ -207,13 +207,17 @@
         {{-- Grid lines + task blocks --}}
         <div class="relative flex-1 border-l border-gray-700" style="height: {{ $gridHeightPx }}px">
 
-            {{-- Hour and half-hour grid lines --}}
+            {{-- Hour and quarter-hour grid lines --}}
             @for($h = $gridStart; $h <= $gridEnd; $h++)
                 <div class="absolute w-full border-t border-gray-700"
                      style="top: {{ ($h - $gridStart) * $hourHeightPx }}px"></div>
                 @if($h < $gridEnd)
+                <div class="absolute w-full border-t border-gray-800 opacity-60"
+                     style="top: {{ ($h - $gridStart) * $hourHeightPx + ($hourHeightPx / 4) }}px"></div>
                 <div class="absolute w-full border-t border-gray-800"
                      style="top: {{ ($h - $gridStart) * $hourHeightPx + ($hourHeightPx / 2) }}px"></div>
+                <div class="absolute w-full border-t border-gray-800 opacity-60"
+                     style="top: {{ ($h - $gridStart) * $hourHeightPx + ($hourHeightPx * 3 / 4) }}px"></div>
                 @endif
             @endfor
 
