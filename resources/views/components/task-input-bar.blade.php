@@ -144,7 +144,13 @@
                  x-transition:enter-end="opacity-100"
                  class="pl-9 flex flex-wrap items-baseline gap-x-1.5 gap-y-0.5 text-xs">
                 <span class="text-gray-300 break-words min-w-0" x-text="'\u201c' + (preview && preview.title || '') + '\u201d'"></span>
-                <template x-if="preview && preview.date">
+                <template x-if="preview && preview.nodate">
+                    <span class="contents">
+                        <span class="text-gray-600" aria-hidden="true">·</span>
+                        <span class="text-gray-500 whitespace-nowrap italic">no date</span>
+                    </span>
+                </template>
+                <template x-if="preview && preview.date && !preview.nodate">
                     <span class="contents">
                         <span class="text-gray-600" aria-hidden="true">·</span>
                         <span class="text-blue-400 whitespace-nowrap" x-text="preview.date"></span>

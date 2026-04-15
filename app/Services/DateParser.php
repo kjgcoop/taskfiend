@@ -16,13 +16,24 @@ class DateParser
         $input = preg_replace('/\bevery!\s*/i', 'every ', $input);
         $input = trim($input);
 
+        // "nodate" token explicitly clears any date on the task.
+        $nodate = (bool) preg_match('/\bnodate\b/i', $input);
+        if ($nodate) {
+            $input = trim(preg_replace('/\bnodate\b\s*/i', '', $input));
+        }
+
         $result = [
             'name' => $input,
             'date' => null,
             'time' => null,
             'recurrence_pattern' => null,
             'recurrence_floating' => false,
+            'nodate' => $nodate,
         ];
+
+        if ($nodate) {
+            return $result;
+        }
 
         $patterns = [
             'daily' => '/\b(daily|every day)\b/i',

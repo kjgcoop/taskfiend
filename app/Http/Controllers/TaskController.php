@@ -281,9 +281,13 @@ class TaskController extends Controller
 
             $parsed = $dateParser->parseTaskInput($taskName);
             $taskName = $parsed['name'];
-            // A date keyword in the task name (e.g. "tomorrow") overrides the
-            // day-view's pre-filled hidden date.
-            if (!$date || $parsed['date'] !== null) {
+            if ($parsed['nodate']) {
+                // Explicit "nodate" token always clears date and time.
+                $date = null;
+                $time = null;
+            } elseif (!$date || $parsed['date'] !== null) {
+                // A date keyword in the task name (e.g. "tomorrow") overrides the
+                // day-view's pre-filled hidden date.
                 $date = $parsed['date'];
                 $time = $parsed['time'];
             }
@@ -1022,13 +1026,16 @@ class TaskController extends Controller
         $title = $parsed['name'] ?: $taskName;
 
         $dateFormatted = null;
-        if ($parsed['date']) {
+        if ($parsed['nodate']) {
+            $dateFormatted = 'no date';
+        } elseif ($parsed['date']) {
             $dateFormatted = Carbon::parse($parsed['date'])->format('D, M j');
         }
 
         $hasSpecial = $projectName !== null
             || !empty($tagNames)
             || $parsed['date'] !== null
+            || $parsed['nodate']
             || $parsed['recurrence_pattern'] !== null
             || $location !== null
             || !empty($assigneeNames)
@@ -1040,6 +1047,7 @@ class TaskController extends Controller
             'project'           => $projectName,
             'tags_display'      => implode(' ', array_map(fn($t) => '@' . $t, $tagNames)),
             'date'              => $dateFormatted,
+            'nodate'            => $parsed['nodate'],
             'recurrence'        => $parsed['recurrence_pattern'],
             'location'          => $location,
             'show_map'          => $showMap,
@@ -1767,7 +1775,10 @@ class TaskController extends Controller
 
             $parsed    = $dateParser->parseTaskInput($taskName);
             $taskName  = $parsed['name'];
-            if (!$date || $parsed['date'] !== null) {
+            if ($parsed['nodate']) {
+                $date = null;
+                $time = null;
+            } elseif (!$date || $parsed['date'] !== null) {
                 $date = $parsed['date'];
                 $time = $parsed['time'];
             }
