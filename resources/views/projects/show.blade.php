@@ -1,9 +1,24 @@
 <x-app-layout>
     <x-slot name="header">
         <div class="flex justify-between items-center" x-data="{ showSaveTemplate: false }">
-            <h2 class="font-semibold text-xl text-gray-100 leading-tight">
-                {{ $project->name }}
-            </h2>
+            <div class="flex items-center gap-2">
+                <h2 class="font-semibold text-xl text-gray-100 leading-tight">
+                    {{ $project->name }}
+                </h2>
+                <span class="text-sm text-gray-500">#{{ $project->id }}</span>
+                <span x-data="{ copied: false }">
+                    <button @click="navigator.clipboard.writeText('{{ route('projects.show', $project) }}').then(() => { copied = true; setTimeout(() => copied = false, 2000) })"
+                            title="Copy link"
+                            class="text-gray-500 hover:text-gray-300 transition-colors">
+                        <span x-show="!copied">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
+                            </svg>
+                        </span>
+                        <span x-show="copied" x-cloak class="text-xs text-green-400">Copied!</span>
+                    </button>
+                </span>
+            </div>
             <div class="flex gap-2">
                 <a href="{{ route('projects.export-markdown', $project) }}" class="px-4 py-2 bg-gray-700 border border-gray-600 text-gray-100 rounded hover:bg-gray-600">
                     Export .md

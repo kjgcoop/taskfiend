@@ -60,7 +60,22 @@
                             <div class="absolute inset-0 bg-black/55"></div>
                         @endif
                         <div class="relative p-6">
-                            <h3 class="font-semibold text-lg {{ $hasBg ? 'text-white' : 'text-gray-100' }}">{{ $project->name }}</h3>
+                            <div class="flex items-start justify-between gap-2">
+                                <h3 class="font-semibold text-lg {{ $hasBg ? 'text-white' : 'text-gray-100' }}">{{ $project->name }}</h3>
+                                <span x-data="{ copied: false }" class="shrink-0 flex items-center gap-1 mt-0.5">
+                                    <span class="text-xs {{ $hasBg ? 'text-gray-300' : 'text-gray-500' }}">#{{ $project->id }}</span>
+                                    <button @click.stop="navigator.clipboard.writeText('{{ route('projects.show', $project) }}').then(() => { copied = true; setTimeout(() => copied = false, 2000) })"
+                                            title="Copy link"
+                                            class="{{ $hasBg ? 'text-gray-300 hover:text-white' : 'text-gray-500 hover:text-gray-300' }} transition-colors">
+                                        <span x-show="!copied">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
+                                            </svg>
+                                        </span>
+                                        <span x-show="copied" x-cloak class="text-xs text-green-400">Copied!</span>
+                                    </button>
+                                </span>
+                            </div>
                             @if($project->description)
                                 <p class="text-sm {{ $hasBg ? 'text-gray-200' : 'text-gray-400' }} mt-2">{{ Str::limit($project->description, 100) }}</p>
                             @endif
@@ -106,11 +121,26 @@
                                  onclick="window.location='{{ route('projects.show', $project) }}'">
                                 <div class="flex items-start justify-between gap-2">
                                     <h3 class="font-semibold text-lg text-gray-400 line-through">{{ $project->name }}</h3>
-                                    @if($project->status === 'done')
-                                        <span class="shrink-0 inline-block px-2 py-1 text-xs rounded bg-green-900/50 text-green-400">Done</span>
-                                    @else
-                                        <span class="shrink-0 inline-block px-2 py-1 text-xs rounded bg-gray-700 text-gray-400">Archived</span>
-                                    @endif
+                                    <div class="shrink-0 flex items-center gap-2">
+                                        <span x-data="{ copied: false }" class="flex items-center gap-1">
+                                            <span class="text-xs text-gray-600">#{{ $project->id }}</span>
+                                            <button @click.stop="navigator.clipboard.writeText('{{ route('projects.show', $project) }}').then(() => { copied = true; setTimeout(() => copied = false, 2000) })"
+                                                    title="Copy link"
+                                                    class="text-gray-600 hover:text-gray-400 transition-colors">
+                                                <span x-show="!copied">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
+                                                    </svg>
+                                                </span>
+                                                <span x-show="copied" x-cloak class="text-xs text-green-400">Copied!</span>
+                                            </button>
+                                        </span>
+                                        @if($project->status === 'done')
+                                            <span class="inline-block px-2 py-1 text-xs rounded bg-green-900/50 text-green-400">Done</span>
+                                        @else
+                                            <span class="inline-block px-2 py-1 text-xs rounded bg-gray-700 text-gray-400">Archived</span>
+                                        @endif
+                                    </div>
                                 </div>
                                 @if($project->description)
                                     <p class="text-sm text-gray-600 mt-2">{{ Str::limit($project->description, 100) }}</p>
