@@ -94,9 +94,38 @@
                             </div>
                         </div>
                     </div>
-                    <x-nav-link :href="route('tags.index')" :active="request()->routeIs('tags.*')">
-                        {{ __('Tags') }}
-                    </x-nav-link>
+                    <div class="relative flex items-center" x-data="{ open: false }" @click.outside="open = false" @close.stop="open = false">
+                        <a href="{{ route('tags.index') }}" class="inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium leading-5 focus:outline-none transition duration-150 ease-in-out {{ request()->routeIs('tags.*') ? 'border-indigo-400 text-gray-100' : 'border-transparent text-gray-400 hover:text-gray-100 hover:border-gray-500' }}">
+                            {{ __('Tags') }}
+                        </a>
+                        <button @click="open = !open" class="inline-flex items-center pl-0.5 text-gray-400 hover:text-gray-100 focus:outline-none transition duration-150 ease-in-out">
+                            <svg class="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
+                            </svg>
+                        </button>
+                        <div x-show="open"
+                             x-transition:enter="transition ease-out duration-200"
+                             x-transition:enter-start="opacity-0 scale-95"
+                             x-transition:enter-end="opacity-100 scale-100"
+                             x-transition:leave="transition ease-in duration-75"
+                             x-transition:leave-start="opacity-100 scale-100"
+                             x-transition:leave-end="opacity-0 scale-95"
+                             class="absolute z-50 top-full mt-2 w-48 rounded-md shadow-lg ltr:origin-top-left start-0"
+                             style="display: none;"
+                             @click="open = false">
+                            <div class="rounded-md ring-1 ring-black ring-opacity-5 bg-[#202020] max-h-64 overflow-y-auto">
+                                @forelse($navTags as $tag)
+                                    <a href="{{ route('tags.show', $tag) }}"
+                                       class="block w-full px-4 py-2 text-start text-sm leading-5 text-gray-300 hover:bg-gray-700 border-l-4 focus:outline-none transition duration-150 ease-in-out"
+                                       style="border-left-color: {{ $tag->color ?? 'transparent' }}">
+                                        {{ $tag->tag_name }}
+                                    </a>
+                                @empty
+                                    <span class="block px-4 py-2 text-sm text-gray-500 italic">No tags yet</span>
+                                @endforelse
+                            </div>
+                        </div>
+                    </div>
                     <x-nav-link :href="route('templates.index')" :active="request()->routeIs('templates.*')">
                         {{ __('Templates') }}
                     </x-nav-link>
@@ -252,9 +281,29 @@
                     @endforelse
                 </div>
             </div>
-            <x-responsive-nav-link :href="route('tags.index')" :active="request()->routeIs('tags.*')">
-                {{ __('Tags') }}
-            </x-responsive-nav-link>
+            <div x-data="{ tagsOpen: false }">
+                <div class="flex">
+                    <a href="{{ route('tags.index') }}" class="flex-1 flex items-center ps-3 pe-4 py-2 border-l-4 text-base font-medium transition duration-150 ease-in-out focus:outline-none {{ request()->routeIs('tags.*') ? 'border-indigo-400 text-indigo-300 bg-gray-700' : 'border-transparent text-gray-400 hover:text-gray-100 hover:bg-gray-700 hover:border-gray-500' }}">
+                        {{ __('Tags') }}
+                    </a>
+                    <button @click="tagsOpen = !tagsOpen" class="px-4 py-2 text-gray-400 hover:text-gray-100 hover:bg-gray-700 focus:outline-none transition duration-150 ease-in-out">
+                        <svg class="h-5 w-5 transform transition-transform duration-200" :class="{'rotate-180': tagsOpen}" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
+                        </svg>
+                    </button>
+                </div>
+                <div x-show="tagsOpen" x-transition class="bg-[#101010]">
+                    @forelse($navTags as $tag)
+                        <a href="{{ route('tags.show', $tag) }}"
+                           class="block w-full ps-3 pe-4 py-2 border-l-4 text-base font-medium text-gray-400 hover:text-gray-100 hover:bg-gray-700 focus:outline-none transition duration-150 ease-in-out"
+                           style="border-left-color: {{ $tag->color ?? 'transparent' }}">
+                            {{ $tag->tag_name }}
+                        </a>
+                    @empty
+                        <span class="block ps-6 pe-4 py-2 text-sm text-gray-500 italic">No tags yet</span>
+                    @endforelse
+                </div>
+            </div>
             <x-responsive-nav-link :href="route('templates.index')" :active="request()->routeIs('templates.*')">
                 {{ __('Templates') }}
             </x-responsive-nav-link>

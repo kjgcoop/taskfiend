@@ -5,6 +5,7 @@ namespace App\View\Composers;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
 use App\Models\Project;
+use App\Models\Tag;
 
 class NavigationComposer
 {
@@ -43,7 +44,10 @@ class NavigationComposer
                 ->get(['id', 'name', 'background_image']);
         }
 
+        $navTags = Tag::orderBy('tag_name')->get(['id', 'tag_name', 'color']);
+
         $view->with('otherLinksFiles', $otherLinksFiles);
         $view->with('navProjects', $navProjects);
+        $view->with('navTags', $navTags);
     }
 }
