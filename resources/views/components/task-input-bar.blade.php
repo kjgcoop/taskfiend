@@ -76,6 +76,40 @@
                                      class="px-3 py-2 text-sm text-gray-500 italic">No matching tags</div>
                             </div>
                         </template>
+
+                        <template x-if="autocompleteType === 'location'">
+                            <div>
+                                <div class="px-3 py-1.5 text-xs font-semibold text-gray-400 border-b border-gray-700">Locations</div>
+                                <template x-for="(loc, i) in filteredLocations" :key="loc">
+                                    <div class="px-3 py-2 cursor-pointer text-sm text-gray-300 flex items-center gap-2"
+                                         :class="{ 'bg-gray-600 text-gray-100': autocompleteIndex === i }"
+                                         @mouseenter="autocompleteIndex = i"
+                                         @click.prevent="selectAutocomplete(loc)">
+                                        <span class="text-orange-400 text-xs">+</span>
+                                        <span x-text="loc"></span>
+                                    </div>
+                                </template>
+                                <div x-show="filteredLocations.length === 0"
+                                     class="px-3 py-2 text-sm text-gray-500 italic">No prior locations — any text after + works</div>
+                            </div>
+                        </template>
+
+                        <template x-if="autocompleteType === 'user'">
+                            <div>
+                                <div class="px-3 py-1.5 text-xs font-semibold text-gray-400 border-b border-gray-700">Assignees</div>
+                                <template x-for="(user, i) in filteredUsers" :key="user.id">
+                                    <div class="px-3 py-2 cursor-pointer text-sm text-gray-300 flex items-center gap-2"
+                                         :class="{ 'bg-gray-600 text-gray-100': autocompleteIndex === i }"
+                                         @mouseenter="autocompleteIndex = i"
+                                         @click.prevent="selectAutocomplete(user.name, user.id)">
+                                        <span class="text-cyan-400 text-xs">&amp;</span>
+                                        <span x-text="user.name"></span>
+                                    </div>
+                                </template>
+                                <div x-show="filteredUsers.length === 0"
+                                     class="px-3 py-2 text-sm text-gray-500 italic">No matching users</div>
+                            </div>
+                        </template>
                     </div>
                 </div>
                 <button type="submit"
@@ -132,6 +166,24 @@
                     <span class="contents">
                         <span class="text-gray-600" aria-hidden="true">·</span>
                         <span class="text-yellow-400 whitespace-nowrap" x-text="preview.tags_display"></span>
+                    </span>
+                </template>
+                <template x-if="preview && preview.location">
+                    <span class="contents">
+                        <span class="text-gray-600" aria-hidden="true">·</span>
+                        <span class="text-orange-400 whitespace-nowrap" x-text="'+' + preview.location"></span>
+                    </span>
+                </template>
+                <template x-if="preview && preview.assignees_display">
+                    <span class="contents">
+                        <span class="text-gray-600" aria-hidden="true">·</span>
+                        <span class="text-cyan-400 whitespace-nowrap" x-text="preview.assignees_display"></span>
+                    </span>
+                </template>
+                <template x-if="preview && preview.unknown_assignees">
+                    <span class="contents">
+                        <span class="text-gray-600" aria-hidden="true">·</span>
+                        <span class="text-amber-400 whitespace-nowrap" x-text="preview.unknown_assignees + ' — not recognized as a user, kept as text'"></span>
                     </span>
                 </template>
             </div>

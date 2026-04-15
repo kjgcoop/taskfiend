@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Project;
 use App\Models\Tag;
 use App\Models\Task;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -140,10 +141,27 @@ class TagController extends Controller
 
         $allTags = Tag::orderByRaw('LOWER(tag_name)')->get(['id', 'tag_name', 'color']);
 
+        $users = User::whereNull('email_enabled_at')
+            ->orderByRaw('LOWER(name)')
+            ->get(['id', 'name']);
+
+        $locations = Task::where('status', 'incomplete')
+            ->whereNotNull('location')
+            ->where('location', '!=', '')
+            ->where(function ($q) {
+                $q->where('creator_id', Auth::id())
+                  ->orWhereHas('assignees', function ($subq) {
+                      $subq->where('users.id', Auth::id());
+                  });
+            })
+            ->distinct()
+            ->orderByRaw('LOWER(location)')
+            ->pluck('location');
+
         return view('tags.show', compact(
             'tag', 'tasks', 'completedTasks', 'completedTasksHasMore', 'completedTasksTotal',
             'archivedTasks', 'archivedTasksHasMore', 'archivedTasksTotal',
-            'projects', 'allTags', 'sort'
+            'projects', 'allTags', 'users', 'locations', 'sort'
         ));
     }
 

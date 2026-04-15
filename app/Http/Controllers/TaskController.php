@@ -201,6 +201,46 @@ class TaskController extends Controller
             $taskName = trim(preg_replace('/@[\w-]+\s*/', '', $taskName));
         }
 
+        // Parse +location token (only in quick-add, only if no location explicitly provided)
+        if ($isQuickAdd && empty($validated['location'])) {
+            if (preg_match('/\+(\w[\w-]*)/', $taskName, $locationMatch)) {
+                $locationToken = $locationMatch[1];
+                $normalized = strtolower(preg_replace('/[-_]/', '', $locationToken));
+                $existingLocation = Task::whereNotNull('location')
+                    ->where('location', '!=', '')
+                    ->whereRaw("LOWER(REPLACE(REPLACE(REPLACE(location, ' ', ''), '-', ''), '_', '')) = ?", [$normalized])
+                    ->value('location');
+                $validated['location'] = $existingLocation ?: $locationToken;
+                $taskName = trim(preg_replace('/\+\w[\w-]*\s*/', '', $taskName));
+            }
+        }
+
+        // Parse &user tokens (only in quick-add, only if no assignees explicitly provided)
+        if ($isQuickAdd && empty($validated['assignee_ids'])) {
+            $parsedAssigneeIds = [];
+            if (preg_match_all('/&([\w-]+)/', $taskName, $userMatches)) {
+                foreach ($userMatches[1] as $userSlug) {
+                    $normalized = strtolower(preg_replace('/[-_]/', '', $userSlug));
+                    $user = User::whereNull('email_enabled_at')
+                        ->where(function ($q) use ($normalized, $userSlug) {
+                            $q->whereRaw("LOWER(REPLACE(REPLACE(REPLACE(name, ' ', ''), '-', ''), '_', '')) = ?", [$normalized])
+                              ->orWhereRaw('LOWER(name) LIKE ?', [strtolower($userSlug) . '%']);
+                        })
+                        ->first();
+                    if ($user) {
+                        $parsedAssigneeIds[] = $user->id;
+                        $taskName = trim(preg_replace('/&' . preg_quote($userSlug, '/') . '(?=\s|$)/', '', $taskName));
+                    }
+                    // Unmatched: leave &token in name as-is
+                }
+            }
+            if (!empty($parsedAssigneeIds)) {
+                $validated['assignee_ids'] = $parsedAssigneeIds;
+            }
+        }
+        // Collapse any double-spaces left by token removal
+        $taskName = trim(preg_replace('/\s{2,}/', ' ', $taskName));
+
         // Parse natural language date if provided
         if ($date && !preg_match('/^\d{4}-\d{2}-\d{2}$/', $date)) {
             $parsedDate = $this->resolveNaturalDate($date);
@@ -889,6 +929,9 @@ class TaskController extends Controller
         $taskName = $input;
         $projectName = null;
         $tagNames = [];
+        $location = null;
+        $assigneeNames = [];
+        $unknownAssignees = [];
 
         // Mirror the #project token parsing from store()
         if (preg_match('/#([\w-]+)/', $taskName, $projectMatch)) {
@@ -920,6 +963,42 @@ class TaskController extends Controller
             $taskName = trim(preg_replace('/@[\w-]+\s*/', '', $taskName));
         }
 
+        // Mirror the +location token parsing from store()
+        if (preg_match('/\+(\w[\w-]*)/', $taskName, $locationMatch)) {
+            $locationToken = $locationMatch[1];
+            $normalized = strtolower(preg_replace('/[-_]/', '', $locationToken));
+            $existingLocation = Task::whereNotNull('location')
+                ->where('location', '!=', '')
+                ->whereRaw("LOWER(REPLACE(REPLACE(REPLACE(location, ' ', ''), '-', ''), '_', '')) = ?", [$normalized])
+                ->value('location');
+            $location = $existingLocation ?: $locationToken;
+            $taskName = trim(preg_replace('/\+\w[\w-]*\s*/', '', $taskName));
+        }
+
+        // Mirror the &user token parsing from store()
+        if (preg_match_all('/&([\w-]+)/', $taskName, $userMatches)) {
+            foreach ($userMatches[1] as $userSlug) {
+                $normalized = strtolower(preg_replace('/[-_]/', '', $userSlug));
+                $user = User::whereNull('email_enabled_at')
+                    ->where(function ($q) use ($normalized, $userSlug) {
+                        $q->whereRaw("LOWER(REPLACE(REPLACE(REPLACE(name, ' ', ''), '-', ''), '_', '')) = ?", [$normalized])
+                          ->orWhereRaw('LOWER(name) LIKE ?', [strtolower($userSlug) . '%']);
+                    })
+                    ->first();
+                if ($user) {
+                    $assigneeNames[] = $user->name;
+                } else {
+                    $unknownAssignees[] = '&' . $userSlug;
+                }
+            }
+            // Only strip matched user tokens from preview title
+            foreach ($assigneeNames as $name) {
+                $slug = strtolower(preg_replace('/\s+/', '', $name));
+                $taskName = trim(preg_replace('/&' . preg_quote($slug, '/') . '(?=\s|$)/i', '', $taskName));
+            }
+        }
+        $taskName = trim(preg_replace('/\s{2,}/', ' ', $taskName));
+
         // Parse natural language date/recurrence from the remaining task name
         $dateParser = new DateParser();
         $parsed = $dateParser->parseTaskInput($taskName);
@@ -933,15 +1012,21 @@ class TaskController extends Controller
         $hasSpecial = $projectName !== null
             || !empty($tagNames)
             || $parsed['date'] !== null
-            || $parsed['recurrence_pattern'] !== null;
+            || $parsed['recurrence_pattern'] !== null
+            || $location !== null
+            || !empty($assigneeNames)
+            || !empty($unknownAssignees);
 
         return response()->json([
-            'has_special'  => $hasSpecial,
-            'title'        => $title,
-            'project'      => $projectName,
-            'tags_display' => implode(' ', array_map(fn($t) => '@' . $t, $tagNames)),
-            'date'         => $dateFormatted,
-            'recurrence'   => $parsed['recurrence_pattern'],
+            'has_special'       => $hasSpecial,
+            'title'             => $title,
+            'project'           => $projectName,
+            'tags_display'      => implode(' ', array_map(fn($t) => '@' . $t, $tagNames)),
+            'date'              => $dateFormatted,
+            'recurrence'        => $parsed['recurrence_pattern'],
+            'location'          => $location,
+            'assignees_display' => implode(' ', array_map(fn($n) => '&' . preg_replace('/\s+/', '', strtolower($n)), $assigneeNames)),
+            'unknown_assignees' => implode(' ', $unknownAssignees),
         ]);
     }
 
@@ -1588,6 +1673,46 @@ class TaskController extends Controller
             $taskName = trim(preg_replace('/@[\w-]+\s*/', '', $taskName));
         }
 
+        // ── Parse +location token ────────────────────────────────────────────────────
+        $lineLocation = $validated['location'] ?? null;
+        if ($isQuickAdd && empty($lineLocation)) {
+            if (preg_match('/\+(\w[\w-]*)/', $taskName, $locationMatch)) {
+                $locationToken = $locationMatch[1];
+                $normalized = strtolower(preg_replace('/[-_]/', '', $locationToken));
+                $existingLocation = Task::whereNotNull('location')
+                    ->where('location', '!=', '')
+                    ->whereRaw("LOWER(REPLACE(REPLACE(REPLACE(location, ' ', ''), '-', ''), '_', '')) = ?", [$normalized])
+                    ->value('location');
+                $lineLocation = $existingLocation ?: $locationToken;
+                $taskName = trim(preg_replace('/\+\w[\w-]*\s*/', '', $taskName));
+            }
+        }
+
+        // ── Parse &user tokens ───────────────────────────────────────────────────────
+        $lineAssigneeIds = $validated['assignee_ids'] ?? null;
+        if ($isQuickAdd && empty($lineAssigneeIds)) {
+            $parsedAssigneeIds = [];
+            if (preg_match_all('/&([\w-]+)/', $taskName, $userMatches)) {
+                foreach ($userMatches[1] as $userSlug) {
+                    $normalized = strtolower(preg_replace('/[-_]/', '', $userSlug));
+                    $user = User::whereNull('email_enabled_at')
+                        ->where(function ($q) use ($normalized, $userSlug) {
+                            $q->whereRaw("LOWER(REPLACE(REPLACE(REPLACE(name, ' ', ''), '-', ''), '_', '')) = ?", [$normalized])
+                              ->orWhereRaw('LOWER(name) LIKE ?', [strtolower($userSlug) . '%']);
+                        })
+                        ->first();
+                    if ($user) {
+                        $parsedAssigneeIds[] = $user->id;
+                        $taskName = trim(preg_replace('/&' . preg_quote($userSlug, '/') . '(?=\s|$)/', '', $taskName));
+                    }
+                }
+            }
+            if (!empty($parsedAssigneeIds)) {
+                $lineAssigneeIds = $parsedAssigneeIds;
+            }
+        }
+        $taskName = trim(preg_replace('/\s{2,}/', ' ', $taskName));
+
         // ── Quick-add: parse date / recurrence out of the task name ─────────────────
         if ($isQuickAdd && !$recurrencePattern) {
             $dateParser = new DateParser();
@@ -1645,7 +1770,7 @@ class TaskController extends Controller
         $task = Task::create([
             'name'                => $taskName,
             'description'         => $validated['description'] ?? null,
-            'location'            => $validated['location'] ?? null,
+            'location'            => $lineLocation,
             'date'                => $date,
             'time'                => $time,
             'duration_minutes'    => $this->parseDurationInput($validated['duration_minutes'] ?? null),
@@ -1662,11 +1787,11 @@ class TaskController extends Controller
         }
 
         // ── Assignees ────────────────────────────────────────────────────────────────
-        if (!empty($validated['parent_id']) && empty($validated['assignee_ids'])) {
+        if (!empty($validated['parent_id']) && empty($lineAssigneeIds)) {
             $parentTask  = Task::find($validated['parent_id']);
             $assigneeIds = $parentTask ? $parentTask->assignees->pluck('id')->toArray() : [Auth::id()];
         } else {
-            $assigneeIds = $validated['assignee_ids'] ?? [Auth::id()];
+            $assigneeIds = $lineAssigneeIds ?? [Auth::id()];
         }
 
         foreach ($assigneeIds as $assigneeId) {

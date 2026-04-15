@@ -210,10 +210,23 @@ class ProjectController extends Controller
 
         $tags = Tag::orderByRaw('LOWER(tag_name)')->get(['id', 'tag_name', 'color']);
 
+        $locations = Task::where('status', 'incomplete')
+            ->whereNotNull('location')
+            ->where('location', '!=', '')
+            ->where(function ($q) {
+                $q->where('creator_id', Auth::id())
+                  ->orWhereHas('assignees', function ($subq) {
+                      $subq->where('users.id', Auth::id());
+                  });
+            })
+            ->distinct()
+            ->orderByRaw('LOWER(location)')
+            ->pluck('location');
+
         return view('projects.show', compact(
             'project', 'tasks', 'completedTasks', 'completedTasksHasMore', 'completedTasksTotal',
             'archivedTasks', 'archivedTasksHasMore', 'archivedTasksTotal',
-            'users', 'projects', 'tags', 'sort'
+            'users', 'projects', 'tags', 'locations', 'sort'
         ));
     }
 

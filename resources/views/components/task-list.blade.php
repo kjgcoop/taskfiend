@@ -91,7 +91,7 @@
         };
     };
 
-    window.taskFilter = function (projects, tags) {
+    window.taskFilter = function (projects, tags, users, locations) {
         return {
             query: '',
             noResults: false,
@@ -103,6 +103,8 @@
             // Autocomplete state
             projects: projects || [],
             tags: tags || [],
+            users: users || [],
+            locations: locations || [],
             showAutocomplete: false,
             autocompleteType: null,
             autocompleteQuery: '',
@@ -122,6 +124,18 @@
                 if (!this.autocompleteQuery) return this.tags;
                 const q = this.autocompleteQuery.toLowerCase();
                 return this.tags.filter(t => t.tag_name.toLowerCase().includes(q));
+            },
+
+            get filteredLocations() {
+                if (!this.autocompleteQuery) return this.locations;
+                const q = this.autocompleteQuery.toLowerCase().replace(/-/g, ' ');
+                return this.locations.filter(l => l.toLowerCase().includes(q));
+            },
+
+            get filteredUsers() {
+                if (!this.autocompleteQuery) return this.users;
+                const q = this.autocompleteQuery.toLowerCase();
+                return this.users.filter(u => u.name.toLowerCase().includes(q));
             },
 
             // Number of non-empty task lines currently in the textarea
@@ -223,8 +237,10 @@
                 const lineStart = input.lastIndexOf('\n', cursorPos - 1) + 1;
                 const beforeCursor = input.substring(lineStart, cursorPos);
 
-                const projectMatch = beforeCursor.match(/#(\w*)$/);
-                const tagMatch = beforeCursor.match(/@(\w*)$/);
+                const projectMatch  = beforeCursor.match(/#(\w*)$/);
+                const tagMatch      = beforeCursor.match(/@(\w*)$/);
+                const locationMatch = beforeCursor.match(/\+(\w*)$/);
+                const userMatch     = beforeCursor.match(/&(\w*)$/);
 
                 if (projectMatch && this.projects.length > 0) {
                     this.autocompleteType = 'project';
@@ -234,6 +250,16 @@
                 } else if (tagMatch && this.tags.length > 0) {
                     this.autocompleteType = 'tag';
                     this.autocompleteQuery = tagMatch[1];
+                    this.autocompleteIndex = 0;
+                    this.showAutocomplete = true;
+                } else if (locationMatch) {
+                    this.autocompleteType = 'location';
+                    this.autocompleteQuery = locationMatch[1];
+                    this.autocompleteIndex = 0;
+                    this.showAutocomplete = this.filteredLocations.length > 0;
+                } else if (userMatch && this.users.length > 0) {
+                    this.autocompleteType = 'user';
+                    this.autocompleteQuery = userMatch[1];
                     this.autocompleteIndex = 0;
                     this.showAutocomplete = true;
                 } else {
@@ -280,7 +306,10 @@
 
             handleKeydown(event) {
                 if (this.showAutocomplete) {
-                    const list = this.autocompleteType === 'project' ? this.filteredProjects : this.filteredTags;
+                    const list = this.autocompleteType === 'project'  ? this.filteredProjects
+                               : this.autocompleteType === 'tag'      ? this.filteredTags
+                               : this.autocompleteType === 'location' ? this.filteredLocations
+                               : this.filteredUsers;
                     const maxIndex = Math.max(0, list.length - 1);
 
                     if (event.key === 'ArrowDown') {
@@ -292,7 +321,12 @@
                     } else if (event.key === 'Enter') {
                         event.preventDefault();
                         const item = list[this.autocompleteIndex];
-                        if (item) this.selectAutocomplete(this.autocompleteType === 'project' ? item.name : item.tag_name, item.id);
+                        if (item) {
+                            const name = this.autocompleteType === 'tag'      ? item.tag_name
+                                       : this.autocompleteType === 'location' ? item  // string, not object
+                                       : item.name;
+                            this.selectAutocomplete(name, item.id);
+                        }
                     } else if (event.key === 'Escape') {
                         event.preventDefault();
                         this.showAutocomplete = false;
@@ -314,8 +348,23 @@
             selectAutocomplete(name, id = null) {
                 const inputEl = this.$refs.createInput;
                 if (!inputEl) return;
-                const slug = name.toLowerCase().replace(/[^a-z0-9-]/g, '');
-                const prefix = this.autocompleteType === 'project' ? '#' : '@';
+
+                let slug, prefix;
+                if (this.autocompleteType === 'project') {
+                    slug   = name.toLowerCase().replace(/[^a-z0-9-]/g, '');
+                    prefix = '#';
+                } else if (this.autocompleteType === 'tag') {
+                    slug   = name.toLowerCase().replace(/[^a-z0-9-]/g, '');
+                    prefix = '@';
+                } else if (this.autocompleteType === 'location') {
+                    // Lowercase, spaces → hyphens, strip other non-word chars
+                    slug   = name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+                    prefix = '+';
+                } else {
+                    // user: lowercase, spaces removed
+                    slug   = name.toLowerCase().replace(/\s+/g, '').replace(/[^a-z0-9]/g, '');
+                    prefix = '&';
+                }
 
                 // Use lastIndexOf on the partial token already captured in autocompleteQuery
                 // rather than relying on selectionStart, which can be 0 when the input loses

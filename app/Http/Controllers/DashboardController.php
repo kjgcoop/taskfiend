@@ -7,6 +7,7 @@ use App\Models\ChangeLog;
 use App\Models\Project;
 use App\Models\Tag;
 use App\Models\Task;
+use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -25,14 +26,31 @@ class DashboardController extends Controller
         };
     }
 
-    /** Projects + tags needed by the quick-add autocomplete. */
+    /** Projects, tags, users, and locations needed by the quick-add autocomplete. */
     private function quickAddData(): array
     {
         $projects = Project::activeForUser(Auth::id())->orderBy('name')->get(['id', 'name']);
 
         $tags = Tag::orderByRaw('LOWER(tag_name)')->get(['id', 'tag_name', 'color']);
 
-        return compact('projects', 'tags');
+        $users = User::whereNull('email_enabled_at')
+            ->orderByRaw('LOWER(name)')
+            ->get(['id', 'name']);
+
+        $locations = Task::where('status', 'incomplete')
+            ->whereNotNull('location')
+            ->where('location', '!=', '')
+            ->where(function ($q) {
+                $q->where('creator_id', Auth::id())
+                  ->orWhereHas('assignees', function ($subq) {
+                      $subq->where('users.id', Auth::id());
+                  });
+            })
+            ->distinct()
+            ->orderByRaw('LOWER(location)')
+            ->pluck('location');
+
+        return compact('projects', 'tags', 'users', 'locations');
     }
 
     public function inbox(Request $request)

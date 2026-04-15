@@ -14,7 +14,7 @@
     </x-slot>
 
     <div class="py-12">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8" x-data="taskFilter(@js($projects), @js($tags))">
+        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8" x-data="taskFilter(@js($projects), @js($tags), @js($users), @js($locations))">
             <div class="mb-4 text-sm text-gray-600">
                 Tasks with no project assigned
             </div>
