@@ -298,7 +298,14 @@
                         <span class="text-sm font-medium text-gray-500">Location</span>
                         <div @if(!$isInactive) @click="startEdit('location')" @endif x-show="!editing.location" class="mt-1 p-2 rounded min-h-[40px] {{ !$isInactive ? 'cursor-pointer hover:bg-gray-700' : '' }}">
                             @if($task->location)
-                                <p class="text-gray-300">{{ $task->location }}</p>
+                                @if($task->show_map)
+                                    @php $mapUrl = sprintf(config('taskfiend.maps_url_template', 'https://maps.google.com/?q=%s'), urlencode($task->location)); @endphp
+                                    <a href="{{ $mapUrl }}" target="_blank" rel="noopener"
+                                       onclick="event.stopPropagation()"
+                                       class="text-orange-400 hover:underline">{{ $task->location }}</a>
+                                @else
+                                    <p class="text-gray-300">{{ $task->location }}</p>
+                                @endif
                             @else
                                 <p class="text-gray-400 italic">{{ $isInactive ? 'No location set' : 'Click to set location (optional)' }}</p>
                             @endif
@@ -308,8 +315,14 @@
                             <input type="text" x-model="fields.location"
                                    @keydown.enter="saveField('location')"
                                    @keydown.escape="cancelEdit('location')"
-                                   placeholder="e.g., Conference Room B, Zoom, 123 Main St"
+                                   placeholder="e.g., Home, Conference Room B, 123 Main St"
                                    class="w-full rounded-md bg-gray-700 border-gray-600 text-gray-100 placeholder-gray-500 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                            <label class="flex items-center gap-2 mt-2 text-sm text-gray-400 cursor-pointer select-none">
+                                <input type="checkbox" x-model="fields.show_map"
+                                       @change="saveField('show_map')"
+                                       class="rounded border-gray-600 bg-gray-700 text-orange-500 focus:ring-orange-500">
+                                Show as map link
+                            </label>
                             <div class="flex gap-2 mt-2">
                                 <button @click="saveField('location')"
                                         class="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700">
@@ -790,6 +803,7 @@
                     parent_id: @js($task->parent_id ?? ''),
                     recurrence_pattern: @js($task->recurrence_pattern ?? ''),
                     recurrence_floating: @js((bool) $task->recurrence_floating),
+                    show_map: @js((bool) $task->show_map),
                     tag_ids: @js($task->tags->pluck('id')->toArray()),
                     assignee_ids: @js($task->assignees->pluck('id')->toArray()),
                 },

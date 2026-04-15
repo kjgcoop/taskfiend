@@ -260,7 +260,14 @@
                  x-show="!editing.location"
                  class="mt-1 p-2 rounded min-h-[36px] {{ !$isInactive ? 'cursor-pointer hover:bg-gray-700' : '' }}">
                 @if($task->location)
-                    <p class="text-sm text-gray-300">{{ $task->location }}</p>
+                    @if($task->show_map)
+                        @php $mapUrl = sprintf(config('taskfiend.maps_url_template', 'https://maps.google.com/?q=%s'), urlencode($task->location)); @endphp
+                        <a href="{{ $mapUrl }}" target="_blank" rel="noopener" onclick="event.stopPropagation()"
+                           title="{{ $task->location }}"
+                           class="text-sm text-orange-400 hover:underline">{{ $task->location }}</a>
+                    @else
+                        <p class="text-sm text-gray-300">{{ $task->location }}</p>
+                    @endif
                 @else
                     <p class="text-sm text-gray-400 italic">{{ $isInactive ? 'No location' : 'Click to set location' }}</p>
                 @endif
@@ -272,6 +279,14 @@
                        @keydown.escape="cancelEdit('location')"
                        placeholder="e.g., Conference Room B, Zoom, 123 Main St"
                        class="w-full rounded-md bg-gray-700 border-gray-600 text-gray-100 placeholder-gray-500 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm">
+                <div class="flex items-center gap-2 mt-2">
+                    <label class="flex items-center gap-1.5 text-xs text-gray-400 cursor-pointer">
+                        <input type="checkbox" x-model="fields.show_map"
+                               @change="saveField('show_map')"
+                               class="rounded bg-gray-700 border-gray-600 text-orange-500 focus:ring-orange-500">
+                        Map link
+                    </label>
+                </div>
                 <div class="flex gap-2 mt-2">
                     <button @click="saveField('location')" class="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700">Save</button>
                     <button @click="cancelEdit('location')" class="px-3 py-1 bg-gray-700 text-gray-300 text-sm rounded hover:bg-gray-600">Cancel</button>
@@ -662,6 +677,7 @@
                 project_id: @js($task->project_id ?? $inboxProjectId),
                 recurrence_pattern: @js($task->recurrence_pattern ?? ''),
                 recurrence_floating: @js((bool) $task->recurrence_floating),
+                show_map: @js((bool) $task->show_map),
                 tag_ids: @js($task->tags->pluck('id')->toArray()),
                 assignee_ids: @js($task->assignees->pluck('id')->toArray()),
             },

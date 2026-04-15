@@ -37,6 +37,14 @@
                             @error('location')<p class="mt-1 text-sm text-red-600">{{ $message }}</p>@enderror
                         </div>
 
+                        <div class="mb-4 flex items-center gap-2">
+                            <input type="hidden" name="show_map" value="0">
+                            <input type="checkbox" name="show_map" id="show_map" value="1"
+                                   class="rounded bg-gray-700 border-gray-600 text-orange-500 focus:ring-orange-500"
+                                   {{ old('show_map', $task->show_map) ? 'checked' : '' }}>
+                            <label for="show_map" class="text-sm text-gray-300">Show location as map link</label>
+                        </div>
+
                         <div class="mb-4 grid grid-cols-2 gap-4" x-data="dateInput('{{ old('date', $task->getAttributes()['date'] ?? '') }}')">
                             <div>
                                 <label for="date" class="block text-sm font-medium text-gray-300 mb-2">Date</label>

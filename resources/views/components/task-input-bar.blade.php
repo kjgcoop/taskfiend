@@ -171,7 +171,8 @@
                 <template x-if="preview && preview.location">
                     <span class="contents">
                         <span class="text-gray-600" aria-hidden="true">·</span>
-                        <span class="text-orange-400 whitespace-nowrap" x-text="'+' + preview.location"></span>
+                        <span class="text-orange-400 whitespace-nowrap"
+                              x-text="(preview.show_map ? '++ ' : '+ ') + preview.location"></span>
                     </span>
                 </template>
                 <template x-if="preview && preview.assignees_display">

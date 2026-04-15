@@ -201,27 +201,24 @@ class TaskController extends Controller
             $taskName = trim(preg_replace('/@[\w-]+\s*/', '', $taskName));
         }
 
-        // Parse +location / ++location tokens (only in quick-add, only if no location explicitly provided).
-        // ++ prefix means show_map=true (render as a clickable map link).
+        // Parse location tokens (only in quick-add, only if no location explicitly provided).
+        // Supported forms (++ = show as map link):
+        //   ++"123 Main St, Town"   ++office   +"Coffee Shop"   +home
         if ($isQuickAdd && empty($validated['location'])) {
-            if (preg_match('/\+\+(\w[\w-]*)/', $taskName, $mapLocMatch)) {
-                $locationToken = $mapLocMatch[1];
-                $normalized = strtolower(preg_replace('/[-_]/', '', $locationToken));
-                $existingLocation = Task::whereNotNull('location')
-                    ->where('location', '!=', '')
-                    ->whereRaw("LOWER(REPLACE(REPLACE(REPLACE(location, ' ', ''), '-', ''), '_', '')) = ?", [$normalized])
-                    ->value('location');
-                $validated['location'] = $existingLocation ?: $locationToken;
+            if (preg_match('/\+\+"([^"]+)"/', $taskName, $m)) {
+                $validated['location'] = $this->resolveLocationToken($m[1]);
+                $validated['show_map'] = true;
+                $taskName = trim(preg_replace('/\+\+"[^"]*"\s*/', '', $taskName));
+            } elseif (preg_match('/\+\+(\w[\w-]*)/', $taskName, $m)) {
+                $validated['location'] = $this->resolveLocationToken($m[1]);
                 $validated['show_map'] = true;
                 $taskName = trim(preg_replace('/\+\+\w[\w-]*\s*/', '', $taskName));
-            } elseif (preg_match('/\+(\w[\w-]*)/', $taskName, $locationMatch)) {
-                $locationToken = $locationMatch[1];
-                $normalized = strtolower(preg_replace('/[-_]/', '', $locationToken));
-                $existingLocation = Task::whereNotNull('location')
-                    ->where('location', '!=', '')
-                    ->whereRaw("LOWER(REPLACE(REPLACE(REPLACE(location, ' ', ''), '-', ''), '_', '')) = ?", [$normalized])
-                    ->value('location');
-                $validated['location'] = $existingLocation ?: $locationToken;
+            } elseif (preg_match('/\+"([^"]+)"/', $taskName, $m)) {
+                $validated['location'] = $this->resolveLocationToken($m[1]);
+                $validated['show_map'] = false;
+                $taskName = trim(preg_replace('/\+"[^"]*"\s*/', '', $taskName));
+            } elseif (preg_match('/\+(\w[\w-]*)/', $taskName, $m)) {
+                $validated['location'] = $this->resolveLocationToken($m[1]);
                 $validated['show_map'] = false;
                 $taskName = trim(preg_replace('/\+\w[\w-]*\s*/', '', $taskName));
             }
@@ -979,24 +976,19 @@ class TaskController extends Controller
 
         // Mirror the +location / ++location token parsing from store()
         $showMap = false;
-        if (preg_match('/\+\+(\w[\w-]*)/', $taskName, $mapLocMatch)) {
-            $locationToken = $mapLocMatch[1];
-            $normalized = strtolower(preg_replace('/[-_]/', '', $locationToken));
-            $existingLocation = Task::whereNotNull('location')
-                ->where('location', '!=', '')
-                ->whereRaw("LOWER(REPLACE(REPLACE(REPLACE(location, ' ', ''), '-', ''), '_', '')) = ?", [$normalized])
-                ->value('location');
-            $location = $existingLocation ?: $locationToken;
+        if (preg_match('/\+\+"([^"]+)"/', $taskName, $m)) {
+            $location = $this->resolveLocationToken($m[1]);
+            $showMap  = true;
+            $taskName = trim(preg_replace('/\+\+"[^"]*"\s*/', '', $taskName));
+        } elseif (preg_match('/\+\+(\w[\w-]*)/', $taskName, $m)) {
+            $location = $this->resolveLocationToken($m[1]);
             $showMap  = true;
             $taskName = trim(preg_replace('/\+\+\w[\w-]*\s*/', '', $taskName));
-        } elseif (preg_match('/\+(\w[\w-]*)/', $taskName, $locationMatch)) {
-            $locationToken = $locationMatch[1];
-            $normalized = strtolower(preg_replace('/[-_]/', '', $locationToken));
-            $existingLocation = Task::whereNotNull('location')
-                ->where('location', '!=', '')
-                ->whereRaw("LOWER(REPLACE(REPLACE(REPLACE(location, ' ', ''), '-', ''), '_', '')) = ?", [$normalized])
-                ->value('location');
-            $location = $existingLocation ?: $locationToken;
+        } elseif (preg_match('/\+"([^"]+)"/', $taskName, $m)) {
+            $location = $this->resolveLocationToken($m[1]);
+            $taskName = trim(preg_replace('/\+"[^"]*"\s*/', '', $taskName));
+        } elseif (preg_match('/\+(\w[\w-]*)/', $taskName, $m)) {
+            $location = $this->resolveLocationToken($m[1]);
             $taskName = trim(preg_replace('/\+\w[\w-]*\s*/', '', $taskName));
         }
 
@@ -1365,6 +1357,8 @@ class TaskController extends Controller
         $newTask = Task::create([
             'name' => $originalTask->name,
             'description' => $originalTask->description,
+            'location' => $originalTask->location,
+            'show_map' => $originalTask->show_map,
             'date' => $nextDate,
             'time' => $originalTask->time,
             'duration_minutes' => $originalTask->duration_minutes,
@@ -1479,6 +1473,22 @@ class TaskController extends Controller
      * Return an error response from store() that works for both AJAX (JSON 422)
      * and regular (redirect back with errors) requests.
      */
+    /**
+     * Fuzzy-match a location token against existing task locations.
+     * Strips spaces, hyphens, and underscores before comparing so that
+     * "coffee-shop", "Coffee Shop", and "coffeeshop" all resolve to the
+     * already-stored canonical value (preserving original casing/spacing).
+     * Falls back to the raw token if no match is found.
+     */
+    private function resolveLocationToken(string $token): string
+    {
+        $normalized = strtolower(preg_replace('/[-_\s]/', '', $token));
+        return Task::whereNotNull('location')
+            ->where('location', '!=', '')
+            ->whereRaw("LOWER(REPLACE(REPLACE(REPLACE(location, ' ', ''), '-', ''), '_', '')) = ?", [$normalized])
+            ->value('location') ?? $token;
+    }
+
     private function storeError(Request $request, array $errors)
     {
         if ($request->wantsJson()) {
@@ -1703,24 +1713,20 @@ class TaskController extends Controller
         $lineLocation = $validated['location'] ?? null;
         $lineShowMap  = $validated['show_map'] ?? false;
         if ($isQuickAdd && empty($lineLocation)) {
-            if (preg_match('/\+\+(\w[\w-]*)/', $taskName, $mapLocMatch)) {
-                $locationToken = $mapLocMatch[1];
-                $normalized = strtolower(preg_replace('/[-_]/', '', $locationToken));
-                $existingLocation = Task::whereNotNull('location')
-                    ->where('location', '!=', '')
-                    ->whereRaw("LOWER(REPLACE(REPLACE(REPLACE(location, ' ', ''), '-', ''), '_', '')) = ?", [$normalized])
-                    ->value('location');
-                $lineLocation = $existingLocation ?: $locationToken;
+            if (preg_match('/\+\+"([^"]+)"/', $taskName, $m)) {
+                $lineLocation = $this->resolveLocationToken($m[1]);
+                $lineShowMap  = true;
+                $taskName = trim(preg_replace('/\+\+"[^"]*"\s*/', '', $taskName));
+            } elseif (preg_match('/\+\+(\w[\w-]*)/', $taskName, $m)) {
+                $lineLocation = $this->resolveLocationToken($m[1]);
                 $lineShowMap  = true;
                 $taskName = trim(preg_replace('/\+\+\w[\w-]*\s*/', '', $taskName));
-            } elseif (preg_match('/\+(\w[\w-]*)/', $taskName, $locationMatch)) {
-                $locationToken = $locationMatch[1];
-                $normalized = strtolower(preg_replace('/[-_]/', '', $locationToken));
-                $existingLocation = Task::whereNotNull('location')
-                    ->where('location', '!=', '')
-                    ->whereRaw("LOWER(REPLACE(REPLACE(REPLACE(location, ' ', ''), '-', ''), '_', '')) = ?", [$normalized])
-                    ->value('location');
-                $lineLocation = $existingLocation ?: $locationToken;
+            } elseif (preg_match('/\+"([^"]+)"/', $taskName, $m)) {
+                $lineLocation = $this->resolveLocationToken($m[1]);
+                $lineShowMap  = false;
+                $taskName = trim(preg_replace('/\+"[^"]*"\s*/', '', $taskName));
+            } elseif (preg_match('/\+(\w[\w-]*)/', $taskName, $m)) {
+                $lineLocation = $this->resolveLocationToken($m[1]);
                 $lineShowMap  = false;
                 $taskName = trim(preg_replace('/\+\w[\w-]*\s*/', '', $taskName));
             }

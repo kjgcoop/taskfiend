@@ -109,7 +109,8 @@
             autocompleteType: null,
             autocompleteQuery: '',
             autocompleteIndex: 0,
-            autocompleteLocationMap: false, // true when triggered by ++ (map link)
+            autocompleteLocationMap: false,    // true when triggered by ++ (map link)
+            autocompleteLocationQuoted: false, // true when triggered by +" or ++" (quoted form)
 
             // Quick-add parse preview
             preview: null,
@@ -238,42 +239,63 @@
                 const lineStart = input.lastIndexOf('\n', cursorPos - 1) + 1;
                 const beforeCursor = input.substring(lineStart, cursorPos);
 
-                const projectMatch     = beforeCursor.match(/#(\w*)$/);
-                const tagMatch        = beforeCursor.match(/@(\w*)$/);
-                // Check ++ (map location) before single + to avoid false match
-                const mapLocMatch     = beforeCursor.match(/\+\+(\w*)$/);
-                const locationMatch   = !mapLocMatch && beforeCursor.match(/\+(\w*)$/);
-                const userMatch       = beforeCursor.match(/&(\w*)$/);
+                const projectMatch        = beforeCursor.match(/#(\w*)$/);
+                const tagMatch           = beforeCursor.match(/@(\w*)$/);
+                // Location: check quoted ++ and + before unquoted to avoid false matches
+                const mapLocQuotedMatch  = beforeCursor.match(/\+\+"([^"]*)$/);
+                const mapLocUnquotMatch  = !mapLocQuotedMatch && beforeCursor.match(/\+\+(\w*)$/);
+                const locQuotedMatch     = !mapLocQuotedMatch && !mapLocUnquotMatch && beforeCursor.match(/\+"([^"]*)$/);
+                const locationMatch      = !mapLocQuotedMatch && !mapLocUnquotMatch && !locQuotedMatch && beforeCursor.match(/\+(\w*)$/);
+                const userMatch          = beforeCursor.match(/&(\w*)$/);
 
                 if (projectMatch && this.projects.length > 0) {
                     this.autocompleteType = 'project';
                     this.autocompleteQuery = projectMatch[1];
                     this.autocompleteIndex = 0;
                     this.autocompleteLocationMap = false;
+                    this.autocompleteLocationQuoted = false;
                     this.showAutocomplete = true;
                 } else if (tagMatch && this.tags.length > 0) {
                     this.autocompleteType = 'tag';
                     this.autocompleteQuery = tagMatch[1];
                     this.autocompleteIndex = 0;
                     this.autocompleteLocationMap = false;
+                    this.autocompleteLocationQuoted = false;
                     this.showAutocomplete = true;
-                } else if (mapLocMatch) {
+                } else if (mapLocQuotedMatch) {
                     this.autocompleteType = 'location';
-                    this.autocompleteQuery = mapLocMatch[1];
+                    this.autocompleteQuery = mapLocQuotedMatch[1];
                     this.autocompleteIndex = 0;
                     this.autocompleteLocationMap = true;
+                    this.autocompleteLocationQuoted = true;
+                    this.showAutocomplete = this.filteredLocations.length > 0;
+                } else if (mapLocUnquotMatch) {
+                    this.autocompleteType = 'location';
+                    this.autocompleteQuery = mapLocUnquotMatch[1];
+                    this.autocompleteIndex = 0;
+                    this.autocompleteLocationMap = true;
+                    this.autocompleteLocationQuoted = false;
+                    this.showAutocomplete = this.filteredLocations.length > 0;
+                } else if (locQuotedMatch) {
+                    this.autocompleteType = 'location';
+                    this.autocompleteQuery = locQuotedMatch[1];
+                    this.autocompleteIndex = 0;
+                    this.autocompleteLocationMap = false;
+                    this.autocompleteLocationQuoted = true;
                     this.showAutocomplete = this.filteredLocations.length > 0;
                 } else if (locationMatch) {
                     this.autocompleteType = 'location';
                     this.autocompleteQuery = locationMatch[1];
                     this.autocompleteIndex = 0;
                     this.autocompleteLocationMap = false;
+                    this.autocompleteLocationQuoted = false;
                     this.showAutocomplete = this.filteredLocations.length > 0;
                 } else if (userMatch && this.users.length > 0) {
                     this.autocompleteType = 'user';
                     this.autocompleteQuery = userMatch[1];
                     this.autocompleteIndex = 0;
                     this.autocompleteLocationMap = false;
+                    this.autocompleteLocationQuoted = false;
                     this.showAutocomplete = true;
                 } else {
                     this.showAutocomplete = false;
@@ -362,7 +384,7 @@
                 const inputEl = this.$refs.createInput;
                 if (!inputEl) return;
 
-                let slug, prefix;
+                let slug, prefix, suffix = ' ';
                 if (this.autocompleteType === 'project') {
                     slug   = name.toLowerCase().replace(/[^a-z0-9-]/g, '');
                     prefix = '#';
@@ -370,24 +392,30 @@
                     slug   = name.toLowerCase().replace(/[^a-z0-9-]/g, '');
                     prefix = '@';
                 } else if (this.autocompleteType === 'location') {
-                    // Lowercase, spaces → hyphens, strip other non-word chars
-                    slug   = name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
-                    prefix = this.autocompleteLocationMap ? '++' : '+';
+                    if (this.autocompleteLocationQuoted) {
+                        // Quoted form: keep the exact name (spaces allowed), wrap in "..."
+                        slug   = name;
+                        prefix = this.autocompleteLocationMap ? '++"' : '+"';
+                        suffix = '" ';
+                    } else {
+                        // Unquoted form: lowercase, spaces → hyphens
+                        slug   = name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+                        prefix = this.autocompleteLocationMap ? '++' : '+';
+                    }
                 } else {
                     // user: lowercase, spaces removed
                     slug   = name.toLowerCase().replace(/\s+/g, '').replace(/[^a-z0-9]/g, '');
                     prefix = '&';
                 }
 
-                // Use lastIndexOf on the partial token already captured in autocompleteQuery
-                // rather than relying on selectionStart, which can be 0 when the input loses
-                // focus during a mouse click on the dropdown item.
+                // Use lastIndexOf on the partial token already captured in autocompleteQuery.
+                // For quoted mode the prefix already includes the opening quote (e.g. ++" ).
                 const partialToken = prefix + this.autocompleteQuery;
                 const currentValue = inputEl.value;
                 const insertIdx = currentValue.lastIndexOf(partialToken);
                 let newCursorPos = currentValue.length;
                 if (insertIdx >= 0) {
-                    const replacement = prefix + slug + ' ';
+                    const replacement = prefix + slug + suffix;
                     inputEl.value = currentValue.substring(0, insertIdx)
                         + replacement
                         + currentValue.substring(insertIdx + partialToken.length);
@@ -869,7 +897,24 @@
                             <span class="text-purple-400" data-task-recurrence-display>{{ $task->recurrence_pattern }}</span>
                         @endif
                         @if($task->location)
-                            <span class="border border-gray-400 text-gray-400 rounded px-1.5 py-0.5" data-task-location-display>{{ $task->location }}</span>
+                            @php
+                                $truncLen = config('taskfiend.location_truncate_length', 30);
+                                $locDisplay = ($truncLen > 0 && mb_strlen($task->location) > $truncLen)
+                                    ? mb_substr($task->location, 0, $truncLen) . '…'
+                                    : $task->location;
+                            @endphp
+                            @if($task->show_map)
+                                @php $mapUrl = sprintf(config('taskfiend.maps_url_template', 'https://maps.google.com/?q=%s'), urlencode($task->location)); @endphp
+                                <a href="{{ $mapUrl }}" target="_blank" rel="noopener"
+                                   onclick="event.stopPropagation()"
+                                   title="{{ $task->location }}"
+                                   class="border border-orange-400 text-orange-400 rounded px-1.5 py-0.5 hover:bg-orange-400/10 hover:underline"
+                                   data-task-location-display>{{ $locDisplay }}</a>
+                            @else
+                                <span class="border border-gray-400 text-gray-400 rounded px-1.5 py-0.5"
+                                      title="{{ mb_strlen($task->location) > $truncLen && $truncLen > 0 ? $task->location : '' }}"
+                                      data-task-location-display>{{ $locDisplay }}</span>
+                            @endif
                         @endif
                         @if($task->description)
                             <span class="flex items-center gap-1 text-gray-500" title="Has description">
