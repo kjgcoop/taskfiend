@@ -109,6 +109,7 @@
             autocompleteType: null,
             autocompleteQuery: '',
             autocompleteIndex: 0,
+            autocompleteLocationMap: false, // true when triggered by ++ (map link)
 
             // Quick-add parse preview
             preview: null,
@@ -237,30 +238,42 @@
                 const lineStart = input.lastIndexOf('\n', cursorPos - 1) + 1;
                 const beforeCursor = input.substring(lineStart, cursorPos);
 
-                const projectMatch  = beforeCursor.match(/#(\w*)$/);
-                const tagMatch      = beforeCursor.match(/@(\w*)$/);
-                const locationMatch = beforeCursor.match(/\+(\w*)$/);
-                const userMatch     = beforeCursor.match(/&(\w*)$/);
+                const projectMatch     = beforeCursor.match(/#(\w*)$/);
+                const tagMatch        = beforeCursor.match(/@(\w*)$/);
+                // Check ++ (map location) before single + to avoid false match
+                const mapLocMatch     = beforeCursor.match(/\+\+(\w*)$/);
+                const locationMatch   = !mapLocMatch && beforeCursor.match(/\+(\w*)$/);
+                const userMatch       = beforeCursor.match(/&(\w*)$/);
 
                 if (projectMatch && this.projects.length > 0) {
                     this.autocompleteType = 'project';
                     this.autocompleteQuery = projectMatch[1];
                     this.autocompleteIndex = 0;
+                    this.autocompleteLocationMap = false;
                     this.showAutocomplete = true;
                 } else if (tagMatch && this.tags.length > 0) {
                     this.autocompleteType = 'tag';
                     this.autocompleteQuery = tagMatch[1];
                     this.autocompleteIndex = 0;
+                    this.autocompleteLocationMap = false;
                     this.showAutocomplete = true;
+                } else if (mapLocMatch) {
+                    this.autocompleteType = 'location';
+                    this.autocompleteQuery = mapLocMatch[1];
+                    this.autocompleteIndex = 0;
+                    this.autocompleteLocationMap = true;
+                    this.showAutocomplete = this.filteredLocations.length > 0;
                 } else if (locationMatch) {
                     this.autocompleteType = 'location';
                     this.autocompleteQuery = locationMatch[1];
                     this.autocompleteIndex = 0;
+                    this.autocompleteLocationMap = false;
                     this.showAutocomplete = this.filteredLocations.length > 0;
                 } else if (userMatch && this.users.length > 0) {
                     this.autocompleteType = 'user';
                     this.autocompleteQuery = userMatch[1];
                     this.autocompleteIndex = 0;
+                    this.autocompleteLocationMap = false;
                     this.showAutocomplete = true;
                 } else {
                     this.showAutocomplete = false;
@@ -359,7 +372,7 @@
                 } else if (this.autocompleteType === 'location') {
                     // Lowercase, spaces → hyphens, strip other non-word chars
                     slug   = name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
-                    prefix = '+';
+                    prefix = this.autocompleteLocationMap ? '++' : '+';
                 } else {
                     // user: lowercase, spaces removed
                     slug   = name.toLowerCase().replace(/\s+/g, '').replace(/[^a-z0-9]/g, '');

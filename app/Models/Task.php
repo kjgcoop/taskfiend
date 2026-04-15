@@ -15,6 +15,7 @@ class Task extends Model
         'name',
         'description',
         'location',
+        'show_map',
         'status',
         'completed_at',
         'creator_id',
@@ -33,6 +34,7 @@ class Task extends Model
     {
         return [
             'recurrence_floating' => 'boolean',
+            'show_map'            => 'boolean',
             'completed_at'        => 'datetime',
         ];
     }

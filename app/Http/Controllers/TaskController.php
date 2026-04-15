@@ -201,9 +201,20 @@ class TaskController extends Controller
             $taskName = trim(preg_replace('/@[\w-]+\s*/', '', $taskName));
         }
 
-        // Parse +location token (only in quick-add, only if no location explicitly provided)
+        // Parse +location / ++location tokens (only in quick-add, only if no location explicitly provided).
+        // ++ prefix means show_map=true (render as a clickable map link).
         if ($isQuickAdd && empty($validated['location'])) {
-            if (preg_match('/\+(\w[\w-]*)/', $taskName, $locationMatch)) {
+            if (preg_match('/\+\+(\w[\w-]*)/', $taskName, $mapLocMatch)) {
+                $locationToken = $mapLocMatch[1];
+                $normalized = strtolower(preg_replace('/[-_]/', '', $locationToken));
+                $existingLocation = Task::whereNotNull('location')
+                    ->where('location', '!=', '')
+                    ->whereRaw("LOWER(REPLACE(REPLACE(REPLACE(location, ' ', ''), '-', ''), '_', '')) = ?", [$normalized])
+                    ->value('location');
+                $validated['location'] = $existingLocation ?: $locationToken;
+                $validated['show_map'] = true;
+                $taskName = trim(preg_replace('/\+\+\w[\w-]*\s*/', '', $taskName));
+            } elseif (preg_match('/\+(\w[\w-]*)/', $taskName, $locationMatch)) {
                 $locationToken = $locationMatch[1];
                 $normalized = strtolower(preg_replace('/[-_]/', '', $locationToken));
                 $existingLocation = Task::whereNotNull('location')
@@ -211,6 +222,7 @@ class TaskController extends Controller
                     ->whereRaw("LOWER(REPLACE(REPLACE(REPLACE(location, ' ', ''), '-', ''), '_', '')) = ?", [$normalized])
                     ->value('location');
                 $validated['location'] = $existingLocation ?: $locationToken;
+                $validated['show_map'] = false;
                 $taskName = trim(preg_replace('/\+\w[\w-]*\s*/', '', $taskName));
             }
         }
@@ -322,6 +334,7 @@ class TaskController extends Controller
             'name' => $taskName,
             'description' => $validated['description'] ?? null,
             'location' => $validated['location'] ?? null,
+            'show_map' => $validated['show_map'] ?? false,
             'date' => $date,
             'time' => $time,
             'duration_minutes' => $this->parseDurationInput($validated['duration_minutes'] ?? null),
@@ -474,6 +487,7 @@ class TaskController extends Controller
             'name' => 'required|string|max:255',
             'description' => 'nullable|string',
             'location' => 'nullable|string|max:255',
+            'show_map' => 'nullable|boolean',
             'date' => 'nullable|string|max:255',
             'time' => 'nullable|date_format:H:i',
             'duration_minutes' => 'nullable|string|max:20',
@@ -596,7 +610,7 @@ class TaskController extends Controller
         }
 
         $changes = [];
-        foreach (['name', 'description', 'location', 'date', 'time', 'duration_minutes', 'project_id', 'parent_id', 'recurrence_pattern', 'recurrence_floating', 'status'] as $field) {
+        foreach (['name', 'description', 'location', 'show_map', 'date', 'time', 'duration_minutes', 'project_id', 'parent_id', 'recurrence_pattern', 'recurrence_floating', 'status'] as $field) {
             if (isset($validated[$field]) && $task->$field != $validated[$field]) {
                 $changes[$field] = ['old' => $task->$field, 'new' => $validated[$field]];
                 $task->$field = $validated[$field];
@@ -673,7 +687,7 @@ class TaskController extends Controller
         $this->assertProjectActive($task, asJson: true);
 
         $field = $request->input('field');
-        $allowedFields = ['name', 'description', 'location', 'status', 'date', 'time', 'duration_minutes', 'project_id', 'parent_id', 'recurrence_pattern', 'recurrence_floating', 'tag_ids', 'assignee_ids'];
+        $allowedFields = ['name', 'description', 'location', 'show_map', 'status', 'date', 'time', 'duration_minutes', 'project_id', 'parent_id', 'recurrence_pattern', 'recurrence_floating', 'tag_ids', 'assignee_ids'];
 
         if (!in_array($field, $allowedFields)) {
             return response()->json(['success' => false, 'message' => 'Invalid field'], 400);
@@ -743,7 +757,7 @@ class TaskController extends Controller
                 }
 
                 // Coerce boolean fields properly ("false" string → false, "true" string → true)
-                if ($field === 'recurrence_floating') {
+                if ($field === 'recurrence_floating' || $field === 'show_map') {
                     $value = filter_var($value, FILTER_VALIDATE_BOOLEAN);
                 }
 
@@ -963,8 +977,19 @@ class TaskController extends Controller
             $taskName = trim(preg_replace('/@[\w-]+\s*/', '', $taskName));
         }
 
-        // Mirror the +location token parsing from store()
-        if (preg_match('/\+(\w[\w-]*)/', $taskName, $locationMatch)) {
+        // Mirror the +location / ++location token parsing from store()
+        $showMap = false;
+        if (preg_match('/\+\+(\w[\w-]*)/', $taskName, $mapLocMatch)) {
+            $locationToken = $mapLocMatch[1];
+            $normalized = strtolower(preg_replace('/[-_]/', '', $locationToken));
+            $existingLocation = Task::whereNotNull('location')
+                ->where('location', '!=', '')
+                ->whereRaw("LOWER(REPLACE(REPLACE(REPLACE(location, ' ', ''), '-', ''), '_', '')) = ?", [$normalized])
+                ->value('location');
+            $location = $existingLocation ?: $locationToken;
+            $showMap  = true;
+            $taskName = trim(preg_replace('/\+\+\w[\w-]*\s*/', '', $taskName));
+        } elseif (preg_match('/\+(\w[\w-]*)/', $taskName, $locationMatch)) {
             $locationToken = $locationMatch[1];
             $normalized = strtolower(preg_replace('/[-_]/', '', $locationToken));
             $existingLocation = Task::whereNotNull('location')
@@ -1025,6 +1050,7 @@ class TaskController extends Controller
             'date'              => $dateFormatted,
             'recurrence'        => $parsed['recurrence_pattern'],
             'location'          => $location,
+            'show_map'          => $showMap,
             'assignees_display' => implode(' ', array_map(fn($n) => '&' . preg_replace('/\s+/', '', strtolower($n)), $assigneeNames)),
             'unknown_assignees' => implode(' ', $unknownAssignees),
         ]);
@@ -1673,10 +1699,21 @@ class TaskController extends Controller
             $taskName = trim(preg_replace('/@[\w-]+\s*/', '', $taskName));
         }
 
-        // ── Parse +location token ────────────────────────────────────────────────────
+        // ── Parse +location / ++location tokens ─────────────────────────────────────
         $lineLocation = $validated['location'] ?? null;
+        $lineShowMap  = $validated['show_map'] ?? false;
         if ($isQuickAdd && empty($lineLocation)) {
-            if (preg_match('/\+(\w[\w-]*)/', $taskName, $locationMatch)) {
+            if (preg_match('/\+\+(\w[\w-]*)/', $taskName, $mapLocMatch)) {
+                $locationToken = $mapLocMatch[1];
+                $normalized = strtolower(preg_replace('/[-_]/', '', $locationToken));
+                $existingLocation = Task::whereNotNull('location')
+                    ->where('location', '!=', '')
+                    ->whereRaw("LOWER(REPLACE(REPLACE(REPLACE(location, ' ', ''), '-', ''), '_', '')) = ?", [$normalized])
+                    ->value('location');
+                $lineLocation = $existingLocation ?: $locationToken;
+                $lineShowMap  = true;
+                $taskName = trim(preg_replace('/\+\+\w[\w-]*\s*/', '', $taskName));
+            } elseif (preg_match('/\+(\w[\w-]*)/', $taskName, $locationMatch)) {
                 $locationToken = $locationMatch[1];
                 $normalized = strtolower(preg_replace('/[-_]/', '', $locationToken));
                 $existingLocation = Task::whereNotNull('location')
@@ -1684,6 +1721,7 @@ class TaskController extends Controller
                     ->whereRaw("LOWER(REPLACE(REPLACE(REPLACE(location, ' ', ''), '-', ''), '_', '')) = ?", [$normalized])
                     ->value('location');
                 $lineLocation = $existingLocation ?: $locationToken;
+                $lineShowMap  = false;
                 $taskName = trim(preg_replace('/\+\w[\w-]*\s*/', '', $taskName));
             }
         }
@@ -1771,6 +1809,7 @@ class TaskController extends Controller
             'name'                => $taskName,
             'description'         => $validated['description'] ?? null,
             'location'            => $lineLocation,
+            'show_map'            => $lineShowMap,
             'date'                => $date,
             'time'                => $time,
             'duration_minutes'    => $this->parseDurationInput($validated['duration_minutes'] ?? null),
