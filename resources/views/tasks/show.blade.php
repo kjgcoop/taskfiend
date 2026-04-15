@@ -1,9 +1,26 @@
 <x-app-layout>
     <x-slot name="header">
         <div class="flex justify-between items-center">
-            <h2 class="font-semibold text-xl text-gray-100 leading-tight task-title">
-                {!! render_title($task->name) !!}
-            </h2>
+            <div>
+                <h2 class="font-semibold text-xl text-gray-100 leading-tight task-title">
+                    {!! render_title($task->name) !!}
+                </h2>
+                <div class="flex items-center gap-1.5 mt-0.5">
+                    <span class="text-sm text-gray-600">#{{ $task->id }}</span>
+                    <button x-data="{ copied: false }"
+                            @click="navigator.clipboard.writeText('{{ route('tasks.show', $task) }}'); copied = true; setTimeout(() => copied = false, 1500)"
+                            title="Copy link"
+                            class="p-0.5 text-gray-600 hover:text-gray-300 rounded transition">
+                        <svg x-show="!copied" class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                  d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/>
+                        </svg>
+                        <svg x-show="copied" class="w-3.5 h-3.5 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="display:none">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
             @if(!$isInactive)
             <form method="POST" action="{{ route('tasks.duplicate', $task) }}">
                 @csrf

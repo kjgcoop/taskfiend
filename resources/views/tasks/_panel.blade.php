@@ -14,7 +14,20 @@
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
             </svg>
         </button>
-        <span class="text-xs text-gray-500 uppercase tracking-wide font-medium flex-shrink-0">Task</span>
+        <span class="text-xs text-gray-500 uppercase tracking-wide font-medium flex-shrink-0">Task #{{ $task->id }}</span>
+        <button x-data="{ copied: false }"
+                @click.prevent="navigator.clipboard.writeText('{{ route('tasks.show', $task) }}'); copied = true; setTimeout(() => copied = false, 1500)"
+                onclick="event.stopPropagation()"
+                title="Copy link"
+                class="flex-shrink-0 p-1 text-gray-600 hover:text-gray-300 rounded transition">
+            <svg x-show="!copied" class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/>
+            </svg>
+            <svg x-show="copied" class="w-3.5 h-3.5 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="display:none">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+            </svg>
+        </button>
     </div>
     <div class="flex items-center gap-2">
         @if(!$isInactive)

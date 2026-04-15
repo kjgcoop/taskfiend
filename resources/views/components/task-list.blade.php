@@ -766,16 +766,17 @@
                 @endif
 
                 <!-- Complete circle / quick-complete form (hidden in bulk mode) -->
+                <div class="flex flex-col items-center flex-shrink-0">
                 @if($showAsArchived)
-                    <div class="mt-1 w-6 h-6 rounded-full bg-gray-600 flex-shrink-0" title="Archived"></div>
+                    <div class="mt-1 w-6 h-6 rounded-full bg-gray-600" title="Archived"></div>
                 @elseif($task->status === 'done')
                     <div x-show="!$store.bulkEdit.active"
-                         class="mt-1 w-6 h-6 rounded-full bg-green-600 flex-shrink-0" title="Completed"></div>
+                         class="mt-1 w-6 h-6 rounded-full bg-green-600" title="Completed"></div>
                 @elseif($task->status === 'archived')
                     <div x-show="!$store.bulkEdit.active"
-                         class="mt-1 w-6 h-6 rounded-full bg-gray-600 flex-shrink-0" title="Archived"></div>
+                         class="mt-1 w-6 h-6 rounded-full bg-gray-600" title="Archived"></div>
                 @elseif($readOnly)
-                    <div class="mt-1 w-6 h-6 rounded-full border-2 border-gray-700 flex-shrink-0" title="Project is inactive"></div>
+                    <div class="mt-1 w-6 h-6 rounded-full border-2 border-gray-700" title="Project is inactive"></div>
                 @else
                 <form x-show="!$store.bulkEdit.active"
                       x-data="listQuickComplete()" @submit.prevent="submit()"
@@ -831,6 +832,8 @@
                     <div x-show="error" x-text="error" class="mt-1 text-xs text-red-400 max-w-xs" style="display:none"></div>
                 </form>
                 @endif
+                    <span class="text-[10px] text-gray-600 mt-1 leading-none">#{{ $task->id }}</span>
+                </div>
 
                 <!-- Task Content -->
                 <div class="flex-1"
