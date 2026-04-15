@@ -9,10 +9,73 @@
                         </svg>
                     </a>
                 @endif
-                <h2 class="font-semibold text-xl text-gray-100 leading-tight">
-                    @if($carbonDate->isToday()) {{ __('Today') }} - @endif{{ $carbonDate->format('l, F j, Y') }}
-                    <x-task-count-badge :count="$tasks->count()" :breakdown="$breakdown" />
-                </h2>
+                <div x-data="{
+                    editing: false,
+                    input: '',
+                    error: false,
+                    currentDate: '{{ $carbonDate->format('Y-m-d') }}',
+                    activate() {
+                        this.input = this.currentDate;
+                        this.error = false;
+                        this.editing = true;
+                        this.$nextTick(() => { this.$refs.dateInput.focus(); this.$refs.dateInput.select(); });
+                    },
+                    cancel() {
+                        this.editing = false;
+                        this.error = false;
+                    },
+                    async navigate() {
+                        const val = this.input.trim();
+                        if (!val) { this.cancel(); return; }
+                        const resp = await fetch('{{ route('tasks.parseDate') }}', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content,
+                                'Accept': 'application/json',
+                            },
+                            body: JSON.stringify({ input: val })
+                        });
+                        const data = await resp.json();
+                        if (data.success) {
+                            if (data.date === this.currentDate) { this.cancel(); return; }
+                            window.location.href = '{{ route('day') }}?date=' + data.date;
+                        } else {
+                            this.error = true;
+                        }
+                    },
+                    pickDate(value) {
+                        if (!value || value === this.currentDate) return;
+                        window.location.href = '{{ route('day') }}?date=' + value;
+                    }
+                }" @click.outside="cancel()">
+                    <h2 x-show="!editing"
+                        @click="activate()"
+                        class="font-semibold text-xl text-gray-100 leading-tight cursor-pointer hover:text-gray-300 transition-colors select-none"
+                        title="Click to jump to a different date">
+                        @if($carbonDate->isToday()) {{ __('Today') }} - @endif{{ $carbonDate->format('l, F j, Y') }}
+                        <x-task-count-badge :count="$tasks->count()" :breakdown="$breakdown" />
+                    </h2>
+                    <div x-show="editing" x-cloak class="flex items-center gap-1.5">
+                        <input
+                            x-ref="dateInput"
+                            x-model="input"
+                            @keydown.enter.prevent="navigate()"
+                            @keydown.escape.prevent="cancel()"
+                            @input="error = false"
+                            @click.stop
+                            :class="error ? 'border-red-500 focus:ring-red-500' : 'border-gray-600 focus:ring-blue-500'"
+                            class="bg-gray-700 border rounded px-2 py-0.5 text-gray-100 text-base font-semibold focus:outline-none focus:ring-2 w-44"
+                        />
+                        <label class="text-gray-400 hover:text-gray-100 cursor-pointer" title="Pick from calendar" @click.stop>
+                            <input type="date" class="sr-only" :value="currentDate" @change="pickDate($event.target.value)" />
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                            </svg>
+                        </label>
+                        <span x-show="error" class="text-red-400 text-xs">Can't parse date</span>
+                    </div>
+                </div>
                 <a href="{{ route('day') }}?date={{ $carbonDate->copy()->addDay()->format('Y-m-d') }}" class="text-gray-400 hover:text-gray-100" title="{{ $carbonDate->copy()->addDay()->format('l, F j, Y') }}">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
