@@ -58,13 +58,18 @@ class Project extends Model
         return $this->belongsTo(ProjectTemplate::class, 'template_id');
     }
 
-    /** Scope to incomplete projects the given user owns or is assigned to. */
+    /**
+     * Scope to incomplete projects the given user can interact with:
+     * projects they own, are assigned to at the project level, or have
+     * at least one task assigned to them within.
+     */
     public function scopeActiveForUser(Builder $query, int $userId): Builder
     {
         return $query->where('status', 'incomplete')
                      ->where(function ($q) use ($userId) {
                          $q->where('user_id', $userId)
-                           ->orWhereHas('assignees', fn($q2) => $q2->where('users.id', $userId));
+                           ->orWhereHas('assignees', fn($q2) => $q2->where('users.id', $userId))
+                           ->orWhereHas('tasks.assignees', fn($q2) => $q2->where('users.id', $userId));
                      });
     }
 }
