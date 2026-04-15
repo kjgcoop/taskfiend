@@ -15,9 +15,9 @@
                     <x-nav-link :href="route('day')" :active="request()->routeIs('today') || request()->routeIs('dashboard') || (request()->routeIs('day') && !request()->has('date'))">
                         {{ __('Today') }}
                     </x-nav-link>
-                    <x-nav-link :href="route('inbox')" :active="request()->routeIs('inbox')">
+                    <!-- <x-nav-link :href="route('inbox')" :active="request()->routeIs('inbox')">
                         {{ __('Inbox') }}
-                    </x-nav-link>
+                    </x-nav-link>-->
                     <div class="relative flex items-center" x-data="{ open: false }" @click.outside="open = false" @close.stop="open = false">
                         @php
                             $byDateActive = request()->routeIs('calendar') || request()->routeIs('overdue') || request()->routeIs('undated');
@@ -228,9 +228,9 @@
             <x-responsive-nav-link :href="route('day')" :active="request()->routeIs('today') || request()->routeIs('dashboard') || (request()->routeIs('day') && !request()->has('date'))">
                 {{ __('Today') }}
             </x-responsive-nav-link>
-            <x-responsive-nav-link :href="route('inbox')" :active="request()->routeIs('inbox')">
+            <!-- <x-responsive-nav-link :href="route('inbox')" :active="request()->routeIs('inbox')">
                 {{ __('Inbox') }}
-            </x-responsive-nav-link>
+            </x-responsive-nav-link> -->
             <div x-data="{ byDateOpen: false }">
                 <div class="flex">
                     <a href="{{ route('calendar') }}" class="flex-1 flex items-center ps-3 pe-4 py-2 border-l-4 text-base font-medium transition duration-150 ease-in-out focus:outline-none {{ request()->routeIs('calendar') || request()->routeIs('overdue') || request()->routeIs('undated') ? 'border-indigo-400 text-indigo-300 bg-gray-700' : 'border-transparent text-gray-400 hover:text-gray-100 hover:bg-gray-700 hover:border-gray-500' }}">
