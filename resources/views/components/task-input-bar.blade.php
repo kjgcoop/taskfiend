@@ -17,21 +17,23 @@
             @endif
             <div class="flex gap-2 items-center">
                 <div class="relative flex-1" @click.outside="showAutocomplete = false">
-                    <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none">
+                    <span class="absolute left-3 top-2.5 text-gray-500 pointer-events-none">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
                         </svg>
                     </span>
-                    <input type="text"
-                           name="name"
-                           x-ref="createInput"
-                           placeholder="Add a task..."
-                           autocomplete="off"
-                           value="{{ old('name') }}"
-                           x-on:input="handleInput($event)"
-                           x-on:keydown="handleKeydown($event)"
-                           :class="nameError ? 'border-red-500 focus:ring-red-500' : 'border-gray-600 focus:ring-blue-500'"
-                           class="w-full pl-9 pr-4 py-2 bg-gray-700 border rounded-md text-gray-100 placeholder-gray-500 focus:outline-none focus:ring-2 focus:border-transparent">
+                    <textarea name="name"
+                              x-ref="createInput"
+                              placeholder="Add a task… (Shift+Enter for multiple)"
+                              autocomplete="off"
+                              rows="1"
+                              x-on:input="handleInput($event)"
+                              x-on:keydown="handleKeydown($event)"
+                              x-on:click="schedulePreview($event.target.value, $event.target.selectionStart)"
+                              x-on:paste="$nextTick(() => { $refs.createInput.style.height = 'auto'; $refs.createInput.style.height = Math.min($refs.createInput.scrollHeight, 200) + 'px'; })"
+                              :class="nameError ? 'border-red-500 focus:ring-red-500' : 'border-gray-600 focus:ring-blue-500'"
+                              style="resize: none; overflow: hidden;"
+                              class="w-full pl-9 pr-4 py-2 bg-gray-700 border rounded-md text-gray-100 placeholder-gray-500 focus:outline-none focus:ring-2 focus:border-transparent">{{ old('name') }}</textarea>
 
                     {{-- Autocomplete dropdown --}}
                     <div x-show="showAutocomplete"
@@ -84,13 +86,17 @@
                     <span x-show="submitting" x-cloak>…</span>
                 </button>
             </div>
+            {{-- Multi-line task count badge --}}
+            <div x-show="lineCount > 1" x-cloak class="pl-9">
+                <span class="text-xs text-blue-400" x-text="lineCount + ' tasks will be created'"></span>
+            </div>
             {{-- Client-side validation error --}}
             <div x-show="nameError" x-cloak class="pl-1">
                 <p x-text="nameError" class="text-xs text-red-400"></p>
             </div>
             {{-- Server-side error (AJAX) --}}
             <div x-show="serverError" x-cloak class="pl-1">
-                <p x-text="serverError" class="text-xs text-red-400"></p>
+                <p x-text="serverError" class="text-xs text-red-400 whitespace-pre-line"></p>
             </div>
             @error('name')
                 <p class="text-xs text-red-400 pl-1">{{ $message }}</p>
