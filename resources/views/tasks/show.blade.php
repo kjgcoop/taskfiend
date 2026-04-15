@@ -178,6 +178,7 @@
                                     </button>
                                     <input type="date" x-ref="datePicker"
                                            @change="pickDate($event.target.value)"
+                                           min="{{ now()->format('Y-m-d') }}"
                                            class="absolute inset-0 opacity-0 w-full h-full cursor-pointer">
                                 </div>
                             </div>

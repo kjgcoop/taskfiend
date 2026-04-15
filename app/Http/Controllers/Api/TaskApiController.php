@@ -68,6 +68,14 @@ class TaskApiController extends Controller
             }
         }
 
+        // Reject dates in the past (today is always valid)
+        if ($date && Carbon::parse($date)->startOfDay()->lt(Carbon::today())) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Task date cannot be in the past.',
+            ], 422);
+        }
+
         $projectId = $validated['project_id'] ?? null;
         if (!$projectId) {
             $inbox = Project::where('user_id', $user->id)->where('is_inbox', true)->first();

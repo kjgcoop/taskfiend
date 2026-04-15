@@ -313,6 +313,11 @@ class TaskController extends Controller
             }
         }
 
+        // Reject dates in the past (today is always valid)
+        if ($date && Carbon::parse($date)->startOfDay()->lt(Carbon::today())) {
+            return $this->storeError($request, ['date' => 'Task date cannot be in the past.']);
+        }
+
         // project_id is NOT NULL in the database; fall back to the user's default project,
         // then inbox, when the form was submitted without one (e.g. quick-add without a #project token).
         if (empty($validated['project_id'])) {
@@ -519,6 +524,15 @@ class TaskController extends Controller
                 ])->withInput();
             }
             $validated['date'] = $parsedDate->format('Y-m-d');
+        }
+
+        // Reject dates in the past (today is always valid)
+        if (!empty($validated['date']) && Carbon::parse($validated['date'])->startOfDay()->lt(Carbon::today())) {
+            $msg = 'Task date cannot be in the past.';
+            if ($request->ajax()) {
+                return response()->json(['success' => false, 'message' => $msg], 422);
+            }
+            return back()->withErrors(['date' => $msg])->withInput();
         }
 
         // Validate parent change (prevent circular references)
@@ -762,6 +776,11 @@ class TaskController extends Controller
                         return response()->json(['success' => false, 'message' => "Could not parse date: \"{$value}\". Try formats like: tomorrow, next friday, march 15, 3/15, 2026-03-15"], 400);
                     }
                     $value = $parsed->format('Y-m-d');
+
+                    // Reject dates in the past (today is always valid)
+                    if (Carbon::parse($value)->startOfDay()->lt(Carbon::today())) {
+                        return response()->json(['success' => false, 'message' => 'Task date cannot be in the past.'], 422);
+                    }
                 }
 
                 // Coerce boolean fields properly ("false" string → false, "true" string → true)
@@ -1354,6 +1373,18 @@ class TaskController extends Controller
 
         if (!$nextOccurrence) {
             return;
+        }
+
+        // Advance past-due occurrences forward through the pattern until we reach today
+        // at the earliest. E.g. a daily task last due Monday, completed on Wednesday,
+        // lands on Wednesday (today) — not Tuesday.
+        $today = Carbon::today();
+        while ($nextOccurrence->lt($today)) {
+            $advanced = $dateParser->getNextOccurrence($originalTask->recurrence_pattern, $nextOccurrence);
+            if (!$advanced) {
+                break;
+            }
+            $nextOccurrence = $advanced;
         }
 
         $nextDate = $nextOccurrence->format('Y-m-d');
