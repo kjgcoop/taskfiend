@@ -250,6 +250,12 @@
                                         class="px-3 py-1 bg-gray-700 text-gray-300 text-sm rounded hover:bg-gray-600">
                                     Cancel
                                 </button>
+                                @if($task->time)
+                                <button @click="fields.time = ''; saveField('time')"
+                                        class="px-3 py-1 bg-gray-700 text-red-400 text-sm rounded hover:bg-gray-600">
+                                    Clear
+                                </button>
+                                @endif
                             </div>
                         </div>
                         @endif
@@ -959,6 +965,49 @@
                     await this.saveField('date');
                 },
 
+                // Send a single field to the server and update local state on success.
+                // Returns true on success, false on failure. Does NOT reload the page.
+                async _saveFieldRequest(field) {
+                    // Normalize date text → stored date value before sending
+                    if (field === 'date') {
+                        const input = this.dateText.trim();
+                        if (!input) {
+                            this.fields.date = '';
+                        } else if (!/^\d{4}-\d{2}-\d{2}$/.test(this.fields.date)) {
+                            this.fields.date = input;
+                        }
+                    }
+
+                    const formData = new FormData();
+                    formData.append('_token', document.querySelector('meta[name="csrf-token"]').content);
+                    formData.append('field', field);
+
+                    if (Array.isArray(this.fields[field])) {
+                        this.fields[field].forEach(value => {
+                            formData.append(field + '[]', value);
+                        });
+                    } else {
+                        formData.append('value', this.fields[field]);
+                    }
+
+                    const response = await fetch(`/tasks/${this.taskId}/update-field`, {
+                        method: 'POST',
+                        body: formData,
+                    });
+
+                    const data = await response.json();
+
+                    if (data.success) {
+                        this.original[field] = JSON.parse(JSON.stringify(this.fields[field]));
+                        this.editing[field] = false;
+                        return true;
+                    } else {
+                        alert('Error saving ' + field + ': ' + (data.message || 'Failed to update'));
+                        this.resetField(field);
+                        return false;
+                    }
+                },
+
                 async saveField(field) {
                     try {
                         // Check if marking a recurring task as done
@@ -978,34 +1027,19 @@
                             }
                         }
 
-                        const formData = new FormData();
-                        formData.append('_token', document.querySelector('meta[name="csrf-token"]').content);
-                        formData.append('field', field);
-
-                        if (Array.isArray(this.fields[field])) {
-                            this.fields[field].forEach(value => {
-                                formData.append(field + '[]', value);
-                            });
-                        } else {
-                            formData.append('value', this.fields[field]);
+                        // Save any other fields that are currently open in edit mode,
+                        // so their changes aren't lost when the page reloads.
+                        const otherEditingFields = Object.keys(this.editing).filter(
+                            f => this.editing[f] && f !== field
+                        );
+                        for (const otherField of otherEditingFields) {
+                            await this._saveFieldRequest(otherField);
                         }
 
-                        const response = await fetch(`/tasks/${this.taskId}/update-field`, {
-                            method: 'POST',
-                            body: formData,
-                        });
-
-                        const data = await response.json();
-
-                        if (data.success) {
-                            this.original[field] = JSON.parse(JSON.stringify(this.fields[field]));
-                            this.editing[field] = false;
-
-                            // Reload page to show updated data
+                        // Save the triggered field and reload
+                        const ok = await this._saveFieldRequest(field);
+                        if (ok) {
                             window.location.reload();
-                        } else {
-                            alert('Error: ' + (data.message || 'Failed to update'));
-                            this.resetField(field);
                         }
                     } catch (error) {
                         console.error('Error:', error);
