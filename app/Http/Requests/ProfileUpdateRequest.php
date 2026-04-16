@@ -25,7 +25,6 @@ class ProfileUpdateRequest extends FormRequest
                 'max:255',
                 Rule::unique(User::class)->ignore($this->user()->id),
             ],
-            'default_project_id' => ['nullable', 'exists:projects,id'],
         ];
     }
 }

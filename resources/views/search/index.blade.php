@@ -36,11 +36,6 @@
                             <template x-if="autocompleteType === 'project'">
                                 <div>
                                     <div class="px-3 py-2 text-xs font-semibold text-gray-400 bg-[#202020] border-b border-gray-600">Projects</div>
-                                    <div class="px-2 py-1 hover:bg-gray-600 cursor-pointer text-sm text-gray-300"
-                                         @click.prevent="selectAutocomplete('inbox')"
-                                         :class="{ 'bg-gray-600': autocompleteIndex === 0 }">
-                                        <span class="font-medium">My Inbox</span>
-                                    </div>
                                     <template x-for="(project, index) in filteredProjects" :key="project.id">
                                         <div class="px-2 py-1 hover:bg-gray-600 cursor-pointer text-sm text-gray-300"
                                              @click.prevent="selectAutocomplete(project.name)"
@@ -110,7 +105,6 @@
                                 id="project_filter"
                                 class="w-full rounded-md bg-gray-700 border-gray-600 text-gray-100 placeholder-gray-500 shadow-sm focus:border-blue-500 focus:ring-blue-500">
                             <option value="none">No project filter (search all)</option>
-                            <option value="inbox">My Inbox</option>
                             <template x-for="project in projects" :key="project.id">
                                 <option :value="project.id" x-text="project.name"></option>
                             </template>

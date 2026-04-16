@@ -69,13 +69,8 @@ class TaskController extends Controller
         $tags = Tag::orderByRaw('LOWER(tag_name)')->get();
         $users = User::whereNull('email_enabled_at')->get();
 
-        // Default to user's chosen default project, then inbox
-        // @todo Can we simplify this by only returning the default? That's a
-        // not null column, so we can be sure it will return data.
-        $inboxProject = Project::where('user_id', Auth::id())->where('is_inbox', true)->first();
         $preselectedProjectId = $request->query('project_id')
-            ?? Auth::user()->default_project_id
-            ?? ($inboxProject ? $inboxProject->id : null);
+            ?? Auth::user()->defaultProject()->id;
         $preselectedDate = $request->query('date');
 
         // Handle parent task preselection
@@ -320,33 +315,10 @@ class TaskController extends Controller
             return $this->storeError($request, ['date' => 'Task date cannot be in the past.']);
         }
 
-        // project_id is NOT NULL in the database; fall back to the user's default project,
-        // then inbox, when the form was submitted without one (e.g. quick-add without a #project token).
-        // @todo Given that default is not null, can't we just skip the inbox
-        // check?
+        // project_id is NOT NULL in the database; fall back to the user's default project
+        // when the form was submitted without one (e.g. quick-add without a #project token).
         if (empty($validated['project_id'])) {
-            $defaultProjectId = Auth::user()->default_project_id;
-
-            if ($defaultProjectId) {
-                $validated['project_id'] = $defaultProjectId;
-            } else {
-                $inbox = Project::where('user_id', Auth::id())
-                    ->where('is_inbox', true)
-                    ->first();
-
-                // @todo This should have been created on user creation; why is
-                // is it here too?
-                if (!$inbox) {
-                    $inbox = Project::create([
-                        'name'       => 'Inbox',
-                        'user_id'    => Auth::id(),
-                        'is_inbox'   => true,
-                        'status'     => 'incomplete',
-                    ]);
-                }
-
-                $validated['project_id'] = $inbox->id;
-            }
+            $validated['project_id'] = Auth::user()->defaultProject()->id;
         }
 
         $task = Task::create([
@@ -407,8 +379,7 @@ class TaskController extends Controller
 
         $tags = Tag::orderByRaw('LOWER(tag_name)')->get();
         $users = User::whereNull('email_enabled_at')->get();
-        // @todo Use default project ID instead?
-        $inboxProjectId = Project::where('user_id', Auth::id())->where('is_inbox', true)->value('id');
+        $defaultProjectId = Auth::user()->defaultProject()->id;
 
         // Calculate next due date for recurring tasks
         $nextDueDate = null;
@@ -438,7 +409,7 @@ class TaskController extends Controller
 
         $isInactive = $task->project && in_array($task->project->status, ['done', 'archived']);
 
-        return view('tasks.show', compact('task', 'projects', 'tags', 'users', 'nextDueDate', 'availableParents', 'inboxProjectId', 'isInactive'));
+        return view('tasks.show', compact('task', 'projects', 'tags', 'users', 'nextDueDate', 'availableParents', 'defaultProjectId', 'isInactive'));
     }
 
     public function panel(Task $task)
@@ -452,8 +423,7 @@ class TaskController extends Controller
 
         $tags = Tag::orderByRaw('LOWER(tag_name)')->get();
         $users = User::whereNull('email_enabled_at')->get();
-        // @todo Use default project ID instead?
-        $inboxProjectId = Project::where('user_id', Auth::id())->where('is_inbox', true)->value('id');
+        $defaultProjectId = Auth::user()->defaultProject()->id;
 
         $nextDueDate = null;
         if ($task->recurrence_pattern && $task->date) {
@@ -467,7 +437,7 @@ class TaskController extends Controller
 
         $isInactive = $task->project && in_array($task->project->status, ['done', 'archived']);
 
-        return view('tasks._panel', compact('task', 'projects', 'tags', 'users', 'nextDueDate', 'inboxProjectId', 'isInactive'));
+        return view('tasks._panel', compact('task', 'projects', 'tags', 'users', 'nextDueDate', 'defaultProjectId', 'isInactive'));
     }
 
     public function edit(Task $task)
@@ -479,8 +449,7 @@ class TaskController extends Controller
 
         $tags = Tag::orderByRaw('LOWER(tag_name)')->get();
         $users = User::whereNull('email_enabled_at')->get();
-        // @todo Use default inbox ID instead?
-        $inboxProjectId = Project::where('user_id', Auth::id())->where('is_inbox', true)->value('id');
+        $defaultProjectId = Auth::user()->defaultProject()->id;
 
         // Get available parent tasks (exclude self and descendants to prevent cycles)
         $excludeIds = $task->getAllDescendants()->pluck('id')->push($task->id);
@@ -497,7 +466,7 @@ class TaskController extends Controller
             ->orderByRaw('LOWER(name)')
             ->get();
 
-        return view('tasks.edit', compact('task', 'projects', 'tags', 'users', 'availableParents', 'inboxProjectId'));
+        return view('tasks.edit', compact('task', 'projects', 'tags', 'users', 'availableParents', 'defaultProjectId'));
     }
 
     public function update(Request $request, Task $task)
@@ -1857,26 +1826,9 @@ class TaskController extends Controller
             throw new \InvalidArgumentException('Task name is empty after removing inline tokens.');
         }
 
-        // ── Fallback project (same logic as single-task store()) ────────────────────
+        // ── Fallback project ─────────────────────────────────────────────────────────
         if (empty($projectId)) {
-            // @todo Just use default project ID - it's not null; no need for
-            // inbox.
-            $defaultProjectId = Auth::user()->default_project_id;
-            if ($defaultProjectId) {
-                $projectId = $defaultProjectId;
-            } else {
-                $inbox = Project::where('user_id', Auth::id())->where('is_inbox', true)->first();
-                if (!$inbox) {
-                    // @todo Why are we creating inboxes all over the code?
-                    $inbox = Project::create([
-                        'name'     => 'Inbox',
-                        'user_id'  => Auth::id(),
-                        'is_inbox' => true,
-                        'status'   => 'incomplete',
-                    ]);
-                }
-                $projectId = $inbox->id;
-            }
+            $projectId = Auth::user()->defaultProject()->id;
         }
 
         // ── Create the task ──────────────────────────────────────────────────────────

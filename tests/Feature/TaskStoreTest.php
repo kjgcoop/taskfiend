@@ -213,46 +213,17 @@ class TaskStoreTest extends TestCase
     public function test_uses_default_project_when_no_project_id_given(): void
     {
         $defaultProject = Project::create([
-            'name'    => 'Default',
-            'user_id' => $this->user->id,
-            'status'  => 'incomplete',
+            'name'       => 'Default',
+            'user_id'    => $this->user->id,
+            'status'     => 'incomplete',
+            'is_default' => true,
         ]);
-        $this->user->update(['default_project_id' => $defaultProject->id]);
 
         $this->actingAs($this->user)->post('/tasks', ['name' => 'No Project Task']);
 
         $this->assertDatabaseHas('tasks', [
             'name'       => 'No Project Task',
             'project_id' => $defaultProject->id,
-        ]);
-    }
-
-    public function test_uses_existing_inbox_when_no_project_or_default(): void
-    {
-        $inbox = Project::create([
-            'name'     => 'Inbox',
-            'user_id'  => $this->user->id,
-            'is_inbox' => true,
-            'status'   => 'incomplete',
-        ]);
-
-        $this->actingAs($this->user)->post('/tasks', ['name' => 'Inbox Task']);
-
-        $this->assertDatabaseHas('tasks', [
-            'name'       => 'Inbox Task',
-            'project_id' => $inbox->id,
-        ]);
-    }
-
-    public function test_auto_creates_inbox_when_none_exists_and_no_default(): void
-    {
-        $this->actingAs($this->user)->post('/tasks', ['name' => 'Auto Inbox Task']);
-
-        $inbox = Project::where('user_id', $this->user->id)->where('is_inbox', true)->first();
-        $this->assertNotNull($inbox);
-        $this->assertDatabaseHas('tasks', [
-            'name'       => 'Auto Inbox Task',
-            'project_id' => $inbox->id,
         ]);
     }
 

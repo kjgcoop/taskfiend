@@ -86,22 +86,6 @@
             @endif
         </div>
 
-        <div>
-            <x-input-label for="default_project_id" :value="__('Default Project')" class="!text-gray-300" />
-            <p class="mt-1 text-xs text-gray-500">New tasks with no project specified are placed here automatically.</p>
-            <select id="default_project_id" name="default_project_id"
-                    class="mt-1 block w-full rounded-md bg-gray-700 border-gray-600 text-gray-100 shadow-sm focus:border-blue-500 focus:ring-blue-500">
-                <option value="">— None —</option>
-                @foreach($projects as $project)
-                    <option value="{{ $project->id }}"
-                        {{ old('default_project_id', $user->default_project_id) == $project->id ? 'selected' : '' }}>
-                        {{ $project->name }}{{ $project->is_inbox ? ' (Inbox)' : '' }}
-                    </option>
-                @endforeach
-            </select>
-            <x-input-error class="mt-2" :messages="$errors->get('default_project_id')" />
-        </div>
-
         <div class="flex items-center gap-4">
             <x-primary-button>{{ __('Save') }}</x-primary-button>
 

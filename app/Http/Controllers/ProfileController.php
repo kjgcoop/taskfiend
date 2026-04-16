@@ -3,7 +3,6 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\ProfileUpdateRequest;
-use App\Models\Project;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -20,12 +19,8 @@ class ProfileController extends Controller
      */
     public function edit(Request $request): View
     {
-        // @todo Why do we need to know if this is an inbox?
-        $projects = Project::activeForUser(Auth::id())->orderByRaw('LOWER(name)')->get(['id', 'name', 'is_inbox']);
-
         return view('profile.edit', [
-            'user'     => $request->user(),
-            'projects' => $projects,
+            'user' => $request->user(),
         ]);
     }
 
@@ -35,22 +30,6 @@ class ProfileController extends Controller
     public function update(ProfileUpdateRequest $request): RedirectResponse
     {
         $validated = $request->validated();
-
-        // Ensure the chosen default project is actually accessible to this user
-        if (!empty($validated['default_project_id'])) {
-            $accessible = Project::where('id', $validated['default_project_id'])
-                ->where('status', 'incomplete')
-                ->where(function ($q) {
-                    $q->where('user_id', Auth::id())
-                      ->orWhereHas('assignees', fn ($q2) => $q2->where('users.id', Auth::id()));
-                })
-                ->exists();
-
-            if (!$accessible) {
-                return Redirect::route('profile.edit')
-                    ->withErrors(['default_project_id' => 'That project is not available.']);
-            }
-        }
 
         $request->user()->fill($validated);
 
