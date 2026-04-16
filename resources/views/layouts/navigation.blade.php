@@ -79,7 +79,7 @@
                                 @forelse($navProjects as $project)
                                     @php $hasBg = !empty($project->background_image); @endphp
                                     <a href="{{ route('projects.show', $project) }}"
-                                       class="relative block w-full text-start text-sm leading-5 focus:outline-none transition duration-150 ease-in-out overflow-hidden {{ $hasBg ? 'border-b-2 border-[#202020]' : 'px-4 py-2 text-gray-300 hover:bg-gray-700' }}"
+                                       class="relative block w-full text-start text-sm leading-5 focus:outline-none transition duration-150 ease-in-out overflow-hidden {{ $hasBg ? 'border-b-2 border-[#202020]' : 'py-2 text-gray-300 hover:bg-gray-700' }}"
                                        @if($hasBg)
                                        style="background-image: url('{{ route('projects.background', $project) }}'); background-size: cover; background-position: center;"
                                        @endif>
