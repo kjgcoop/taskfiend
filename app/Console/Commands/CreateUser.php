@@ -2,7 +2,6 @@
 
 namespace App\Console\Commands;
 
-use App\Models\Project;
 use App\Models\User;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Hash;
@@ -45,15 +44,7 @@ class CreateUser extends Command
             'email_enabled_at' => null,
         ]);
 
-        // Create the default (inbox) project for the new user.
-        // This is the only place this should happen for CLI-created users.
-        $inbox = Project::create([
-            'name' => $user->name . "'s Inbox",
-            'description' => 'Personal inbox for quick task capture',
-            'user_id' => $user->id,
-            'status' => 'incomplete',
-            'is_default' => true,
-        ]);
+        $user->createDefaultProject();
 
         $this->info("User created successfully!");
         $this->info("Email: {$user->email}");
