@@ -111,6 +111,7 @@
             autocompleteIndex: 0,
             autocompleteLocationMap: false,    // true when triggered by ++ (map link)
             autocompleteLocationQuoted: false, // true when triggered by +" or ++" (quoted form)
+            autocompleteNot: false,            // true when triggered by not: prefix in filter mode
 
             // Quick-add parse preview
             preview: null,
@@ -220,6 +221,7 @@
 
             handleInput(event) {
                 const el = event.target;
+                this.autocompleteNot = false;
                 const input = el.value;
                 if (this.serverError) this.serverError = '';
 
@@ -306,6 +308,110 @@
                 this.$nextTick(() => this.schedulePreview(el.value, el.selectionStart));
             },
 
+            handleFilterInput(event) {
+                const el = event.target;
+                const beforeCursor = el.value.substring(0, el.selectionStart);
+
+                const notProjectMatch = beforeCursor.match(/not:#(\w*)$/i);
+                const notTagMatch     = beforeCursor.match(/not:@(\w*)$/i);
+                const notLocMatch     = beforeCursor.match(/not:\+(\w*)$/i);
+                const notUserMatch    = beforeCursor.match(/not:&(\w*)$/i);
+                const projectMatch    = !notProjectMatch && beforeCursor.match(/#(\w*)$/);
+                const tagMatch        = !notTagMatch && beforeCursor.match(/@(\w*)$/);
+                const locationMatch   = !notLocMatch && beforeCursor.match(/\+(\w*)$/);
+                const userMatch       = !notUserMatch && beforeCursor.match(/&(\w*)$/);
+
+                if (notProjectMatch && this.projects.length > 0) {
+                    this.autocompleteType = 'project';
+                    this.autocompleteQuery = notProjectMatch[1];
+                    this.autocompleteNot = true;
+                    this.autocompleteIndex = 0;
+                    this.showAutocomplete = true;
+                } else if (notTagMatch && this.tags.length > 0) {
+                    this.autocompleteType = 'tag';
+                    this.autocompleteQuery = notTagMatch[1];
+                    this.autocompleteNot = true;
+                    this.autocompleteIndex = 0;
+                    this.showAutocomplete = true;
+                } else if (notLocMatch) {
+                    this.autocompleteType = 'location';
+                    this.autocompleteQuery = notLocMatch[1];
+                    this.autocompleteNot = true;
+                    this.autocompleteLocationMap = false;
+                    this.autocompleteLocationQuoted = false;
+                    this.autocompleteIndex = 0;
+                    this.showAutocomplete = this.filteredLocations.length > 0;
+                } else if (notUserMatch && this.users.length > 0) {
+                    this.autocompleteType = 'user';
+                    this.autocompleteQuery = notUserMatch[1];
+                    this.autocompleteNot = true;
+                    this.autocompleteIndex = 0;
+                    this.showAutocomplete = true;
+                } else if (projectMatch && this.projects.length > 0) {
+                    this.autocompleteType = 'project';
+                    this.autocompleteQuery = projectMatch[1];
+                    this.autocompleteNot = false;
+                    this.autocompleteIndex = 0;
+                    this.showAutocomplete = true;
+                } else if (tagMatch && this.tags.length > 0) {
+                    this.autocompleteType = 'tag';
+                    this.autocompleteQuery = tagMatch[1];
+                    this.autocompleteNot = false;
+                    this.autocompleteIndex = 0;
+                    this.showAutocomplete = true;
+                } else if (locationMatch) {
+                    this.autocompleteType = 'location';
+                    this.autocompleteQuery = locationMatch[1];
+                    this.autocompleteNot = false;
+                    this.autocompleteLocationMap = false;
+                    this.autocompleteLocationQuoted = false;
+                    this.autocompleteIndex = 0;
+                    this.showAutocomplete = this.filteredLocations.length > 0;
+                } else if (userMatch && this.users.length > 0) {
+                    this.autocompleteType = 'user';
+                    this.autocompleteQuery = userMatch[1];
+                    this.autocompleteNot = false;
+                    this.autocompleteIndex = 0;
+                    this.showAutocomplete = true;
+                } else {
+                    this.showAutocomplete = false;
+                    this.autocompleteNot = false;
+                }
+
+                this.filterTasks();
+            },
+
+            handleFilterKeydown(event) {
+                if (this.showAutocomplete) {
+                    const list = this.autocompleteType === 'project'  ? this.filteredProjects
+                               : this.autocompleteType === 'tag'      ? this.filteredTags
+                               : this.autocompleteType === 'location' ? this.filteredLocations
+                               : this.filteredUsers;
+                    const maxIndex = Math.max(0, list.length - 1);
+                    if (event.key === 'ArrowDown') {
+                        event.preventDefault();
+                        this.autocompleteIndex = Math.min(this.autocompleteIndex + 1, maxIndex);
+                    } else if (event.key === 'ArrowUp') {
+                        event.preventDefault();
+                        this.autocompleteIndex = Math.max(this.autocompleteIndex - 1, 0);
+                    } else if (event.key === 'Enter') {
+                        event.preventDefault();
+                        const item = list[this.autocompleteIndex];
+                        if (item) {
+                            const name = this.autocompleteType === 'tag'      ? item.tag_name
+                                       : this.autocompleteType === 'location' ? item
+                                       : item.name;
+                            this.selectAutocomplete(name, item.id);
+                        }
+                    } else if (event.key === 'Escape') {
+                        event.preventDefault();
+                        this.showAutocomplete = false;
+                    }
+                } else if (event.key === 'Escape') {
+                    this.switchToCreate();
+                }
+            },
+
             // value and cursorPos are captured at call time so the timer only
             // needs to do the fetch — no stale DOM references inside the closure.
             schedulePreview(value, cursorPos = null) {
@@ -381,7 +487,8 @@
             },
 
             selectAutocomplete(name, id = null) {
-                const inputEl = this.$refs.createInput;
+                const isFilter = this.mode === 'filter';
+                const inputEl  = isFilter ? this.$refs.filterInput : this.$refs.createInput;
                 if (!inputEl) return;
 
                 let slug, prefix, suffix = ' ';
@@ -392,15 +499,15 @@
                     slug   = name.toLowerCase().replace(/[^a-z0-9-]/g, '');
                     prefix = '@';
                 } else if (this.autocompleteType === 'location') {
-                    if (this.autocompleteLocationQuoted) {
-                        // Quoted form: keep the exact name (spaces allowed), wrap in "..."
+                    if (!isFilter && this.autocompleteLocationQuoted) {
+                        // Quoted form (create mode only): keep exact name, wrap in "..."
                         slug   = name;
                         prefix = this.autocompleteLocationMap ? '++"' : '+"';
                         suffix = '" ';
                     } else {
                         // Unquoted form: lowercase, spaces → hyphens
                         slug   = name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
-                        prefix = this.autocompleteLocationMap ? '++' : '+';
+                        prefix = (!isFilter && this.autocompleteLocationMap) ? '++' : '+';
                     }
                 } else {
                     // user: lowercase, spaces removed
@@ -408,51 +515,59 @@
                     prefix = '&';
                 }
 
-                // Use lastIndexOf on the partial token already captured in autocompleteQuery.
-                // For quoted mode the prefix already includes the opening quote (e.g. ++" ).
-                const partialToken = prefix + this.autocompleteQuery;
+                // In filter mode, prepend not: when the suggestion was triggered by not: prefix.
+                const notStr       = isFilter && this.autocompleteNot ? 'not:' : '';
+                const partialToken = notStr + prefix + this.autocompleteQuery;
                 const currentValue = inputEl.value;
-                const insertIdx = currentValue.lastIndexOf(partialToken);
-                let newCursorPos = currentValue.length;
+                // Case-insensitive position search so Not:#foo matches not:#foo
+                const insertIdx    = currentValue.toLowerCase().lastIndexOf(partialToken.toLowerCase());
+                let newCursorPos   = currentValue.length;
                 if (insertIdx >= 0) {
-                    const replacement = prefix + slug + suffix;
+                    const replacement = notStr + prefix + slug + suffix;
                     inputEl.value = currentValue.substring(0, insertIdx)
                         + replacement
                         + currentValue.substring(insertIdx + partialToken.length);
                     newCursorPos = insertIdx + replacement.length;
                 }
 
-                // Inject the ID directly into the form so the server doesn't rely on
-                // slug matching (which fails when the name contains spaces or special chars).
-                if (this.autocompleteType === 'tag' && id) {
-                    const form = inputEl.closest('form');
-                    if (form && !form.querySelector(`input[data-tag-slug="${slug}"]`)) {
+                if (!isFilter) {
+                    // Inject the ID directly into the form so the server doesn't rely on
+                    // slug matching (which fails when the name contains spaces or special chars).
+                    if (this.autocompleteType === 'tag' && id) {
+                        const form = inputEl.closest('form');
+                        if (form && !form.querySelector(`input[data-tag-slug="${slug}"]`)) {
+                            const hidden = document.createElement('input');
+                            hidden.type = 'hidden';
+                            hidden.name = 'tag_ids[]';
+                            hidden.value = id;
+                            hidden.dataset.tagSlug = slug;
+                            form.appendChild(hidden);
+                        }
+                    }
+                    if (this.autocompleteType === 'project' && id) {
+                        const form = inputEl.closest('form');
+                        const prev = form.querySelector('input[data-project-autocomplete]');
+                        if (prev) prev.remove();
                         const hidden = document.createElement('input');
                         hidden.type = 'hidden';
-                        hidden.name = 'tag_ids[]';
+                        hidden.name = 'project_id';
                         hidden.value = id;
-                        hidden.dataset.tagSlug = slug;
+                        hidden.dataset.projectSlug = slug;
+                        hidden.dataset.projectAutocomplete = '1';
                         form.appendChild(hidden);
                     }
                 }
-                if (this.autocompleteType === 'project' && id) {
-                    const form = inputEl.closest('form');
-                    // Replace any previously injected project_id from autocomplete
-                    const prev = form.querySelector('input[data-project-autocomplete]');
-                    if (prev) prev.remove();
-                    const hidden = document.createElement('input');
-                    hidden.type = 'hidden';
-                    hidden.name = 'project_id';
-                    hidden.value = id;
-                    hidden.dataset.projectSlug = slug;
-                    hidden.dataset.projectAutocomplete = '1';
-                    form.appendChild(hidden);
-                }
+
                 this.showAutocomplete = false;
                 this.$nextTick(() => {
                     inputEl.focus();
                     inputEl.setSelectionRange(newCursorPos, newCursorPos);
-                    this.schedulePreview(inputEl.value, newCursorPos);
+                    if (isFilter) {
+                        this.query = inputEl.value;
+                        this.filterTasks();
+                    } else {
+                        this.schedulePreview(inputEl.value, newCursorPos);
+                    }
                 });
             },
 
@@ -505,72 +620,70 @@
             },
             filterTasks() {
                 const container = this.$refs.taskContainer;
-                const tasks = container.querySelectorAll('[data-filterable]');
-                const query = this.query.trim().toLowerCase();
+                const tasks     = container.querySelectorAll('[data-filterable]');
+                const rawQuery  = this.query.trim().toLowerCase();
 
-                if (!query) {
+                if (!rawQuery) {
                     tasks.forEach(el => el.style.display = '');
                     this.noResults = false;
-                    Alpine.store('taskCount').visible = tasks.length;
+                    Alpine.store('taskCount').visible  = tasks.length;
                     Alpine.store('taskCount').filtered = false;
                     return;
                 }
 
-                const tokens = query.split(/\s+/).filter(t => t.length > 0);
-                const projectFilters = [];
-                const tagFilters = [];
-                const nameFilters = [];
-
-                tokens.forEach(token => {
-                    if (token.startsWith('#') && token.length > 1) {
-                        projectFilters.push(token.substring(1));
-                    } else if (token.startsWith('@') && token.length > 1) {
-                        tagFilters.push(token.substring(1));
+                // Tokenize: handle not:"quoted term" and "quoted term" as single tokens.
+                const tokenRegex        = /not:"([^"]+)"|"([^"]+)"|(\S+)/g;
+                const projectFilters    = [], tagFilters     = [], nameFilters     = [],
+                      locationFilters   = [], userFilters    = [],
+                      notProjectFilters = [], notTagFilters  = [], notNameFilters  = [],
+                      notLocationFilters= [], notUserFilters = [];
+                let m;
+                while ((m = tokenRegex.exec(rawQuery)) !== null) {
+                    if (m[1] !== undefined) {
+                        notNameFilters.push(m[1]);               // not:"quoted"
+                    } else if (m[2] !== undefined) {
+                        nameFilters.push(m[2]);                  // "quoted"
                     } else {
-                        nameFilters.push(token);
+                        const token = m[3];
+                        const isNot = token.startsWith('not:');
+                        const val   = isNot ? token.substring(4) : token;
+                        if (!val) continue;
+                        if      (val.startsWith('#') && val.length > 1) (isNot ? notProjectFilters  : projectFilters ).push(val.substring(1));
+                        else if (val.startsWith('@') && val.length > 1) (isNot ? notTagFilters      : tagFilters     ).push(val.substring(1));
+                        else if (val.startsWith('+') && val.length > 1) (isNot ? notLocationFilters : locationFilters).push(val.substring(1));
+                        else if (val.startsWith('&') && val.length > 1) (isNot ? notUserFilters     : userFilters    ).push(val.substring(1));
+                        else                                             (isNot ? notNameFilters     : nameFilters    ).push(val);
                     }
-                });
+                }
 
                 let visibleCount = 0;
-
                 tasks.forEach(el => {
-                    const taskName = el.dataset.taskName || '';
-                    const projectName = el.dataset.project || '';
-                    const tagList = el.dataset.tags ? el.dataset.tags.split('|') : [];
+                    const taskName  = el.dataset.taskName  || '';
+                    const project   = el.dataset.project   || '';
+                    const tags      = el.dataset.tags      ? el.dataset.tags.split('|').filter(Boolean)      : [];
+                    const location  = el.dataset.location  || '';
+                    const assignees = el.dataset.assignees ? el.dataset.assignees.split('|').filter(Boolean) : [];
 
-                    let matches = true;
+                    let ok = true;
+                    // Positive filters — all must match
+                    if (ok) for (const f of nameFilters)         { if (!taskName.includes(f))                           { ok = false; break; } }
+                    if (ok) for (const f of projectFilters)      { if (!project.includes(f))                            { ok = false; break; } }
+                    if (ok) for (const f of tagFilters)          { if (!tags.some(t => t.includes(f)))                  { ok = false; break; } }
+                    if (ok) for (const f of locationFilters)     { if (!location.includes(f.replace(/-/g, ' ')))        { ok = false; break; } }
+                    if (ok) for (const f of userFilters)         { if (!assignees.some(a => a.includes(f)))             { ok = false; break; } }
+                    // Negative filters — none may match
+                    if (ok) for (const f of notNameFilters)      { if (taskName.includes(f))                            { ok = false; break; } }
+                    if (ok) for (const f of notProjectFilters)   { if (project.includes(f))                             { ok = false; break; } }
+                    if (ok) for (const f of notTagFilters)       { if (tags.some(t => t.includes(f)))                   { ok = false; break; } }
+                    if (ok) for (const f of notLocationFilters)  { if (location.includes(f.replace(/-/g, ' ')))         { ok = false; break; } }
+                    if (ok) for (const f of notUserFilters)      { if (assignees.some(a => a.includes(f)))              { ok = false; break; } }
 
-                    for (const filter of nameFilters) {
-                        if (!taskName.includes(filter)) {
-                            matches = false;
-                            break;
-                        }
-                    }
-
-                    if (matches) {
-                        for (const filter of projectFilters) {
-                            if (!projectName.includes(filter)) {
-                                matches = false;
-                                break;
-                            }
-                        }
-                    }
-
-                    if (matches) {
-                        for (const filter of tagFilters) {
-                            if (!tagList.some(tag => tag.includes(filter))) {
-                                matches = false;
-                                break;
-                            }
-                        }
-                    }
-
-                    el.style.display = matches ? '' : 'none';
-                    if (matches) visibleCount++;
+                    el.style.display = ok ? '' : 'none';
+                    if (ok) visibleCount++;
                 });
 
                 this.noResults = visibleCount === 0 && tasks.length > 0;
-                Alpine.store('taskCount').visible = visibleCount;
+                Alpine.store('taskCount').visible  = visibleCount;
                 Alpine.store('taskCount').filtered = true;
             }
         }
@@ -730,6 +843,8 @@
              data-task-name="{{ strtolower($task->name) }}"
              data-project="{{ strtolower($task->project?->name ?? '') }}"
              data-tags="{{ strtolower($task->tags->pluck('tag_name')->join('|')) }}"
+             data-location="{{ strtolower($task->location ?? '') }}"
+             data-assignees="{{ $task->assignees->map(fn($a) => preg_replace('/[^a-z0-9]/', '', strtolower($a->name)))->join('|') }}"
              style="margin-left: {{ $marginLeft }}px;"
              :class="$store.bulkEdit.active && $store.bulkEdit.isSelected({{ $task->id }}) ? 'ring-2 ring-blue-500 ring-inset' : ''">
             <div class="flex items-start gap-4">
