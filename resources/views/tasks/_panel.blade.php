@@ -86,10 +86,28 @@
         </div>
         @if(!$isInactive)
         <div x-show="editing.name" class="mt-1">
-            <input type="text" x-model="fields.name"
-                   @keydown.enter="saveField('name')"
-                   @keydown.escape="cancelEdit('name')"
-                   class="w-full rounded-md bg-gray-700 border-gray-600 text-gray-100 placeholder-gray-500 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+            <div class="relative">
+                <input type="text" x-ref="nameInput"
+                       x-model="fields.name"
+                       @input="handleNameInput($event)"
+                       @keydown="handleNameKeydown($event)"
+                       @blur="nameAC.show = false"
+                       class="w-full rounded-md bg-gray-700 border-gray-600 text-gray-100 placeholder-gray-500 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                <div x-show="nameAC.show" x-cloak
+                     class="absolute z-50 left-0 right-0 top-full mt-0.5 bg-gray-800 border border-gray-600 rounded-md shadow-lg overflow-hidden">
+                    <template x-for="(item, idx) in nameAC.results" :key="item.id">
+                        <button type="button"
+                                @mousedown.prevent="selectNameAutocomplete(item)"
+                                :class="idx === nameAC.activeIndex ? 'bg-gray-700' : 'hover:bg-gray-700'"
+                                class="w-full text-left flex items-center gap-2 px-3 py-1.5 text-sm text-gray-200">
+                            <span x-show="nameAC.type === 'tag'"
+                                  class="inline-block w-2 h-2 rounded-full flex-shrink-0"
+                                  :style="'background-color:' + (item.color || '#888')"></span>
+                            <span x-text="item.name"></span>
+                        </button>
+                    </template>
+                </div>
+            </div>
             <div class="flex gap-2 mt-2">
                 <button @click="saveField('name')" class="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700">Save</button>
                 <button @click="cancelEdit('name')" class="px-3 py-1 bg-gray-700 text-gray-300 text-sm rounded hover:bg-gray-600">Cancel</button>
@@ -705,6 +723,9 @@
             dateError: '',
             datePast: false,
             projects: null,
+            nameAC: { show: false, type: null, query: '', results: [], activeIndex: -1 },
+            allTags: @js($tags->map(fn($t) => ['id' => $t->id, 'name' => $t->tag_name, 'color' => $t->color])->values()),
+            allProjects: @js($projects->map(fn($p) => ['id' => $p->id, 'name' => $p->name])->values()),
 
             init() {
                 this.original = JSON.parse(JSON.stringify(this.fields));
@@ -729,6 +750,9 @@
 
             cancelEdit(field) {
                 this.editing[field] = false;
+                if (field === 'name') {
+                    this.nameAC = { show: false, type: null, query: '', results: [], activeIndex: -1 };
+                }
                 if (field === 'date') {
                     this.dateText = @js($task->date ? \Carbon\Carbon::parse($task->date)->format('l, F j, Y') : '');
                     this.datePreview = '';
@@ -741,6 +765,94 @@
 
             resetField(field) {
                 this.fields[field] = JSON.parse(JSON.stringify(this.original[field]));
+            },
+
+            handleNameInput(e) {
+                const val = this.fields.name;
+                const pos = e.target.selectionStart;
+                const textToCursor = val.substring(0, pos);
+                const tagMatch = textToCursor.match(/@([\w-]*)$/);
+                const projectMatch = !tagMatch && textToCursor.match(/#([\w-]*)$/);
+
+                if (tagMatch) {
+                    const q = tagMatch[1].toLowerCase();
+                    this.nameAC.type = 'tag';
+                    this.nameAC.query = q;
+                    this.nameAC.results = this.allTags.filter(t => {
+                        const slug = t.name.toLowerCase().replace(/[^a-z0-9-]/g, '');
+                        return t.name.toLowerCase().startsWith(q) || slug.startsWith(q);
+                    }).slice(0, 8);
+                    this.nameAC.show = this.nameAC.results.length > 0;
+                    this.nameAC.activeIndex = -1;
+                } else if (projectMatch) {
+                    const q = projectMatch[1].toLowerCase();
+                    this.nameAC.type = 'project';
+                    this.nameAC.query = q;
+                    this.nameAC.results = this.allProjects.filter(p => {
+                        const slug = p.name.toLowerCase().replace(/[^a-z0-9-]/g, '');
+                        return p.name.toLowerCase().startsWith(q) || slug.startsWith(q);
+                    }).slice(0, 8);
+                    this.nameAC.show = this.nameAC.results.length > 0;
+                    this.nameAC.activeIndex = -1;
+                } else {
+                    this.nameAC.show = false;
+                }
+            },
+
+            handleNameKeydown(e) {
+                if (this.nameAC.show) {
+                    if (e.key === 'ArrowDown') {
+                        e.preventDefault();
+                        this.nameAC.activeIndex = Math.min(this.nameAC.activeIndex + 1, this.nameAC.results.length - 1);
+                        return;
+                    }
+                    if (e.key === 'ArrowUp') {
+                        e.preventDefault();
+                        this.nameAC.activeIndex = Math.max(this.nameAC.activeIndex - 1, -1);
+                        return;
+                    }
+                    if (e.key === 'Enter' && this.nameAC.activeIndex >= 0) {
+                        e.preventDefault();
+                        this.selectNameAutocomplete(this.nameAC.results[this.nameAC.activeIndex]);
+                        return;
+                    }
+                    if (e.key === 'Escape') {
+                        e.preventDefault();
+                        this.nameAC.show = false;
+                        return;
+                    }
+                    // Enter with no active item: close AC and fall through to save
+                    if (e.key === 'Enter') {
+                        this.nameAC.show = false;
+                    }
+                }
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    this.saveField('name');
+                } else if (e.key === 'Escape') {
+                    e.preventDefault();
+                    this.cancelEdit('name');
+                }
+            },
+
+            selectNameAutocomplete(item) {
+                const input = this.$refs.nameInput;
+                const val = this.fields.name;
+                const pos = input ? input.selectionStart : val.length;
+                const textToCursor = val.substring(0, pos);
+                const prefix = this.nameAC.type === 'tag' ? '@' : '#';
+                const newBeforeCursor = textToCursor.replace(new RegExp(prefix + '[\\w-]*$'), '');
+                this.fields.name = (newBeforeCursor + val.substring(pos)).trim();
+
+                if (this.nameAC.type === 'tag') {
+                    if (!this.fields.tag_ids.includes(item.id)) {
+                        this.fields.tag_ids = [...this.fields.tag_ids, item.id];
+                    }
+                } else {
+                    this.fields.project_id = item.id;
+                }
+                this.nameAC = { show: false, type: null, query: '', results: [], activeIndex: -1 };
+                this.$nextTick(() => { if (input) input.focus(); });
             },
 
             async previewDate() {
