@@ -123,6 +123,11 @@
                                 @empty
                                     <span class="block px-4 py-2 text-sm text-gray-500 italic">No tags yet</span>
                                 @endforelse
+                                <a href="{{ route('tags.create') }}"
+                                   class="block w-full px-4 py-2 text-start text-sm leading-5 text-gray-300 hover:bg-gray-700 border-l-4 focus:outline-none transition duration-150 ease-in-out"
+                                   style="border-left-color: transparent">
+                                    Add New Tag
+                                </a>
                             </div>
                         </div>
                     </div>
