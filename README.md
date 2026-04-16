@@ -4,11 +4,14 @@ This is a vibe-coded to-do list software that is a lot like many of the other op
 Because I designed this for my own devious purposes, I assumed there would only be two or three users. It would probably fine for more than that, but it's not designed to scale. It assumes at least one user is technical enough to run this on a server and run scripts at the command line.
 
 ### Features
-- **Quick-add bar** on task list views — type a task name with natural language dates, `#project`, and `@tag` to autofill fields with autocomplete suggestions
-- **Agenda view** on the day page — toggle between list and agenda (time-block) layouts; tasks can be quick-completed inline without a page reload
+- **Quick-add bar** on task list views — type a task name with natural language dates and inline shortcuts (`#project`, `@tag`, `+location`, `&user`, `nodate`) to autofill fields; autocomplete suggestions appear as you type. Paste multiple lines to create multiple tasks at once, or use Shift-Enter to add them in sequence.
+- **Agenda view** on the day page — toggle between list and agenda (time-block) layouts; tasks can be quick-completed inline without a page reload. Click the date header to jump to any date.
 - **Recurring tasks** — set a recurrence pattern on any task; completing it automatically creates the next occurrence (see `RECURRING_TASKS.md`)
 - **Natural language dates & recurrence** — type natural language in the quick-add bar and dates/recurrence are parsed automatically (see below for full syntax)
-- **Markdown** in task descriptions
+- **Markdown** in task descriptions; `` `code` `` spans are also supported in task titles
+- **Task links** — link to other tasks, projects, or locations from any description or comment using `[task:1]`, `[project:1]`, or `[location:1]`; IDs are shown on task and project pages
+- **Project/tag navigation** — the header nav includes dropdowns listing all your projects and tags
+- **Task count breakdown** — click the task count on any list view to see a breakdown by project
 - **Changelogs** — every create/edit is logged and browsable by task, project, tag, or user
 - **API** — create and query tasks via bearer token (see Admin-Like Functions below for key management)
 
@@ -82,6 +85,7 @@ The quick-add bar parses natural language from the task name. The recurrence pat
 | `January 15` | Jan 15 (next occurrence) |
 | `3/15` | March 15 (next occurrence) |
 | `2026-03-15` | Exact date |
+| `nodate` | Removes the date |
 
 **Multiple day names:** if your task name contains more than one day name (e.g. "Letter that comes on Sunday Tuesday"), the *last* day name is used for scheduling and the earlier ones are left in the title.
 
@@ -112,12 +116,14 @@ The quick-add bar parses natural language from the task name. The recurrence pat
 
 #### Quick-add extras
 
-Add a project or tags inline by name — autocomplete suggestions appear as you type:
+Add a project, tags, location, or assignees inline by name — autocomplete suggestions appear as you type. Unknown `#things` and `@things` are ignored rather than silently stripped.
 
 | Token | Effect |
 |---|---|
 | `#project-name` | Assigns task to that project |
 | `@tag-name` | Applies that tag |
+| `+location` | Sets the task location |
+| `&username` | Assigns that user; for multiple: `&user1,user2` or `&user1 &user2` |
 
 Multiple tags are supported: `Buy milk @errands @today`.
 
