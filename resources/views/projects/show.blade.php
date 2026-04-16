@@ -1,6 +1,6 @@
 <x-app-layout>
     <x-slot name="header">
-        <div class="flex justify-between items-center" x-data="{ showSaveTemplate: false }">
+        <div class="flex justify-between items-center" x-data="{ showSaveTemplate: false, showMenu: false }">
             <div class="flex items-center gap-2">
                 @if($project->is_default)
                     <span title="Default project" class="text-yellow-400 shrink-0">
@@ -35,19 +35,32 @@
                     </button>
                 </span>
             </div>
-            <div class="flex gap-2">
-                <a href="{{ route('projects.export-markdown', $project) }}" class="px-4 py-2 bg-gray-700 border border-gray-600 text-gray-100 rounded hover:bg-gray-600">
-                    Export .md
-                </a>
-                <a href="{{ route('projects.export-template', $project) }}" class="px-4 py-2 bg-gray-700 border border-gray-600 text-gray-100 rounded hover:bg-gray-600">
-                    Download Template
-                </a>
-                @if($project->user_id === Auth::id())
-                    <button @click="showSaveTemplate = true"
-                            class="px-4 py-2 bg-gray-700 border border-gray-600 text-gray-100 rounded hover:bg-gray-600">
-                        Save as Template
-                    </button>
-                @endif
+            <!-- Three-dot menu -->
+            <div class="relative" @click.outside="showMenu = false">
+                <button @click="showMenu = !showMenu"
+                        class="p-2 text-gray-400 hover:text-gray-100 hover:bg-gray-700 rounded transition-colors"
+                        title="More options">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M10 6a2 2 0 110-4 2 2 0 010 4zm0 6a2 2 0 110-4 2 2 0 010 4zm0 6a2 2 0 110-4 2 2 0 010 4z" />
+                    </svg>
+                </button>
+                <div x-show="showMenu" x-cloak
+                     class="absolute right-0 mt-1 w-48 bg-gray-800 border border-gray-600 rounded shadow-lg z-10">
+                    <a href="{{ route('projects.export-markdown', $project) }}"
+                       class="block px-4 py-2 text-gray-200 hover:bg-gray-700">
+                        Export .md
+                    </a>
+                    <a href="{{ route('projects.export-template', $project) }}"
+                       class="block px-4 py-2 text-gray-200 hover:bg-gray-700">
+                        Download Template
+                    </a>
+                    @if($project->user_id === Auth::id())
+                        <button @click="showMenu = false; showSaveTemplate = true"
+                                class="w-full text-left px-4 py-2 text-gray-200 hover:bg-gray-700">
+                            Save as Template
+                        </button>
+                    @endif
+                </div>
             </div>
 
             <!-- Save as Template Modal -->
