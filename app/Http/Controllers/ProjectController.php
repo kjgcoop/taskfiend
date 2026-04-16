@@ -351,11 +351,6 @@ class ProjectController extends Controller
             return response()->json(['success' => false, 'message' => 'Only the project creator can edit it.'], 403);
         }
 
-        // @todo Yes they can. Or they should be, anyway.
-        if ($project->is_inbox) {
-            return response()->json(['success' => false, 'message' => 'Inbox projects cannot be edited.'], 403);
-        }
-
         $field = $request->input('field');
         $allowedFields = ['name', 'description', 'status', 'assignee_ids'];
 
@@ -380,9 +375,8 @@ class ProjectController extends Controller
                 }
 
                 if ($field === 'status' && in_array($value, ['done', 'archived'])) {
-                    $isDefault = \App\Models\User::where('default_project_id', $project->id)->exists();
-                    if ($isDefault) {
-                        return response()->json(['success' => false, 'message' => 'This project is someone\'s default project. Update their profile before archiving it.'], 422);
+                    if ($project->is_default) {
+                        return response()->json(['success' => false, 'message' => 'This is your default project. Pin a different project as default before archiving it.'], 422);
                     }
                 }
 
@@ -434,12 +428,28 @@ class ProjectController extends Controller
 
     public function destroy(Project $project)
     {
-        // @todo Switch to checking if default rather than checking if inbox.
-        if ($project->is_inbox) {
-            abort(403, 'Inbox projects cannot be deleted or archived.');
+        if ($project->is_default) {
+            abort(403, 'Your default project cannot be deleted or archived. Pin a different project as default first.');
         }
 
         abort(403, 'Projects cannot be deleted. Please archive instead.');
+    }
+
+    public function setDefault(Project $project)
+    {
+        if ($project->user_id !== Auth::id()) {
+            abort(403);
+        }
+
+        if ($project->status !== 'incomplete') {
+            return response()->json(['success' => false, 'message' => 'Only active projects can be set as default.'], 422);
+        }
+
+        // Unpin the current default, then pin this one.
+        Project::where('user_id', Auth::id())->where('is_default', true)->update(['is_default' => false]);
+        $project->update(['is_default' => true]);
+
+        return response()->json(['success' => true]);
     }
 
     public function uploadBackground(Request $request, Project $project)

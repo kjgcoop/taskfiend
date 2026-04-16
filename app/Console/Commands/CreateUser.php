@@ -45,22 +45,21 @@ class CreateUser extends Command
             'email_enabled_at' => null,
         ]);
 
-        // Create Inbox project for the new user and set it as the default
+        // Create the default (inbox) project for the new user.
+        // This is the only place this should happen for CLI-created users.
         $inbox = Project::create([
             'name' => $user->name . "'s Inbox",
             'description' => 'Personal inbox for quick task capture',
             'user_id' => $user->id,
             'status' => 'incomplete',
-            'is_inbox' => true,
+            'is_default' => true,
         ]);
-
-        $user->update(['default_project_id' => $inbox->id]);
 
         $this->info("User created successfully!");
         $this->info("Email: {$user->email}");
         $this->info("Name: {$user->name}");
         $this->info("ID: {$user->id}");
-        $this->info("Inbox project created: {$user->name}'s Inbox");
+        $this->info("Default project created: {$user->name}'s Inbox");
 
         return 0;
     }

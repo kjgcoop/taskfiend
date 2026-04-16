@@ -255,40 +255,12 @@ class TodoistImport extends Command
         $name = $todoistProject['name'];
         $isTodoistInbox = !empty($todoistProject['inbox_project']);
 
-        // If this is the Todoist Inbox, map it to the user's Task Fiend inbox project
-        // @todo Instead of hard-coding inbox, use whatever project the user
-        // has specified as their default in their profile.
+        // If this is the Todoist Inbox, map it to the user's default project.
         if ($isTodoistInbox) {
-            $inboxProject = Project::where('user_id', $this->user->id)
-                ->where('is_inbox', true)
-                ->first();
-
-            if ($inboxProject) {
-                $this->projectIdMap[$todoistProject['id']] = $inboxProject->id;
-                $this->info("Mapped Todoist Inbox to existing inbox project '{$inboxProject->name}' ({$current}/{$total} projects)");
-                return;
-            }
-
-            // No inbox project exists yet — create one
-            // @todo Inbox creation implemented in serveral places.
-            try {
-                $inboxProject = Project::create([
-                    'name' => $this->user->name . "'s Inbox",
-                    'description' => 'Personal inbox for quick task capture',
-                    'user_id' => $this->user->id,
-                    'status' => 'incomplete',
-                    'is_inbox' => true,
-                ]);
-
-                $this->projectIdMap[$todoistProject['id']] = $inboxProject->id;
-                $this->projectsImported++;
-                $this->info("Created inbox project '{$inboxProject->name}' for Todoist Inbox ({$current}/{$total} projects)");
-                return;
-            } catch (\Exception $e) {
-                $this->error("Failed to create inbox project: " . $e->getMessage());
-                $this->errors++;
-                return;
-            }
+            $defaultProject = $this->user->defaultProject();
+            $this->projectIdMap[$todoistProject['id']] = $defaultProject->id;
+            $this->info("Mapped Todoist Inbox to default project '{$defaultProject->name}' ({$current}/{$total} projects)");
+            return;
         }
 
         // Check for duplicate project (by name, global uniqueness)

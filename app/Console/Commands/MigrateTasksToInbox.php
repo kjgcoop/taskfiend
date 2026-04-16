@@ -33,7 +33,7 @@ class MigrateTasksToInbox extends Command
         foreach ($tasks as $task) {
             // Find the creator's Inbox project
             $inbox = Project::where('user_id', $task->creator_id)
-                ->where('is_inbox', true)
+                ->where('is_default', true)
                 ->first();
 
             if ($inbox) {

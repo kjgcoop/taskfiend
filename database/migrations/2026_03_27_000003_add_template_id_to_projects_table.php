@@ -9,7 +9,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('projects', function (Blueprint $table) {
-            $table->foreignId('template_id')->nullable()->after('is_inbox')
+            $table->foreignId('template_id')->nullable()->after('is_default')
                 ->constrained('project_templates')->nullOnDelete();
         });
     }

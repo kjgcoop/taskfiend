@@ -67,14 +67,14 @@ class ApiTaskTest extends TestCase
         return $this->withToken($this->plainKey)->getJson("/api/tasks/completed/{$date}");
     }
 
-    /** Create an inbox project for the test user. */
-    private function createInbox(): Project
+    /** Create the default project for the test user. */
+    private function createDefaultProject(): Project
     {
         return Project::create([
-            'name'     => 'Inbox',
-            'user_id'  => $this->user->id,
-            'is_inbox' => true,
-            'status'   => 'incomplete',
+            'name'       => 'Inbox',
+            'user_id'    => $this->user->id,
+            'is_default' => true,
+            'status'     => 'incomplete',
         ]);
     }
 
@@ -184,7 +184,7 @@ class ApiTaskTest extends TestCase
 
     public function test_create_returns_201_with_task(): void
     {
-        $this->createInbox();
+        $this->createDefaultProject();
 
         $response = $this->apiPost(['name' => 'My API Task']);
 
@@ -195,7 +195,7 @@ class ApiTaskTest extends TestCase
 
     public function test_create_stores_task_in_database(): void
     {
-        $this->createInbox();
+        $this->createDefaultProject();
 
         $this->apiPost(['name' => 'Stored Task']);
 
@@ -208,7 +208,7 @@ class ApiTaskTest extends TestCase
 
     public function test_create_auto_assigns_creator_when_no_assignees_given(): void
     {
-        $this->createInbox();
+        $this->createDefaultProject();
 
         $this->apiPost(['name' => 'Self Assigned']);
 
@@ -232,21 +232,21 @@ class ApiTaskTest extends TestCase
         ]);
     }
 
-    public function test_create_falls_back_to_inbox_project(): void
+    public function test_create_falls_back_to_default_project(): void
     {
-        $inbox = $this->createInbox();
+        $default = $this->createDefaultProject();
 
-        $this->apiPost(['name' => 'Inbox Task']);
+        $this->apiPost(['name' => 'Default Project Task']);
 
         $this->assertDatabaseHas('tasks', [
-            'name'       => 'Inbox Task',
-            'project_id' => $inbox->id,
+            'name'       => 'Default Project Task',
+            'project_id' => $default->id,
         ]);
     }
 
     public function test_create_parses_natural_language_date_from_name(): void
     {
-        $this->createInbox();
+        $this->createDefaultProject();
 
         $response = $this->apiPost(['name' => 'Morning run daily']);
 
@@ -259,7 +259,7 @@ class ApiTaskTest extends TestCase
 
     public function test_create_explicit_date_is_not_overridden_by_name_parsing(): void
     {
-        $this->createInbox();
+        $this->createDefaultProject();
 
         $this->apiPost(['name' => 'Stand-up daily', 'date' => '2026-07-01']);
 
@@ -269,7 +269,7 @@ class ApiTaskTest extends TestCase
 
     public function test_create_stores_tags(): void
     {
-        $this->createInbox();
+        $this->createDefaultProject();
         $tag = Tag::create(['tag_name' => 'work', 'color' => '#0000ff']);
 
         $this->apiPost(['name' => 'Tagged Task', 'tag_ids' => [$tag->id]]);
@@ -280,7 +280,7 @@ class ApiTaskTest extends TestCase
 
     public function test_create_stores_explicit_assignees(): void
     {
-        $this->createInbox();
+        $this->createDefaultProject();
         $other = User::factory()->create();
 
         $this->apiPost(['name' => 'Assigned Task', 'assignee_ids' => [$other->id]]);
@@ -292,7 +292,7 @@ class ApiTaskTest extends TestCase
 
     public function test_create_stores_recurrence_pattern(): void
     {
-        $this->createInbox();
+        $this->createDefaultProject();
 
         $this->apiPost(['name' => 'Recurring Task', 'recurrence_pattern' => 'weekly']);
 
@@ -304,7 +304,7 @@ class ApiTaskTest extends TestCase
 
     public function test_create_stores_floating_recurrence_flag(): void
     {
-        $this->createInbox();
+        $this->createDefaultProject();
 
         $this->apiPost([
             'name'                => 'Floating Task',
@@ -320,7 +320,7 @@ class ApiTaskTest extends TestCase
 
     public function test_create_writes_change_log(): void
     {
-        $this->createInbox();
+        $this->createDefaultProject();
 
         $this->apiPost(['name' => 'Logged API Task']);
 
@@ -334,7 +334,7 @@ class ApiTaskTest extends TestCase
 
     public function test_create_response_includes_related_data(): void
     {
-        $this->createInbox();
+        $this->createDefaultProject();
 
         $response = $this->apiPost(['name' => 'Rich Task']);
 

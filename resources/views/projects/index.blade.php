@@ -61,7 +61,24 @@
                         @endif
                         <div class="relative p-6">
                             <div class="flex items-start justify-between gap-2">
-                                <h3 class="font-semibold text-lg {{ $hasBg ? 'text-white' : 'text-gray-100' }}">{{ $project->name }}</h3>
+                                <div class="flex items-center gap-1.5 min-w-0">
+                                    @if($project->is_default)
+                                        <span title="Default project" class="{{ $hasBg ? 'text-yellow-300' : 'text-yellow-400' }} shrink-0">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                                                <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                                            </svg>
+                                        </span>
+                                    @elseif($project->user_id === Auth::id())
+                                        <button onclick="event.stopPropagation(); setDefaultProject({{ $project->id }}, this)"
+                                                title="Set as default project"
+                                                class="{{ $hasBg ? 'text-gray-400 hover:text-yellow-300' : 'text-gray-600 hover:text-yellow-400' }} shrink-0 transition-colors">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 20 20" stroke="currentColor" stroke-width="1.5">
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                                            </svg>
+                                        </button>
+                                    @endif
+                                    <h3 class="font-semibold text-lg truncate {{ $hasBg ? 'text-white' : 'text-gray-100' }}">{{ $project->name }}</h3>
+                                </div>
                                 <span x-data="{ copied: false }" class="shrink-0 flex items-center gap-1 mt-0.5">
                                     <span class="text-xs {{ $hasBg ? 'text-gray-300' : 'text-gray-500' }}">#{{ $project->id }}</span>
                                     <button @click.stop="navigator.clipboard.writeText('{{ route('projects.show', $project) }}').then(() => { copied = true; setTimeout(() => copied = false, 2000) })"
@@ -165,4 +182,21 @@
             @endif
         </div>
     </div>
+<script>
+function setDefaultProject(projectId, btn) {
+    fetch(`/projects/${projectId}/set-default`, {
+        method: 'POST',
+        headers: {
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+            'Accept': 'application/json',
+        },
+    }).then(r => r.json()).then(data => {
+        if (data.success) {
+            window.location.reload();
+        } else {
+            alert(data.message || 'Could not set default project.');
+        }
+    });
+}
+</script>
 </x-app-layout>

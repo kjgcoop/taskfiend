@@ -64,92 +64,11 @@ class DashboardController extends Controller
         return compact('projects', 'tags', 'users', 'locations');
     }
 
-    // @todo Really need own inbox function? Can't we use the same function
-    // that gets other projects?
-    public function inbox(Request $request)
+    public function inbox()
     {
-        $sort = $request->input('sort', 'date');
-
-        // Get (or create) user's Inbox project so quick-add tasks land here.
-        $inboxProject = \App\Models\Project::where('user_id', Auth::id())
-            ->where('is_inbox', true)
-            ->first();
-
-        // @todo This is different from a bunch of other places where the
-        // inbox is created.
-        if (!$inboxProject) {
-            $inboxProject = \App\Models\Project::create([
-                'name'     => 'Inbox',
-                'user_id'  => Auth::id(),
-                'is_inbox' => true,
-                'status'   => 'incomplete',
-            ]);
-        }
-
-        $tasksQuery = Task::query()
-            ->where(function ($q) {
-                $q->where('creator_id', Auth::id())
-                  ->orWhereHas('assignees', function ($query) {
-                      $query->where('users.id', Auth::id());
-                  });
-            })
-            ->where('status', '!=', 'archived')
-            ->where('status', '!=', 'done')
-            ->where('project_id', $inboxProject?->id)
-            ->with(['creator', 'tags', 'assignees', 'attachments', 'comments', 'completionLog.user']);
-
-        $this->applySortOrder($tasksQuery, $sort);
-        $tasks = $tasksQuery->get();
-
-        $perPage = (int) env('PAGINATION_PER_PAGE', 100);
-
-        $userConstraint = function ($q) {
-            $q->where('creator_id', Auth::id())
-              ->orWhereHas('assignees', fn($q2) => $q2->where('users.id', Auth::id()));
-        };
-
-        $completedTasksTotal = Task::query()->where($userConstraint)
-            ->where('status', 'done')
-            ->where('project_id', $inboxProject?->id)
-            ->count();
-
-        $completedTasksRaw = Task::query()->where($userConstraint)
-            ->where('status', 'done')
-            ->where('project_id', $inboxProject?->id)
-            ->with(['creator', 'tags', 'assignees', 'attachments', 'comments', 'completionLog.user'])
-            ->orderByDesc('updated_at')
-            ->take($perPage + 1)
-            ->get();
-
-        $completedTasksHasMore = $completedTasksRaw->count() > $perPage;
-        $completedTasks = $completedTasksHasMore ? $completedTasksRaw->slice(0, $perPage) : $completedTasksRaw;
-
-        $archivedTasksTotal = Task::query()->where($userConstraint)
-            ->where('status', 'archived')
-            ->where('project_id', $inboxProject?->id)
-            ->count();
-
-        $archivedTasksRaw = Task::query()->where($userConstraint)
-            ->where('status', 'archived')
-            ->where('project_id', $inboxProject?->id)
-            ->with(['creator', 'tags', 'assignees', 'attachments', 'comments', 'completionLog.user'])
-            ->orderByDesc('updated_at')
-            ->take($perPage + 1)
-            ->get();
-
-        $archivedTasksHasMore = $archivedTasksRaw->count() > $perPage;
-        $archivedTasks = $archivedTasksHasMore ? $archivedTasksRaw->slice(0, $perPage) : $archivedTasksRaw;
-
-        // Inbox tasks all belong to one project; build the breakdown directly.
-        $breakdown = $tasks->isNotEmpty()
-            ? [['name' => $inboxProject->name, 'count' => $tasks->count()]]
-            : [];
-
-        return view('dashboard.inbox', array_merge(compact(
-            'tasks', 'sort', 'inboxProject', 'breakdown',
-            'completedTasks', 'completedTasksTotal', 'completedTasksHasMore',
-            'archivedTasks', 'archivedTasksTotal', 'archivedTasksHasMore'
-        ), $this->quickAddData()));
+        // /inbox is kept for bookmarks; redirect to the user's default project.
+        $defaultProject = Auth::user()->defaultProject();
+        return redirect()->route('projects.show', $defaultProject);
     }
 
     public function overdue(Request $request)
@@ -510,80 +429,6 @@ class DashboardController extends Controller
         $hideDate = true;
         return response()->json([
             'html'     => view('tasks.partials.completed-list', compact('tasks', 'readOnly', 'showAsArchived', 'hideDate'))->render(),
-            'hasMore'  => $hasMore,
-            'nextPage' => $page + 1,
-        ]);
-    }
-
-    // @todo Why does inbox have its own created tasks function?
-    public function inboxCompletedTasks(Request $request)
-    {
-        $perPage = (int) env('PAGINATION_PER_PAGE', 100);
-        $page    = max(1, (int) $request->get('page', 1));
-        $offset  = ($page - 1) * $perPage;
-
-        $inboxProject = \App\Models\Project::where('user_id', Auth::id())
-            ->where('is_inbox', true)
-            ->first();
-
-        $userConstraint = function ($q) {
-            $q->where('creator_id', Auth::id())
-              ->orWhereHas('assignees', fn($q2) => $q2->where('users.id', Auth::id()));
-        };
-
-        $tasks = Task::query()->where($userConstraint)
-            ->where('status', 'done')
-            ->where('project_id', $inboxProject?->id)
-            ->with(['creator', 'tags', 'assignees', 'attachments', 'comments', 'completionLog.user'])
-            ->orderByDesc('updated_at')
-            ->skip($offset)->take($perPage + 1)
-            ->get();
-
-        $hasMore = $tasks->count() > $perPage;
-        if ($hasMore) {
-            $tasks = $tasks->slice(0, $perPage);
-        }
-
-        return response()->json([
-            'html'     => view('tasks.partials.completed-list', compact('tasks'))->render(),
-            'hasMore'  => $hasMore,
-            'nextPage' => $page + 1,
-        ]);
-    }
-
-    // @todo Why does inbox have its own list of archived tasks?
-    public function inboxArchivedTasks(Request $request)
-    {
-        $perPage = (int) env('PAGINATION_PER_PAGE', 100);
-        $page    = max(1, (int) $request->get('page', 1));
-        $offset  = ($page - 1) * $perPage;
-
-        $inboxProject = \App\Models\Project::where('user_id', Auth::id())
-            ->where('is_inbox', true)
-            ->first();
-
-        $userConstraint = function ($q) {
-            $q->where('creator_id', Auth::id())
-              ->orWhereHas('assignees', fn($q2) => $q2->where('users.id', Auth::id()));
-        };
-
-        $tasks = Task::query()->where($userConstraint)
-            ->where('status', 'archived')
-            ->where('project_id', $inboxProject?->id)
-            ->with(['creator', 'tags', 'assignees', 'attachments', 'comments', 'completionLog.user'])
-            ->orderByDesc('updated_at')
-            ->skip($offset)->take($perPage + 1)
-            ->get();
-
-        $hasMore = $tasks->count() > $perPage;
-        if ($hasMore) {
-            $tasks = $tasks->slice(0, $perPage);
-        }
-
-        $readOnly = true;
-        $showAsArchived = true;
-        return response()->json([
-            'html'     => view('tasks.partials.completed-list', compact('tasks', 'readOnly', 'showAsArchived'))->render(),
             'hasMore'  => $hasMore,
             'nextPage' => $page + 1,
         ]);

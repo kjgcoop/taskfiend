@@ -42,13 +42,14 @@ class RegisteredUserController extends Controller
             'password' => Hash::make($request->password),
         ]);
 
-        // Create Inbox project for the new user
+        // Create the default (inbox) project for the new user.
+        // This is the only place this should happen for web-registered users.
         Project::create([
             'name' => $user->name . "'s Inbox",
             'description' => 'Personal inbox for quick task capture',
             'user_id' => $user->id,
             'status' => 'incomplete',
-            'is_inbox' => true,
+            'is_default' => true,
         ]);
 
         event(new Registered($user));

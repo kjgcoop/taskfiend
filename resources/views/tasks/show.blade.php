@@ -824,7 +824,7 @@
                     date: @js($task->date ?? ''),
                     time: @js($task->time ?? ''),
                     duration_minutes: @js(\App\Models\Task::formatDuration($task->duration_minutes) ?? ''),
-                    project_id: @js($task->project_id ?? $inboxProjectId),
+                    project_id: @js($task->project_id ?? $defaultProjectId),
                     parent_id: @js($task->parent_id ?? ''),
                     recurrence_pattern: @js($task->recurrence_pattern ?? ''),
                     recurrence_floating: @js((bool) $task->recurrence_floating),

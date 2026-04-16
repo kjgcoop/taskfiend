@@ -16,7 +16,7 @@ class Project extends Model
         'background_image',
         'user_id',
         'status',
-        'is_inbox',
+        'is_default',
         'template_id',
     ];
 

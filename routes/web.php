@@ -21,7 +21,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/', [DashboardController::class, 'day'])->name('dashboard');
     Route::get('/today', [DashboardController::class, 'day'])->name('today');
     Route::get('/overdue', [DashboardController::class, 'overdue'])->name('overdue');
-    Route::get('/inbox', [DashboardController::class, 'inbox'])->name('inbox');
+    Route::get('/inbox', [DashboardController::class, 'inbox'])->name('inbox'); // kept for bookmarks
     Route::get('/all-tasks', [DashboardController::class, 'all'])->name('all-tasks');
     Route::get('/undated', [DashboardController::class, 'undated'])->name('undated');
     Route::get('/calendar', [DashboardController::class, 'calendar'])->name('calendar');
@@ -29,9 +29,6 @@ Route::middleware('auth')->group(function () {
     Route::get('/day/export-markdown', [DashboardController::class, 'exportDayMarkdown'])->name('day.export-markdown');
     Route::get('/day/completed-tasks', [DashboardController::class, 'dayCompletedTasks'])->name('day.completedTasks');
     Route::get('/day/archived-tasks', [DashboardController::class, 'dayArchivedTasks'])->name('day.archivedTasks');
-    Route::get('/inbox/completed-tasks', [DashboardController::class, 'inboxCompletedTasks'])->name('inbox.completedTasks');
-    Route::get('/inbox/archived-tasks', [DashboardController::class, 'inboxArchivedTasks'])->name('inbox.archivedTasks');
-
 
     // /tasks index is retired — route removed to prevent access, controller code left intact
     Route::resource('tasks', TaskController::class)->except(['index']);
@@ -48,6 +45,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/projects/{project}/completed-tasks', [ProjectController::class, 'completedTasks'])->name('projects.completedTasks');
     Route::get('/projects/{project}/archived-tasks', [ProjectController::class, 'archivedTasks'])->name('projects.archivedTasks');
     Route::post('/projects/{project}/update-field', [ProjectController::class, 'updateField'])->name('projects.updateField');
+    Route::post('/projects/{project}/set-default', [ProjectController::class, 'setDefault'])->name('projects.setDefault');
     Route::get('/projects/{project}/background', [ProjectController::class, 'showBackground'])->name('projects.background');
     Route::post('/projects/{project}/background', [ProjectController::class, 'uploadBackground'])->name('projects.background.upload');
     Route::delete('/projects/{project}/background', [ProjectController::class, 'removeBackground'])->name('projects.background.remove');

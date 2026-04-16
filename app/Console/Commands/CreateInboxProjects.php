@@ -33,7 +33,7 @@ class CreateInboxProjects extends Command
         foreach ($users as $user) {
             // Check if user already has an Inbox project
             $hasInbox = Project::where('user_id', $user->id)
-                ->where('is_inbox', true)
+                ->where('is_default', true)
                 ->exists();
 
             if (!$hasInbox) {
@@ -42,7 +42,7 @@ class CreateInboxProjects extends Command
                     'description' => 'Personal inbox for quick task capture',
                     'user_id' => $user->id,
                     'status' => 'incomplete',
-                    'is_inbox' => true,
+                    'is_default' => true,
                 ]);
                 $created++;
                 $this->info("Created Inbox for {$user->name} ({$user->email})");

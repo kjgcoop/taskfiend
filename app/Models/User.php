@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Facades\Log;
 
 class User extends Authenticatable
 {
@@ -25,7 +26,6 @@ class User extends Authenticatable
         'password',
         'email_enabled_at',
         'profile_image',
-        'default_project_id',
     ];
 
     /**
@@ -62,9 +62,16 @@ class User extends Authenticatable
         return $this->hasMany(Project::class, 'user_id');
     }
 
-    public function defaultProject(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    public function defaultProject(): Project
     {
-        return $this->belongsTo(Project::class, 'default_project_id');
+        $project = Project::where('user_id', $this->id)->where('is_default', true)->first();
+
+        if (!$project) {
+            Log::error('User has no default project', ['user_id' => $this->id]);
+            throw new \RuntimeException("User {$this->id} has no default project.");
+        }
+
+        return $project;
     }
 
     public function createdTasks(): HasMany
