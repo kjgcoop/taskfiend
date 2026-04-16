@@ -508,38 +508,50 @@ class DateParser
      */
     public function detectUnrecognizedPattern(string $input): ?string
     {
-        // List of recurrence-related keywords that suggest the user is trying to specify a pattern
-        $recurrenceKeywords = [
-            'every',
-            'daily',
-            'weekly',
-            'monthly',
-            'yearly',
-            'weekdays',
-            'weekends',
-        ];
-
-        // Check if input contains any recurrence keywords
-        $containsKeyword = false;
-        foreach ($recurrenceKeywords as $keyword) {
+        // Unambiguous recurrence keywords — any occurrence signals a recurrence attempt
+        $unambiguousKeywords = ['daily', 'weekly', 'monthly', 'yearly', 'weekdays', 'weekends'];
+        foreach ($unambiguousKeywords as $keyword) {
             if (preg_match('/\b' . preg_quote($keyword, '/') . '\b/i', $input)) {
-                $containsKeyword = true;
-                break;
+                $parsed = $this->parseTaskInput($input);
+                if ($parsed['recurrence_pattern'] !== null) {
+                    return null;
+                }
+                return "The recurrence pattern in '{$input}' was not recognized. Supported patterns include: daily, every other day, weekdays, weekends, weekly, every other week, every Monday/Tuesday/etc., every other Monday/Tuesday/etc., every 2 weeks, monthly, every month, every 3 months, every 1st (monthly), every first Monday (monthly), yearly.";
             }
         }
 
-        if (!$containsKeyword) {
+        // "every" appears in plain English too ("backup every file"), so only treat it as a
+        // recurrence attempt when it is immediately followed by a recurrence-vocabulary word.
+        if (!preg_match('/\bevery\b/i', $input)) {
             return null;
         }
 
-        // Now check if we actually parsed a pattern from it
+        // Extract the immediate next word after "every"
+        if (!preg_match('/\bevery\s+(\S+)/i', $input, $m)) {
+            // "every" at end of string — plain English, leave it alone
+            return null;
+        }
+        $nextWord = strtolower(rtrim($m[1], '.,;:!?'));
+
+        $dayNames = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+        $recurrenceVocab = array_merge($dayNames, [
+            'other', 'day', 'days', 'week', 'weeks', 'month', 'months', 'year', 'years',
+            'first', 'second', 'third', 'fourth', 'last',
+            '1st', '2nd', '3rd', '4th',
+        ]);
+        $isNumeric = (bool) preg_match('/^\d{1,2}(st|nd|rd|th)?$/', $nextWord);
+
+        if (!in_array($nextWord, $recurrenceVocab, true) && !$isNumeric) {
+            // Not a recurrence-vocabulary word — plain English, leave it alone
+            return null;
+        }
+
+        // Looks like a recurrence attempt — check if it actually parsed
         $parsed = $this->parseTaskInput($input);
         if ($parsed['recurrence_pattern'] !== null) {
-            // We recognized the pattern, all good
             return null;
         }
 
-        // We found recurrence keywords but couldn't parse a pattern
         return "The recurrence pattern in '{$input}' was not recognized. Supported patterns include: daily, every other day, weekdays, weekends, weekly, every other week, every Monday/Tuesday/etc., every other Monday/Tuesday/etc., every 2 weeks, monthly, every month, every 3 months, every 1st (monthly), every first Monday (monthly), yearly.";
     }
 }
