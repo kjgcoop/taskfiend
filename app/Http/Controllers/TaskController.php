@@ -163,7 +163,9 @@ class TaskController extends Controller
         // Parse #project and @tag tokens from the task name (quick-add inline syntax).
         // Strip these before DateParser runs so it receives a clean task name.
         if (preg_match('/#([\w-]+)/', $taskName, $projectMatch)) {
-            if (!isset($validated['project_id'])) {
+            // Track whether the #token was resolved so we only strip it when it was recognised.
+            $projectWasResolved = isset($validated['project_id']); // already set by autocomplete
+            if (!$projectWasResolved) {
                 $projectQuery = strtolower($projectMatch[1]);
                 $stripped = "LOWER(REPLACE(REPLACE(REPLACE(name, ' ', ''), '''', ''), '.', ''))";
                 $project = Project::where(function ($q) use ($projectQuery, $stripped) {
@@ -178,13 +180,19 @@ class TaskController extends Controller
                     ->first();
                 if ($project) {
                     $validated['project_id'] = $project->id;
+                    $projectWasResolved = true;
                 }
             }
-            $taskName = trim(preg_replace('/#[\w-]+\s*/', '', $taskName));
+            // Only remove the token from the title if we actually matched a project.
+            // An unrecognised #word should be left as plain text.
+            if ($projectWasResolved) {
+                $taskName = trim(preg_replace('/#[\w-]+\s*/', '', $taskName));
+            }
         }
 
         if (preg_match_all('/@([\w-]+)/', $taskName, $tagMatches)) {
             $parsedTagIds = [];
+            $matchedTagSlugs = [];
             foreach ($tagMatches[1] as $tagSlug) {
                 $tag = Tag::where(function ($q) use ($tagSlug) {
                         // Exact match, space-stripped match (handles "5 minutes" → "@5minutes"),
@@ -196,13 +204,18 @@ class TaskController extends Controller
                     ->first();
                 if ($tag) {
                     $parsedTagIds[] = $tag->id;
+                    $matchedTagSlugs[] = preg_quote($tagSlug, '/');
                 }
+                // Unrecognised @word: leave it as plain text in the title.
             }
             if (!empty($parsedTagIds)) {
                 $existingTagIds = $validated['tag_ids'] ?? [];
                 $validated['tag_ids'] = array_unique(array_merge($existingTagIds, $parsedTagIds));
             }
-            $taskName = trim(preg_replace('/@[\w-]+\s*/', '', $taskName));
+            // Only strip the tokens that actually matched a tag.
+            if (!empty($matchedTagSlugs)) {
+                $taskName = trim(preg_replace('/@(' . implode('|', $matchedTagSlugs) . ')\s*/', '', $taskName));
+            }
         }
 
         // Parse location tokens (only in quick-add, only if no location explicitly provided).
@@ -974,20 +987,31 @@ class TaskController extends Controller
             // Only show the project badge if we actually matched a real project.
             // Showing the raw slug as green was misleading (looked like a match when it wasn't).
             $projectName = $project ? $project->name : null;
-            $taskName = trim(preg_replace('/#[\w-]+\s*/', '', $taskName));
+            // Only strip the token if a project was found; unrecognised #word stays as plain text.
+            if ($project) {
+                $taskName = trim(preg_replace('/#[\w-]+\s*/', '', $taskName));
+            }
         }
 
         // Mirror the @tag token parsing from store()
         if (preg_match_all('/@([\w-]+)/', $taskName, $tagMatches)) {
+            $matchedTagSlugs = [];
             foreach ($tagMatches[1] as $tagSlug) {
                 $tag = Tag::where(function ($q) use ($tagSlug) {
                         $q->whereRaw('LOWER(tag_name) = ?', [strtolower($tagSlug)])
                           ->orWhereRaw("LOWER(REPLACE(tag_name, ' ', '')) = ?", [strtolower($tagSlug)])
                           ->orWhereRaw('LOWER(tag_name) LIKE ?', [strtolower($tagSlug) . '%']);
                     })->first();
-                $tagNames[] = $tag ? $tag->tag_name : $tagSlug;
+                if ($tag) {
+                    $tagNames[] = $tag->tag_name;
+                    $matchedTagSlugs[] = preg_quote($tagSlug, '/');
+                }
+                // Unrecognised @word: leave it in the preview title as plain text.
             }
-            $taskName = trim(preg_replace('/@[\w-]+\s*/', '', $taskName));
+            // Only strip the tokens that actually matched a tag.
+            if (!empty($matchedTagSlugs)) {
+                $taskName = trim(preg_replace('/@(' . implode('|', $matchedTagSlugs) . ')\s*/', '', $taskName));
+            }
         }
 
         // Mirror the +location / ++location token parsing from store()
