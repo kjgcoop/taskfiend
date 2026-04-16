@@ -30,7 +30,7 @@
                               x-on:input="handleInput($event)"
                               x-on:keydown="handleKeydown($event)"
                               x-on:click="schedulePreview($event.target.value, $event.target.selectionStart)"
-                              x-on:paste="$nextTick(() => { $refs.createInput.style.height = 'auto'; $refs.createInput.style.height = Math.min($refs.createInput.scrollHeight, 200) + 'px'; })"
+                              x-on:paste="const raw = ($event.clipboardData || window.clipboardData).getData('text'); const cleaned = raw.split('\n').map(l => l.replace(/^[-*] /, '')).join('\n'); if (cleaned !== raw) { $event.preventDefault(); const el = $refs.createInput; const s = el.selectionStart, e = el.selectionEnd; el.value = el.value.slice(0, s) + cleaned + el.value.slice(e); el.selectionStart = el.selectionEnd = s + cleaned.length; el.dispatchEvent(new Event('input')); } $nextTick(() => { $refs.createInput.style.height = 'auto'; $refs.createInput.style.height = Math.min($refs.createInput.scrollHeight, 200) + 'px'; })"
                               :class="nameError ? 'border-red-500 focus:ring-red-500' : 'border-gray-600 focus:ring-blue-500'"
                               style="resize: none; overflow: hidden;"
                               class="w-full pl-9 pr-4 py-2 bg-gray-700 border rounded-md text-gray-100 placeholder-gray-500 focus:outline-none focus:ring-2 focus:border-transparent">{{ old('name') }}</textarea>
