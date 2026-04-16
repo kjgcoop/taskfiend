@@ -59,7 +59,7 @@ class TaskController extends Controller
             ->values()
             ->toArray();
 
-        return view('tasks.index', compact('tasks', 'sort', 'breakdown'));
+        return view('tasks.create', compact('tasks', 'sort', 'breakdown'));
     }
 
     public function create(Request $request)
@@ -1652,7 +1652,7 @@ class TaskController extends Controller
 
         // ── Full-form response ───────────────────────────────────────────────────────
         if (!$hasErrors) {
-            return redirect()->route('tasks.index')
+            return redirect()->route('tasks.create')
                 ->with('success', "Created {$successCount} task" . ($successCount === 1 ? '' : 's') . " successfully.");
         }
 
