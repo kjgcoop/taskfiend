@@ -39,7 +39,7 @@ class NavigationComposer
         $navProjects = collect();
         if (Auth::check()) {
             $navProjects = Project::activeForUser(Auth::id())
-                ->orderBy('name')
+                ->orderByRaw('LOWER(name)')
                 ->get(['id', 'name', 'background_image']);
         }
 
