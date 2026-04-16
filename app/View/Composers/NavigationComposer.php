@@ -43,7 +43,7 @@ class NavigationComposer
                 ->get(['id', 'name', 'background_image']);
         }
 
-        $navTags = Tag::orderBy('tag_name')->get(['id', 'tag_name', 'color']);
+        $navTags = Tag::orderByRaw('LOWER(tag_name)')->get(['id', 'tag_name', 'color']);
 
         $view->with('otherLinksFiles', $otherLinksFiles);
         $view->with('navProjects', $navProjects);
