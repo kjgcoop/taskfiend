@@ -238,7 +238,7 @@
                             Clear
                         </a>
                         <div class="ml-auto flex items-center gap-2">
-                            <label for="sort" class="text-sm text-gray-400">Sort by</label>
+                            <label for="sort" class="text-sm text-gray-400">Sort: </label>
                             <select name="sort" id="sort" class="rounded-md bg-gray-700 border-gray-600 text-gray-100 text-sm shadow-sm focus:border-blue-500 focus:ring-blue-500">
                                 <option value="date_asc" {{ request('sort', 'date_asc') === 'date_asc' ? 'selected' : '' }}>Date (oldest first)</option>
                                 <option value="date_desc" {{ request('sort') === 'date_desc' ? 'selected' : '' }}>Date (newest first)</option>

@@ -22,7 +22,7 @@
                        x-on:keydown.escape="clearFilter()"
                        placeholder="Filter tasks... (# project, @ tag)"
                        class="flex-1 px-4 py-2 bg-gray-700 border border-gray-600 rounded-md text-gray-100 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                <label class="text-gray-400 text-sm whitespace-nowrap">Sort by:</label>
+                <label class="text-gray-400 text-sm whitespace-nowrap">Sort: </label>
                 <select id="sort-select" onchange="(function(v){const p=new URLSearchParams(window.location.search);p.set('sort',v);localStorage.setItem('task_sort_'+window.location.pathname,v);window.location.href=window.location.pathname+'?'+p.toString()})(this.value)"
                         class="text-sm bg-gray-700 border border-gray-600 rounded px-2 py-2 text-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500">
                     <option value="date" {{ $sort === 'date' ? 'selected' : '' }}>Date & Time</option>
