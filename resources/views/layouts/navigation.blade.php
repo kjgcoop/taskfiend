@@ -91,6 +91,10 @@
                                 @empty
                                     <span class="block px-4 py-2 text-sm text-gray-500 italic">No active projects</span>
                                 @endforelse
+                                <a href="{{ route('projects.create') }}" class="relative block w-full text-start text-sm leading-5 focus:outline-none transition duration-150 ease-in-out overflow-hidden py-2 text-gray-300 hover:bg-gray-700"
+                                    style="border-left-color: transparent">
+                                    <span class="relative px-4 py-2 block">Add New Project</span>
+                                </a>
                             </div>
                         </div>
                     </div>
