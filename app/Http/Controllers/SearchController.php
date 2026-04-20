@@ -166,11 +166,18 @@ class SearchController extends Controller
         [$completedTasks, $completedTasksHasMore, $completedTasksTotal] = $this->fetchPage($baseQuery, 'done',       $sort, $with, $perPage, $request->boolean('show_done'));
         [$archivedTasks,  $archivedTasksHasMore,  $archivedTasksTotal]  = $this->fetchPage($baseQuery, 'archived',   $sort, $with, $perPage, $request->boolean('show_archived'));
 
+        $breakdown = $tasks
+            ->groupBy(fn($t) => optional($t->project)->name ?? 'No Project')
+            ->map(fn($g, $name) => ['name' => $name, 'count' => $g->count()])
+            ->sortByDesc('count')
+            ->values()
+            ->toArray();
+
         return view('search.index', compact(
             'tasks', 'tasksHasMore', 'tasksTotal',
             'completedTasks', 'completedTasksHasMore', 'completedTasksTotal',
             'archivedTasks', 'archivedTasksHasMore', 'archivedTasksTotal',
-            'projects', 'tags', 'users'
+            'projects', 'tags', 'users', 'breakdown'
         ));
     }
 
