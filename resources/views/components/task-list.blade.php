@@ -95,6 +95,7 @@
         return {
             query: '',
             noResults: false,
+            showIncomplete: true,
             mode: 'create',
             nameError: '',
             serverError: '',

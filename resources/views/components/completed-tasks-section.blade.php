@@ -1,6 +1,6 @@
 @props([
     'tasks',
-    'label' => 'Show done tasks',
+    'label' => 'Done tasks',
     'hideDate' => false,
     'readOnly' => false,
     'showAsArchived' => false,
@@ -15,15 +15,20 @@
 @if($displayCount > 0)
 <div class="mt-4 border-t border-gray-700 pt-4"
      x-data="completedTasksLoader({{ $hasMore ? 'true' : 'false' }}, {{ $nextPage }}, {{ json_encode($ajaxUrl) }})">
-    <label class="inline-flex items-center gap-2 cursor-pointer select-none">
-        <input type="checkbox"
-               x-model="showCompleted"
-               class="rounded border-gray-600 bg-gray-700 text-blue-600 focus:ring-blue-500 focus:ring-offset-0">
-        <span class="text-sm text-gray-400" :class="showCompleted ? 'text-gray-200' : 'hover:text-gray-200'">
+    <button type="button"
+            @click="showCompleted = !showCompleted"
+            class="inline-flex items-center gap-1.5 text-sm text-gray-400 hover:text-gray-200 transition-colors select-none">
+        <svg xmlns="http://www.w3.org/2000/svg"
+             class="h-3.5 w-3.5 transition-transform duration-150 flex-shrink-0"
+             :class="showCompleted ? 'rotate-90' : ''"
+             fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
+        </svg>
+        <span :class="showCompleted ? 'text-gray-200' : ''">
             {{ $label }}
             <span class="text-gray-600">({{ $displayCount }})</span>
         </span>
-    </label>
+    </button>
 
     <div x-show="showCompleted" x-cloak class="mt-4">
         <div x-ref="list">

@@ -1,55 +1,104 @@
 <x-app-layout>
     <x-slot name="header">
-        <div class="flex justify-between items-center">
-            <h2 class="font-semibold text-xl text-gray-100 leading-tight" style="color: {{ $tag->color }}">
-                {{ $tag->tag_name }}
-            </h2>
+        <div class="flex items-center gap-2 w-full" x-data="{ showMenu: false }">
+            {{-- Inline-editable tag name + count badge --}}
+            <div x-data="tagHeaderEditor({{ $tag->id }}, @js($tag->tag_name), @js($tag->color))" class="flex items-center gap-2 min-w-0">
+                <h2 x-show="!editing"
+                    @click="startEdit()"
+                    class="font-semibold text-xl leading-tight truncate cursor-pointer hover:opacity-80 transition-opacity"
+                    style="color: {{ $tag->color }}"
+                    x-text="name">
+                </h2>
+                <input x-show="editing" x-cloak x-ref="nameInput"
+                       x-model="name"
+                       @blur="save()"
+                       @keydown.enter.prevent="save()"
+                       @keydown.escape.prevent="cancel()"
+                       class="font-semibold text-xl bg-transparent border-b border-gray-400 focus:outline-none focus:border-blue-400 min-w-0 w-52"
+                       :style="'color: ' + color" />
+                <x-task-count-badge :count="$tasks->count()" :breakdown="$breakdown" />
+            </div>
+
+            {{-- Spacer --}}
+            <div class="flex-1"></div>
+
+            {{-- ID + copy link --}}
+            <span class="text-sm text-gray-500 shrink-0">#{{ $tag->id }}</span>
+            <span x-data="{ copied: false }" class="shrink-0">
+                <button @click="navigator.clipboard.writeText('[tag:{{ $tag->id }}]').then(() => { copied = true; setTimeout(() => copied = false, 2000) })"
+                        title="Copy tag reference [tag:{{ $tag->id }}]"
+                        class="text-gray-500 hover:text-gray-300 transition-colors">
+                    <span x-show="!copied">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
+                        </svg>
+                    </span>
+                    <span x-show="copied" x-cloak class="text-xs text-green-400">Copied!</span>
+                </button>
+            </span>
+
+            {{-- Three-dot menu --}}
+            <div class="relative shrink-0" @click.outside="showMenu = false">
+                <button @click="showMenu = !showMenu"
+                        class="p-2 text-gray-400 hover:text-gray-100 hover:bg-gray-700 rounded transition-colors"
+                        title="More options">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M10 6a2 2 0 110-4 2 2 0 010 4zm0 6a2 2 0 110-4 2 2 0 010 4zm0 6a2 2 0 110-4 2 2 0 010 4z" />
+                    </svg>
+                </button>
+                <div x-show="showMenu" x-cloak
+                     class="absolute right-0 mt-1 w-40 bg-gray-800 border border-gray-600 rounded shadow-lg z-10">
+                    <button @click="showMenu = false; $dispatch('open-tag-details')"
+                            class="w-full text-left px-4 py-2 text-gray-200 hover:bg-gray-700">
+                        Details
+                    </button>
+                </div>
+            </div>
         </div>
     </x-slot>
 
-    <div class="py-12" x-data="tagEditor({{ $tag->id }})">
+    <div class="py-12" x-data="tagEditor({{ $tag->id }})"
+         @open-tag-details.window="showDetails = true">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-6">
-            <!-- Tag Details -->
-            <div class="bg-[#202020] border border-gray-700 overflow-hidden shadow-sm sm:rounded-lg p-6">
-                <!-- Tag Name -->
-                <div class="mb-4">
-                    <span class="text-sm font-medium text-gray-500">Tag Name</span>
-                    <div @click="startEdit('tag_name')" x-show="!editing.tag_name" class="mt-1 cursor-pointer hover:bg-gray-700 p-2 rounded flex items-center gap-3">
-                        <div class="w-6 h-6 rounded-full flex-shrink-0" :style="'background-color:' + fields.color"></div>
-                        <p class="text-lg font-semibold text-gray-100" x-text="fields.tag_name"></p>
+
+            {{-- Details Modal --}}
+            <div x-show="showDetails" x-cloak
+                 class="fixed inset-0 z-50 flex items-center justify-center bg-black/60"
+                 @keydown.escape.window="showDetails = false">
+                <div class="bg-gray-800 border border-gray-600 rounded-lg p-6 w-full max-w-md shadow-xl overflow-y-auto max-h-[90vh]"
+                     @click.stop>
+                    <div class="flex justify-between items-center mb-5">
+                        <h4 class="text-gray-100 font-semibold text-lg">Tag Details</h4>
+                        <button @click="showDetails = false" class="text-gray-400 hover:text-gray-100">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                        </button>
                     </div>
-                    <div x-show="editing.tag_name" class="mt-1">
-                        <input type="text" x-model="fields.tag_name"
-                               @keydown.enter="saveField('tag_name')"
-                               @keydown.escape="cancelEdit('tag_name')"
-                               class="w-full rounded-md bg-gray-700 border-gray-600 text-gray-100 placeholder-gray-500 shadow-sm focus:border-blue-500 focus:ring-blue-500">
-                        <div class="flex gap-2 mt-2">
+
+                    {{-- Tag Name --}}
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-400 mb-1">Tag Name</label>
+                        <div class="flex gap-2">
+                            <input type="text" x-model="fields.tag_name"
+                                   @keydown.enter="saveField('tag_name')"
+                                   class="flex-1 rounded-md bg-gray-700 border-gray-600 text-gray-100 placeholder-gray-500 shadow-sm focus:border-blue-500 focus:ring-blue-500 px-3 py-2 text-sm">
                             <button @click="saveField('tag_name')"
                                     class="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700">
                                 Save
                             </button>
-                            <button @click="cancelEdit('tag_name')"
-                                    class="px-3 py-1 bg-gray-700 text-gray-300 text-sm rounded hover:bg-gray-600">
-                                Cancel
-                            </button>
                         </div>
                     </div>
-                </div>
 
-                <!-- Color -->
-                <div class="mt-4">
-                    <span class="text-sm font-medium text-gray-500">Color</span>
-                    <div @click="startEdit('color')" x-show="!editing.color" class="mt-1 cursor-pointer hover:bg-gray-700 p-2 rounded flex items-center gap-3">
-                        <div class="w-8 h-8 rounded-lg" :style="'background-color:' + fields.color"></div>
-                        <p class="text-sm text-gray-400" x-text="fields.color"></p>
-                    </div>
-                    <div x-show="editing.color" class="mt-1">
+                    {{-- Color --}}
+                    <div class="mb-5">
+                        <label class="block text-sm font-medium text-gray-400 mb-2">Color</label>
                         <div class="flex flex-wrap gap-2 mb-3">
                             @foreach(['#EF4444','#F97316','#F59E0B','#EAB308','#84CC16','#22C55E','#10B981','#14B8A6','#06B6D4','#3B82F6','#6366F1','#8B5CF6','#A855F7','#EC4899','#F43F5E','#78716C','#6B7280','#64748B','#0EA5E9','#0D9488','#15803D','#B45309','#C2410C','#9F1239'] as $c)
                             <button type="button"
                                 @click="fields.color = '{{ $c }}'"
-                                :class="fields.color === '{{ $c }}' ? 'ring-2 ring-offset-2 ring-offset-[#202020] ring-white scale-110' : 'hover:scale-110'"
-                                class="w-8 h-8 rounded-full transition-transform"
+                                :class="fields.color === '{{ $c }}' ? 'ring-2 ring-offset-2 ring-offset-gray-800 ring-white scale-110' : 'hover:scale-110'"
+                                class="w-7 h-7 rounded-full transition-transform"
                                 style="background-color: {{ $c }};"
                                 title="{{ $c }}">
                             </button>
@@ -64,38 +113,43 @@
                                 class="w-24 rounded-md bg-gray-700 border-gray-600 text-gray-100 text-sm px-2 py-1 focus:border-blue-500 focus:ring-blue-500"
                                 placeholder="3B82F6">
                         </div>
-                        <div class="flex gap-2">
-                            <button @click="saveField('color')"
-                                    class="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700">
-                                Save
-                            </button>
-                            <button @click="cancelEdit('color')"
-                                    class="px-3 py-1 bg-gray-700 text-gray-300 text-sm rounded hover:bg-gray-600">
-                                Cancel
-                            </button>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Delete -->
-                <div class="mt-6 pt-4 border-t border-gray-700">
-                    <form method="POST" action="{{ route('tags.destroy', $tag) }}">
-                        @csrf
-                        @method('DELETE')
-                        <button type="submit" class="text-sm text-red-500 hover:text-red-400 hover:underline"
-                                onclick="return confirm('Are you sure you want to delete this tag?')">
-                            Delete Tag
+                        <button @click="saveField('color')"
+                                class="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700">
+                            Save Color
                         </button>
-                    </form>
+                    </div>
+
+                    <div class="flex justify-between items-center pt-4 border-t border-gray-700">
+                        <form method="POST" action="{{ route('tags.destroy', $tag) }}"
+                              onsubmit="return confirm('Are you sure you want to delete this tag?')">
+                            @csrf
+                            @method('DELETE')
+                            <button type="submit" class="text-sm text-red-500 hover:text-red-400 hover:underline">
+                                Delete Tag
+                            </button>
+                        </form>
+                        <button @click="showDetails = false"
+                                class="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-gray-300 rounded text-sm">
+                            Close
+                        </button>
+                    </div>
                 </div>
             </div>
 
             <!-- Tagged Tasks -->
             <div class="bg-[#202020] border border-gray-700 overflow-hidden shadow-sm sm:rounded-lg p-6" x-data="taskFilter(@js($projects), @js($allTags), @js($users), @js($locations))">
-                <div class="flex justify-between items-center mb-4">
-                    <h3 class="text-lg font-semibold text-gray-100">Tagged Tasks
-                        <x-task-count-badge :count="$tasks->count()" :breakdown="$breakdown" />
-                    </h3>
+                <div class="flex items-center justify-between mb-4">
+                    <button type="button"
+                            @click="showIncomplete = !showIncomplete"
+                            title="Toggle task list"
+                            class="text-gray-500 hover:text-gray-300 transition-colors flex-shrink-0">
+                        <svg xmlns="http://www.w3.org/2000/svg"
+                             class="h-4 w-4 transition-transform duration-150"
+                             :class="showIncomplete ? 'rotate-90' : ''"
+                             fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
+                        </svg>
+                    </button>
                     <select id="sort-select" onchange="(function(v){const p=new URLSearchParams(window.location.search);p.set('sort',v);localStorage.setItem('task_sort_'+window.location.pathname,v);window.location.href=window.location.pathname+'?'+p.toString()})(this.value)"
                             class="text-sm bg-gray-700 border border-gray-600 rounded px-2 py-1 text-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500">
                         <option value="date" {{ $sort === 'date' ? 'selected' : '' }}>Date & Time</option>
@@ -105,12 +159,14 @@
                         <option value="custom" {{ $sort === 'custom' ? 'selected' : '' }}>Custom Sort</option>
                     </select>
                 </div>
-                <x-task-input-bar :tag-id="$tag->id" filter-placeholder="Filter tasks... (# project)" />
-                <div x-ref="taskContainer">
-                    <x-task-list :tasks="$tasks" :sortable="$sort === 'custom'" :reorder-url="route('tags.reorderTasks', $tag)" />
-                </div>
-                <div x-show="noResults" x-cloak class="bg-[#202020] p-8 rounded-lg text-center text-gray-400 border border-gray-700">
-                    No tasks match your filter.
+                <div x-show="showIncomplete">
+                    <x-task-input-bar :tag-id="$tag->id" filter-placeholder="Filter tasks... (# project)" />
+                    <div x-ref="taskContainer">
+                        <x-task-list :tasks="$tasks" :sortable="$sort === 'custom'" :reorder-url="route('tags.reorderTasks', $tag)" />
+                    </div>
+                    <div x-show="noResults" x-cloak class="bg-[#202020] p-8 rounded-lg text-center text-gray-400 border border-gray-700">
+                        No tasks match your filter.
+                    </div>
                 </div>
                 <x-completed-tasks-section
                     :tasks="$completedTasks"
@@ -121,7 +177,7 @@
                 />
                 <x-completed-tasks-section
                     :tasks="$archivedTasks"
-                    label="Show archived tasks"
+                    label="Archived tasks"
                     :read-only="true"
                     :show-as-archived="true"
                     :total-count="$archivedTasksTotal"
@@ -135,9 +191,66 @@
 
     @push('scripts')
     <script>
+        function tagHeaderEditor(tagId, initialName, initialColor) {
+            return {
+                tagId: tagId,
+                name: initialName,
+                color: initialColor,
+                original: initialName,
+                editing: false,
+
+                startEdit() {
+                    this.original = this.name;
+                    this.editing = true;
+                    this.$nextTick(() => {
+                        if (this.$refs.nameInput) {
+                            this.$refs.nameInput.focus();
+                            this.$refs.nameInput.select();
+                        }
+                    });
+                },
+
+                cancel() {
+                    this.name = this.original;
+                    this.editing = false;
+                },
+
+                async save() {
+                    if (this.name.trim() === this.original.trim()) {
+                        this.editing = false;
+                        return;
+                    }
+                    const formData = new FormData();
+                    formData.append('_token', document.querySelector('meta[name="csrf-token"]').content);
+                    formData.append('field', 'tag_name');
+                    formData.append('value', this.name.trim());
+                    try {
+                        const resp = await fetch(`/tags/${this.tagId}/update-field`, {
+                            method: 'POST',
+                            body: formData,
+                        });
+                        const data = await resp.json();
+                        if (data.success) {
+                            this.original = this.name.trim();
+                            this.editing = false;
+                        } else {
+                            alert(data.message || 'Failed to save');
+                            this.name = this.original;
+                            this.editing = false;
+                        }
+                    } catch (e) {
+                        alert('An error occurred while saving');
+                        this.name = this.original;
+                        this.editing = false;
+                    }
+                },
+            };
+        }
+
         function tagEditor(tagId) {
             return {
                 tagId: tagId,
+                showDetails: false,
                 editing: {},
                 fields: {
                     tag_name: @js($tag->tag_name),
@@ -147,16 +260,6 @@
 
                 init() {
                     this.original = JSON.parse(JSON.stringify(this.fields));
-                },
-
-                startEdit(field) {
-                    this.editing[field] = true;
-                    if (field === 'tag_name') {
-                        this.$nextTick(() => {
-                            const input = this.$el.querySelector('input[x-model="fields.tag_name"]');
-                            if (input) { input.focus(); input.select(); }
-                        });
-                    }
                 },
 
                 cancelEdit(field) {
