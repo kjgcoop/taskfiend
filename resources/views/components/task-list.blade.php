@@ -494,7 +494,7 @@
 
                 let slug, prefix, suffix = ' ';
                 if (this.autocompleteType === 'project') {
-                    slug   = name.toLowerCase().replace(/[^a-z0-9-]/g, '');
+                    slug   = name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
                     prefix = '#';
                 } else if (this.autocompleteType === 'tag') {
                     slug   = name.toLowerCase().replace(/[^a-z0-9-]/g, '');
@@ -674,13 +674,13 @@
                     let ok = true;
                     // Positive filters — all must match
                     if (ok) for (const f of nameFilters)         { if (!taskName.includes(f))                           { ok = false; break; } }
-                    if (ok) for (const f of projectFilters)      { if (!project.includes(f))                            { ok = false; break; } }
+                    if (ok) for (const f of projectFilters)      { if (!project.includes(f.replace(/-/g, ' ')))             { ok = false; break; } }
                     if (ok) for (const f of tagFilters)          { if (!tags.some(t => t.includes(f)))                  { ok = false; break; } }
                     if (ok) for (const f of locationFilters)     { if (!location.includes(f.replace(/-/g, ' ')))        { ok = false; break; } }
                     if (ok) for (const f of userFilters)         { if (!assignees.some(a => a.includes(f)))             { ok = false; break; } }
                     // Negative filters — none may match
                     if (ok) for (const f of notNameFilters)      { if (taskName.includes(f))                            { ok = false; break; } }
-                    if (ok) for (const f of notProjectFilters)   { if (project.includes(f))                             { ok = false; break; } }
+                    if (ok) for (const f of notProjectFilters)   { if (project.includes(f.replace(/-/g, ' ')))          { ok = false; break; } }
                     if (ok) for (const f of notTagFilters)       { if (tags.some(t => t.includes(f)))                   { ok = false; break; } }
                     if (ok) for (const f of notLocationFilters)  { if (location.includes(f.replace(/-/g, ' ')))         { ok = false; break; } }
                     if (ok) for (const f of notUserFilters)      { if (assignees.some(a => a.includes(f)))              { ok = false; break; } }
