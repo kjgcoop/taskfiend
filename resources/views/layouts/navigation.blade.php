@@ -91,6 +91,10 @@
                                 @empty
                                     <span class="block px-4 py-2 text-sm text-gray-500 italic">No active projects</span>
                                 @endforelse
+                                <a href="{{ route('projects.create') }}" class="relative block w-full text-start text-sm leading-5 focus:outline-none transition duration-150 ease-in-out overflow-hidden py-2 text-gray-300 hover:bg-gray-700"
+                                    style="border-left-color: transparent">
+                                    <span class="relative px-4 py-2 block">Add New Project</span>
+                                </a>
                             </div>
                         </div>
                     </div>
@@ -168,14 +172,19 @@
                         </div>
                     </div>
 
-                    <x-nav-link :href="route('tasks.create')" :active="request()->routeIs('tasks.create')" class="inline-flex items-center px-4 py-2 bg-blue-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-blue-700">
-                        +
-                    </x-nav-link>
                 </div>
             </div>
 
             <!-- Settings Dropdown -->
-            <div class="hidden sm:flex sm:items-center sm:ms-6">
+            <div class="hidden sm:flex sm:items-center sm:gap-3 sm:ms-6">
+                @auth
+                <a href="{{ route('tasks.create') }}" title="New Task"
+                   class="inline-flex items-center justify-center w-9 h-9 bg-blue-600 hover:bg-blue-700 text-white rounded-md transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
+                    </svg>
+                </a>
+                @endauth
                 @auth
                 <x-dropdown align="right" width="48">
                     <x-slot name="trigger">

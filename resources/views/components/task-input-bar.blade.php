@@ -1,4 +1,4 @@
-@props(['date' => null, 'projectId' => null, 'tagId' => null, 'filterPlaceholder' => 'Filter tasks... (# project, @ tag)'])
+@props(['date' => null, 'projectId' => null, 'tagId' => null, 'filterPlaceholder' => 'Filter… #project @tag +location &user · prefix not: to exclude'])
 
 <div class="mb-4">
     {{-- Create mode (default, hidden in bulk mode) --}}
@@ -16,7 +16,7 @@
                 <input type="hidden" name="tag_ids[]" value="{{ $tagId }}">
             @endif
             <div class="flex gap-2 items-center">
-                <div class="relative flex-1" @click.outside="showAutocomplete = false">
+                <div class="relative flex-1" @click.outside="mode === 'create' && (showAutocomplete = false)">
                     <span class="absolute left-3 top-2.5 text-gray-500 pointer-events-none">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
@@ -30,7 +30,7 @@
                               x-on:input="handleInput($event)"
                               x-on:keydown="handleKeydown($event)"
                               x-on:click="schedulePreview($event.target.value, $event.target.selectionStart)"
-                              x-on:paste="$nextTick(() => { $refs.createInput.style.height = 'auto'; $refs.createInput.style.height = Math.min($refs.createInput.scrollHeight, 200) + 'px'; })"
+                              x-on:paste="const raw = ($event.clipboardData || window.clipboardData).getData('text'); const cleaned = raw.split('\n').map(l => l.replace(/^[-*] /, '')).join('\n'); if (cleaned !== raw) { $event.preventDefault(); const el = $refs.createInput; const s = el.selectionStart, e = el.selectionEnd; el.value = el.value.slice(0, s) + cleaned + el.value.slice(e); el.selectionStart = el.selectionEnd = s + cleaned.length; el.dispatchEvent(new Event('input')); } $nextTick(() => { $refs.createInput.style.height = 'auto'; $refs.createInput.style.height = Math.min($refs.createInput.scrollHeight, 200) + 'px'; })"
                               :class="nameError ? 'border-red-500 focus:ring-red-500' : 'border-gray-600 focus:ring-blue-500'"
                               style="resize: none; overflow: hidden;"
                               class="w-full pl-9 pr-4 py-2 bg-gray-700 border rounded-md text-gray-100 placeholder-gray-500 focus:outline-none focus:ring-2 focus:border-transparent">{{ old('name') }}</textarea>
@@ -221,13 +221,97 @@
                 <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
             </svg>
         </button>
-        <input type="text"
-               x-ref="filterInput"
-               x-model="query"
-               x-on:input="filterTasks()"
-               x-on:keydown.escape="switchToCreate()"
-               placeholder="{{ $filterPlaceholder }}"
-               class="flex-1 px-4 py-2 bg-gray-700 border border-gray-600 rounded-md text-gray-100 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+        <div class="relative flex-1" @click.outside="mode === 'filter' && (showAutocomplete = false)">
+            <input type="text"
+                   x-ref="filterInput"
+                   x-model="query"
+                   x-on:input="handleFilterInput($event)"
+                   x-on:keydown="handleFilterKeydown($event)"
+                   placeholder="{{ $filterPlaceholder }}"
+                   class="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-md text-gray-100 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+
+            {{-- Autocomplete dropdown for filter mode --}}
+            <div x-show="showAutocomplete"
+                 x-transition:enter="transition ease-out duration-100"
+                 x-transition:enter-start="opacity-0 scale-95"
+                 x-transition:enter-end="opacity-100 scale-100"
+                 x-cloak
+                 class="absolute z-20 w-full top-full left-0 mt-1 bg-gray-800 border border-gray-600 rounded-md shadow-lg max-h-52 overflow-auto">
+
+                <template x-if="autocompleteType === 'project'">
+                    <div>
+                        <div class="px-3 py-1.5 text-xs font-semibold text-gray-400 border-b border-gray-700"
+                             x-text="autocompleteNot ? 'Exclude project' : 'Projects'"></div>
+                        <template x-for="(project, i) in filteredProjects" :key="project.id">
+                            <div class="px-3 py-2 cursor-pointer text-sm text-gray-300 flex items-center gap-2"
+                                 :class="{ 'bg-gray-600 text-gray-100': autocompleteIndex === i }"
+                                 @mouseenter="autocompleteIndex = i"
+                                 @click.prevent="selectAutocomplete(project.name, project.id)">
+                                <span class="text-gray-500 text-xs" x-text="autocompleteNot ? 'not:#' : '#'"></span>
+                                <span x-text="project.name"></span>
+                            </div>
+                        </template>
+                        <div x-show="filteredProjects.length === 0"
+                             class="px-3 py-2 text-sm text-gray-500 italic">No matching projects</div>
+                    </div>
+                </template>
+
+                <template x-if="autocompleteType === 'tag'">
+                    <div>
+                        <div class="px-3 py-1.5 text-xs font-semibold text-gray-400 border-b border-gray-700"
+                             x-text="autocompleteNot ? 'Exclude tag' : 'Tags'"></div>
+                        <template x-for="(tag, i) in filteredTags" :key="tag.id">
+                            <div class="px-3 py-2 cursor-pointer text-sm flex items-center gap-2"
+                                 :class="{ 'bg-gray-600': autocompleteIndex === i }"
+                                 @mouseenter="autocompleteIndex = i"
+                                 @click.prevent="selectAutocomplete(tag.tag_name, tag.id)">
+                                <span class="text-xs" :style="'color: ' + tag.color"
+                                      x-text="autocompleteNot ? 'not:@' : '@'"></span>
+                                <span :style="'color: ' + tag.color" x-text="tag.tag_name"></span>
+                            </div>
+                        </template>
+                        <div x-show="filteredTags.length === 0"
+                             class="px-3 py-2 text-sm text-gray-500 italic">No matching tags</div>
+                    </div>
+                </template>
+
+                <template x-if="autocompleteType === 'location'">
+                    <div>
+                        <div class="px-3 py-1.5 text-xs font-semibold text-gray-400 border-b border-gray-700"
+                             x-text="autocompleteNot ? 'Exclude location' : 'Locations'"></div>
+                        <template x-for="(loc, i) in filteredLocations" :key="loc">
+                            <div class="px-3 py-2 cursor-pointer text-sm text-gray-300 flex items-center gap-2"
+                                 :class="{ 'bg-gray-600 text-gray-100': autocompleteIndex === i }"
+                                 @mouseenter="autocompleteIndex = i"
+                                 @click.prevent="selectAutocomplete(loc)">
+                                <span class="text-orange-400 text-xs" x-text="autocompleteNot ? 'not:+' : '+'"></span>
+                                <span x-text="loc"></span>
+                            </div>
+                        </template>
+                        <div x-show="filteredLocations.length === 0"
+                             class="px-3 py-2 text-sm text-gray-500 italic">No prior locations</div>
+                    </div>
+                </template>
+
+                <template x-if="autocompleteType === 'user'">
+                    <div>
+                        <div class="px-3 py-1.5 text-xs font-semibold text-gray-400 border-b border-gray-700"
+                             x-text="autocompleteNot ? 'Exclude user' : 'Assignees'"></div>
+                        <template x-for="(user, i) in filteredUsers" :key="user.id">
+                            <div class="px-3 py-2 cursor-pointer text-sm text-gray-300 flex items-center gap-2"
+                                 :class="{ 'bg-gray-600 text-gray-100': autocompleteIndex === i }"
+                                 @mouseenter="autocompleteIndex = i"
+                                 @click.prevent="selectAutocomplete(user.name, user.id)">
+                                <span class="text-cyan-400 text-xs" x-text="autocompleteNot ? 'not:&' : '&'"></span>
+                                <span x-text="user.name"></span>
+                            </div>
+                        </template>
+                        <div x-show="filteredUsers.length === 0"
+                             class="px-3 py-2 text-sm text-gray-500 italic">No matching users</div>
+                    </div>
+                </template>
+            </div>
+        </div>
         <button @click="$store.bulkEdit.toggle()"
                 title="Bulk edit mode"
                 :class="$store.bulkEdit.active ? 'text-blue-400 bg-gray-700' : 'text-gray-500 hover:text-gray-300'"

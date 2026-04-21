@@ -98,11 +98,6 @@
                 <a href="{{ route('day.export-markdown') }}?date={{ $carbonDate->format('Y-m-d') }}" class="hidden sm:inline-flex items-center px-4 py-2 bg-gray-700 border border-gray-600 rounded-md font-semibold text-xs text-gray-100 uppercase tracking-widest hover:bg-gray-600">
                     Export .md
                 </a>
-                <a href="{{ route('tasks.create') }}?date={{ $carbonDate->format('Y-m-d') }}" class="inline-flex items-center gap-1 px-3 py-2 bg-blue-600 border border-transparent rounded-md text-white hover:bg-blue-700" title="Add Task">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
-                    </svg>
-                </a>
             </div>
         </div>
     </x-slot>
@@ -110,20 +105,8 @@
     <div class="py-12">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
 
-            {{-- Controls bar: sort (list only) + view toggle + 24h toggle --}}
-            <div class="flex justify-between items-center mb-2" x-data>
-                {{-- Sort (list view only) --}}
-                <div x-show="$store.dayView.current === 'list'" x-cloak>
-                    <select id="sort-select" onchange="(function(v){const p=new URLSearchParams(window.location.search);p.set('sort',v);localStorage.setItem('task_sort_'+window.location.pathname,v);window.location.href=window.location.pathname+'?'+p.toString()})(this.value)"
-                            class="text-sm bg-gray-700 border border-gray-600 rounded px-2 py-1 text-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500">
-                        <option value="date" {{ $sort === 'date' ? 'selected' : '' }}>Date & Time</option>
-                        <option value="created" {{ $sort === 'created' ? 'selected' : '' }}>Date Added</option>
-                        <option value="name" {{ $sort === 'name' ? 'selected' : '' }}>Name (A–Z)</option>
-                        <option value="location" {{ $sort === 'location' ? 'selected' : '' }}>Location (A–Z)</option>
-                        <option value="custom" {{ $sort === 'custom' ? 'selected' : '' }}>Custom Sort</option>
-                    </select>
-                </div>
-                <div x-show="$store.dayView.current !== 'list'" x-cloak></div>
+            {{-- Controls bar: view toggle + 24h toggle --}}
+            <div class="flex justify-end items-center mb-2" x-data>
 
                 <div class="flex items-center gap-2">
                     {{-- Full-day toggle (agenda only) --}}
@@ -165,12 +148,36 @@
 
             {{-- List view --}}
             <div x-cloak x-show="$store.dayView.current === 'list'" x-data="taskFilter(@js($projects), @js($tags), @js($users), @js($locations))">
-                <x-task-input-bar :date="$carbonDate->format('Y-m-d')" />
-                <div x-ref="taskContainer">
-                    <x-task-list :tasks="$tasks" :hide-date="true" :view-date="$carbonDate->format('Y-m-d')" :sortable="$sort === 'custom'" />
+                {{-- Fold chevron + sort row --}}
+                <div class="flex items-center justify-between mb-2">
+                    <button type="button"
+                            @click="showIncomplete = !showIncomplete"
+                            title="Toggle task list"
+                            class="text-gray-500 hover:text-gray-300 transition-colors flex-shrink-0">
+                        <svg xmlns="http://www.w3.org/2000/svg"
+                             class="h-4 w-4 transition-transform duration-150"
+                             :class="showIncomplete ? 'rotate-90' : ''"
+                             fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
+                        </svg>
+                    </button>
+                    <select id="sort-select" onchange="(function(v){const p=new URLSearchParams(window.location.search);p.set('sort',v);localStorage.setItem('task_sort_'+window.location.pathname,v);window.location.href=window.location.pathname+'?'+p.toString()})(this.value)"
+                            class="text-sm bg-gray-700 border border-gray-600 rounded px-2 py-1 text-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <option value="date" {{ $sort === 'date' ? 'selected' : '' }}>Date & Time</option>
+                        <option value="created" {{ $sort === 'created' ? 'selected' : '' }}>Date Added</option>
+                        <option value="name" {{ $sort === 'name' ? 'selected' : '' }}>Name (A–Z)</option>
+                        <option value="location" {{ $sort === 'location' ? 'selected' : '' }}>Location (A–Z)</option>
+                        <option value="custom" {{ $sort === 'custom' ? 'selected' : '' }}>Custom Sort</option>
+                    </select>
                 </div>
-                <div x-show="noResults" x-cloak class="bg-[#202020] p-8 rounded-lg text-center text-gray-400 border border-gray-700">
-                    No tasks match your filter.
+                <div x-show="showIncomplete">
+                    <x-task-input-bar :date="$carbonDate->format('Y-m-d')" />
+                    <div x-ref="taskContainer">
+                        <x-task-list :tasks="$tasks" :hide-date="true" :view-date="$carbonDate->format('Y-m-d')" :sortable="$sort === 'custom'" />
+                    </div>
+                    <div x-show="noResults" x-cloak class="bg-[#202020] p-8 rounded-lg text-center text-gray-400 border border-gray-700">
+                        No tasks match your filter.
+                    </div>
                 </div>
                 <x-completed-tasks-section
                     :tasks="$completedTasks"
@@ -180,7 +187,7 @@
                     :ajax-url="$completedTasksHasMore ? route('day.completedTasks') . '?date=' . $date : null" />
                 <x-completed-tasks-section
                     :tasks="$archivedTasks"
-                    label="Show archived tasks"
+                    label="Archived tasks"
                     :hide-date="true"
                     :read-only="true"
                     :show-as-archived="true"

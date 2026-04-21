@@ -2,6 +2,9 @@
     <x-slot name="header">
         <h2 class="font-semibold text-xl text-gray-100 leading-tight">
             {{ __('Search Tasks') }}
+            @if($tasksTotal > 0)
+                <x-task-count-badge :count="$tasksTotal" :breakdown="$breakdown" />
+            @endif
         </h2>
     </x-slot>
 
@@ -238,7 +241,7 @@
                             Clear
                         </a>
                         <div class="ml-auto flex items-center gap-2">
-                            <label for="sort" class="text-sm text-gray-400">Sort by</label>
+                            <label for="sort" class="text-sm text-gray-400">Sort: </label>
                             <select name="sort" id="sort" class="rounded-md bg-gray-700 border-gray-600 text-gray-100 text-sm shadow-sm focus:border-blue-500 focus:ring-blue-500">
                                 <option value="date_asc" {{ request('sort', 'date_asc') === 'date_asc' ? 'selected' : '' }}>Date (oldest first)</option>
                                 <option value="date_desc" {{ request('sort') === 'date_desc' ? 'selected' : '' }}>Date (newest first)</option>
@@ -264,17 +267,13 @@
                     $moreBaseUrl = route('search.more') . '?' . http_build_query(request()->except(['export', 'page', 'status']));
                 @endphp
                 <div class="bg-[#202020] border border-gray-700 overflow-hidden shadow-sm sm:rounded-lg p-6" x-data="taskFilter(@js($projects), @js($tags))">
-                    <div class="flex items-center justify-between mb-4">
-                        <h3 class="text-lg font-semibold text-gray-100">
-                            Search Results
-                            <span class="text-sm font-normal text-gray-500">({{ $totalFound }} found)</span>
-                        </h3>
-                        @if($tasksTotal > 0 || $completedTasksTotal > 0 || $archivedTasksTotal > 0)
-                            <a href="{{ request()->fullUrlWithQuery(['export' => 'markdown']) }}" class="px-3 py-1.5 bg-gray-700 border border-gray-600 text-xs text-gray-100 rounded hover:bg-gray-600">
-                                Export .md
-                            </a>
-                        @endif
+                    @if($tasksTotal > 0 || $completedTasksTotal > 0 || $archivedTasksTotal > 0)
+                    <div class="flex justify-end mb-4">
+                        <a href="{{ request()->fullUrlWithQuery(['export' => 'markdown']) }}" class="px-3 py-1.5 bg-gray-700 border border-gray-600 text-xs text-gray-100 rounded hover:bg-gray-600">
+                            Export .md
+                        </a>
                     </div>
+                    @endif
                     {{-- Filter bar / bulk-edit header --}}
                     <div class="mb-4">
                         {{-- Normal filter input (hidden in bulk mode) --}}

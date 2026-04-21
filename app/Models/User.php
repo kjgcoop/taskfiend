@@ -62,6 +62,17 @@ class User extends Authenticatable
         return $this->hasMany(Project::class, 'user_id');
     }
 
+    public function createDefaultProject(): Project
+    {
+        return Project::create([
+            'name'        => $this->name . "'s Inbox",
+            'description' => 'Personal inbox for quick task capture',
+            'user_id'     => $this->id,
+            'status'      => 'incomplete',
+            'is_default'  => true,
+        ]);
+    }
+
     public function defaultProject(): Project
     {
         $project = Project::where('user_id', $this->id)->where('is_default', true)->first();
