@@ -66,6 +66,7 @@ function completedTasksLoader(initialHasMore, initialNextPage, ajaxUrl) {
                 this.$refs.list.insertAdjacentHTML('beforeend', data.html);
                 this.hasMore  = data.hasMore;
                 this.nextPage = data.nextPage;
+                window.dispatchEvent(new CustomEvent('completed-tasks-loaded'));
             } catch (e) {
                 console.error('Failed to load more completed tasks:', e);
             } finally {

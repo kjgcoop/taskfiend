@@ -596,6 +596,11 @@
                     if (this.tags && this.tags.length > 0) {
                         Alpine.store('bulkEdit').tags = this.tags;
                     }
+
+                    // Re-apply filter when more completed/archived tasks are lazy-loaded
+                    window.addEventListener('completed-tasks-loaded', () => {
+                        if (this.query) this.filterTasks();
+                    });
                 });
             },
             switchToFilter() {
@@ -621,13 +626,13 @@
             },
             filterTasks() {
                 const container = this.$refs.taskContainer;
-                const tasks     = container.querySelectorAll('[data-filterable]');
+                const allTasks  = this.$el.querySelectorAll('[data-filterable]');
                 const rawQuery  = this.query.trim().toLowerCase();
 
                 if (!rawQuery) {
-                    tasks.forEach(el => el.style.display = '');
+                    allTasks.forEach(el => el.style.display = '');
                     this.noResults = false;
-                    Alpine.store('taskCount').visible  = tasks.length;
+                    Alpine.store('taskCount').visible  = container.querySelectorAll('[data-filterable]').length;
                     Alpine.store('taskCount').filtered = false;
                     return;
                 }
@@ -658,7 +663,7 @@
                 }
 
                 let visibleCount = 0;
-                tasks.forEach(el => {
+                allTasks.forEach(el => {
                     const taskName  = el.dataset.taskName  || '';
                     const project   = el.dataset.project   || '';
                     const tags      = el.dataset.tags      ? el.dataset.tags.split('|').filter(Boolean)      : [];
@@ -680,10 +685,10 @@
                     if (ok) for (const f of notUserFilters)      { if (assignees.some(a => a.includes(f)))              { ok = false; break; } }
 
                     el.style.display = ok ? '' : 'none';
-                    if (ok) visibleCount++;
+                    if (ok && container.contains(el)) visibleCount++;
                 });
 
-                this.noResults = visibleCount === 0 && tasks.length > 0;
+                this.noResults = visibleCount === 0 && container.querySelectorAll('[data-filterable]').length > 0;
                 Alpine.store('taskCount').visible  = visibleCount;
                 Alpine.store('taskCount').filtered = true;
             }
