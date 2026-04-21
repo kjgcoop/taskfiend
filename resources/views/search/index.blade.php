@@ -390,6 +390,8 @@
                         @endif
 
                         @if($tasksTotal === 0 && $completedTasksTotal === 0 && $archivedTasksTotal === 0)
+                            {{-- Ensures taskFilter (defined via @pushOnce in task-list) is always on the page --}}
+                            <x-task-list :tasks="collect()" />
                             <p class="text-gray-500 text-center py-8 italic">No tasks found matching your criteria.</p>
                         @endif
                     </div>
