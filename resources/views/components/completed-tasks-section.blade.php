@@ -14,7 +14,7 @@
 
 @if($displayCount > 0)
 <div class="mt-4 border-t border-gray-700 pt-4"
-     x-data="completedTasksLoader({{ $hasMore ? 'true' : 'false' }}, {{ $nextPage }}, {{ json_encode($ajaxUrl) }})">
+     x-data="completedTasksLoader({{ $hasMore ? 'true' : 'false' }}, {{ $nextPage }}, {{ json_encode($ajaxUrl) }}, {{ $displayCount }})">
     <button type="button"
             @click="showCompleted = !showCompleted"
             class="inline-flex items-center gap-1.5 text-sm text-gray-400 hover:text-gray-200 transition-colors select-none">
@@ -26,7 +26,7 @@
         </svg>
         <span :class="showCompleted ? 'text-gray-200' : ''">
             {{ $label }}
-            <span class="text-gray-600">({{ $displayCount }})</span>
+            <span class="text-gray-600" x-text="visibleCount !== null ? '(' + visibleCount + ' of ' + totalCount + ')' : '(' + totalCount + ')'"></span>
         </span>
     </button>
 
@@ -48,12 +48,25 @@
 @once
 @push('scripts')
 <script>
-function completedTasksLoader(initialHasMore, initialNextPage, ajaxUrl) {
+function completedTasksLoader(initialHasMore, initialNextPage, ajaxUrl, totalCount) {
     return {
         showCompleted: false,
         hasMore:  initialHasMore,
         nextPage: initialNextPage,
         loading:  false,
+        totalCount: totalCount,
+        visibleCount: null,
+
+        init() {
+            window.addEventListener('filter-updated', () => this.updateCount());
+        },
+
+        updateCount() {
+            if (!this.$refs.list) return;
+            const tasks = this.$refs.list.querySelectorAll('[data-filterable]');
+            const visible = Array.from(tasks).filter(el => el.style.display !== 'none').length;
+            this.visibleCount = Alpine.store('taskCount').filtered ? visible : null;
+        },
 
         async loadMore() {
             if (this.loading || !this.hasMore || !ajaxUrl) return;

@@ -635,6 +635,7 @@
                     this.noResults = false;
                     Alpine.store('taskCount').visible  = container.querySelectorAll('[data-filterable]').length;
                     Alpine.store('taskCount').filtered = false;
+                    window.dispatchEvent(new CustomEvent('filter-updated'));
                     return;
                 }
 
@@ -692,6 +693,7 @@
                 this.noResults = visibleCount === 0 && container.querySelectorAll('[data-filterable]').length > 0;
                 Alpine.store('taskCount').visible  = visibleCount;
                 Alpine.store('taskCount').filtered = true;
+                window.dispatchEvent(new CustomEvent('filter-updated'));
             }
         }
     };
