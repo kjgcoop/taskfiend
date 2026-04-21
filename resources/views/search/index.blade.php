@@ -9,7 +9,9 @@
     </x-slot>
 
     @php
-        $hasSearchParams = request()->hasAny(['q', 'tag_ids', 'project_id', 'location', 'has_location', 'date_from', 'date_to', 'has_date', 'assignee_id', 'creator_id', 'show_incomplete', 'show_done', 'show_archived', 'show_archived_projects', 'sort', 'search_title', 'search_description']);
+        $hasSearchParams          = request()->hasAny(['q', 'tag_ids', 'project_id', 'location', 'has_location', 'date_from', 'date_to', 'has_date', 'assignee_id', 'creator_id', 'show_incomplete', 'show_done', 'show_archived', 'show_archived_projects', 'sort', 'search_title', 'search_description']);
+        $defaultSearchTitle       = $hasSearchParams ? request()->boolean('search_title')       : true;
+        $defaultSearchDescription = $hasSearchParams ? request()->boolean('search_description') : true;
     @endphp
     <div class="py-12">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-6">
@@ -221,9 +223,7 @@
                     <!-- Status Filters -->
                     @php
                         $hasSearchParams = request()->hasAny(['q', 'tag_ids', 'project_id', 'location', 'has_location', 'date_from', 'date_to', 'has_date', 'assignee_id', 'creator_id', 'show_incomplete', 'show_done', 'show_archived', 'show_archived_projects', 'sort', 'search_title', 'search_description']);
-                        $defaultIncomplete        = $hasSearchParams ? request()->boolean('show_incomplete')        : true;
-                        $defaultSearchTitle       = $hasSearchParams ? request()->boolean('search_title')       : true;
-                        $defaultSearchDescription = $hasSearchParams ? request()->boolean('search_description') : true;
+                        $defaultIncomplete = $hasSearchParams ? request()->boolean('show_incomplete') : true;
                     @endphp
                     <div class="mb-6">
                         <label class="block text-sm font-medium text-gray-300 mb-2">Status</label>
