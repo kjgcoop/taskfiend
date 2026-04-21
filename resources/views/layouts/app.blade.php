@@ -165,13 +165,13 @@
                            @change="checkDate()"
                            :class="dateError ? 'border-red-500' : 'border-gray-600'"
                            class="text-sm bg-gray-700 border rounded px-2 py-1.5 text-gray-100 focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:opacity-40 disabled:cursor-not-allowed">
-                    <span x-show="dateError" x-text="dateError" class="text-xs text-red-400 whitespace-nowrap" style="display:none"></span>
                     <button @click="date = ''; dateError = ''" x-show="date && !clearDate" title="Clear date input"
                             class="text-gray-500 hover:text-gray-300 text-xs w-5 h-5 flex items-center justify-center" style="display:none">
                         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
                         </svg>
                     </button>
+                    <span x-show="dateError" x-text="dateError" class="text-xs text-red-400 whitespace-nowrap" style="display:none"></span>
                     <label class="flex items-center gap-1 text-xs text-gray-400 cursor-pointer whitespace-nowrap ml-0.5" title="Remove date from all selected tasks">
                         <input type="checkbox" x-model="clearDate" @change="if (clearDate) date = ''"
                                class="rounded border-gray-500 bg-gray-600 text-blue-500 focus:ring-blue-500 focus:ring-offset-gray-900">
