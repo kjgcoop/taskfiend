@@ -629,6 +629,7 @@
                         </svg>
                     </button>
                     <div class="flex items-center gap-3">
+                        <label for="sort-results" class="text-sm text-gray-400">Sort:</label>
                         <select id="sort-select" onchange="(function(v){const p=new URLSearchParams(window.location.search);p.set('sort',v);localStorage.setItem('task_sort_'+window.location.pathname,v);window.location.href=window.location.pathname+'?'+p.toString()})(this.value)"
                                 class="text-sm bg-gray-700 border border-gray-600 rounded px-2 py-1 text-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500">
                             <option value="date" {{ $sort === 'date' ? 'selected' : '' }}>Date & Time</option>
@@ -637,11 +638,6 @@
                             <option value="location" {{ $sort === 'location' ? 'selected' : '' }}>Location (A–Z)</option>
                             <option value="custom" {{ $sort === 'custom' ? 'selected' : '' }}>Custom Sort</option>
                         </select>
-                        @if(!$isInactive)
-                            <a href="{{ route('tasks.create') }}?project_id={{ $project->id }}" class="text-sm text-blue-400 hover:underline">
-                                Add Task
-                            </a>
-                        @endif
                     </div>
                 </div>
                 <div x-show="showIncomplete">
