@@ -133,11 +133,11 @@ class SearchController extends Controller
         }
 
         if ($request->filled('duration_min')) {
-            $baseQuery->where('duration', '>=', (int) $request->duration_min);
+            $baseQuery->where('duration_minutes', '>=', (int) $request->duration_min);
         }
 
         if ($request->filled('duration_max')) {
-            $baseQuery->where('duration', '<=', (int) $request->duration_max);
+            $baseQuery->where('duration_minutes', '<=', (int) $request->duration_max);
         }
 
         return $baseQuery;
