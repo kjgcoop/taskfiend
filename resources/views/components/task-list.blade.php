@@ -625,9 +625,10 @@
                 }
             },
             filterTasks() {
-                const container = this.$refs.taskContainer;
-                const allTasks  = this.$el.querySelectorAll('[data-filterable]');
-                const rawQuery  = this.query.trim().toLowerCase();
+                const container  = this.$refs.taskContainer;
+                const filterRoot = container.parentElement;
+                const allTasks   = filterRoot.querySelectorAll('[data-filterable]');
+                const rawQuery   = this.query.trim().toLowerCase();
 
                 if (!rawQuery) {
                     allTasks.forEach(el => el.style.display = '');
