@@ -30,7 +30,9 @@ class SearchController extends Controller
             'show_archived_projects' => 'nullable|boolean',
             'assignee_id'            => 'nullable|integer|exists:users,id',
             'creator_id'      => 'nullable|integer|exists:users,id',
-            'sort'            => 'nullable|in:date_asc,date_desc,name_asc,name_desc,created_desc,location_asc,location_desc',
+            'sort'               => 'nullable|in:date_asc,date_desc,name_asc,name_desc,created_desc,location_asc,location_desc',
+            'search_title'       => 'nullable|boolean',
+            'search_description' => 'nullable|boolean',
         ]);
     }
 
@@ -55,9 +57,23 @@ class SearchController extends Controller
 
         if ($request->filled('q')) {
             $searchText = $request->q;
-            $baseQuery->where(function ($q) use ($searchText) {
-                $q->where('name', 'like', '%' . $searchText . '%')
-                  ->orWhere('description', 'like', '%' . $searchText . '%');
+            $inTitle    = $request->boolean('search_title');
+            $inDesc     = $request->boolean('search_description');
+
+            if (!$inTitle && !$inDesc) {
+                $inTitle = true;
+                $inDesc  = true;
+            }
+
+            $baseQuery->where(function ($q) use ($searchText, $inTitle, $inDesc) {
+                if ($inTitle && $inDesc) {
+                    $q->where('name', 'like', '%' . $searchText . '%')
+                      ->orWhere('description', 'like', '%' . $searchText . '%');
+                } elseif ($inTitle) {
+                    $q->where('name', 'like', '%' . $searchText . '%');
+                } else {
+                    $q->where('description', 'like', '%' . $searchText . '%');
+                }
             });
         }
 

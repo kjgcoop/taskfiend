@@ -9,7 +9,7 @@
     </x-slot>
 
     @php
-        $hasSearchParams = request()->hasAny(['q', 'tag_ids', 'project_id', 'location', 'has_location', 'date_from', 'date_to', 'has_date', 'assignee_id', 'creator_id', 'show_incomplete', 'show_done', 'show_archived', 'show_archived_projects', 'sort']);
+        $hasSearchParams = request()->hasAny(['q', 'tag_ids', 'project_id', 'location', 'has_location', 'date_from', 'date_to', 'has_date', 'assignee_id', 'creator_id', 'show_incomplete', 'show_done', 'show_archived', 'show_archived_projects', 'sort', 'search_title', 'search_description']);
     @endphp
     <div class="py-12">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-6">
@@ -99,6 +99,23 @@
 
                     <!-- Collapsible filters -->
                     <div x-show="expanded" x-transition:enter="transition ease-out duration-150" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" x-transition:leave="transition ease-in duration-100" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0">
+
+                    <!-- Search scope -->
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-300 mb-2">Search in</label>
+                        <div class="flex items-center gap-6">
+                            <label class="inline-flex items-center cursor-pointer">
+                                <input type="checkbox" name="search_title" value="1" {{ $defaultSearchTitle ? 'checked' : '' }}
+                                       class="rounded border-gray-600 bg-gray-700 text-blue-600 focus:ring-blue-500">
+                                <span class="ml-2 text-sm text-gray-300">Title</span>
+                            </label>
+                            <label class="inline-flex items-center cursor-pointer">
+                                <input type="checkbox" name="search_description" value="1" {{ $defaultSearchDescription ? 'checked' : '' }}
+                                       class="rounded border-gray-600 bg-gray-700 text-blue-600 focus:ring-blue-500">
+                                <span class="ml-2 text-sm text-gray-300">Description</span>
+                            </label>
+                        </div>
+                    </div>
 
                     <!-- Project Filter -->
                     <div class="mb-4">
@@ -203,8 +220,10 @@
 
                     <!-- Status Filters -->
                     @php
-                        $hasSearchParams = request()->hasAny(['q', 'tag_ids', 'project_id', 'location', 'has_location', 'date_from', 'date_to', 'has_date', 'assignee_id', 'creator_id', 'show_incomplete', 'show_done', 'show_archived', 'show_archived_projects', 'sort']);
-                        $defaultIncomplete = $hasSearchParams ? request()->boolean('show_incomplete') : true;
+                        $hasSearchParams = request()->hasAny(['q', 'tag_ids', 'project_id', 'location', 'has_location', 'date_from', 'date_to', 'has_date', 'assignee_id', 'creator_id', 'show_incomplete', 'show_done', 'show_archived', 'show_archived_projects', 'sort', 'search_title', 'search_description']);
+                        $defaultIncomplete        = $hasSearchParams ? request()->boolean('show_incomplete')        : true;
+                        $defaultSearchTitle       = $hasSearchParams ? request()->boolean('search_title')       : true;
+                        $defaultSearchDescription = $hasSearchParams ? request()->boolean('search_description') : true;
                     @endphp
                     <div class="mb-6">
                         <label class="block text-sm font-medium text-gray-300 mb-2">Status</label>
