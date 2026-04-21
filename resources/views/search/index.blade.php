@@ -9,9 +9,11 @@
     </x-slot>
 
     @php
-        $hasSearchParams          = request()->hasAny(['q', 'tag_ids', 'project_id', 'location', 'has_location', 'date_from', 'date_to', 'has_date', 'assignee_id', 'creator_id', 'show_incomplete', 'show_done', 'show_archived', 'show_archived_projects', 'sort', 'search_title', 'search_description']);
+        $hasSearchParams          = request()->hasAny(['q', 'tag_ids', 'project_id', 'location', 'has_location', 'date_from', 'date_to', 'has_date', 'no_date', 'assignee_id', 'creator_id', 'show_incomplete', 'show_done', 'show_archived', 'show_archived_projects', 'sort', 'search_title', 'search_description']);
         $defaultSearchTitle       = $hasSearchParams ? request()->boolean('search_title')       : true;
         $defaultSearchDescription = $hasSearchParams ? request()->boolean('search_description') : true;
+        $defaultHasDate           = $hasSearchParams ? request()->boolean('has_date') : true;
+        $defaultNoDate            = $hasSearchParams ? request()->boolean('no_date')  : true;
     @endphp
     <div class="py-12">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-6">
@@ -165,11 +167,16 @@
                                    value="{{ request('date_to') }}"
                                    class="w-full rounded-md bg-gray-700 border-gray-600 text-gray-100 shadow-sm focus:border-blue-500 focus:ring-blue-500">
                         </div>
-                        <div class="flex items-end pb-1">
+                        <div class="flex flex-col justify-end gap-2 pb-1">
                             <label class="inline-flex items-center cursor-pointer">
-                                <input type="checkbox" name="has_date" value="1" {{ request('has_date') ? 'checked' : '' }}
+                                <input type="checkbox" name="has_date" value="1" {{ $defaultHasDate ? 'checked' : '' }}
                                        class="rounded border-gray-600 bg-gray-700 text-blue-600 focus:ring-blue-500">
                                 <span class="ml-2 text-sm text-gray-300">Has a date</span>
+                            </label>
+                            <label class="inline-flex items-center cursor-pointer">
+                                <input type="checkbox" name="no_date" value="1" {{ $defaultNoDate ? 'checked' : '' }}
+                                       class="rounded border-gray-600 bg-gray-700 text-blue-600 focus:ring-blue-500">
+                                <span class="ml-2 text-sm text-gray-300">Has no date</span>
                             </label>
                         </div>
                     </div>

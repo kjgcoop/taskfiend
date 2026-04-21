@@ -33,6 +33,7 @@ class SearchController extends Controller
             'sort'               => 'nullable|in:date_asc,date_desc,name_asc,name_desc,created_desc,location_asc,location_desc',
             'search_title'       => 'nullable|boolean',
             'search_description' => 'nullable|boolean',
+            'no_date'            => 'nullable|boolean',
         ]);
     }
 
@@ -94,8 +95,13 @@ class SearchController extends Controller
             }
         }
 
-        if ($request->boolean('has_date')) {
+        $filterHasDate = $request->boolean('has_date');
+        $filterNoDate  = $request->boolean('no_date');
+
+        if ($filterHasDate && !$filterNoDate) {
             $baseQuery->whereNotNull('date');
+        } elseif (!$filterHasDate && $filterNoDate) {
+            $baseQuery->whereNull('date');
         }
 
         if ($request->filled('date_from')) {
