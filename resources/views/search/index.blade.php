@@ -265,13 +265,13 @@
                             <select id="sort-results"
                                     onchange="const u = new URL(window.location); u.searchParams.set('sort', this.value); window.location = u"
                                     class="rounded-md bg-gray-700 border-gray-600 text-gray-100 text-sm shadow-sm focus:border-blue-500 focus:ring-blue-500">
-                                <option value="date_asc"      {{ request('sort', 'date_asc') === 'date_asc'      ? 'selected' : '' }}>Date (oldest first)</option>
-                                <option value="date_desc"     {{ request('sort') === 'date_desc'     ? 'selected' : '' }}>Date (newest first)</option>
+                                <option value="date_asc"      {{ request('sort', 'date_asc') === 'date_asc'      ? 'selected' : '' }}>Date & Time</option>
+                                <!-- <option value="date_desc"     {{ request('sort') === 'date_desc'     ? 'selected' : '' }}>Date (newest first)</option> -->
+                                <option value="created_desc"  {{ request('sort') === 'created_desc'  ? 'selected' : '' }}>Date Added</option>
                                 <option value="name_asc"      {{ request('sort') === 'name_asc'      ? 'selected' : '' }}>Name (A–Z)</option>
-                                <option value="name_desc"     {{ request('sort') === 'name_desc'     ? 'selected' : '' }}>Name (Z–A)</option>
-                                <option value="created_desc"  {{ request('sort') === 'created_desc'  ? 'selected' : '' }}>Recently created</option>
+                                <!-- <option value="name_desc"     {{ request('sort') === 'name_desc'     ? 'selected' : '' }}>Name (Z–A)</option> -->
                                 <option value="location_asc"  {{ request('sort') === 'location_asc'  ? 'selected' : '' }}>Location (A–Z)</option>
-                                <option value="location_desc" {{ request('sort') === 'location_desc' ? 'selected' : '' }}>Location (Z–A)</option>
+                                <!-- <option value="location_desc" {{ request('sort') === 'location_desc' ? 'selected' : '' }}>Location (Z–A)</option> -->
                             </select>
                         </div>
                     </div>
