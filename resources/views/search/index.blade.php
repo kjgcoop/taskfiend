@@ -266,7 +266,8 @@
                     // Base URL for load-more AJAX calls — all current search params minus export/page/status
                     $moreBaseUrl = route('search.more') . '?' . http_build_query(request()->except(['export', 'page', 'status']));
                 @endphp
-                <div class="bg-[#202020] border border-gray-700 overflow-hidden shadow-sm sm:rounded-lg p-6" x-data="taskFilter(@js($projects), @js($tags))">
+                <div class="bg-[#202020] border border-gray-700 overflow-hidden shadow-sm sm:rounded-lg p-6" x-data="taskFilter(@js($projects), @js($tags), @js($users), @js($locations))">
+                    <x-task-input-bar />
                     @if($tasksTotal > 0 || $completedTasksTotal > 0 || $archivedTasksTotal > 0)
                     <div class="flex justify-end mb-4">
                         <a href="{{ request()->fullUrlWithQuery(['export' => 'markdown']) }}" class="px-3 py-1.5 bg-gray-700 border border-gray-600 text-xs text-gray-100 rounded hover:bg-gray-600">
@@ -274,51 +275,6 @@
                         </a>
                     </div>
                     @endif
-                    {{-- Filter bar / bulk-edit header --}}
-                    <div class="mb-4">
-                        {{-- Normal filter input (hidden in bulk mode) --}}
-                        <div x-show="!$store.bulkEdit.active" class="flex gap-2 items-center">
-                            <input type="text"
-                                   x-model="query"
-                                   x-on:input="filterTasks()"
-                                   x-on:keydown.escape="clearFilter()"
-                                   placeholder="Filter results... (# project, @ tag)"
-                                   class="flex-1 px-4 py-2 bg-gray-700 border border-gray-600 rounded-md text-gray-100 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                            <button @click="$store.bulkEdit.toggle()"
-                                    title="Bulk edit mode"
-                                    :class="$store.bulkEdit.active ? 'text-blue-400 bg-gray-700' : 'text-gray-500 hover:text-gray-300'"
-                                    class="flex-shrink-0 p-2 rounded-md hover:bg-gray-700 transition">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
-                                </svg>
-                            </button>
-                        </div>
-                        {{-- Bulk edit header (shown in bulk mode) --}}
-                        <div x-show="$store.bulkEdit.active" x-cloak class="flex gap-3 items-center">
-                            <button @click="$store.bulkEdit.toggle()"
-                                    title="Exit bulk edit"
-                                    class="flex-shrink-0 p-2 text-blue-400 bg-gray-700 rounded-md hover:bg-gray-600 transition">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
-                                </svg>
-                            </button>
-                            <span class="text-sm font-medium text-blue-400">Bulk edit</span>
-                            <span class="text-sm text-gray-400">
-                                <span x-text="$store.bulkEdit.count"></span>
-                                <span x-text="$store.bulkEdit.count === 1 ? 'task' : 'tasks'"></span>
-                                selected
-                            </span>
-                            <button @click="$store.bulkEdit.selectAllVisible()"
-                                    class="text-xs text-blue-400 hover:text-blue-300 underline">
-                                Select all visible
-                            </button>
-                            <button @click="$store.bulkEdit.deselectAll()"
-                                    x-show="$store.bulkEdit.count > 0"
-                                    class="text-xs text-gray-500 hover:text-gray-300 underline">
-                                Deselect all
-                            </button>
-                        </div>
-                    </div>
                     <div x-ref="taskContainer">
                         @if($tasksTotal > 0)
                             <div x-data="searchSectionLoader({{ $tasksHasMore ? 'true' : 'false' }}, {{ json_encode($moreBaseUrl . '&status=incomplete') }})">

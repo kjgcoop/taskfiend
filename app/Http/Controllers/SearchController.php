@@ -131,7 +131,20 @@ class SearchController extends Controller
         $projects = Project::activeForUser(Auth::id())->orderByRaw('LOWER(name)')->get();
 
         $tags  = Tag::orderByRaw('LOWER(tag_name)')->get();
-        $users = User::whereNull('email_enabled_at')->orderBy('name')->get();
+        $users = User::whereNull('email_enabled_at')->orderByRaw('LOWER(name)')->get(['id', 'name']);
+
+        $locations = Task::where('status', 'incomplete')
+            ->whereNotNull('location')
+            ->where('location', '!=', '')
+            ->where(function ($q) {
+                $q->where('creator_id', Auth::id())
+                  ->orWhereHas('assignees', function ($subq) {
+                      $subq->where('users.id', Auth::id());
+                  });
+            })
+            ->distinct()
+            ->orderByRaw('LOWER(location)')
+            ->pluck('location');
 
         $with = ['creator', 'project', 'tags', 'assignees', 'attachments', 'comments'];
         $sort = $request->input('sort', 'date_asc');
@@ -177,7 +190,7 @@ class SearchController extends Controller
             'tasks', 'tasksHasMore', 'tasksTotal',
             'completedTasks', 'completedTasksHasMore', 'completedTasksTotal',
             'archivedTasks', 'archivedTasksHasMore', 'archivedTasksTotal',
-            'projects', 'tags', 'users', 'breakdown'
+            'projects', 'tags', 'users', 'locations', 'breakdown'
         ));
     }
 

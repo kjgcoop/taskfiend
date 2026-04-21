@@ -626,6 +626,7 @@
             },
             filterTasks() {
                 const container  = this.$refs.taskContainer;
+                if (!container) return;
                 const filterRoot = container.closest('[x-data]');
                 const allTasks   = filterRoot.querySelectorAll('[data-filterable]');
                 const rawQuery   = this.query.trim().toLowerCase();
