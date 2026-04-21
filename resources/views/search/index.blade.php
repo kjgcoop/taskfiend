@@ -240,18 +240,6 @@
                         <a href="{{ route('search') }}" class="text-sm text-gray-400 hover:text-gray-300">
                             Clear
                         </a>
-                        <div class="ml-auto flex items-center gap-2">
-                            <label for="sort" class="text-sm text-gray-400">Sort: </label>
-                            <select name="sort" id="sort" class="rounded-md bg-gray-700 border-gray-600 text-gray-100 text-sm shadow-sm focus:border-blue-500 focus:ring-blue-500">
-                                <option value="date_asc" {{ request('sort', 'date_asc') === 'date_asc' ? 'selected' : '' }}>Date (oldest first)</option>
-                                <option value="date_desc" {{ request('sort') === 'date_desc' ? 'selected' : '' }}>Date (newest first)</option>
-                                <option value="name_asc" {{ request('sort') === 'name_asc' ? 'selected' : '' }}>Name (A–Z)</option>
-                                <option value="name_desc" {{ request('sort') === 'name_desc' ? 'selected' : '' }}>Name (Z–A)</option>
-                                <option value="created_desc" {{ request('sort') === 'created_desc' ? 'selected' : '' }}>Recently created</option>
-                                <option value="location_asc" {{ request('sort') === 'location_asc' ? 'selected' : '' }}>Location (A–Z)</option>
-                                <option value="location_desc" {{ request('sort') === 'location_desc' ? 'selected' : '' }}>Location (Z–A)</option>
-                            </select>
-                        </div>
                     </div>
 
                     </div>{{-- end collapsible filters --}}
@@ -269,10 +257,24 @@
                 <div class="bg-[#202020] border border-gray-700 overflow-hidden shadow-sm sm:rounded-lg p-6" x-data="taskFilter(@js($projects), @js($tags), @js($users), @js($locations))">
                     <x-task-input-bar />
                     @if($tasksTotal > 0 || $completedTasksTotal > 0 || $archivedTasksTotal > 0)
-                    <div class="flex justify-end mb-4">
+                    <div class="flex justify-end items-center gap-3 mb-4">
                         <a href="{{ request()->fullUrlWithQuery(['export' => 'markdown']) }}" class="px-3 py-1.5 bg-gray-700 border border-gray-600 text-xs text-gray-100 rounded hover:bg-gray-600">
                             Export .md
                         </a>
+                        <div class="flex items-center gap-2">
+                            <label for="sort-results" class="text-sm text-gray-400">Sort:</label>
+                            <select id="sort-results"
+                                    onchange="const u = new URL(window.location); u.searchParams.set('sort', this.value); window.location = u"
+                                    class="rounded-md bg-gray-700 border-gray-600 text-gray-100 text-sm shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                                <option value="date_asc"      {{ request('sort', 'date_asc') === 'date_asc'      ? 'selected' : '' }}>Date (oldest first)</option>
+                                <option value="date_desc"     {{ request('sort') === 'date_desc'     ? 'selected' : '' }}>Date (newest first)</option>
+                                <option value="name_asc"      {{ request('sort') === 'name_asc'      ? 'selected' : '' }}>Name (A–Z)</option>
+                                <option value="name_desc"     {{ request('sort') === 'name_desc'     ? 'selected' : '' }}>Name (Z–A)</option>
+                                <option value="created_desc"  {{ request('sort') === 'created_desc'  ? 'selected' : '' }}>Recently created</option>
+                                <option value="location_asc"  {{ request('sort') === 'location_asc'  ? 'selected' : '' }}>Location (A–Z)</option>
+                                <option value="location_desc" {{ request('sort') === 'location_desc' ? 'selected' : '' }}>Location (Z–A)</option>
+                            </select>
+                        </div>
                     </div>
                     @endif
                     <div x-ref="taskContainer">
