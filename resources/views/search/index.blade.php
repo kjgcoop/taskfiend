@@ -263,7 +263,7 @@
                         <div class="flex items-center gap-2">
                             <label for="sort-results" class="text-sm text-gray-400">Sort:</label>
                             <select id="sort-results"
-                                    onchange="const u = new URL(window.location.href); u.searchParams.set('sort', this.value); window.location = u"
+                                    onchange="(function(v){const p=new URLSearchParams(window.location.search);p.set('sort',v);window.location.href=window.location.pathname+'?'+p.toString()})(this.value)"
                                     class="rounded-md bg-gray-700 border-gray-600 text-gray-100 text-sm shadow-sm focus:border-blue-500 focus:ring-blue-500">
                                 <option value="date_asc"      {{ request('sort', 'date_asc') === 'date_asc'      ? 'selected' : '' }}>Date & Time</option>
                                 <!-- <option value="date_desc"     {{ request('sort') === 'date_desc'     ? 'selected' : '' }}>Date (newest first)</option> -->
