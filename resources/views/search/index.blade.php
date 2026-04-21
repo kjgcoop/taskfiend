@@ -9,7 +9,7 @@
     </x-slot>
 
     @php
-        $hasSearchParams          = request()->hasAny(['q', 'tag_ids', 'project_id', 'location', 'has_location', 'date_from', 'date_to', 'has_date', 'no_date', 'assignee_id', 'creator_id', 'show_incomplete', 'show_done', 'show_archived', 'show_archived_projects', 'sort', 'search_title', 'search_description']);
+        $hasSearchParams          = request()->hasAny(['q', 'tag_ids', 'project_id', 'location', 'has_location', 'date_from', 'date_to', 'has_date', 'no_date', 'duration_min', 'duration_max', 'assignee_id', 'creator_id', 'show_incomplete', 'show_done', 'show_archived', 'show_archived_projects', 'sort', 'search_title', 'search_description']);
         $defaultSearchTitle       = $hasSearchParams ? request()->boolean('search_title')       : true;
         $defaultSearchDescription = $hasSearchParams ? request()->boolean('search_description') : true;
         $defaultHasDate           = $hasSearchParams ? request()->boolean('has_date') : true;
@@ -178,6 +178,26 @@
                                        class="rounded border-gray-600 bg-gray-700 text-blue-600 focus:ring-blue-500">
                                 <span class="ml-2 text-sm text-gray-300">Has no date</span>
                             </label>
+                        </div>
+                    </div>
+
+                    <!-- Duration Filter -->
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-300 mb-2">Duration (minutes)</label>
+                        <div class="flex items-end gap-3">
+                            <div>
+                                <label for="duration_min" class="block text-xs text-gray-400 mb-1">At least</label>
+                                <input type="number" name="duration_min" id="duration_min" min="0"
+                                       value="{{ request('duration_min') }}"
+                                       class="w-28 rounded-md bg-gray-700 border-gray-600 text-gray-100 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                            </div>
+                            <span class="text-gray-500 pb-2">–</span>
+                            <div>
+                                <label for="duration_max" class="block text-xs text-gray-400 mb-1">At most</label>
+                                <input type="number" name="duration_max" id="duration_max" min="0"
+                                       value="{{ request('duration_max') }}"
+                                       class="w-28 rounded-md bg-gray-700 border-gray-600 text-gray-100 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                            </div>
                         </div>
                     </div>
 

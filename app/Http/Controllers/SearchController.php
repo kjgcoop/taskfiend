@@ -34,6 +34,8 @@ class SearchController extends Controller
             'search_title'       => 'nullable|boolean',
             'search_description' => 'nullable|boolean',
             'no_date'            => 'nullable|boolean',
+            'duration_min'       => 'nullable|integer|min:0',
+            'duration_max'       => 'nullable|integer|min:0',
         ]);
     }
 
@@ -128,6 +130,14 @@ class SearchController extends Controller
 
         if ($request->boolean('has_location')) {
             $baseQuery->whereNotNull('location')->where('location', '!=', '');
+        }
+
+        if ($request->filled('duration_min')) {
+            $baseQuery->where('duration', '>=', (int) $request->duration_min);
+        }
+
+        if ($request->filled('duration_max')) {
+            $baseQuery->where('duration', '<=', (int) $request->duration_max);
         }
 
         return $baseQuery;
