@@ -40,6 +40,14 @@ if (! function_exists('render_body')) {
 
         $userId = auth()->id();
 
+        // Only resolve bare URLs that point at this app instance (same host + port).
+        $appHost  = request()->getHttpHost(); // e.g. "example.com" or "example.com:8000"
+        $isAppUrl = function (string $url) use ($appHost): bool {
+            $host = parse_url($url, PHP_URL_HOST);
+            $port = parse_url($url, PHP_URL_PORT);
+            return ($port ? "{$host}:{$port}" : $host) === $appHost;
+        };
+
         // ── Collect all reference IDs so we can batch-load ──────────────────
         // Bracket notation
         preg_match_all('/\[task:(\d+)\]/',    $text, $tm);
@@ -130,7 +138,8 @@ if (! function_exists('render_body')) {
         // ── Bare app URLs: /tasks/N[/…] ─────────────────────────────────────
         $text = preg_replace_callback(
             '~(?<!\]\()https?://[^\s\])"\'<>#]*/tasks/(\d+)[^\s\])"\'<>#]*~i',
-            function ($m) use ($tasks, $userId, $mdText) {
+            function ($m) use ($tasks, $userId, $mdText, $isAppUrl) {
+                if (! $isAppUrl($m[0])) return $m[0];
                 $task = $tasks->get((int) $m[1]);
                 if (! $task) return $m[0];
 
@@ -155,7 +164,8 @@ if (! function_exists('render_body')) {
         // ── Bare app URLs: /projects/N[/…] ──────────────────────────────────
         $text = preg_replace_callback(
             '~(?<!\]\()https?://[^\s\])"\'<>#]*/projects/(\d+)[^\s\])"\'<>#]*~i',
-            function ($m) use ($projects, $userId, $mdText) {
+            function ($m) use ($projects, $userId, $mdText, $isAppUrl) {
+                if (! $isAppUrl($m[0])) return $m[0];
                 $project = $projects->get((int) $m[1]);
                 if (! $project) return $m[0];
 
@@ -180,7 +190,8 @@ if (! function_exists('render_body')) {
         // ── Bare app URLs: /tags/N[/…] ───────────────────────────────────────
         $text = preg_replace_callback(
             '~(?<!\]\()https?://[^\s\])"\'<>#]*/tags/(\d+)[^\s\])"\'<>#]*~i',
-            function ($m) use ($tags, $mdText) {
+            function ($m) use ($tags, $mdText, $isAppUrl) {
+                if (! $isAppUrl($m[0])) return $m[0];
                 $tag = $tags->get((int) $m[1]);
                 if (! $tag) return $m[0];
 
