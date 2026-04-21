@@ -311,13 +311,13 @@
                             <select id="sort-results"
                                     onchange="(function(v){const p=new URLSearchParams(window.location.search);p.set('sort',v);window.location.href=window.location.pathname+'?'+p.toString()})(this.value)"
                                     class="rounded-md bg-gray-700 border-gray-600 text-gray-100 text-sm shadow-sm focus:border-blue-500 focus:ring-blue-500">
-                                <option value="date_asc"      {{ request('sort', 'date_asc') === 'date_asc'      ? 'selected' : '' }}>Date & Time</option>
-                                <!-- <option value="date_desc"     {{ request('sort') === 'date_desc'     ? 'selected' : '' }}>Date (newest first)</option> -->
+                                <option value="date_asc"      {{ request('sort', 'date_asc') === 'date_asc'      ? 'selected' : '' }}>Date & Time (oldest first)</option>
+                                <option value="date_desc"     {{ request('sort') === 'date_desc'     ? 'selected' : '' }}>Date & Time (newest first)</option>
                                 <option value="created_desc"  {{ request('sort') === 'created_desc'  ? 'selected' : '' }}>Date Added</option>
                                 <option value="name_asc"      {{ request('sort') === 'name_asc'      ? 'selected' : '' }}>Name (A–Z)</option>
-                                <!-- <option value="name_desc"     {{ request('sort') === 'name_desc'     ? 'selected' : '' }}>Name (Z–A)</option> -->
+                                <option value="name_desc"     {{ request('sort') === 'name_desc'     ? 'selected' : '' }}>Name (Z–A)</option>
                                 <option value="location_asc"  {{ request('sort') === 'location_asc'  ? 'selected' : '' }}>Location (A–Z)</option>
-                                <!-- <option value="location_desc" {{ request('sort') === 'location_desc' ? 'selected' : '' }}>Location (Z–A)</option> -->
+                                <option value="location_desc" {{ request('sort') === 'location_desc' ? 'selected' : '' }}>Location (Z–A)</option>
                             </select>
                         </div>
                     </div>
@@ -483,12 +483,12 @@
                         this.autocompleteType = 'project';
                         this.autocompleteQuery = projectMatch[1];
                         this.autocompleteIndex = 0;
-                        this.showAutocomplete = true;
+                        this.showAutocomplete = this.filteredProjects.length > 0;
                     } else if (tagMatch) {
                         this.autocompleteType = 'tag';
                         this.autocompleteQuery = tagMatch[1];
                         this.autocompleteIndex = 0;
-                        this.showAutocomplete = true;
+                        this.showAutocomplete = this.filteredTags.length > 0;
                     } else {
                         this.showAutocomplete = false;
                     }
