@@ -257,14 +257,14 @@
                     this.autocompleteIndex = 0;
                     this.autocompleteLocationMap = false;
                     this.autocompleteLocationQuoted = false;
-                    this.showAutocomplete = true;
+                    this.showAutocomplete = this.filteredProjects.length > 0;
                 } else if (tagMatch && this.tags.length > 0) {
                     this.autocompleteType = 'tag';
                     this.autocompleteQuery = tagMatch[1];
                     this.autocompleteIndex = 0;
                     this.autocompleteLocationMap = false;
                     this.autocompleteLocationQuoted = false;
-                    this.showAutocomplete = true;
+                    this.showAutocomplete = this.filteredTags.length > 0;
                 } else if (mapLocQuotedMatch) {
                     this.autocompleteType = 'location';
                     this.autocompleteQuery = mapLocQuotedMatch[1];
@@ -299,7 +299,7 @@
                     this.autocompleteIndex = 0;
                     this.autocompleteLocationMap = false;
                     this.autocompleteLocationQuoted = false;
-                    this.showAutocomplete = true;
+                    this.showAutocomplete = this.filteredUsers.length > 0;
                 } else {
                     this.showAutocomplete = false;
                 }
@@ -327,13 +327,13 @@
                     this.autocompleteQuery = notProjectMatch[1];
                     this.autocompleteNot = true;
                     this.autocompleteIndex = 0;
-                    this.showAutocomplete = true;
+                    this.showAutocomplete = this.filteredProjects.length > 0;
                 } else if (notTagMatch && this.tags.length > 0) {
                     this.autocompleteType = 'tag';
                     this.autocompleteQuery = notTagMatch[1];
                     this.autocompleteNot = true;
                     this.autocompleteIndex = 0;
-                    this.showAutocomplete = true;
+                    this.showAutocomplete = this.filteredTags.length > 0;
                 } else if (notLocMatch) {
                     this.autocompleteType = 'location';
                     this.autocompleteQuery = notLocMatch[1];
@@ -347,19 +347,19 @@
                     this.autocompleteQuery = notUserMatch[1];
                     this.autocompleteNot = true;
                     this.autocompleteIndex = 0;
-                    this.showAutocomplete = true;
+                    this.showAutocomplete = this.filteredUsers.length > 0;
                 } else if (projectMatch && this.projects.length > 0) {
                     this.autocompleteType = 'project';
                     this.autocompleteQuery = projectMatch[1];
                     this.autocompleteNot = false;
                     this.autocompleteIndex = 0;
-                    this.showAutocomplete = true;
+                    this.showAutocomplete = this.filteredProjects.length > 0;
                 } else if (tagMatch && this.tags.length > 0) {
                     this.autocompleteType = 'tag';
                     this.autocompleteQuery = tagMatch[1];
                     this.autocompleteNot = false;
                     this.autocompleteIndex = 0;
-                    this.showAutocomplete = true;
+                    this.showAutocomplete = this.filteredTags.length > 0;
                 } else if (locationMatch) {
                     this.autocompleteType = 'location';
                     this.autocompleteQuery = locationMatch[1];
@@ -373,7 +373,7 @@
                     this.autocompleteQuery = userMatch[1];
                     this.autocompleteNot = false;
                     this.autocompleteIndex = 0;
-                    this.showAutocomplete = true;
+                    this.showAutocomplete = this.filteredUsers.length > 0;
                 } else {
                     this.showAutocomplete = false;
                     this.autocompleteNot = false;
