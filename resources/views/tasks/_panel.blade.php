@@ -190,7 +190,6 @@
                             </svg>
                         </button>
                         <input type="date" x-ref="datePicker" @change="pickDate($event.target.value)"
-                               :min="new Date().toLocaleDateString('en-CA')"
                                class="absolute inset-0 opacity-0 w-full h-full cursor-pointer">
                     </div>
                 </div>
@@ -906,6 +905,18 @@
 
             async pickDate(value) {
                 if (!value) return;
+                const now = new Date();
+                const today = now.getFullYear() + '-' +
+                    String(now.getMonth() + 1).padStart(2, '0') + '-' +
+                    String(now.getDate()).padStart(2, '0');
+                if (value < today) {
+                    this.dateError = 'Date cannot be in the past';
+                    this.dateText = '';
+                    this.fields.date = '';
+                    this.datePreview = '';
+                    this.$refs.datePicker.value = '';
+                    return;
+                }
                 const d = new Date(value + 'T12:00:00');
                 const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
                 this.dateText = d.toLocaleDateString('en-US', options);
