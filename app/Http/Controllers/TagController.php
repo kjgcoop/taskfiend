@@ -72,7 +72,7 @@ class TagController extends Controller
             'name'     => $tasksQuery->orderByRaw($reversed ? 'LOWER(name) DESC' : 'LOWER(name) ASC'),
             'custom'   => $tasksQuery->orderByRaw('CASE WHEN tag_task.sort_order IS NULL THEN 1 ELSE 0 END, tag_task.sort_order ASC, tasks.date IS NULL, tasks.date ASC, tasks.time IS NULL, tasks.time ASC'),
             'location' => $tasksQuery->orderByRaw($reversed ? '(location IS NULL OR location = \'\') ASC, LOWER(location) DESC' : '(location IS NULL OR location = \'\') ASC, LOWER(location) ASC'),
-            default    => $tasksQuery->orderByRaw($reversed ? 'date IS NULL, date DESC, time IS NULL, time DESC' : 'date IS NULL, date ASC, time IS NULL, time ASC'),
+            default    => $tasksQuery->orderByRaw($reversed ? 'tasks.date IS NULL, tasks.date DESC, tasks.time IS NULL, tasks.time DESC' : 'tasks.date IS NULL, tasks.date ASC, tasks.time IS NULL, tasks.time ASC'),
         };
         $tasks = $tasksQuery->get();
 

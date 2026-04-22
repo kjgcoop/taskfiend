@@ -74,7 +74,8 @@ class ProjectController extends Controller
     {
         $this->authorizeProjectAccess($project);
 
-        $sort = $request->input('sort', 'date');
+        $sort     = $request->input('sort', 'date');
+        $reversed = $request->boolean('reversed');
 
         $isDirectMember = $project->user_id === Auth::id()
             || $project->assignees()->where('users.id', Auth::id())->exists();
