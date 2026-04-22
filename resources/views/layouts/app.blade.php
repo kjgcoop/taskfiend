@@ -182,7 +182,7 @@
                     <input type="text"
                            x-model="naturalDate"
                            :disabled="clearDate"
-                           @keydown.enter.prevent="applyNaturalDate()"
+                           @keydown.enter.prevent="applyNaturalDate(true)"
                            @blur="applyNaturalDate()"
                            @input="naturalDateError = ''"
                            placeholder="or: next mon"
@@ -369,7 +369,7 @@
                         }
                     },
 
-                    async applyNaturalDate() {
+                    async applyNaturalDate(andSubmit = false) {
                         const input = this.naturalDate.trim();
                         if (!input) return;
                         this.naturalDateLoading = true;
@@ -385,6 +385,7 @@
                                 this.clearDate = false;
                                 this.dateError = '';
                                 this.naturalDate = '';
+                                if (andSubmit) this.openConfirm();
                             } else {
                                 this.naturalDateError = 'Not recognized';
                             }
