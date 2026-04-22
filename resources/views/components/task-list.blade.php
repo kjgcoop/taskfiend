@@ -860,7 +860,7 @@
             <div class="flex items-start gap-4">
                 <!-- Drag handle (only in custom sort mode on root-level, non-read-only tasks) -->
                 @if($sortable && !$readOnly && $depth === 0)
-                <div class="drag-handle mt-1.5 flex-shrink-0 touch-none
+                <div class="drag-handle self-stretch flex items-center flex-shrink-0 touch-none
                             opacity-0 group-hover:opacity-100 transition-opacity"
                      style="cursor: grab"
                      :class="{ 'invisible pointer-events-none': $store.bulkEdit.active }"
