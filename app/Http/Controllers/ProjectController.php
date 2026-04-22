@@ -128,11 +128,11 @@ class ProjectController extends Controller
                           ]);
                 }
             ]))
-            ->when($sort === 'created',  fn($q) => $q->orderBy('created_at', 'desc'))
-            ->when($sort === 'name',     fn($q) => $q->orderByRaw('LOWER(name) ASC'))
+            ->when($sort === 'created',  fn($q) => $q->orderBy('created_at', $reversed ? 'asc' : 'desc'))
+            ->when($sort === 'name',     fn($q) => $q->orderByRaw($reversed ? 'LOWER(name) DESC' : 'LOWER(name) ASC'))
             ->when($sort === 'custom',   fn($q) => $q->orderByRaw('CASE WHEN project_sort_order IS NULL THEN 1 ELSE 0 END, project_sort_order ASC, date IS NULL, date ASC, time IS NULL, time ASC'))
-            ->when($sort === 'location', fn($q) => $q->orderByRaw('(location IS NULL OR location = \'\') ASC, LOWER(location) ASC'))
-            ->when(!in_array($sort, ['created', 'name', 'custom', 'location']), fn($q) => $q->orderByRaw('date IS NULL, date ASC, time IS NULL, time ASC'))
+            ->when($sort === 'location', fn($q) => $q->orderByRaw($reversed ? '(location IS NULL OR location = \'\') ASC, LOWER(location) DESC' : '(location IS NULL OR location = \'\') ASC, LOWER(location) ASC'))
+            ->when(!in_array($sort, ['created', 'name', 'custom', 'location']), fn($q) => $q->orderByRaw($reversed ? 'date IS NULL, date DESC, time IS NULL, time DESC' : 'date IS NULL, date ASC, time IS NULL, time ASC'))
 //            ->orderBy('date')
 //            ->orderBy('time')
             ->get();

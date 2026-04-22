@@ -26,14 +26,14 @@ class DashboardController extends Controller
     }
 
     /** Apply sort ordering to a task query based on the sort parameter. */
-    private function applySortOrder($query, string $sort): void
+    private function applySortOrder($query, string $sort, bool $reversed = false): void
     {
         match ($sort) {
-            'created'  => $query->orderBy('created_at', 'desc'),
-            'name'     => $query->orderByRaw('LOWER(name) ASC'),
+            'created'  => $query->orderBy('created_at', $reversed ? 'asc' : 'desc'),
+            'name'     => $query->orderByRaw($reversed ? 'LOWER(name) DESC' : 'LOWER(name) ASC'),
             'custom'   => $query->orderByRaw('CASE WHEN sort_order IS NULL THEN 1 ELSE 0 END, sort_order ASC, date IS NULL, date ASC, time IS NULL, time ASC'),
-            'location' => $query->orderByRaw('(location IS NULL OR location = \'\') ASC, LOWER(location) ASC'),
-            default    => $query->orderByRaw('date IS NULL, date ASC, time IS NULL, time ASC'),
+            'location' => $query->orderByRaw($reversed ? '(location IS NULL OR location = \'\') ASC, LOWER(location) DESC' : '(location IS NULL OR location = \'\') ASC, LOWER(location) ASC'),
+            default    => $query->orderByRaw($reversed ? 'date IS NULL, date DESC, time IS NULL, time DESC' : 'date IS NULL, date ASC, time IS NULL, time ASC'),
         };
     }
 
@@ -73,7 +73,8 @@ class DashboardController extends Controller
 
     public function overdue(Request $request)
     {
-        $sort = $request->input('sort', 'date');
+        $sort     = $request->input('sort', 'date');
+        $reversed = $request->boolean('reversed');
 
         $tasksQuery = Task::query()
             ->where(function ($q) {
@@ -89,7 +90,7 @@ class DashboardController extends Controller
             ->whereHas('project', fn($pq) => $pq->whereNotIn('status', ['archived', 'done']))
             ->with(['creator', 'project', 'tags', 'assignees', 'attachments', 'comments', 'completionLog.user']);
 
-        $this->applySortOrder($tasksQuery, $sort);
+        $this->applySortOrder($tasksQuery, $sort, $reversed);
         $tasks = $tasksQuery->get();
 
         $breakdown = $this->projectBreakdown($tasks);
@@ -99,7 +100,8 @@ class DashboardController extends Controller
 
     public function undated(Request $request)
     {
-        $sort = $request->input('sort', 'created');
+        $sort     = $request->input('sort', 'created');
+        $reversed = $request->boolean('reversed');
 
         $tasksQuery = Task::query()
             ->where(function ($q) {
@@ -114,7 +116,7 @@ class DashboardController extends Controller
             ->whereHas('project', fn($pq) => $pq->whereNotIn('status', ['archived', 'done']))
             ->with(['creator', 'project', 'tags', 'assignees', 'attachments', 'comments', 'completionLog.user']);
 
-        $this->applySortOrder($tasksQuery, $sort);
+        $this->applySortOrder($tasksQuery, $sort, $reversed);
         $tasks = $tasksQuery->get();
 
         $breakdown = $this->projectBreakdown($tasks);
@@ -124,7 +126,8 @@ class DashboardController extends Controller
 
     public function all(Request $request)
     {
-        $sort = $request->input('sort', 'date');
+        $sort     = $request->input('sort', 'date');
+        $reversed = $request->boolean('reversed');
 
         $tasksQuery = Task::query()
             ->where(function ($q) {
@@ -138,7 +141,7 @@ class DashboardController extends Controller
             ->with(['creator', 'project', 'tags', 'assignees', 'attachments', 'comments', 'completionLog.user'])
             ->orderByRaw("CASE WHEN status = 'done' THEN 1 ELSE 0 END ASC");
 
-        $this->applySortOrder($tasksQuery, $sort);
+        $this->applySortOrder($tasksQuery, $sort, $reversed);
         $tasks = $tasksQuery->get();
 
         $breakdown = $this->projectBreakdown($tasks);
@@ -262,7 +265,8 @@ class DashboardController extends Controller
             return $this->dayReview($carbonDate, $dateStr);
         }
 
-        $sort = $request->input('sort', 'date');
+        $sort     = $request->input('sort', 'date');
+        $reversed = $request->boolean('reversed');
 
         $tasksQuery = Task::query()
             ->where(function ($q) {
@@ -276,7 +280,7 @@ class DashboardController extends Controller
             ->where('date', $dateStr)
             ->whereHas('project', fn($pq) => $pq->whereNotIn('status', ['archived', 'done']))
             ->with(['creator', 'project', 'tags', 'assignees', 'attachments', 'comments', 'completionLog.user']);
-        $this->applySortOrder($tasksQuery, $sort);
+        $this->applySortOrder($tasksQuery, $sort, $reversed);
         $tasks = $tasksQuery->get();
 
         $perPage = (int) env('PAGINATION_PER_PAGE', 100);

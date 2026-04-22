@@ -54,7 +54,8 @@ class TagController extends Controller
 
     public function show(Request $request, Tag $tag)
     {
-        $sort = $request->input('sort', 'date');
+        $sort     = $request->input('sort', 'date');
+        $reversed = $request->boolean('reversed');
 
         $tasksQuery = $tag->tasks()
             ->where(function ($q) {
@@ -67,11 +68,11 @@ class TagController extends Controller
             ->where('status', '!=', 'done')
             ->with(['creator', 'project', 'assignees', 'attachments', 'comments', 'completionLog.user']);
         match ($sort) {
-            'created'  => $tasksQuery->orderBy('created_at', 'desc'),
-            'name'     => $tasksQuery->orderByRaw('LOWER(name) ASC'),
+            'created'  => $tasksQuery->orderBy('created_at', $reversed ? 'asc' : 'desc'),
+            'name'     => $tasksQuery->orderByRaw($reversed ? 'LOWER(name) DESC' : 'LOWER(name) ASC'),
             'custom'   => $tasksQuery->orderByRaw('CASE WHEN tag_task.sort_order IS NULL THEN 1 ELSE 0 END, tag_task.sort_order ASC, tasks.date IS NULL, tasks.date ASC, tasks.time IS NULL, tasks.time ASC'),
-            'location' => $tasksQuery->orderByRaw('(location IS NULL OR location = \'\') ASC, LOWER(location) ASC'),
-            default    => $tasksQuery->orderByRaw('date IS NULL, date ASC, time IS NULL, time ASC'),
+            'location' => $tasksQuery->orderByRaw($reversed ? '(location IS NULL OR location = \'\') ASC, LOWER(location) DESC' : '(location IS NULL OR location = \'\') ASC, LOWER(location) ASC'),
+            default    => $tasksQuery->orderByRaw($reversed ? 'date IS NULL, date DESC, time IS NULL, time DESC' : 'date IS NULL, date ASC, time IS NULL, time ASC'),
         };
         $tasks = $tasksQuery->get();
 

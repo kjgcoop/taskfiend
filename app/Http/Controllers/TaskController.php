@@ -39,14 +39,15 @@ class TaskController extends Controller
             $query->whereHas('project', fn($pq) => $pq->whereNotIn('status', ['archived', 'done']));
         }
 
-        $sort = $request->input('sort', 'date');
+        $sort     = $request->input('sort', 'date');
+        $reversed = $request->boolean('reversed');
 
         match ($sort) {
-            'created'  => $query->orderBy('created_at', 'desc'),
-            'name'     => $query->orderByRaw('LOWER(name) ASC'),
+            'created'  => $query->orderBy('created_at', $reversed ? 'asc' : 'desc'),
+            'name'     => $query->orderByRaw($reversed ? 'LOWER(name) DESC' : 'LOWER(name) ASC'),
             'custom'   => $query->orderByRaw('CASE WHEN sort_order IS NULL THEN 1 ELSE 0 END, sort_order ASC, date IS NULL, date ASC, time IS NULL, time ASC'),
-            'location' => $query->orderByRaw('(location IS NULL OR location = \'\') ASC, LOWER(location) ASC'),
-            default    => $query->orderByRaw('date IS NULL, date ASC, time IS NULL, time ASC'),
+            'location' => $query->orderByRaw($reversed ? '(location IS NULL OR location = \'\') ASC, LOWER(location) DESC' : '(location IS NULL OR location = \'\') ASC, LOWER(location) ASC'),
+            default    => $query->orderByRaw($reversed ? 'date IS NULL, date DESC, time IS NULL, time DESC' : 'date IS NULL, date ASC, time IS NULL, time ASC'),
         };
 
         $tasks = $query->with(['creator', 'project', 'tags', 'assignees', 'attachments', 'comments', 'completionLog.user'])

@@ -634,10 +634,19 @@
                                 class="text-sm bg-gray-700 border border-gray-600 rounded px-2 py-1 text-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500">
                             <option value="date" {{ $sort === 'date' ? 'selected' : '' }}>Date & Time</option>
                             <option value="created" {{ $sort === 'created' ? 'selected' : '' }}>Date Added</option>
-                            <option value="name" {{ $sort === 'name' ? 'selected' : '' }}>Name (A–Z)</option>
-                            <option value="location" {{ $sort === 'location' ? 'selected' : '' }}>Location (A–Z)</option>
+                            <option value="name" {{ $sort === 'name' ? 'selected' : '' }}>Name</option>
+                            <option value="location" {{ $sort === 'location' ? 'selected' : '' }}>Location</option>
                             <option value="custom" {{ $sort === 'custom' ? 'selected' : '' }}>Custom Sort</option>
                         </select>
+                        @if($sort !== 'custom')
+                        <button onclick="toggleSortReversed()"
+                                title="{{ request()->boolean('reversed') ? 'Reversed — click to restore' : 'Reverse sort order' }}"
+                                class="p-1 rounded transition-colors {{ request()->boolean('reversed') ? 'text-blue-400 hover:text-blue-300' : 'text-gray-500 hover:text-gray-300' }}">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M7 16V4M3 8l4-4 4 4M17 8v12M13 16l4 4 4-4" />
+                            </svg>
+                        </button>
+                        @endif
                     </div>
                 </div>
                 <div x-show="showIncomplete">

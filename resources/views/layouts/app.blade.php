@@ -122,6 +122,13 @@
             </main>
         </div>
 
+        <script>
+        function toggleSortReversed() {
+            const p = new URLSearchParams(window.location.search);
+            if (p.get('reversed') === '1') { p.delete('reversed'); } else { p.set('reversed', '1'); }
+            window.location.href = window.location.pathname + '?' + p.toString();
+        }
+        </script>
         @stack('scripts')
 
         <!-- Bulk Edit Bottom Bar -->

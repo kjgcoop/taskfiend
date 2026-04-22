@@ -30,7 +30,8 @@ class SearchController extends Controller
             'show_archived_projects' => 'nullable|boolean',
             'assignee_id'            => 'nullable|integer|exists:users,id',
             'creator_id'      => 'nullable|integer|exists:users,id',
-            'sort'               => 'nullable|in:date_asc,date_desc,name_asc,name_desc,created_desc,location_asc,location_desc',
+            'sort'               => 'nullable|in:date,name,created,location',
+            'reversed'           => 'nullable|boolean',
             'search_title'       => 'nullable|boolean',
             'search_description' => 'nullable|boolean',
             'no_date'            => 'nullable|boolean',
@@ -143,16 +144,21 @@ class SearchController extends Controller
         return $baseQuery;
     }
 
-    private function applySort(Builder $query, string $sort): Builder
+    private function applySort(Builder $query, string $sort, bool $reversed = false): Builder
     {
         return match ($sort) {
-            'date_desc'     => $query->orderByRaw('(date IS NULL) ASC, date DESC, CASE WHEN sort_order IS NULL THEN 1 ELSE 0 END, sort_order, time ASC'),
-            'name_asc'      => $query->orderByRaw('LOWER(name) ASC'),
-            'name_desc'     => $query->orderByRaw('LOWER(name) DESC'),
-            'created_desc'  => $query->orderBy('created_at', 'desc'),
-            'location_asc'  => $query->orderByRaw('(location IS NULL OR location = \'\') ASC, LOWER(location) ASC'),
-            'location_desc' => $query->orderByRaw('(location IS NULL OR location = \'\') ASC, LOWER(location) DESC'),
-            default         => $query->orderByRaw('date IS NULL, date ASC, CASE WHEN sort_order IS NULL THEN 1 ELSE 0 END, sort_order, time IS NULL, time ASC'),
+            'name'     => $reversed
+                ? $query->orderByRaw('LOWER(name) DESC')
+                : $query->orderByRaw('LOWER(name) ASC'),
+            'created'  => $reversed
+                ? $query->orderBy('created_at', 'asc')
+                : $query->orderBy('created_at', 'desc'),
+            'location' => $reversed
+                ? $query->orderByRaw('(location IS NULL OR location = \'\') ASC, LOWER(location) DESC')
+                : $query->orderByRaw('(location IS NULL OR location = \'\') ASC, LOWER(location) ASC'),
+            default    => $reversed
+                ? $query->orderByRaw('(date IS NULL) ASC, date DESC, CASE WHEN sort_order IS NULL THEN 1 ELSE 0 END, sort_order, time IS NULL, time DESC')
+                : $query->orderByRaw('date IS NULL, date ASC, CASE WHEN sort_order IS NULL THEN 1 ELSE 0 END, sort_order, time IS NULL, time ASC'),
         };
     }
 
@@ -178,16 +184,17 @@ class SearchController extends Controller
             ->orderByRaw('LOWER(location)')
             ->pluck('location');
 
-        $with = ['creator', 'project', 'tags', 'assignees', 'attachments', 'comments'];
-        $sort = $request->input('sort', 'date_asc');
+        $with     = ['creator', 'project', 'tags', 'assignees', 'attachments', 'comments'];
+        $sort     = $request->input('sort', 'date');
+        $reversed = $request->boolean('reversed');
 
         $baseQuery = $this->buildSearchQuery($request);
 
         // Markdown export uses unbounded queries
         if ($request->input('export') === 'markdown') {
-            $tasks          = $request->boolean('show_incomplete') ? $this->applySort((clone $baseQuery)->where('status', 'incomplete'), $sort)->with($with)->get() : collect();
-            $completedTasks = $request->boolean('show_done')       ? $this->applySort((clone $baseQuery)->where('status', 'done'),       $sort)->with($with)->get() : collect();
-            $archivedTasks  = $request->boolean('show_archived')   ? $this->applySort((clone $baseQuery)->where('status', 'archived'),   $sort)->with($with)->get() : collect();
+            $tasks          = $request->boolean('show_incomplete') ? $this->applySort((clone $baseQuery)->where('status', 'incomplete'), $sort, $reversed)->with($with)->get() : collect();
+            $completedTasks = $request->boolean('show_done')       ? $this->applySort((clone $baseQuery)->where('status', 'done'),       $sort, $reversed)->with($with)->get() : collect();
+            $archivedTasks  = $request->boolean('show_archived')   ? $this->applySort((clone $baseQuery)->where('status', 'archived'),   $sort, $reversed)->with($with)->get() : collect();
 
             $lines = ['# Search Results'];
             foreach ([['## Incomplete', $tasks], ['## Done', $completedTasks], ['## Archived', $archivedTasks]] as [$heading, $group]) {
@@ -207,9 +214,9 @@ class SearchController extends Controller
 
         $perPage = (int) env('PAGINATION_PER_PAGE', 100);
 
-        [$tasks, $tasksHasMore, $tasksTotal]                         = $this->fetchPage($baseQuery, 'incomplete', $sort, $with, $perPage, $request->boolean('show_incomplete'));
-        [$completedTasks, $completedTasksHasMore, $completedTasksTotal] = $this->fetchPage($baseQuery, 'done',       $sort, $with, $perPage, $request->boolean('show_done'));
-        [$archivedTasks,  $archivedTasksHasMore,  $archivedTasksTotal]  = $this->fetchPage($baseQuery, 'archived',   $sort, $with, $perPage, $request->boolean('show_archived'));
+        [$tasks, $tasksHasMore, $tasksTotal]                         = $this->fetchPage($baseQuery, 'incomplete', $sort, $reversed, $with, $perPage, $request->boolean('show_incomplete'));
+        [$completedTasks, $completedTasksHasMore, $completedTasksTotal] = $this->fetchPage($baseQuery, 'done',       $sort, $reversed, $with, $perPage, $request->boolean('show_done'));
+        [$archivedTasks,  $archivedTasksHasMore,  $archivedTasksTotal]  = $this->fetchPage($baseQuery, 'archived',   $sort, $reversed, $with, $perPage, $request->boolean('show_archived'));
 
         $breakdown = $tasks
             ->groupBy(fn($t) => optional($t->project)->name ?? 'No Project')
@@ -227,14 +234,14 @@ class SearchController extends Controller
     }
 
     /** Fetch the first page for a given status; returns [$collection, $hasMore, $total]. */
-    private function fetchPage(Builder $baseQuery, string $status, string $sort, array $with, int $perPage, bool $enabled): array
+    private function fetchPage(Builder $baseQuery, string $status, string $sort, bool $reversed, array $with, int $perPage, bool $enabled): array
     {
         if (!$enabled) {
             return [collect(), false, 0];
         }
 
         $total = (clone $baseQuery)->where('status', $status)->count();
-        $raw   = $this->applySort((clone $baseQuery)->where('status', $status), $sort)
+        $raw   = $this->applySort((clone $baseQuery)->where('status', $status), $sort, $reversed)
             ->with($with)
             ->take($perPage + 1)
             ->get();
@@ -254,13 +261,14 @@ class SearchController extends Controller
         $perPage = (int) env('PAGINATION_PER_PAGE', 100);
         $page    = max(1, (int) $request->get('page', 1));
         $offset  = ($page - 1) * $perPage;
-        $status  = $request->status;
-        $sort    = $request->input('sort', 'date_asc');
-        $with    = ['creator', 'project', 'tags', 'assignees', 'attachments', 'comments'];
+        $status   = $request->status;
+        $sort     = $request->input('sort', 'date');
+        $reversed = $request->boolean('reversed');
+        $with     = ['creator', 'project', 'tags', 'assignees', 'attachments', 'comments'];
 
         $baseQuery = $this->buildSearchQuery($request);
 
-        $raw = $this->applySort((clone $baseQuery)->where('status', $status), $sort)
+        $raw = $this->applySort((clone $baseQuery)->where('status', $status), $sort, $reversed)
             ->with($with)
             ->skip($offset)->take($perPage + 1)
             ->get();
