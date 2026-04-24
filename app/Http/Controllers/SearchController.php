@@ -157,8 +157,8 @@ class SearchController extends Controller
                 ? $query->orderByRaw('(location IS NULL OR location = \'\') ASC, LOWER(location) DESC')
                 : $query->orderByRaw('(location IS NULL OR location = \'\') ASC, LOWER(location) ASC'),
             default    => $reversed
-                ? $query->orderByRaw('(date IS NULL) ASC, date DESC, CASE WHEN sort_order IS NULL THEN 1 ELSE 0 END, sort_order, time IS NULL, time DESC')
-                : $query->orderByRaw('date IS NULL, date ASC, CASE WHEN sort_order IS NULL THEN 1 ELSE 0 END, sort_order, time IS NULL, time ASC'),
+                ? $query->orderByRaw('(date IS NULL) ASC, date DESC, CASE WHEN sort_order IS NULL THEN 1 ELSE 0 END, sort_order, time IS NULL, time DESC, created_at DESC')
+                : $query->orderByRaw('date IS NULL, date ASC, CASE WHEN sort_order IS NULL THEN 1 ELSE 0 END, sort_order, time IS NULL, time ASC, created_at ASC'),
         };
     }
 
