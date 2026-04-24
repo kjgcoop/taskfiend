@@ -12,6 +12,7 @@ Because I designed this for my own devious purposes, I assumed there would only 
 - **Task links** — link to other tasks, projects, or locations from any description or comment using `[task:1]`, `[project:1]`, or `[location:1]`; IDs are shown on task and project pages
 - **Project/tag navigation** — the header nav includes dropdowns listing all your projects and tags
 - **Task count breakdown** — click the task count on any list view to see a breakdown by project
+- **Search** — find tasks by title, description, tags, projects, assignees, duration, and date presence; title and description can be targeted independently
 - **Changelogs** — every create/edit is logged and browsable by task, project, tag, or user
 - **API** — create and query tasks via bearer token (see Admin-Like Functions below for key management)
 
@@ -126,6 +127,17 @@ Add a project, tags, location, or assignees inline by name — autocomplete sugg
 | `&username` | Assigns that user; for multiple: `&user1,user2` or `&user1 &user2` |
 
 Multiple tags are supported: `Buy milk @errands @today`.
+
+#### Filter bar
+
+On list views (day, project, tag, search) a filter bar sits above the task list. In addition to plain text, it accepts:
+
+| Token | Effect |
+|---|---|
+| `not:project-name` | Show only tasks *not* in that project |
+| `not:tag-name` | Show only tasks *not* tagged with that tag |
+
+Filtering applies to completed and archived tasks as well; expand the done/archived section after filtering to see the filtered results.
 
 ### Frontend Assets
 
