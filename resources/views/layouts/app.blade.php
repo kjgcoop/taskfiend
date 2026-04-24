@@ -698,6 +698,9 @@
                     const rect = group.getBoundingClientRect();
                     offsetY = e.clientY - rect.top;
 
+                    const dragCard = group.querySelector('[data-filterable]');
+                    if (dragCard) dragCard.style.borderColor = 'rgb(239,68,68)';
+
                     ghost = group.cloneNode(true);
                     ghost.style.cssText = 'position:fixed;left:' + rect.left + 'px;top:' + rect.top + 'px;width:' + rect.width + 'px;opacity:0.5;pointer-events:none;z-index:9999;box-sizing:border-box;';
                     document.body.appendChild(ghost);
@@ -755,7 +758,12 @@
 
                 function cleanup() {
                     if (ghost) { ghost.remove(); ghost = null; }
-                    if (draggedEl) { draggedEl.style.opacity = ''; draggedEl = null; }
+                    if (draggedEl) {
+                        const card = draggedEl.querySelector('[data-filterable]');
+                        if (card) card.style.borderColor = '';
+                        draggedEl.style.opacity = '';
+                        draggedEl = null;
+                    }
                     isDragging = false;
                     indicator.style.display = 'none';
                     if (indicator.parentNode) indicator.parentNode.removeChild(indicator);
