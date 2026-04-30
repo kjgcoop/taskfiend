@@ -62,6 +62,17 @@
                         <div class="relative p-6">
                             <div class="flex items-start justify-between gap-2">
                                 <div class="flex items-center gap-1.5 min-w-0">
+                                    @if($project->user_id === Auth::id())
+                                        <button onclick="event.stopPropagation(); toggleHeartProject({{ $project->id }}, this)"
+                                                title="{{ $project->is_hearted ? 'Remove from active projects' : 'Mark as active project' }}"
+                                                data-hearted="{{ $project->is_hearted ? 'true' : 'false' }}"
+                                                data-has-bg="{{ $hasBg ? 'true' : 'false' }}"
+                                                class="shrink-0 transition-colors {{ $project->is_hearted ? ($hasBg ? 'text-pink-400' : 'text-pink-500') : ($hasBg ? 'text-gray-400 hover:text-pink-400' : 'text-gray-600 hover:text-pink-500') }}">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="{{ $project->is_hearted ? 'currentColor' : 'none' }}" stroke="currentColor" stroke-width="{{ $project->is_hearted ? '0' : '1.5' }}">
+                                                <path fill-rule="evenodd" d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" clip-rule="evenodd" />
+                                            </svg>
+                                        </button>
+                                    @endif
                                     @if($project->is_default)
                                         <span title="Default project" class="{{ $hasBg ? 'text-yellow-300' : 'text-yellow-400' }} shrink-0">
                                             <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
@@ -183,6 +194,35 @@
         </div>
     </div>
 <script>
+function toggleHeartProject(projectId, btn) {
+    fetch(`/projects/${projectId}/toggle-heart`, {
+        method: 'POST',
+        headers: {
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+            'Accept': 'application/json',
+        },
+    }).then(r => r.json()).then(data => {
+        if (data.success) {
+            const hearted = data.is_hearted;
+            const hasBg = btn.dataset.hasBg === 'true';
+            btn.dataset.hearted = hearted ? 'true' : 'false';
+            btn.title = hearted ? 'Remove from active projects' : 'Mark as active project';
+            const svg = btn.querySelector('svg');
+            svg.setAttribute('fill', hearted ? 'currentColor' : 'none');
+            svg.setAttribute('stroke-width', hearted ? '0' : '1.5');
+            if (hearted) {
+                btn.className = btn.className.replace(/text-gray-\d+ hover:text-pink-\d+/, hasBg ? 'text-pink-400' : 'text-pink-500');
+            } else {
+                const activeClass = hasBg ? 'text-pink-400' : 'text-pink-500';
+                const inactiveClass = hasBg ? 'text-gray-400 hover:text-pink-400' : 'text-gray-600 hover:text-pink-500';
+                btn.className = btn.className.replace(activeClass, inactiveClass);
+            }
+        } else {
+            alert(data.message || 'Could not update project.');
+        }
+    });
+}
+
 function setDefaultProject(projectId, btn) {
     fetch(`/projects/${projectId}/set-default`, {
         method: 'POST',

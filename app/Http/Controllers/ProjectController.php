@@ -207,7 +207,7 @@ class ProjectController extends Controller
             ->orderByRaw('LOWER(name)')
             ->get();
 
-        $projects = Project::activeForUser(Auth::id())->orderBy('name')->get(['id', 'name']);
+        $projects = Project::activeForUser(Auth::id())->orderBy('name')->get(['id', 'name', 'is_hearted']);
 
         $tags = Tag::orderByRaw('LOWER(tag_name)')->get(['id', 'tag_name', 'color']);
 
@@ -434,6 +434,17 @@ class ProjectController extends Controller
         }
 
         abort(403, 'Projects cannot be deleted. Please archive instead.');
+    }
+
+    public function toggleHeart(Project $project)
+    {
+        if ($project->user_id !== Auth::id()) {
+            abort(403);
+        }
+
+        $project->update(['is_hearted' => !$project->is_hearted]);
+
+        return response()->json(['success' => true, 'is_hearted' => $project->is_hearted]);
     }
 
     public function setDefault(Project $project)
