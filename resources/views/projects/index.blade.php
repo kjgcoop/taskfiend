@@ -7,16 +7,22 @@
         </div>
     </x-slot>
 
-    <div class="py-12" x-data="{ showImportForm: false, templateFile: null, projectName: '' }">
+    <div class="py-12" x-data="{ showImportForm: false, templateFile: null, projectName: '', favoritesOnly: false }">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-6">
             <!-- Action Buttons -->
-            <div class="flex justify-end gap-2">
+            <div class="flex justify-between items-center gap-2">
+                <label class="flex items-center gap-2 text-sm text-gray-400 cursor-pointer select-none">
+                    <input type="checkbox" x-model="favoritesOnly" class="rounded bg-gray-700 border-gray-600 text-pink-500 focus:ring-pink-500">
+                    Favorites only
+                </label>
+                <div class="flex gap-2">
                 <button @click="showImportForm = !showImportForm" class="inline-flex items-center px-4 py-2 bg-gray-700 border border-gray-600 rounded-md font-semibold text-xs text-gray-100 uppercase tracking-widest hover:bg-gray-600">
                     Import Template
                 </button>
                 <a href="{{ route('projects.create') }}" class="inline-flex items-center px-4 py-2 bg-blue-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-blue-700">
                     New Project
                 </a>
+                </div>
             </div>
             <!-- Import Template Form -->
             <div x-show="showImportForm" x-cloak class="bg-[#202020] border border-gray-700 p-6 rounded-lg shadow">
@@ -52,6 +58,7 @@
                 @forelse($projects as $project)
                     @php $hasBg = !empty($project->background_image); @endphp
                     <div class="relative border border-gray-700 rounded-lg shadow hover:shadow-md transition cursor-pointer overflow-hidden {{ $hasBg ? 'min-h-[140px]' : 'bg-[#202020]' }}"
+                         x-show="!favoritesOnly || {{ $project->is_hearted ? 'true' : 'false' }}"
                          onclick="window.location='{{ route('projects.show', $project) }}'"
                          @if($hasBg)
                          style="background-image: url('{{ route('projects.background', $project) }}'); background-size: cover; background-position: center;"
