@@ -676,12 +676,55 @@
                 let ghost = null;
                 let offsetY = 0;
                 let isDragging = false;
+                let lastClientX = 0;
+                let lastClientY = 0;
+                let scrollRaf = null;
+
+                const SCROLL_ZONE = 80; // px from viewport edge that triggers scroll
+                const MAX_SPEED   = 16; // px per frame at the very edge (~960px/s at 60fps)
 
                 const indicator = document.createElement('div');
                 indicator.className = 'task-drop-indicator';
 
                 function isBulkActive() {
                     try { return Alpine.store('bulkEdit').active; } catch { return false; }
+                }
+
+                function updateIndicator(clientX, clientY) {
+                    if (!ghost) return;
+                    ghost.style.visibility = 'hidden';
+                    const el = document.elementFromPoint(clientX, clientY);
+                    ghost.style.visibility = '';
+                    if (!el) return;
+                    const target = el.closest('[data-task-group]');
+                    if (!target || target === draggedEl || !container.contains(target)) return;
+                    const rect = target.getBoundingClientRect();
+                    if (clientY < rect.top + rect.height / 2) {
+                        container.insertBefore(indicator, target);
+                    } else {
+                        container.insertBefore(indicator, target.nextSibling);
+                    }
+                    indicator.style.display = 'block';
+                }
+
+                function autoScrollStep() {
+                    if (!draggedEl) { scrollRaf = null; return; }
+                    const vh = window.innerHeight;
+                    let speed = 0;
+                    if (lastClientY < SCROLL_ZONE) {
+                        speed = -MAX_SPEED * (1 - lastClientY / SCROLL_ZONE);
+                    } else if (lastClientY > vh - SCROLL_ZONE) {
+                        speed = MAX_SPEED * (1 - (vh - lastClientY) / SCROLL_ZONE);
+                    }
+                    if (speed !== 0) {
+                        window.scrollBy(0, speed);
+                        updateIndicator(lastClientX, lastClientY);
+                    }
+                    scrollRaf = requestAnimationFrame(autoScrollStep);
+                }
+
+                function stopAutoScroll() {
+                    if (scrollRaf) { cancelAnimationFrame(scrollRaf); scrollRaf = null; }
                 }
 
                 container.addEventListener('pointerdown', (e) => {
@@ -710,29 +753,16 @@
                     container.addEventListener('pointermove', onMove);
                     container.addEventListener('pointerup', onUp);
                     container.addEventListener('pointercancel', onCancel);
+                    scrollRaf = requestAnimationFrame(autoScrollStep);
                 });
 
                 function onMove(e) {
                     if (!draggedEl) return;
                     isDragging = true;
+                    lastClientX = e.clientX;
+                    lastClientY = e.clientY;
                     ghost.style.top = (e.clientY - offsetY) + 'px';
-
-                    // Temporarily hide ghost so elementFromPoint can see what's underneath
-                    ghost.style.visibility = 'hidden';
-                    const el = document.elementFromPoint(e.clientX, e.clientY);
-                    ghost.style.visibility = '';
-                    if (!el) return;
-
-                    const target = el.closest('[data-task-group]');
-                    if (!target || target === draggedEl || !container.contains(target)) return;
-
-                    const rect = target.getBoundingClientRect();
-                    if (e.clientY < rect.top + rect.height / 2) {
-                        container.insertBefore(indicator, target);
-                    } else {
-                        container.insertBefore(indicator, target.nextSibling);
-                    }
-                    indicator.style.display = 'block';
+                    updateIndicator(e.clientX, e.clientY);
                 }
 
                 function onUp() {
@@ -740,6 +770,7 @@
                     container.removeEventListener('pointermove', onMove);
                     container.removeEventListener('pointerup', onUp);
                     container.removeEventListener('pointercancel', onCancel);
+                    stopAutoScroll();
                     if (isDragging && indicator.parentNode) {
                         container.insertBefore(draggedEl, indicator);
                         cleanup();
@@ -753,10 +784,12 @@
                     container.removeEventListener('pointermove', onMove);
                     container.removeEventListener('pointerup', onUp);
                     container.removeEventListener('pointercancel', onCancel);
+                    stopAutoScroll();
                     cleanup();
                 }
 
                 function cleanup() {
+                    stopAutoScroll();
                     if (ghost) { ghost.remove(); ghost = null; }
                     if (draggedEl) {
                         const card = draggedEl.querySelector('[data-filterable]');
