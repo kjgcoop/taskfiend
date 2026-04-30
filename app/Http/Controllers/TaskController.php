@@ -155,7 +155,7 @@ class TaskController extends Controller
             return $this->storeError($request, ['name' => 'Task name is too long (' . strlen($validated['name']) . '/255 characters max).']);
         }
 
-        $taskName = $validated['name'];
+        $taskName = preg_replace('/^[-*] /', '', $validated['name']);
         $date = $validated['date'] ?? null;
         $time = $validated['time'] ?? null;
         $recurrencePattern = $validated['recurrence_pattern'] ?? null;
@@ -1710,7 +1710,7 @@ class TaskController extends Controller
         ?string $globalRecurrence,
         bool    $isQuickAdd
     ): Task {
-        $taskName = trim($rawName);
+        $taskName = preg_replace('/^[-*] /', '', trim($rawName));
 
         if (strlen($taskName) > 255) {
             throw new \InvalidArgumentException(
