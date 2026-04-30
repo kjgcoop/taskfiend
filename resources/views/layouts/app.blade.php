@@ -816,6 +816,10 @@
                 const container = group.parentElement;
                 const groups = [...container.querySelectorAll(':scope > [data-task-group]')];
                 const idx = groups.indexOf(group);
+
+                // Snapshot button's viewport Y before the DOM move
+                const btnYBefore = btn.getBoundingClientRect().top;
+
                 if (direction === 'top' && idx > 0) {
                     container.insertBefore(group, groups[0]);
                 } else if (direction === 'up' && idx > 0) {
@@ -827,6 +831,11 @@
                 } else {
                     return;
                 }
+
+                // Scroll so the button stays under the user's finger/cursor
+                const delta = btn.getBoundingClientRect().top - btnYBefore;
+                if (delta !== 0) window.scrollBy(0, delta);
+
                 window.saveTaskOrder(container);
                 window.updateSortButtonStates(container);
             };
