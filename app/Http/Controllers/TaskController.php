@@ -360,7 +360,7 @@ class TaskController extends Controller
             $parentTask = Task::find($validated['parent_id']);
             $assigneeIds = $parentTask->assignees->pluck('id')->toArray();
         } else {
-            $assigneeIds = $validated['assignee_ids'] ?? [Auth::id()];
+            $assigneeIds = array_unique(array_merge($validated['assignee_ids'] ?? [], [Auth::id()]));
         }
         foreach ($assigneeIds as $assigneeId) {
             $task->assignments()->create([
