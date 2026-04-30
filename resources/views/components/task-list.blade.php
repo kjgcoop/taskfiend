@@ -860,8 +860,7 @@
             <div class="flex items-start gap-4">
                 <!-- Sort controls (drag handle + arrow buttons, custom sort mode only) -->
                 @if($sortable && !$readOnly && $depth === 0)
-                <div class="self-stretch flex items-center flex-shrink-0 gap-1
-                            opacity-0 group-hover:opacity-100 transition-opacity"
+                <div class="self-stretch flex items-center flex-shrink-0 gap-1"
                      :class="{ 'invisible pointer-events-none': $store.bulkEdit.active }"
                      @click.stop>
                     <!-- Arrow buttons: to-top, up, down, to-bottom -->
