@@ -137,7 +137,7 @@
             </div>
 
             <!-- Tagged Tasks -->
-            <div class="bg-[#202020] border border-gray-700 overflow-hidden shadow-sm sm:rounded-lg p-6" x-data="taskFilter(@js($projects), @js($allTags), @js($users), @js($locations))">
+            <div class="bg-[#202020] border border-gray-700 shadow-sm sm:rounded-lg p-6" x-data="taskFilter(@js($projects), @js($allTags), @js($users), @js($locations))">
                 <div class="flex items-center justify-between mb-4">
                     <button type="button"
                             @click="showIncomplete = !showIncomplete"

@@ -300,7 +300,7 @@
                     // Base URL for load-more AJAX calls — all current search params minus export/page/status
                     $moreBaseUrl = route('search.more') . '?' . http_build_query(request()->except(['export', 'page', 'status']));
                 @endphp
-                <div class="bg-[#202020] border border-gray-700 overflow-hidden shadow-sm sm:rounded-lg p-6" x-data="taskFilter(@js($projects), @js($tags), @js($users), @js($locations))">
+                <div class="bg-[#202020] border border-gray-700 shadow-sm sm:rounded-lg p-6" x-data="taskFilter(@js($projects), @js($tags), @js($users), @js($locations))">
                     @if($tasksTotal > 0 || $completedTasksTotal > 0 || $archivedTasksTotal > 0)
                     <div class="flex justify-end items-center gap-3 mb-4">
                         <a href="{{ request()->fullUrlWithQuery(['export' => 'markdown']) }}" class="px-3 py-1.5 bg-gray-700 border border-gray-600 text-xs text-gray-100 rounded hover:bg-gray-600">
