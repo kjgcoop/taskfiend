@@ -138,7 +138,7 @@
             @if(!$isInactive)
             <div x-show="editing.status" class="mt-1">
                 <select x-model="fields.status"
-                        @keydown.escape="cancelEdit('status')"
+                        @keydown.escape.stop="cancelEdit('status')"
                         class="w-full rounded-md bg-gray-700 border-gray-600 text-gray-100 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm">
                     <option value="incomplete">Incomplete</option>
                     <option value="done">Done</option>
@@ -177,7 +177,7 @@
                         <input type="text" x-model="dateText" x-ref="dateInput"
                                @input.debounce.300ms="previewDate()"
                                @keydown.enter.prevent="saveDateField()"
-                               @keydown.escape="cancelEdit('date')"
+                               @keydown.escape.stop="cancelEdit('date')"
                                placeholder="tomorrow, next friday, march 15..."
                                class="w-full rounded-md bg-gray-700 border-gray-600 text-gray-100 placeholder-gray-500 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm">
                     </div>
@@ -243,7 +243,7 @@
             <div x-show="editing.time" class="mt-1">
                 <input type="time" x-model="fields.time"
                        @keydown.enter="saveField('time')"
-                       @keydown.escape="cancelEdit('time')"
+                       @keydown.escape.stop="cancelEdit('time')"
                        class="w-full rounded-md bg-gray-700 border-gray-600 text-gray-100 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm">
                 <div class="flex gap-2 mt-2">
                     <button @click="saveField('time')" class="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700">Save</button>
@@ -272,7 +272,7 @@
             <div x-show="editing.duration_minutes" class="mt-1">
                 <input type="text" x-model="fields.duration_minutes"
                        @keydown.enter="saveField('duration_minutes')"
-                       @keydown.escape="cancelEdit('duration_minutes')"
+                       @keydown.escape.stop="cancelEdit('duration_minutes')"
                        placeholder="e.g. 1h 30m, 90, 2h"
                        class="w-full rounded-md bg-gray-700 border-gray-600 text-gray-100 placeholder-gray-500 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm">
                 <div class="flex gap-2 mt-2">
@@ -310,7 +310,7 @@
             <div x-show="editing.location" class="mt-1">
                 <input type="text" x-model="fields.location"
                        @keydown.enter="saveField('location')"
-                       @keydown.escape="cancelEdit('location')"
+                       @keydown.escape.stop="cancelEdit('location')"
                        placeholder="e.g., Conference Room B, Zoom, 123 Main St"
                        class="w-full rounded-md bg-gray-700 border-gray-600 text-gray-100 placeholder-gray-500 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm">
                 <div class="flex items-center gap-2 mt-2">
@@ -345,7 +345,7 @@
             <div x-show="editing.project_id" class="mt-1">
                 <select x-model="fields.project_id"
                         @change="saveField('project_id')"
-                        @keydown.escape="cancelEdit('project_id')"
+                        @keydown.escape.stop="cancelEdit('project_id')"
                         class="w-full rounded-md bg-gray-700 border-gray-600 text-gray-100 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm">
                     @foreach($projects as $project)
                         <option value="{{ $project->id }}">{{ $project->name }}</option>
@@ -373,7 +373,7 @@
         <div x-show="editing.description" class="mt-1">
             <textarea x-model="fields.description" rows="4"
                       @keydown.ctrl.enter="saveField('description')"
-                      @keydown.escape="cancelEdit('description')"
+                      @keydown.escape.stop="cancelEdit('description')"
                       class="w-full rounded-md bg-gray-700 border-gray-600 text-gray-100 placeholder-gray-500 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm"></textarea>
             <p class="text-xs text-gray-500 mt-1">Ctrl+Enter to save. Markdown supported.</p>
             <div class="flex gap-2 mt-2">
@@ -404,7 +404,7 @@
             <input type="text" x-model="fields.recurrence_pattern"
                    placeholder="e.g., daily, every Monday, weekdays"
                    @keydown.enter="saveField('recurrence_pattern')"
-                   @keydown.escape="cancelEdit('recurrence_pattern')"
+                   @keydown.escape.stop="cancelEdit('recurrence_pattern')"
                    class="w-full rounded-md bg-gray-700 border-gray-600 text-gray-100 placeholder-gray-500 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm">
             <label class="flex items-center mt-2 text-sm text-gray-400 cursor-pointer">
                 <input type="checkbox" x-model="fields.recurrence_floating"
@@ -827,6 +827,7 @@
                     }
                     if (e.key === 'Escape') {
                         e.preventDefault();
+                        e.stopPropagation();
                         this.nameAC.show = false;
                         return;
                     }
@@ -840,6 +841,7 @@
                     this.saveField('name');
                 } else if (e.key === 'Escape') {
                     e.preventDefault();
+                    e.stopPropagation();
                     this.cancelEdit('name');
                 }
             },
