@@ -858,19 +858,59 @@
              style="margin-left: {{ $marginLeft }}px;"
              :class="$store.bulkEdit.active && $store.bulkEdit.isSelected({{ $task->id }}) ? 'ring-2 ring-blue-500 ring-inset' : ''">
             <div class="flex items-start gap-4">
-                <!-- Drag handle (only in custom sort mode on root-level, non-read-only tasks) -->
+                <!-- Sort controls (drag handle + arrow buttons, custom sort mode only) -->
                 @if($sortable && !$readOnly && $depth === 0)
-                <div class="drag-handle self-stretch flex items-center flex-shrink-0 touch-none
+                <div class="self-stretch flex items-center flex-shrink-0 gap-1
                             opacity-0 group-hover:opacity-100 transition-opacity"
-                     style="cursor: grab"
                      :class="{ 'invisible pointer-events-none': $store.bulkEdit.active }"
-                     @click.stop
-                     title="Drag to reorder">
-                    <svg class="w-4 h-4 text-gray-600" viewBox="0 0 16 24" fill="currentColor" aria-hidden="true">
-                        <circle cx="5" cy="6" r="1.5"/><circle cx="11" cy="6" r="1.5"/>
-                        <circle cx="5" cy="12" r="1.5"/><circle cx="11" cy="12" r="1.5"/>
-                        <circle cx="5" cy="18" r="1.5"/><circle cx="11" cy="18" r="1.5"/>
-                    </svg>
+                     @click.stop>
+                    <!-- Arrow buttons: to-top, up, down, to-bottom -->
+                    <div class="flex flex-col justify-center gap-0.5">
+                        <button data-sort-top type="button"
+                                @click.stop="taskMoveInList($el, 'top')"
+                                title="Move to top"
+                                class="text-gray-500 hover:text-gray-200 transition-colors rounded p-0.5 focus:outline-none">
+                            <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <polyline points="5,12 12,5 19,12"/>
+                                <polyline points="5,18 12,11 19,18"/>
+                            </svg>
+                        </button>
+                        <button data-sort-up type="button"
+                                @click.stop="taskMoveInList($el, 'up')"
+                                title="Move up"
+                                class="text-gray-500 hover:text-gray-200 transition-colors rounded p-0.5 focus:outline-none">
+                            <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <polyline points="5,15 12,8 19,15"/>
+                            </svg>
+                        </button>
+                        <button data-sort-down type="button"
+                                @click.stop="taskMoveInList($el, 'down')"
+                                title="Move down"
+                                class="text-gray-500 hover:text-gray-200 transition-colors rounded p-0.5 focus:outline-none">
+                            <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <polyline points="5,9 12,16 19,9"/>
+                            </svg>
+                        </button>
+                        <button data-sort-bottom type="button"
+                                @click.stop="taskMoveInList($el, 'bottom')"
+                                title="Move to bottom"
+                                class="text-gray-500 hover:text-gray-200 transition-colors rounded p-0.5 focus:outline-none">
+                            <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <polyline points="5,6 12,13 19,6"/>
+                                <polyline points="5,12 12,19 19,12"/>
+                            </svg>
+                        </button>
+                    </div>
+                    <!-- Drag handle -->
+                    <div class="drag-handle touch-none flex items-center self-stretch"
+                         style="cursor: grab"
+                         title="Drag to reorder">
+                        <svg class="w-4 h-4 text-gray-600" viewBox="0 0 16 24" fill="currentColor" aria-hidden="true">
+                            <circle cx="5" cy="6" r="1.5"/><circle cx="11" cy="6" r="1.5"/>
+                            <circle cx="5" cy="12" r="1.5"/><circle cx="11" cy="12" r="1.5"/>
+                            <circle cx="5" cy="18" r="1.5"/><circle cx="11" cy="18" r="1.5"/>
+                        </svg>
+                    </div>
                 </div>
                 @endif
 

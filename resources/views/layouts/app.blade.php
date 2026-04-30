@@ -770,19 +770,65 @@
                 }
 
                 function saveOrder() {
-                    const ids = [...container.querySelectorAll(':scope > [data-task-group-id]')]
-                        .map(el => el.dataset.taskGroupId);
-                    const url = container.dataset.reorderUrl || '/tasks/reorder';
-                    fetch(url, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
-                            'X-Requested-With': 'XMLHttpRequest',
-                        },
-                        body: JSON.stringify({ ids }),
-                    }).catch(() => {});
+                    window.saveTaskOrder(container);
+                    window.updateSortButtonStates(container);
                 }
+
+                window.updateSortButtonStates(container);
+            };
+
+            window.saveTaskOrder = function(container) {
+                const ids = [...container.querySelectorAll(':scope > [data-task-group-id]')]
+                    .map(el => el.dataset.taskGroupId);
+                const url = container.dataset.reorderUrl || '/tasks/reorder';
+                fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                        'X-Requested-With': 'XMLHttpRequest',
+                    },
+                    body: JSON.stringify({ ids }),
+                }).catch(() => {});
+            };
+
+            window.updateSortButtonStates = function(container) {
+                const groups = [...container.querySelectorAll(':scope > [data-task-group]')];
+                groups.forEach((group, idx) => {
+                    const isFirst = idx === 0;
+                    const isLast  = idx === groups.length - 1;
+                    group.querySelectorAll('[data-sort-top],[data-sort-up]').forEach(btn => {
+                        btn.disabled = isFirst;
+                        btn.style.opacity = isFirst ? '0.25' : '';
+                        btn.style.pointerEvents = isFirst ? 'none' : '';
+                    });
+                    group.querySelectorAll('[data-sort-down],[data-sort-bottom]').forEach(btn => {
+                        btn.disabled = isLast;
+                        btn.style.opacity = isLast ? '0.25' : '';
+                        btn.style.pointerEvents = isLast ? 'none' : '';
+                    });
+                });
+            };
+
+            window.taskMoveInList = function(btn, direction) {
+                const group = btn.closest('[data-task-group]');
+                if (!group) return;
+                const container = group.parentElement;
+                const groups = [...container.querySelectorAll(':scope > [data-task-group]')];
+                const idx = groups.indexOf(group);
+                if (direction === 'top' && idx > 0) {
+                    container.insertBefore(group, groups[0]);
+                } else if (direction === 'up' && idx > 0) {
+                    container.insertBefore(group, groups[idx - 1]);
+                } else if (direction === 'down' && idx < groups.length - 1) {
+                    container.insertBefore(groups[idx + 1], group);
+                } else if (direction === 'bottom' && idx < groups.length - 1) {
+                    container.appendChild(group);
+                } else {
+                    return;
+                }
+                window.saveTaskOrder(container);
+                window.updateSortButtonStates(container);
             };
             // ─────────────────────────────────────────────────────────────────────────
         </script>
