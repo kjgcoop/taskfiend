@@ -705,9 +705,14 @@
                             <textarea name="comment" rows="3" required
                                       class="w-full rounded-md bg-gray-700 border-gray-600 text-gray-100 placeholder-gray-500 shadow-sm focus:border-blue-500 focus:ring-blue-500 mb-2"
                                       placeholder="Add a comment..."></textarea>
-                            <div class="flex items-center gap-4">
-                                <input type="file" name="attachment" class="text-sm text-gray-300"
-                                       accept=".jpg,.jpeg,.png,.webp,.gif,.heic,.heif,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.odt,.ods,.odp,.csv,.txt,.json">
+                            <div class="flex items-center gap-4" x-data="{ fileName: '' }">
+                                <label class="flex items-center gap-2 cursor-pointer">
+                                    <span class="px-3 py-1.5 bg-gray-700 border border-gray-600 text-gray-300 text-sm rounded hover:bg-gray-600">Choose file</span>
+                                    <span class="text-sm text-gray-400" x-text="fileName || 'No file chosen'"></span>
+                                    <input type="file" name="attachment" class="hidden"
+                                           accept=".jpg,.jpeg,.png,.webp,.gif,.heic,.heif,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.odt,.ods,.odp,.csv,.txt,.json"
+                                           @change="fileName = $event.target.files[0] ? ($event.target.files[0].name.length > 20 ? $event.target.files[0].name.slice(0, 20) + '…' : $event.target.files[0].name) : ''">
+                                </label>
                                 <button type="submit" class="px-4 py-2 bg-blue-600 text-white text-sm rounded hover:bg-blue-700">
                                     Post Comment
                                 </button>
@@ -786,9 +791,14 @@
                         @if(!$isInactive)
                         <form method="POST" action="{{ route('attachments.store', $task) }}" enctype="multipart/form-data">
                             @csrf
-                            <div class="flex gap-2">
-                                <input type="file" name="attachment" required class="flex-1 text-sm text-gray-300"
-                                       accept=".jpg,.jpeg,.png,.webp,.gif,.heic,.heif,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.odt,.ods,.odp,.csv,.txt,.json">
+                            <div class="flex items-center gap-2" x-data="{ fileName: '' }">
+                                <label class="flex items-center gap-2 cursor-pointer">
+                                    <span class="px-3 py-1.5 bg-gray-700 border border-gray-600 text-gray-300 text-sm rounded hover:bg-gray-600">Choose file</span>
+                                    <span class="text-sm text-gray-400" x-text="fileName || 'No file chosen'"></span>
+                                    <input type="file" name="attachment" required class="hidden"
+                                           accept=".jpg,.jpeg,.png,.webp,.gif,.heic,.heif,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.odt,.ods,.odp,.csv,.txt,.json"
+                                           @change="fileName = $event.target.files[0] ? ($event.target.files[0].name.length > 20 ? $event.target.files[0].name.slice(0, 20) + '…' : $event.target.files[0].name) : ''">
+                                </label>
                                 <button type="submit" class="px-4 py-2 bg-blue-600 text-white text-sm rounded hover:bg-blue-700">
                                     Upload
                                 </button>
