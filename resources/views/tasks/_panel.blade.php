@@ -138,6 +138,7 @@
             @if(!$isInactive)
             <div x-show="editing.status" class="mt-1">
                 <select x-model="fields.status"
+                        x-ref="statusInput"
                         @keydown.escape.stop="cancelEdit('status')"
                         class="w-full rounded-md bg-gray-700 border-gray-600 text-gray-100 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm">
                     <option value="incomplete">Incomplete</option>
@@ -242,6 +243,7 @@
             @if(!$isInactive)
             <div x-show="editing.time" class="mt-1">
                 <input type="time" x-model="fields.time"
+                       x-ref="timeInput"
                        @keydown.enter="saveField('time')"
                        @keydown.escape.stop="cancelEdit('time')"
                        class="w-full rounded-md bg-gray-700 border-gray-600 text-gray-100 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm">
@@ -271,6 +273,7 @@
             @if(!$isInactive)
             <div x-show="editing.duration_minutes" class="mt-1">
                 <input type="text" x-model="fields.duration_minutes"
+                       x-ref="duration_minutesInput"
                        @keydown.enter="saveField('duration_minutes')"
                        @keydown.escape.stop="cancelEdit('duration_minutes')"
                        placeholder="e.g. 1h 30m, 90, 2h"
@@ -309,6 +312,7 @@
             @if(!$isInactive)
             <div x-show="editing.location" class="mt-1">
                 <input type="text" x-model="fields.location"
+                       x-ref="locationInput"
                        @keydown.enter="saveField('location')"
                        @keydown.escape.stop="cancelEdit('location')"
                        placeholder="e.g., Conference Room B, Zoom, 123 Main St"
@@ -372,6 +376,7 @@
         @if(!$isInactive)
         <div x-show="editing.description" class="mt-1">
             <textarea x-model="fields.description" rows="4"
+                      x-ref="descriptionInput"
                       @keydown.ctrl.enter="saveField('description')"
                       @keydown.escape.stop="cancelEdit('description')"
                       class="w-full rounded-md bg-gray-700 border-gray-600 text-gray-100 placeholder-gray-500 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm"></textarea>
@@ -402,6 +407,7 @@
         @if(!$isInactive)
         <div x-show="editing.recurrence_pattern" class="mt-1">
             <input type="text" x-model="fields.recurrence_pattern"
+                   x-ref="recurrence_patternInput"
                    placeholder="e.g., daily, every Monday, weekdays"
                    @keydown.enter="saveField('recurrence_pattern')"
                    @keydown.escape.stop="cancelEdit('recurrence_pattern')"
@@ -742,6 +748,7 @@
 
             startEdit(field) {
                 this.editing[field] = true;
+                this.$nextTick(() => this.$refs[field + 'Input']?.focus());
             },
 
             startEditDate() {
