@@ -1,10 +1,38 @@
 <x-app-layout>
     <x-slot name="header">
         <div class="flex justify-between items-center">
-            <div>
-                <h2 class="font-semibold text-xl text-gray-100 leading-tight task-title">
-                    {!! render_title($task->name) !!}
-                </h2>
+            <div class="flex-1 min-w-0 mr-4" x-data="{
+                editing: false,
+                name: @js($task->name),
+                original: @js($task->name),
+                async save() {
+                    const fd = new FormData();
+                    fd.append('_token', document.querySelector('meta[name=\'csrf-token\']').content);
+                    fd.append('field', 'name');
+                    fd.append('value', this.name.trim());
+                    const res = await fetch('/tasks/{{ $task->id }}/update-field', { method: 'POST', body: fd });
+                    const data = await res.json();
+                    if (data.success) { window.location.reload(); }
+                    else { alert('Error saving: ' + (data.message || 'Failed')); this.name = this.original; this.editing = false; }
+                },
+                cancel() { this.name = this.original; this.editing = false; }
+            }">
+                <div x-show="!editing">
+                    <h2 @if(!$isInactive) @click="editing = true; $nextTick(() => $refs.nameInput.focus())" @endif
+                        class="font-semibold text-xl text-gray-100 leading-tight task-title {{ !$isInactive ? 'cursor-pointer hover:text-gray-300' : '' }}">
+                        {!! render_title($task->name) !!}
+                    </h2>
+                </div>
+                @if(!$isInactive)
+                <div x-show="editing" class="flex items-center gap-2" style="display:none">
+                    <input type="text" x-model="name" x-ref="nameInput"
+                           @keydown.enter="save()"
+                           @keydown.escape="cancel()"
+                           class="text-xl font-semibold rounded-md bg-gray-700 border-gray-600 text-gray-100 shadow-sm focus:border-blue-500 focus:ring-blue-500 flex-1 min-w-0 px-2 py-1">
+                    <button @click="save()" class="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 whitespace-nowrap flex-shrink-0">Save</button>
+                    <button @click="cancel()" class="px-3 py-1 bg-gray-700 text-gray-300 text-sm rounded hover:bg-gray-600 whitespace-nowrap flex-shrink-0">Cancel</button>
+                </div>
+                @endif
                 <div class="flex items-center gap-1.5 mt-0.5">
                     <span class="text-sm text-gray-600">#{{ $task->id }}</span>
                     <button x-data="{ copied: false }"
@@ -55,32 +83,6 @@
         <div class="max-w-4xl mx-auto sm:px-6 lg:px-8 space-y-6">
             <!-- Task Details -->
             <div class="bg-[#202020] border border-gray-700 overflow-hidden shadow-sm sm:rounded-lg p-6">
-                <!-- Task Name -->
-                <div class="mb-4">
-                    <span class="text-sm font-medium text-gray-500">Task Name</span>
-                    <div @if(!$isInactive) @click="startEdit('name')" @endif x-show="!editing.name" class="mt-1 p-2 rounded {{ !$isInactive ? 'cursor-pointer hover:bg-gray-700' : '' }}">
-                        <p class="text-lg font-semibold text-gray-100 task-title">{!! render_title($task->name) !!}</p>
-                    </div>
-                    @if(!$isInactive)
-                    <div x-show="editing.name" class="mt-1">
-                        <input type="text" x-model="fields.name"
-                               @keydown.enter="saveField('name')"
-                               @keydown.escape="cancelEdit('name')"
-                               class="w-full rounded-md bg-gray-700 border-gray-600 text-gray-100 placeholder-gray-500 shadow-sm focus:border-blue-500 focus:ring-blue-500">
-                        <div class="flex gap-2 mt-2">
-                            <button @click="saveField('name')"
-                                    class="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700">
-                                Save
-                            </button>
-                            <button @click="cancelEdit('name')"
-                                    class="px-3 py-1 bg-gray-700 text-gray-300 text-sm rounded hover:bg-gray-600">
-                                Cancel
-                            </button>
-                        </div>
-                    </div>
-                    @endif
-                </div>
-
                 @php $rescheduleCount = $task->rescheduleCount(); @endphp
                 @if($rescheduleCount > 0)
                 <div class="mb-4 flex items-center gap-2">
