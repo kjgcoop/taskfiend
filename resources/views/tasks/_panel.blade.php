@@ -348,6 +348,7 @@
             @if(!$isInactive)
             <div x-show="editing.project_id" class="mt-1">
                 <select x-model="fields.project_id"
+                        x-ref="project_idInput"
                         @change="saveField('project_id')"
                         @keydown.escape.stop="cancelEdit('project_id')"
                         class="w-full rounded-md bg-gray-700 border-gray-600 text-gray-100 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm">
@@ -447,7 +448,9 @@
             @endif
         </div>
         @if(!$isInactive)
-        <div x-show="editing.tag_ids" class="mt-1">
+        <div x-show="editing.tag_ids" class="mt-1"
+             x-ref="tag_idsInput" tabindex="-1"
+             @keydown.escape.stop="cancelEdit('tag_ids')">
             <div class="space-y-1.5 mb-2 max-h-40 overflow-y-auto border border-gray-600 bg-[#101010] rounded p-3">
                 @forelse($tags as $tag)
                     <label class="flex items-center">
@@ -483,7 +486,9 @@
             </div>
         </div>
         @if(!$isInactive)
-        <div x-show="editing.assignee_ids" class="mt-1">
+        <div x-show="editing.assignee_ids" class="mt-1"
+             x-ref="assignee_idsInput" tabindex="-1"
+             @keydown.escape.stop="cancelEdit('assignee_ids')">
             <div class="space-y-1.5 mb-2 max-h-40 overflow-y-auto border border-gray-600 bg-[#101010] rounded p-3">
                 @foreach($users as $user)
                     <label class="flex items-center {{ $user->id === Auth::id() ? 'cursor-not-allowed opacity-60' : '' }}">
