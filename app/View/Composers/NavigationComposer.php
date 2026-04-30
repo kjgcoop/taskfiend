@@ -40,7 +40,7 @@ class NavigationComposer
         if (Auth::check()) {
             $navProjects = Project::activeForUser(Auth::id())
                 ->orderByRaw('LOWER(name)')
-                ->get(['id', 'name', 'background_image']);
+                ->get(['id', 'name', 'background_image', 'is_hearted']);
         }
 
         $navTags = Tag::orderByRaw('LOWER(tag_name)')->get(['id', 'tag_name', 'color']);

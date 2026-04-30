@@ -17,7 +17,13 @@ class Project extends Model
         'user_id',
         'status',
         'is_default',
+        'is_hearted',
         'template_id',
+    ];
+
+    protected $casts = [
+        'is_default' => 'boolean',
+        'is_hearted' => 'boolean',
     ];
 
     protected $attributes = [

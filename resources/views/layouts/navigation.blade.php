@@ -86,7 +86,14 @@
                                         @if($hasBg)
                                             <div class="absolute inset-0 bg-black/60 hover:bg-black/45 transition duration-150 ease-in-out"></div>
                                         @endif
-                                        <span class="relative px-4 py-2 block {{ $hasBg ? 'text-white' : '' }}">{{ $project->name }}</span>
+                                        <span class="relative px-4 py-2 flex items-center gap-1.5 {{ $hasBg ? 'text-white' : '' }}">
+                                            @if($project->is_hearted)
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 shrink-0 {{ $hasBg ? 'text-pink-300' : 'text-pink-500' }}" viewBox="0 0 20 20" fill="currentColor">
+                                                    <path fill-rule="evenodd" d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" clip-rule="evenodd" />
+                                                </svg>
+                                            @endif
+                                            {{ $project->name }}
+                                        </span>
                                     </a>
                                 @empty
                                     <span class="block px-4 py-2 text-sm text-gray-500 italic">No active projects</span>
@@ -293,7 +300,14 @@
                             @if($hasBg)
                                 <div class="absolute inset-0 bg-black/60 hover:bg-black/45 transition duration-150 ease-in-out"></div>
                             @endif
-                            <span class="relative {{ $hasBg ? 'text-white' : '' }}">{{ $project->name }}</span>
+                            <span class="relative flex items-center gap-1.5 {{ $hasBg ? 'text-white' : '' }}">
+                                @if($project->is_hearted)
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 shrink-0 {{ $hasBg ? 'text-pink-300' : 'text-pink-500' }}" viewBox="0 0 20 20" fill="currentColor">
+                                        <path fill-rule="evenodd" d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" clip-rule="evenodd" />
+                                    </svg>
+                                @endif
+                                {{ $project->name }}
+                            </span>
                         </a>
                     @empty
                         <span class="block ps-6 pe-4 py-2 text-sm text-gray-500 italic">No active projects</span>
