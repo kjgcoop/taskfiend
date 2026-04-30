@@ -146,35 +146,7 @@
             </div>
 
             @if($inactiveProjects->count() > 0)
-                <div x-data="{
-                    detailsOpen: false,
-                    statusOpen: false,
-                    activeProject: null,
-                    openDetails(project) {
-                        this.activeProject = project;
-                        this.detailsOpen = true;
-                        this.statusOpen = false;
-                    },
-                    updateStatus(newStatus) {
-                        if (!this.activeProject) return;
-                        fetch('/projects/' + this.activeProject.id + '/update-field', {
-                            method: 'POST',
-                            headers: {
-                                'X-CSRF-TOKEN': document.querySelector('meta[name=\'csrf-token\']').content,
-                                'Content-Type': 'application/json',
-                                'Accept': 'application/json',
-                            },
-                            body: JSON.stringify({ field: 'status', value: newStatus }),
-                        }).then(r => r.json()).then(data => {
-                            if (data.success) {
-                                window.location.reload();
-                            } else {
-                                alert(data.message || 'Could not update status.');
-                            }
-                        });
-                    }
-                }" @open-project-details.window="openDetails($event.detail)"
-                   @keydown.escape.window="detailsOpen = false; statusOpen = false">
+                <div>
                     <h3 class="text-sm font-semibold text-gray-500 uppercase tracking-widest mb-3">
                         Inactive Projects
                     </h3>
@@ -203,25 +175,6 @@
                                         @else
                                             <span class="inline-block px-2 py-1 text-xs rounded bg-gray-700 text-gray-400">Archived</span>
                                         @endif
-                                        @if($project->user_id === Auth::id())
-                                        <div x-data="{ menuOpen: false }" class="relative">
-                                            <button @click.stop="menuOpen = !menuOpen"
-                                                    title="Project options"
-                                                    class="text-gray-600 hover:text-gray-300 transition-colors p-0.5 rounded">
-                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="currentColor" viewBox="0 0 24 24">
-                                                    <circle cx="12" cy="5" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="12" cy="19" r="1.5"/>
-                                                </svg>
-                                            </button>
-                                            <div x-show="menuOpen" x-cloak @click.away="menuOpen = false"
-                                                 class="absolute right-0 mt-1 z-20 bg-gray-800 border border-gray-600 rounded-md shadow-lg py-1 min-w-[130px]"
-                                                 @click.stop>
-                                                <button @click="menuOpen = false; $dispatch('open-project-details', { id: {{ $project->id }}, name: {{ json_encode($project->name) }}, status: '{{ $project->status }}' })"
-                                                        class="w-full text-left px-4 py-2 text-sm text-gray-200 hover:bg-gray-700">
-                                                    Details
-                                                </button>
-                                            </div>
-                                        </div>
-                                        @endif
                                     </div>
                                 </div>
                                 @if($project->description)
@@ -242,53 +195,6 @@
                                 </div>
                             </div>
                         @endforeach
-                    </div>
-
-                    <!-- Details modal -->
-                    <div x-show="detailsOpen" x-cloak
-                         class="fixed inset-0 z-50 flex items-center justify-center"
-                         @click.self="detailsOpen = false; statusOpen = false">
-                        <div class="absolute inset-0 bg-black/60"></div>
-                        <div class="relative bg-gray-800 border border-gray-700 rounded-lg shadow-xl p-6 w-full max-w-sm mx-4" @click.stop>
-                            <div class="flex items-start justify-between gap-3 mb-4">
-                                <h3 class="text-base font-semibold text-gray-100" x-text="activeProject ? activeProject.name : ''"></h3>
-                                <button @click="detailsOpen = false; statusOpen = false" class="text-gray-500 hover:text-gray-300 shrink-0">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
-                                    </svg>
-                                </button>
-                            </div>
-                            <div class="flex items-center gap-2">
-                                <span class="text-sm text-gray-400">Status:</span>
-                                <div class="relative">
-                                    <button @click="statusOpen = !statusOpen"
-                                            class="inline-flex items-center gap-1 px-2 py-1 text-xs rounded cursor-pointer transition-colors hover:opacity-80"
-                                            :class="activeProject && activeProject.status === 'done'
-                                                ? 'bg-green-900/50 text-green-400'
-                                                : 'bg-gray-700 text-gray-400'">
-                                        <span x-text="activeProject ? (activeProject.status.charAt(0).toUpperCase() + activeProject.status.slice(1)) : ''"></span>
-                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                            <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
-                                        </svg>
-                                    </button>
-                                    <div x-show="statusOpen" x-cloak @click.away="statusOpen = false"
-                                         class="absolute left-0 mt-1 z-10 bg-gray-800 border border-gray-600 rounded-md shadow-lg py-1 min-w-[130px]">
-                                        <button @click="updateStatus('incomplete')"
-                                                class="w-full text-left px-3 py-1.5 text-xs text-gray-300 hover:bg-gray-700">
-                                            Incomplete
-                                        </button>
-                                        <button @click="updateStatus('done')"
-                                                class="w-full text-left px-3 py-1.5 text-xs text-green-400 hover:bg-gray-700">
-                                            Done
-                                        </button>
-                                        <button @click="updateStatus('archived')"
-                                                class="w-full text-left px-3 py-1.5 text-xs text-gray-400 hover:bg-gray-700">
-                                            Archived
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
                     </div>
                 </div>
             @endif
