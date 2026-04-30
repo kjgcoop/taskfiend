@@ -30,7 +30,7 @@ class SearchController extends Controller
             'show_archived_projects' => 'nullable|boolean',
             'assignee_id'            => 'nullable|integer|exists:users,id',
             'creator_id'      => 'nullable|integer|exists:users,id',
-            'sort'               => 'nullable|in:date,name,created,location',
+            'sort'               => 'nullable|in:date,name,created,location,duration',
             'reversed'           => 'nullable|boolean',
             'search_title'       => 'nullable|boolean',
             'search_description' => 'nullable|boolean',
@@ -156,6 +156,9 @@ class SearchController extends Controller
             'location' => $reversed
                 ? $query->orderByRaw('(location IS NULL OR location = \'\') ASC, LOWER(location) DESC')
                 : $query->orderByRaw('(location IS NULL OR location = \'\') ASC, LOWER(location) ASC'),
+            'duration' => $reversed
+                ? $query->orderByRaw('CASE WHEN duration_minutes IS NULL THEN 1 ELSE 0 END, duration_minutes DESC')
+                : $query->orderByRaw('CASE WHEN duration_minutes IS NULL THEN 1 ELSE 0 END, duration_minutes ASC'),
             default    => $reversed
                 ? $query->orderByRaw('(date IS NULL) ASC, date DESC, CASE WHEN sort_order IS NULL THEN 1 ELSE 0 END, sort_order, time IS NULL, time DESC, created_at DESC')
                 : $query->orderByRaw('date IS NULL, date ASC, CASE WHEN sort_order IS NULL THEN 1 ELSE 0 END, sort_order, time IS NULL, time ASC, created_at ASC'),

@@ -21,6 +21,7 @@
                         class="text-sm bg-gray-700 border border-gray-600 rounded px-2 py-1 text-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500">
                     <option value="created" {{ $sort === 'created' ? 'selected' : '' }}>Date Added</option>
                     <option value="name" {{ $sort === 'name' ? 'selected' : '' }}>Name</option>
+                    <option value="duration" {{ $sort === 'duration' ? 'selected' : '' }}>Duration</option>
                     <option value="location" {{ $sort === 'location' ? 'selected' : '' }}>Location</option>
                     <option value="custom" {{ $sort === 'custom' ? 'selected' : '' }}>Custom Sort</option>
                 </select>

@@ -641,6 +641,7 @@
                             <option value="date" {{ $sort === 'date' ? 'selected' : '' }}>Date & Time</option>
                             <option value="created" {{ $sort === 'created' ? 'selected' : '' }}>Date Added</option>
                             <option value="name" {{ $sort === 'name' ? 'selected' : '' }}>Name</option>
+                            <option value="duration" {{ $sort === 'duration' ? 'selected' : '' }}>Duration</option>
                             <option value="location" {{ $sort === 'location' ? 'selected' : '' }}>Location</option>
                             <option value="custom" {{ $sort === 'custom' ? 'selected' : '' }}>Custom Sort</option>
                         </select>

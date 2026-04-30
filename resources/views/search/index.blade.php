@@ -314,6 +314,7 @@
                                 <option value="date"     {{ request('sort', 'date') === 'date'     ? 'selected' : '' }}>Date & Time</option>
                                 <option value="created"  {{ request('sort') === 'created'          ? 'selected' : '' }}>Date Added</option>
                                 <option value="name"     {{ request('sort') === 'name'             ? 'selected' : '' }}>Name</option>
+                                <option value="duration" {{ request('sort') === 'duration'         ? 'selected' : '' }}>Duration</option>
                                 <option value="location" {{ request('sort') === 'location'         ? 'selected' : '' }}>Location</option>
                             </select>
                             <button onclick="toggleSortReversed()"
