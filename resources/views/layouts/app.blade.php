@@ -9,7 +9,7 @@
         <!-- Restore saved sort preference before page renders (avoids visible re-sort) -->
         <script>(function(){var p=new URLSearchParams(window.location.search);if(!p.has('sort')){var s=localStorage.getItem('task_sort_'+window.location.pathname);if(s){p.set('sort',s);location.replace(location.pathname+'?'+p.toString());}}}());</script>
 
-        <title>{{ config('app.name', 'Laravel') }} - {{ substr(strip_tags($header), 0, 100) }}</title>
+        <title>{{ config('app.name', 'Laravel') }} - {{ substr(trim(strip_tags($header)), 0, 100) }}</title>
 
         <!-- Favicon -->
         <link rel="icon" type="image/svg+xml" href="{{ config('app.env') !== 'production' ? '/favicon-dev.svg' : '/favicon.svg' }}">
