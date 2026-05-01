@@ -245,10 +245,10 @@
                 const projectMatch        = beforeCursor.match(/#(\w*)$/);
                 const tagMatch           = beforeCursor.match(/@(\w*)$/);
                 // Location: check quoted ++ and + before unquoted to avoid false matches
-                const mapLocQuotedMatch  = beforeCursor.match(/\+\+"([^"]*)$/);
-                const mapLocUnquotMatch  = !mapLocQuotedMatch && beforeCursor.match(/\+\+(\w*)$/);
-                const locQuotedMatch     = !mapLocQuotedMatch && !mapLocUnquotMatch && beforeCursor.match(/\+"([^"]*)$/);
-                const locationMatch      = !mapLocQuotedMatch && !mapLocUnquotMatch && !locQuotedMatch && beforeCursor.match(/\+(\w*)$/);
+                const mapLocQuotedMatch  = beforeCursor.match(/(?<!\S)\+\+"([^"]*)$/);
+                const mapLocUnquotMatch  = !mapLocQuotedMatch && beforeCursor.match(/(?<!\S)\+\+(\w*)$/);
+                const locQuotedMatch     = !mapLocQuotedMatch && !mapLocUnquotMatch && beforeCursor.match(/(?<!\S)\+"([^"]*)$/);
+                const locationMatch      = !mapLocQuotedMatch && !mapLocUnquotMatch && !locQuotedMatch && beforeCursor.match(/(?<!\S)\+(\w*)$/);
                 const userMatch          = beforeCursor.match(/&(\w*)$/);
 
                 if (projectMatch && this.projects.length > 0) {
@@ -319,7 +319,7 @@
                 const notUserMatch    = beforeCursor.match(/not:&(\w*)$/i);
                 const projectMatch    = !notProjectMatch && beforeCursor.match(/#(\w*)$/);
                 const tagMatch        = !notTagMatch && beforeCursor.match(/@(\w*)$/);
-                const locationMatch   = !notLocMatch && beforeCursor.match(/\+(\w*)$/);
+                const locationMatch   = !notLocMatch && beforeCursor.match(/(?<!\S)\+(\w*)$/);
                 const userMatch       = !notUserMatch && beforeCursor.match(/&(\w*)$/);
 
                 if (notProjectMatch && this.projects.length > 0) {
