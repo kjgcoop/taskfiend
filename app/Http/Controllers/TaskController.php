@@ -1017,20 +1017,20 @@ class TaskController extends Controller
 
         // Mirror the +location / ++location token parsing from store()
         $showMap = false;
-        if (preg_match('/\+\+"([^"]+)"/', $taskName, $m)) {
+        if (preg_match('/(?<!\S)\+\+"([^"]+)"/', $taskName, $m)) {
             $location = $this->resolveLocationToken($m[1]);
             $showMap  = true;
-            $taskName = trim(preg_replace('/\+\+"[^"]*"\s*/', '', $taskName));
-        } elseif (preg_match('/\+\+(\w[\w-]*)/', $taskName, $m)) {
+            $taskName = trim(preg_replace('/(?<!\S)\+\+"[^"]*"\s*/', '', $taskName));
+        } elseif (preg_match('/(?<!\S)\+\+(\w[\w-]*)/', $taskName, $m)) {
             $location = $this->resolveLocationToken($m[1]);
             $showMap  = true;
-            $taskName = trim(preg_replace('/\+\+\w[\w-]*\s*/', '', $taskName));
-        } elseif (preg_match('/\+"([^"]+)"/', $taskName, $m)) {
+            $taskName = trim(preg_replace('/(?<!\S)\+\+\w[\w-]*\s*/', '', $taskName));
+        } elseif (preg_match('/(?<!\S)\+"([^"]+)"/', $taskName, $m)) {
             $location = $this->resolveLocationToken($m[1]);
-            $taskName = trim(preg_replace('/\+"[^"]*"\s*/', '', $taskName));
-        } elseif (preg_match('/\+(\w[\w-]*)/', $taskName, $m)) {
+            $taskName = trim(preg_replace('/(?<!\S)\+"[^"]*"\s*/', '', $taskName));
+        } elseif (preg_match('/(?<!\S)\+(\w[\w-]*)/', $taskName, $m)) {
             $location = $this->resolveLocationToken($m[1]);
-            $taskName = trim(preg_replace('/\+\w[\w-]*\s*/', '', $taskName));
+            $taskName = trim(preg_replace('/(?<!\S)\+\w[\w-]*\s*/', '', $taskName));
         }
 
         // Mirror the &user token parsing from store()
