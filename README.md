@@ -11,7 +11,10 @@ Because I designed this for my own devious purposes, I assumed there would only 
 - **Markdown** in task descriptions; `` `code` `` spans are also supported in task titles
 - **Task links** — link to other tasks, projects, or locations from any description or comment using `[task:1]`, `[project:1]`, or `[location:1]`; IDs are shown on task and project pages
 - **Project/tag navigation** — the header nav includes dropdowns listing all your projects and tags
+- **Favorite projects** — star any project to mark it as a favorite; the project list can be filtered to show only favorites, making it easy to separate active work from back-burner projects
 - **Task count breakdown** — click the task count on any list view to see a breakdown by project
+- **Sorting** — sort task lists by date, duration, or other fields; a reverse-sort button flips the current order. Tasks without a date or time are sorted by creation date (newest last), so the bottom of an undated list stays stable.
+- **Manual task reordering** — drag tasks to reorder them, with auto-scroll when dragging to the edge of the page. Scoot arrows (↑ ↓ ⤒ ⤓) let you nudge a task up, down, to the top, or to the bottom one tap at a time; the page follows the arrows so you don't have to hunt for them after each move.
 - **Search** — find tasks by title, description, tags, projects, assignees, duration, and date presence; title and description can be targeted independently
 - **Changelogs** — every create/edit is logged and browsable by task, project, tag, or user
 - **API** — create and query tasks via bearer token (see Admin-Like Functions below for key management)
