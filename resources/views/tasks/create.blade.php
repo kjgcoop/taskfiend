@@ -621,7 +621,13 @@
                 },
 
                 handleKeydown(event) {
-                    if (!this.showAutocomplete) return;
+                    if (!this.showAutocomplete) {
+                        if (event.key === 'Enter' && !event.shiftKey) {
+                            event.preventDefault();
+                            event.target.closest('form').requestSubmit();
+                        }
+                        return;
+                    }
 
                     let maxIndex;
                     if (this.autocompleteType === 'project') {
