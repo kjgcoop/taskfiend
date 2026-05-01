@@ -223,22 +223,22 @@ class TaskController extends Controller
         // Supported forms (++ = show as map link):
         //   ++"123 Main St, Town"   ++office   +"Coffee Shop"   +home
         if ($isQuickAdd && empty($validated['location'])) {
-            if (preg_match('/\+\+"([^"]+)"/', $taskName, $m)) {
+            if (preg_match('/(?<!\S)\+\+"([^"]+)"/', $taskName, $m)) {
                 $validated['location'] = $this->resolveLocationToken($m[1]);
                 $validated['show_map'] = true;
-                $taskName = trim(preg_replace('/\+\+"[^"]*"\s*/', '', $taskName));
-            } elseif (preg_match('/\+\+(\w[\w-]*)/', $taskName, $m)) {
+                $taskName = trim(preg_replace('/(?<!\S)\+\+"[^"]*"\s*/', '', $taskName));
+            } elseif (preg_match('/(?<!\S)\+\+(\w[\w-]*)/', $taskName, $m)) {
                 $validated['location'] = $this->resolveLocationToken($m[1]);
                 $validated['show_map'] = true;
-                $taskName = trim(preg_replace('/\+\+\w[\w-]*\s*/', '', $taskName));
-            } elseif (preg_match('/\+"([^"]+)"/', $taskName, $m)) {
+                $taskName = trim(preg_replace('/(?<!\S)\+\+\w[\w-]*\s*/', '', $taskName));
+            } elseif (preg_match('/(?<!\S)\+"([^"]+)"/', $taskName, $m)) {
                 $validated['location'] = $this->resolveLocationToken($m[1]);
                 $validated['show_map'] = false;
-                $taskName = trim(preg_replace('/\+"[^"]*"\s*/', '', $taskName));
-            } elseif (preg_match('/\+(\w[\w-]*)/', $taskName, $m)) {
+                $taskName = trim(preg_replace('/(?<!\S)\+"[^"]*"\s*/', '', $taskName));
+            } elseif (preg_match('/(?<!\S)\+(\w[\w-]*)/', $taskName, $m)) {
                 $validated['location'] = $this->resolveLocationToken($m[1]);
                 $validated['show_map'] = false;
-                $taskName = trim(preg_replace('/\+\w[\w-]*\s*/', '', $taskName));
+                $taskName = trim(preg_replace('/(?<!\S)\+\w[\w-]*\s*/', '', $taskName));
             }
         }
 
