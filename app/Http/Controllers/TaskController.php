@@ -1401,6 +1401,21 @@ class TaskController extends Controller
             $nextOccurrence = $advanced;
         }
 
+        // Guard: next occurrence must be strictly after the scheduled date of the task
+        // just completed. This prevents re-creating the same instance when a task is
+        // completed before its due date (e.g. completing Thursday's Mon/Thu task on
+        // Wednesday — the "next" occurrence from today is Thursday itself, not Monday).
+        if ($originalTask->date) {
+            $scheduledDate = Carbon::parse($originalTask->date);
+            while ($nextOccurrence->lte($scheduledDate)) {
+                $advanced = $dateParser->getNextOccurrence($originalTask->recurrence_pattern, $nextOccurrence);
+                if (!$advanced) {
+                    break;
+                }
+                $nextOccurrence = $advanced;
+            }
+        }
+
         $nextDate = $nextOccurrence->format('Y-m-d');
 
         $existingTask = Task::where('creator_id', $originalTask->creator_id)
