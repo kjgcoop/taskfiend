@@ -421,7 +421,8 @@ class TaskController extends Controller
             ->orderByRaw('LOWER(name)')
             ->get();
 
-        $isInactive = $task->project && in_array($task->project->status, ['done', 'archived']);
+        $isInactive = in_array($task->status, ['done', 'archived'])
+            || ($task->project && in_array($task->project->status, ['done', 'archived']));
 
         return view('tasks.show', compact('task', 'projects', 'tags', 'users', 'nextDueDate', 'availableParents', 'defaultProjectId', 'isInactive'));
     }
@@ -449,7 +450,8 @@ class TaskController extends Controller
             }
         }
 
-        $isInactive = $task->project && in_array($task->project->status, ['done', 'archived']);
+        $isInactive = in_array($task->status, ['done', 'archived'])
+            || ($task->project && in_array($task->project->status, ['done', 'archived']));
 
         return view('tasks._panel', compact('task', 'projects', 'tags', 'users', 'nextDueDate', 'defaultProjectId', 'isInactive'));
     }
@@ -682,7 +684,7 @@ class TaskController extends Controller
             $this->logChange($task, "changed {$field} from {$change['old']} to {$change['new']}", $verb, $field, $change['old'], $change['new']);
         }
 
-        if ($task->status === 'done' && $task->recurrence_pattern) {
+        if ($statusChangedToDone && $task->recurrence_pattern) {
             $this->createRecurringTask($task);
         }
 
@@ -822,7 +824,7 @@ class TaskController extends Controller
                         }
 
                         $task->load(['project', 'tags']);
-                        return response()->json(['success' => true, 'reload' => true, 'taskData' => $this->buildTaskData($task)]);
+                        return response()->json(['success' => true, 'reload' => true, 'taskData' => $this->buildTaskData($task, $field)]);
                     }
 
                     // Handle archiving with descendants
@@ -874,7 +876,7 @@ class TaskController extends Controller
             }
 
             $task->load(['project', 'tags']);
-            $response = ['success' => true, 'taskData' => $this->buildTaskData($task)];
+            $response = ['success' => true, 'taskData' => $this->buildTaskData($task, $field)];
             if ($field === 'description') {
                 $response['rendered_description'] = render_body($task->description ?? '');
             }
@@ -884,7 +886,7 @@ class TaskController extends Controller
         }
     }
 
-    private function buildTaskData(Task $task): array
+    private function buildTaskData(Task $task, ?string $updatedField = null): array
     {
         return [
             'id'                 => $task->id,
@@ -898,6 +900,7 @@ class TaskController extends Controller
             'recurrence_pattern' => $task->recurrence_pattern,
             'tags'               => $task->tags->map(fn ($t) => ['name' => $t->tag_name, 'color' => $t->color])->values()->toArray(),
             'inactive'           => in_array($task->status, ['done', 'archived']),
+            'updated_field'      => $updatedField,
         ];
     }
 
