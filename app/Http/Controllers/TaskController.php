@@ -684,7 +684,7 @@ class TaskController extends Controller
             $this->logChange($task, "changed {$field} from {$change['old']} to {$change['new']}", $verb, $field, $change['old'], $change['new']);
         }
 
-        if ($statusChangedToDone && $task->recurrence_pattern) {
+        if (($statusChangedToDone || $statusChangedToArchived) && $task->recurrence_pattern) {
             $this->createRecurringTask($task);
         }
 
@@ -870,7 +870,7 @@ class TaskController extends Controller
                 }
                 $this->logChange($task, "updated {$field}", $verb, $field, $previousValue, $value);
 
-                if ($field === 'status' && $value === 'done' && $task->recurrence_pattern) {
+                if ($field === 'status' && in_array($value, ['done', 'archived']) && $task->recurrence_pattern) {
                     $this->createRecurringTask($task);
                 }
             }
