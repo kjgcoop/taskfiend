@@ -705,8 +705,8 @@
         const group = document.querySelector(`[data-task-group-id="${d.id}"]`);
         if (!group) return;
 
-        // Inactive (done/archived): fade the row out without closing the panel
-        if (d.inactive) {
+        // Inactive (done/archived) AND the status field was just changed: fade the row out
+        if (d.inactive && d.updated_field === 'status') {
             group.style.transition = 'opacity 0.4s';
             group.style.opacity = '0';
             setTimeout(() => { group.style.display = 'none'; }, 400);
