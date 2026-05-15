@@ -292,21 +292,11 @@
                 <div x-show="projectsOpen" x-transition class="bg-[#101010]">
                     @forelse($navProjects as $project)
                         @php $hasBg = !empty($project->background_image); @endphp
-                        <a href="{{ route('projects.show', $project) }}"
+                        <a href="{{ route('projects.create') }}"
                            class="relative block w-full ps-3 pe-4 py-2 border-l-4 border-transparent text-base font-medium focus:outline-none transition duration-150 ease-in-out overflow-hidden {{ $hasBg ? 'border-b-2 border-[#202020]' : 'text-gray-400 hover:text-gray-100 hover:bg-gray-700 hover:border-gray-500' }}"
-                           @if($hasBg)
-                           style="background-image: url('{{ route('projects.background', $project) }}'); background-size: cover; background-position: center;"
-                           @endif>
-                            @if($hasBg)
-                                <div class="absolute inset-0 bg-black/60 hover:bg-black/45 transition duration-150 ease-in-out"></div>
-                            @endif
-                            <span class="relative flex items-center gap-1.5 {{ $hasBg ? 'text-white' : '' }}">
-                                @if($project->is_hearted)
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 shrink-0 {{ $hasBg ? 'text-pink-300' : 'text-pink-500' }}" viewBox="0 0 20 20" fill="currentColor">
-                                        <path fill-rule="evenodd" d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" clip-rule="evenodd" />
-                                    </svg>
-                                @endif
-                                {{ $project->name }}
+                        >
+                            <span class="relative flex items-center gap-1.5 text-white">
+                                Add New Project
                             </span>
                         </a>
                     @empty
@@ -314,9 +304,19 @@
                     @endforelse
                     <a href="{{ route('projects.show', $project) }}"
                        class="relative block w-full ps-3 pe-4 py-2 border-l-4 border-transparent text-base font-medium focus:outline-none transition duration-150 ease-in-out overflow-hidden {{ $hasBg ? 'border-b-2 border-[#202020]' : 'text-gray-400 hover:text-gray-100 hover:bg-gray-700 hover:border-gray-500' }}"
-                    >
+                       @if($hasBg)
+                           style="background-image: url('{{ route('projects.background', $project) }}'); background-size: cover; background-position: center;"
+                        @endif>
+                        @if($hasBg)
+                            <div class="absolute inset-0 bg-black/60 hover:bg-black/45 transition duration-150 ease-in-out"></div>
+                        @endif
                         <span class="relative flex items-center gap-1.5 {{ $hasBg ? 'text-white' : '' }}">
-                            {{ route('projects.create') }}
+                            @if($project->is_hearted)
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 shrink-0 {{ $hasBg ? 'text-pink-300' : 'text-pink-500' }}" viewBox="0 0 20 20" fill="currentColor">
+                                    <path fill-rule="evenodd" d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" clip-rule="evenodd" />
+                                </svg>
+                            @endif
+                            {{ $project->name }}
                         </span>
                     </a>
                 </div>
@@ -344,10 +344,9 @@
                     @endforelse
                     <a href="{{ route('tags.create') }}"
                        class="block w-full ps-3 pe-4 py-2 border-l-4 text-base font-medium text-gray-400 hover:text-gray-100 hover:bg-gray-700 focus:outline-none transition duration-150 ease-in-out"
-                       style="border-left-color: transparent">
-                        {{ route('tags.create') }}
+                       style="border-left-color: {{ $tag->color ?? 'transparent' }}">
+                        Add New Tag
                     </a>
-
                 </div>
             </div>
             <x-responsive-nav-link :href="route('templates.index')" :active="request()->routeIs('templates.*')">
