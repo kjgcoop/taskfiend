@@ -1062,6 +1062,15 @@
                         await this._saveFieldRequest(otherField);
                     }
 
+                    if (field === 'name') {
+                        if (JSON.stringify([...this.fields.tag_ids].sort()) !== JSON.stringify([...this.original.tag_ids].sort())) {
+                            await this._saveFieldRequest('tag_ids');
+                        }
+                        if (this.fields.project_id !== this.original.project_id) {
+                            await this._saveFieldRequest('project_id');
+                        }
+                    }
+
                     const ok = await this._saveFieldRequest(field);
                     if (ok) {
                         window.reloadTaskPanel(this.taskId);
