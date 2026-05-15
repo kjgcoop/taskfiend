@@ -1116,13 +1116,6 @@
                                       data-task-location-display>{{ $locDisplay }}</span>
                             @endif
                         @endif
-                        @if($task->description)
-                            <span class="flex items-center gap-1 text-gray-500" title="Has description">
-                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h10"></path>
-                                </svg>
-                            </span>
-                        @endif
                         @if($task->comments->count() > 0)
                             <span class="flex items-center gap-1 text-gray-500" title="{{ $task->comments->count() }} comment(s)">
                                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
