@@ -1007,7 +1007,7 @@
                 </div>
 
                 <!-- Task Content -->
-                <div class="flex-1"
+                <div class="flex-1 min-w-0"
                      :class="$store.bulkEdit.active ? 'cursor-pointer' : 'cursor-pointer'"
                      @click="$store.bulkEdit.active
                          ? $store.bulkEdit.toggleTask({{ $task->id }})
