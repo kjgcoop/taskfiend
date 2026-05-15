@@ -157,13 +157,20 @@
                     <div class="mb-4 grid grid-cols-1 sm:grid-cols-3 gap-4">
                         <div>
                             <label for="date_from" class="block text-sm font-medium text-gray-300 mb-2">Date from</label>
-                            <input type="date" name="date_from" id="date_from"
+                            <input type="date" name="date_from" id="date_from" x-ref="dateFrom"
                                    value="{{ request('date_from') }}"
                                    class="w-full rounded-md bg-gray-700 border-gray-600 text-gray-100 shadow-sm focus:border-blue-500 focus:ring-blue-500">
                         </div>
                         <div>
-                            <label for="date_to" class="block text-sm font-medium text-gray-300 mb-2">Date to</label>
-                            <input type="date" name="date_to" id="date_to"
+                            <div class="flex items-center justify-between mb-2">
+                                <label for="date_to" class="block text-sm font-medium text-gray-300">Date to</label>
+                                <button type="button"
+                                        @click="$refs.dateFrom.value = ''; $refs.dateTo.value = ''"
+                                        class="text-xs text-gray-500 hover:text-gray-300 transition-colors">
+                                    Clear dates
+                                </button>
+                            </div>
+                            <input type="date" name="date_to" id="date_to" x-ref="dateTo"
                                    value="{{ request('date_to') }}"
                                    class="w-full rounded-md bg-gray-700 border-gray-600 text-gray-100 shadow-sm focus:border-blue-500 focus:ring-blue-500">
                         </div>
