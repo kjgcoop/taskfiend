@@ -1046,7 +1046,7 @@
                             </span>
                         @endif
                     </h3>
-                    <p class="text-sm text-gray-400 mt-1" data-task-desc-display
+                    <p class="text-sm text-gray-400 mt-1 break-words" data-task-desc-display
                        @unless($task->description) style="display:none" @endunless>{{ Str::limit($task->description ?? '', 100) }}</p>
                     <div class="flex items-center gap-3 mt-2 text-xs text-gray-500">
                         @if($hideDate)
