@@ -1055,7 +1055,7 @@
 
             async saveField(field) {
                 try {
-                    if (field === 'status' && this.fields.status === 'done' && this.fields.recurrence_pattern) {
+/*                    if (field === 'status' && this.fields.status === 'done' && this.fields.recurrence_pattern) {
                         const confirmed = confirm(
                             '🔄 Recurring Task: Marking as Done\n\n' +
                             'This will complete THIS instance only and create a new task for the next occurrence.\n\n' +
@@ -1066,14 +1066,14 @@
                             this.editing[field] = false;
                             return;
                         }
-                    }
+                    }*/
 
                     if (field === 'status' && this.fields.status === 'incomplete'
                             && ['done', 'archived'].includes(this.original.status) && this.fields.recurrence_pattern) {
                         const archive = confirm(
-                            '🔄 Recurring Task: Marking as Incomplete\n\n' +
+                            'Recurring Task: Marking as Incomplete\n\n' +
                             'When this task was completed, the next occurrence was automatically created.\n\n' +
-                            'Would you like to archive that next occurrence?\n\n' +
+                            'Would you like to archive that next occurrence? Bear in mind that if you keep it, you may have two series of this task.\n\n' +
                             'OK = archive it · Cancel = keep it'
                         );
                         this._nextOccurrenceAction = archive ? 'archive' : 'keep';
