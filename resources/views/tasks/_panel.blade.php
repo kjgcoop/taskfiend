@@ -1069,7 +1069,7 @@
                     }
 
                     if (field === 'status' && this.fields.status === 'incomplete'
-                            && this.original.status === 'done' && this.fields.recurrence_pattern) {
+                            && ['done', 'archived'].includes(this.original.status) && this.fields.recurrence_pattern) {
                         const archive = confirm(
                             '🔄 Recurring Task: Marking as Incomplete\n\n' +
                             'When this task was completed, the next occurrence was automatically created.\n\n' +
