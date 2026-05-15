@@ -208,7 +208,7 @@ class ProjectController extends Controller
             ->orderByRaw('LOWER(name)')
             ->get();
 
-        $projects = Project::activeForUser(Auth::id())->orderBy('name')->get(['id', 'name', 'is_hearted']);
+        $projects = Project::activeForUser(Auth::id())->orderByRaw('LOWER(name)')->get(['id', 'name', 'is_hearted']);
 
         $tags = Tag::orderByRaw('LOWER(tag_name)')->get(['id', 'tag_name', 'color']);
 

@@ -138,7 +138,7 @@ class TagController extends Controller
                   ->orWhereHas('assignees', fn($q2) => $q2->where('users.id', Auth::id()));
             })
             ->where('status', '!=', 'archived')
-            ->orderBy('name')
+            ->orderByRaw('LOWER(name)')
             ->get(['id', 'name']);
 
         $allTags = Tag::orderByRaw('LOWER(tag_name)')->get(['id', 'tag_name', 'color']);

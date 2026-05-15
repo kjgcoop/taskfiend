@@ -229,7 +229,7 @@ class ChangeLogController extends Controller
         $availableProjects = Project::where(function ($q) {
             $q->where('user_id', Auth::id())
               ->orWhereHas('assignees', fn($sq) => $sq->where('users.id', Auth::id()));
-        })->orderBy('name')->get();
+        })->orderByRaw('LOWER(name)')->get();
 
         $availableTags = Tag::orderByRaw('LOWER(tag_name)')->get();
 
