@@ -808,6 +808,13 @@
 </script>
 @endPushOnce
 
+@if($depth === 0)
+    @php
+        $taskIds = $tasks->pluck('id')->flip()->all();
+        $tasks = $tasks->filter(fn($t) => is_null($t->parent_id) || !isset($taskIds[$t->parent_id]));
+    @endphp
+@endif
+
 @if($sortable && !$readOnly && $depth === 0)
 <div class="space-y-2"
      x-data
