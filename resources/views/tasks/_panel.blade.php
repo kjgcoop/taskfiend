@@ -865,6 +865,14 @@
 
             selectNameAutocomplete(item) {
                 const input = this.$refs.nameInput;
+                const val = this.fields.name;
+                const pos = input ? input.selectionStart : val.length;
+                const textToCursor = val.substring(0, pos);
+                const prefix = this.nameAC.type === 'tag' ? '@' : '#';
+                const slug = item.name.toLowerCase().replace(/[^a-z0-9-]/g, '');
+                const newBeforeCursor = textToCursor.replace(new RegExp(prefix + '[\\w-]*$'), prefix + slug + ' ');
+                this.fields.name = newBeforeCursor + val.substring(pos);
+
                 if (this.nameAC.type === 'tag') {
                     if (!this.fields.tag_ids.includes(item.id)) {
                         this.fields.tag_ids = [...this.fields.tag_ids, item.id];
