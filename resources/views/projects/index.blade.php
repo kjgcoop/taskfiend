@@ -129,11 +129,6 @@
                                         {{ ucfirst($project->status) }}
                                     </span>
                                     @endif
-                                    <a href="{{ route('projects.export-markdown', $project) }}"
-                                       onclick="event.stopPropagation()"
-                                       class="text-xs {{ $hasBg ? 'text-gray-300 hover:text-white' : 'text-gray-500 hover:text-gray-300' }}">
-                                        Export .md
-                                    </a>
                                 </div>
                             </div>
                         </div>
@@ -187,11 +182,6 @@
                                             &middot; {{ $project->done_tasks_count }} completed
                                         @endif
                                     </span>
-                                    <a href="{{ route('projects.export-markdown', $project) }}"
-                                       onclick="event.stopPropagation()"
-                                       class="text-xs text-gray-600 hover:text-gray-400">
-                                        Export .md
-                                    </a>
                                 </div>
                             </div>
                         @endforeach
