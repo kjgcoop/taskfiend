@@ -1025,6 +1025,10 @@
                     }
                 }
 
+                if (field === 'status' && this._nextOccurrenceAction) {
+                    formData.append('next_occurrence_action', this._nextOccurrenceAction);
+                }
+
                 const response = await fetch(`/tasks/${this.taskId}/update-field`, {
                     method: 'POST',
                     body: formData,
@@ -1062,6 +1066,19 @@
                             this.editing[field] = false;
                             return;
                         }
+                    }
+
+                    if (field === 'status' && this.fields.status === 'incomplete'
+                            && this.original.status === 'done' && this.fields.recurrence_pattern) {
+                        const archive = confirm(
+                            '🔄 Recurring Task: Marking as Incomplete\n\n' +
+                            'When this task was completed, the next occurrence was automatically created.\n\n' +
+                            'Would you like to archive that next occurrence?\n\n' +
+                            'OK = archive it · Cancel = keep it'
+                        );
+                        this._nextOccurrenceAction = archive ? 'archive' : 'keep';
+                    } else {
+                        this._nextOccurrenceAction = null;
                     }
 
                     const otherEditingFields = Object.keys(this.editing).filter(f => this.editing[f] && f !== field);

@@ -887,6 +887,11 @@ class TaskController extends Controller
                 if ($field === 'status' && in_array($value, ['done', 'archived']) && $task->recurrence_pattern) {
                     $this->createRecurringTask($task);
                 }
+
+                if ($field === 'status' && $value === 'incomplete' && $task->recurrence_pattern
+                    && $request->input('next_occurrence_action') === 'archive') {
+                    $this->archiveNextOccurrence($task);
+                }
             }
 
             $task->load(['project', 'tags']);
@@ -1493,6 +1498,49 @@ class TaskController extends Controller
             'entity_id' => $newTask->id,
             'description' => 'created recurring task',
         ]);
+    }
+
+    protected function archiveNextOccurrence(Task $originalTask): void
+    {
+        $dateParser = new DateParser();
+        $baseDate = $originalTask->recurrence_floating
+            ? Carbon::today()
+            : ($originalTask->date ? Carbon::parse($originalTask->date) : Carbon::today());
+        $nextOccurrence = $dateParser->getNextOccurrence($originalTask->recurrence_pattern, $baseDate);
+
+        if (!$nextOccurrence) {
+            return;
+        }
+
+        $today = Carbon::today();
+        while ($nextOccurrence->lt($today)) {
+            $advanced = $dateParser->getNextOccurrence($originalTask->recurrence_pattern, $nextOccurrence);
+            if (!$advanced) break;
+            $nextOccurrence = $advanced;
+        }
+
+        if ($originalTask->date) {
+            $scheduledDate = Carbon::parse($originalTask->date);
+            while ($nextOccurrence->lte($scheduledDate)) {
+                $advanced = $dateParser->getNextOccurrence($originalTask->recurrence_pattern, $nextOccurrence);
+                if (!$advanced) break;
+                $nextOccurrence = $advanced;
+            }
+        }
+
+        $nextTask = Task::where('creator_id', $originalTask->creator_id)
+            ->where('name', $originalTask->name)
+            ->where('recurrence_pattern', $originalTask->recurrence_pattern)
+            ->where('status', 'incomplete')
+            ->where('date', $nextOccurrence->format('Y-m-d'))
+            ->first();
+
+        if ($nextTask) {
+            $nextTask->status = 'archived';
+            $nextTask->completed_at = now();
+            $nextTask->save();
+            $this->logChange($nextTask, 'archived (next occurrence of re-opened recurring task)', 'archived', 'status', 'incomplete', 'archived');
+        }
     }
 
     /**
