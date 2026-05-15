@@ -1196,7 +1196,7 @@
         <!-- Recursively render subtasks -->
         @if($task->children->count() > 0)
             <div x-show="subtasksOpen" x-transition:leave="transition-opacity duration-150" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0">
-                <x-task-list :tasks="$task->children" :depth="$depth + 1" :hide-date="$hideDate" :read-only="$readOnly" />
+                <x-task-list :tasks="$task->children" :depth="$depth + 1" :hide-date="false" :read-only="$readOnly" />
             </div>
         @endif
         </div>{{-- /data-task-group --}}
