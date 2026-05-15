@@ -66,12 +66,17 @@
     </div>
     @endif
 
-    {{-- Inactive project warning --}}
+    {{-- Inactive warning --}}
     @if($isInactive)
     <div class="p-3 bg-yellow-900 bg-opacity-20 border border-yellow-600 rounded-lg">
         <p class="text-sm text-yellow-300">
-            <span class="font-semibold">Project is inactive.</span>
-            This task is read-only.
+            @if(in_array($task->status, ['done', 'archived']))
+                <span class="font-semibold">Task is {{ $task->status }}.</span>
+                This task is read-only.
+            @else
+                <span class="font-semibold">Project is inactive.</span>
+                This task is read-only.
+            @endif
         </p>
     </div>
     @endif

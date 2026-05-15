@@ -96,8 +96,13 @@
                 @if($isInactive)
                 <div class="mb-4 p-3 bg-yellow-900 bg-opacity-20 border border-yellow-600 rounded-lg">
                     <p class="text-sm text-yellow-300">
-                        <span class="font-semibold">Project is inactive.</span>
-                        This task is read-only. To re-enable editing, change the project status back to <strong>Incomplete</strong>.
+                        @if(in_array($task->status, ['done', 'archived']))
+                            <span class="font-semibold">Task is {{ $task->status }}.</span>
+                            This task is read-only.
+                        @else
+                            <span class="font-semibold">Project is inactive.</span>
+                            This task is read-only. To re-enable editing, change the project status back to <strong>Incomplete</strong>.
+                        @endif
                     </p>
                 </div>
                 @endif
@@ -115,7 +120,7 @@
                         and automatically create a new one for the next occurrence.
                     </p>
                     <p class="text-xs text-purple-400 mt-1">
-                        <strong>To stop the entire series:</strong> Remove the recurrence pattern below before marking done, or change status to "archived" instead.
+                        <strong>To stop the entire series:</strong> Remove the recurrence pattern below before marking done or archived.
                     </p>
                 </div>
                 @endif
