@@ -127,9 +127,9 @@
         <!-- Status -->
         <div>
             <span class="text-xs font-medium text-gray-500 uppercase tracking-wide">Status</span>
-            <div @if(!$isInactive) @click="startEdit('status')" @endif
+            <div @click="startEdit('status')"
                  x-show="!editing.status"
-                 class="mt-1 p-2 rounded {{ !$isInactive ? 'cursor-pointer hover:bg-gray-700' : '' }}">
+                 class="mt-1 p-2 rounded cursor-pointer hover:bg-gray-700">
                 <span class="inline-block px-2 py-0.5 text-xs rounded
                     @if($task->status === 'done') bg-green-100 text-green-800
                     @elseif($task->status === 'archived') bg-gray-100 text-gray-800
@@ -140,7 +140,6 @@
                     <span class="ml-1 text-xs text-purple-400">🔄</span>
                 @endif
             </div>
-            @if(!$isInactive)
             <div x-show="editing.status" class="mt-1">
                 <select x-model="fields.status"
                         x-ref="statusInput"
@@ -155,7 +154,6 @@
                     <button @click="cancelEdit('status')" class="px-3 py-1 bg-gray-700 text-gray-300 text-sm rounded hover:bg-gray-600">Cancel</button>
                 </div>
             </div>
-            @endif
         </div>
 
         <!-- Created By -->

@@ -333,7 +333,7 @@ class TagController extends Controller
     {
         $tag->tasks()->detach();
 
-        $this->logChange($tag, 'deleted tag');
+        $this->logChange($tag, "deleted tag: {$tag->name}");
 
         $tag->delete();
 
