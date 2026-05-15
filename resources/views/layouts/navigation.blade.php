@@ -312,11 +312,11 @@
                     @empty
                         <span class="block ps-6 pe-4 py-2 text-sm text-gray-500 italic">No active projects</span>
                     @endforelse
-                    <a href="{{ route('projects.show', $project) }}"
+                    <a href="{{ route('projects.create') }}"
                        class="relative block w-full ps-3 pe-4 py-2 border-l-4 border-transparent text-base font-medium focus:outline-none transition duration-150 ease-in-out overflow-hidden {{ $hasBg ? 'border-b-2 border-[#202020]' : 'text-gray-400 hover:text-gray-100 hover:bg-gray-700 hover:border-gray-500' }}"
                     >
                         <span class="relative flex items-center gap-1.5 {{ $hasBg ? 'text-white' : '' }}">
-                            {{ route('projects.create') }}
+                            Add New Project
                         </span>
                     </a>
                 </div>
