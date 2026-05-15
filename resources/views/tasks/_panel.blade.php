@@ -865,13 +865,6 @@
 
             selectNameAutocomplete(item) {
                 const input = this.$refs.nameInput;
-                const val = this.fields.name;
-                const pos = input ? input.selectionStart : val.length;
-                const textToCursor = val.substring(0, pos);
-                const prefix = this.nameAC.type === 'tag' ? '@' : '#';
-                const newBeforeCursor = textToCursor.replace(new RegExp(prefix + '[\\w-]*$'), '');
-                this.fields.name = (newBeforeCursor + val.substring(pos)).trim();
-
                 if (this.nameAC.type === 'tag') {
                     if (!this.fields.tag_ids.includes(item.id)) {
                         this.fields.tag_ids = [...this.fields.tag_ids, item.id];
@@ -993,6 +986,9 @@
             },
 
             async _saveFieldRequest(field) {
+                if (field === 'name') {
+                    this.fields.name = this.fields.name.replace(/[@#][\w-]+\s*/g, '').trim();
+                }
                 if (field === 'date') {
                     const input = this.dateText.trim();
                     if (!input) {
