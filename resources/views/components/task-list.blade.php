@@ -186,6 +186,21 @@
                     if (projectHidden) projectHidden.remove();
                 }
 
+                // Stale-page date override: if viewing a past date, use today's date as the
+                // fallback so tasks land on the current day. Date keywords typed into the task
+                // name (e.g. "buy milk tomorrow") still take precedence on the server side.
+                const dateInput = form.querySelector('input[name="date"]');
+                if (dateInput && dateInput.value) {
+                    const now = new Date();
+                    const todayLocal = now.getFullYear() + '-' +
+                        String(now.getMonth() + 1).padStart(2, '0') + '-' +
+                        String(now.getDate()).padStart(2, '0');
+                    if (dateInput.value < todayLocal) {
+                        sessionStorage.setItem('staleTaskCreated', todayLocal);
+                        dateInput.value = todayLocal;
+                    }
+                }
+
                 this.submitting = true;
                 try {
                     const res = await fetch(form.action, {

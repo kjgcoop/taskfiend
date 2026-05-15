@@ -105,6 +105,23 @@
     <div class="py-12">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
 
+            {{-- Stale-page banner: shown when this day page is past its date --}}
+            <div x-data="staleBanner('{{ $carbonDate->format('Y-m-d') }}', '{{ route('day') }}')"
+                 x-show="stale"
+                 x-cloak
+                 x-transition:enter="transition ease-out duration-200"
+                 x-transition:enter-start="opacity-0 -translate-y-1"
+                 x-transition:enter-end="opacity-100 translate-y-0"
+                 class="mb-3 px-4 py-2.5 bg-amber-900/30 border border-amber-700/50 rounded-lg flex items-center justify-between gap-3 flex-wrap">
+                <p class="text-sm text-amber-300 min-w-0">
+                    You're viewing <span x-text="pageDateLabel"></span>.
+                    Tasks added here will be scheduled for <strong x-text="todayLabel"></strong> instead.
+                </p>
+                <a :href="todayUrl" class="text-sm text-amber-200 hover:text-white underline whitespace-nowrap flex-shrink-0">
+                    View today
+                </a>
+            </div>
+
             {{-- Controls bar: view toggle + 24h toggle --}}
             <div class="flex justify-end items-center mb-2" x-data>
 
@@ -213,6 +230,79 @@
 
     @push('scripts')
     <script>
+        // ── Stale-page banner ────────────────────────────────────────────────────
+        document.addEventListener('alpine:init', () => {
+            Alpine.data('staleBanner', (pageDate, dayRoute) => ({
+                pageDate,
+                dayRoute,
+                stale: false,
+                pageDateLabel: '',
+                todayLabel: '',
+                todayUrl: '',
+
+                init() {
+                    this._check();
+                    document.addEventListener('visibilitychange', () => {
+                        if (!document.hidden) this._check();
+                    });
+                    setInterval(() => this._check(), 60_000);
+                },
+
+                _check() {
+                    const now = new Date();
+                    const todayLocal = now.getFullYear() + '-' +
+                        String(now.getMonth() + 1).padStart(2, '0') + '-' +
+                        String(now.getDate()).padStart(2, '0');
+                    this.stale = todayLocal > this.pageDate;
+                    if (this.stale) {
+                        this.todayUrl  = this.dayRoute + '?date=' + todayLocal;
+                        this.pageDateLabel = new Date(this.pageDate + 'T12:00:00')
+                            .toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
+                        this.todayLabel = new Date(todayLocal + 'T12:00:00')
+                            .toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
+                    }
+                },
+            }));
+        });
+
+        // ── Post-create toast (shown after reload when a stale-page task was added) ──
+        document.addEventListener('DOMContentLoaded', () => {
+            const todayDate = sessionStorage.getItem('staleTaskCreated');
+            if (!todayDate) return;
+            sessionStorage.removeItem('staleTaskCreated');
+
+            const todayLabel = new Date(todayDate + 'T12:00:00')
+                .toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
+            const todayUrl = '{{ route('day') }}?date=' + todayDate;
+
+            const toast = document.createElement('div');
+            toast.className = 'fixed bottom-4 left-4 z-50 w-80 bg-gray-800 border border-amber-700/50 rounded-lg shadow-2xl overflow-hidden pointer-events-auto';
+            toast.innerHTML = `
+                <div class="flex items-start gap-3 px-3 py-2.5">
+                    <div class="w-5 h-5 rounded-full bg-amber-600 flex-shrink-0 flex items-center justify-center mt-0.5">
+                        <svg class="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <p class="text-sm text-gray-300">Created after midnight — task scheduled for <strong class="text-amber-300">${todayLabel}</strong>.</p>
+                        <a href="${todayUrl}" class="text-xs text-amber-400 hover:text-amber-300 underline mt-0.5 inline-block">View today's tasks</a>
+                    </div>
+                    <button onclick="this.closest('[data-stale-toast]').remove()" class="flex-shrink-0 text-gray-500 hover:text-gray-300 mt-0.5" aria-label="Dismiss">
+                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+                        </svg>
+                    </button>
+                </div>`;
+            toast.dataset.staleToast = '';
+            toast.style.cssText = 'opacity:0;transform:translateY(8px);transition:opacity .2s,transform .2s';
+            document.body.appendChild(toast);
+            requestAnimationFrame(() => requestAnimationFrame(() => {
+                toast.style.opacity = '1';
+                toast.style.transform = 'translateY(0)';
+            }));
+        });
+
         document.addEventListener('alpine:init', () => {
             Alpine.store('dayView', {
                 current: localStorage.getItem('day_view') || 'list',
