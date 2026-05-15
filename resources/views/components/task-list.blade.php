@@ -456,7 +456,11 @@
                         fd.append('name', previewValue);
                         fd.append('_token', document.querySelector('meta[name="csrf-token"]').content);
                         const res = await fetch(window.taskPreviewUrl, { method: 'POST', body: fd });
-                        if (res.ok) this.preview = await res.json();
+                        if (res.ok) {
+                            const data = await res.json();
+                            this.preview = data;
+                            if (data.projects) this.projects = data.projects;
+                        }
                     } catch {}
                 }, 400);
             },

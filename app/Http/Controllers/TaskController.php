@@ -168,14 +168,15 @@ class TaskController extends Controller
             $projectWasResolved = isset($validated['project_id']); // already set by autocomplete
             if (!$projectWasResolved) {
                 $projectQuery = strtolower($projectMatch[1]);
-                $stripped = "LOWER(REPLACE(REPLACE(REPLACE(name, ' ', ''), '''', ''), '.', ''))";
-                $project = Project::where(function ($q) use ($projectQuery, $stripped) {
-                        // Strip spaces, apostrophes, and other punctuation from the stored
-                        // name before comparing — mirrors the JS slug: /[^a-z0-9-]/g → ''.
-                        // e.g. "KJ's Inbox" → "kjsinbox" ✓
+                // Normalize query by stripping hyphens so "#my-project" matches "My Project".
+                $queryNorm    = str_replace('-', '', $projectQuery);
+                // Strip hyphens, spaces, apostrophes, and periods from the stored name —
+                // mirrors the JS slug: spaces→hyphens then /[^a-z0-9-]/g→'', then strip hyphens.
+                // e.g. "KJ's Inbox" → "kjsinbox", "My Project" → "myproject" ✓
+                $stripped = "LOWER(REPLACE(REPLACE(REPLACE(REPLACE(name, '-', ''), ' ', ''), '''', ''), '.', ''))";
+                $project = Project::where(function ($q) use ($projectQuery, $queryNorm, $stripped) {
                         $q->whereRaw('LOWER(name) = ?', [$projectQuery])
-                          ->orWhereRaw("{$stripped} = ?", [$projectQuery])
-                          ->orWhereRaw('LOWER(name) LIKE ?', [$projectQuery . '%']);
+                          ->orWhereRaw("{$stripped} = ?", [$queryNorm]);
                     })
                     ->activeForUser(Auth::id())
                     ->first();
@@ -993,11 +994,11 @@ class TaskController extends Controller
         // Mirror the #project token parsing from store()
         if (preg_match('/#([\w-]+)/', $taskName, $projectMatch)) {
             $projectQuery = strtolower($projectMatch[1]);
-            $stripped = "LOWER(REPLACE(REPLACE(REPLACE(name, ' ', ''), '''', ''), '.', ''))";
-            $project = Project::where(function ($q) use ($projectQuery, $stripped) {
+            $queryNorm    = str_replace('-', '', $projectQuery);
+            $stripped = "LOWER(REPLACE(REPLACE(REPLACE(REPLACE(name, '-', ''), ' ', ''), '''', ''), '.', ''))";
+            $project = Project::where(function ($q) use ($projectQuery, $queryNorm, $stripped) {
                     $q->whereRaw('LOWER(name) = ?', [$projectQuery])
-                      ->orWhereRaw("{$stripped} = ?", [$projectQuery])
-                      ->orWhereRaw('LOWER(name) LIKE ?', [$projectQuery . '%']);
+                      ->orWhereRaw("{$stripped} = ?", [$queryNorm]);
                 })
                 ->activeForUser(Auth::id())
                 ->first();
@@ -1094,6 +1095,10 @@ class TaskController extends Controller
             || !empty($assigneeNames)
             || !empty($unknownAssignees);
 
+        $freshProjects = Project::activeForUser(Auth::id())
+            ->orderByRaw('LOWER(name)')
+            ->get(['id', 'name']);
+
         return response()->json([
             'has_special'       => $hasSpecial,
             'title'             => $title,
@@ -1106,6 +1111,7 @@ class TaskController extends Controller
             'show_map'          => $showMap,
             'assignees_display' => implode(' ', array_map(fn($n) => '&' . preg_replace('/\s+/', '', strtolower($n)), $assigneeNames)),
             'unknown_assignees' => implode(' ', $unknownAssignees),
+            'projects'          => $freshProjects,
         ]);
     }
 
