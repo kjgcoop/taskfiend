@@ -851,8 +851,8 @@
         <div class="bg-[#202020] p-4 rounded-lg shadow hover:shadow-md transition border border-gray-700 group"
              data-filterable
              data-task-name="{{ strtolower($task->name) }}"
-             data-project="{{ strtolower($task->project?->name ?? '') }}"
-             data-tags="{{ strtolower($task->tags->pluck('tag_name')->join('|')) }}"
+             data-project="{{ preg_replace('/[^a-z0-9 ]/', '', strtolower($task->project?->name ?? '')) }}"
+             data-tags="{{ preg_replace('/[^a-z0-9 |]/', '', strtolower($task->tags->pluck('tag_name')->join('|'))) }}"
              data-location="{{ strtolower($task->location ?? '') }}"
              data-assignees="{{ $task->assignees->map(fn($a) => preg_replace('/[^a-z0-9]/', '', strtolower($a->name)))->join('|') }}"
              style="margin-left: {{ $marginLeft }}px;"
