@@ -1018,6 +1018,15 @@
                     formData.append('value', this.fields[field]);
                 }
 
+                if (field === 'name') {
+                    if (JSON.stringify([...this.fields.tag_ids].sort()) !== JSON.stringify([...this.original.tag_ids].sort())) {
+                        this.fields.tag_ids.forEach(id => formData.append('tag_ids[]', id));
+                    }
+                    if (this.fields.project_id !== this.original.project_id) {
+                        formData.append('new_project_id', this.fields.project_id);
+                    }
+                }
+
                 const response = await fetch(`/tasks/${this.taskId}/update-field`, {
                     method: 'POST',
                     body: formData,
@@ -1060,15 +1069,6 @@
                     const otherEditingFields = Object.keys(this.editing).filter(f => this.editing[f] && f !== field);
                     for (const otherField of otherEditingFields) {
                         await this._saveFieldRequest(otherField);
-                    }
-
-                    if (field === 'name') {
-                        if (JSON.stringify([...this.fields.tag_ids].sort()) !== JSON.stringify([...this.original.tag_ids].sort())) {
-                            await this._saveFieldRequest('tag_ids');
-                        }
-                        if (this.fields.project_id !== this.original.project_id) {
-                            await this._saveFieldRequest('project_id');
-                        }
                     }
 
                     const ok = await this._saveFieldRequest(field);

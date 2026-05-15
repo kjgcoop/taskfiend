@@ -870,6 +870,19 @@ class TaskController extends Controller
                 }
                 $this->logChange($task, "updated {$field}", $verb, $field, $previousValue, $value);
 
+                if ($field === 'name') {
+                    if ($request->has('tag_ids')) {
+                        $task->tags()->sync($request->input('tag_ids', []));
+                        $this->logChange($task, 'updated tags');
+                    }
+                    if ($request->filled('new_project_id')) {
+                        $task->project_id = $request->input('new_project_id');
+                        $task->project_sort_order = null;
+                        $task->save();
+                        $this->logChange($task, 'updated project_id');
+                    }
+                }
+
                 if ($field === 'status' && in_array($value, ['done', 'archived']) && $task->recurrence_pattern) {
                     $this->createRecurringTask($task);
                 }
