@@ -576,44 +576,46 @@
 
                 parseSearchInput() {
                     let input = this.searchInput;
-                    let projectMatches = input.match(/#(\w+)/g) || [];
-                    let tagMatches = input.match(/@(\w+)/g) || [];
 
-                    // Extract plain text (remove # and @ syntax)
-                    let plainText = input
-                        .replace(/#\w+/g, '')
-                        .replace(/@\w+/g, '')
-                        .trim()
-                        .replace(/\s+/g, ' ');
-
-                    this.queryText = plainText;
-
-                    // Find project by name
-                    if (projectMatches.length > 0) {
-                        let projectName = projectMatches[0].substring(1).toLowerCase();
-                        if (projectName === 'inbox') {
-                            this.selectedProjectId = 'inbox';
-                        } else {
-                            let project = this.projects.find(p =>
-                                p.name.toLowerCase().replace(/[^a-z0-9]/g, '') === projectName.replace(/[^a-z0-9]/g, '')
-                            );
-                            this.selectedProjectId = project ? project.id : 'none';
-                        }
-                    } else {
-                        this.selectedProjectId = 'none';
-                    }
-
-                    // Find tags by name
+                    this.selectedProjectId = 'none';
                     this.selectedTagIds = [];
-                    tagMatches.forEach(match => {
-                        let tagName = match.substring(1).toLowerCase();
-                        let tag = this.tags.find(t =>
-                            t.tag_name.toLowerCase().replace(/[^a-z0-9]/g, '') === tagName.replace(/[^a-z0-9]/g, '')
+
+                    // Process #project tokens — strip only those that match a known project;
+                    // unmatched tokens (e.g. #notaproject) are kept in the text query.
+                    let projectFound = false;
+                    let plainText = input.replace(/#(\w+)/g, (match, token) => {
+                        if (projectFound) return match;
+                        const name = token.toLowerCase();
+                        if (name === 'inbox') {
+                            this.selectedProjectId = 'inbox';
+                            projectFound = true;
+                            return '';
+                        }
+                        const project = this.projects.find(p =>
+                            p.name.toLowerCase().replace(/[^a-z0-9]/g, '') === name.replace(/[^a-z0-9]/g, '')
+                        );
+                        if (project) {
+                            this.selectedProjectId = project.id;
+                            projectFound = true;
+                            return '';
+                        }
+                        return match; // no match — keep in text
+                    });
+
+                    // Process @tag tokens — same logic: only strip matched tags.
+                    plainText = plainText.replace(/@(\w+)/g, (match, token) => {
+                        const name = token.toLowerCase();
+                        const tag = this.tags.find(t =>
+                            t.tag_name.toLowerCase().replace(/[^a-z0-9]/g, '') === name.replace(/[^a-z0-9]/g, '')
                         );
                         if (tag && !this.selectedTagIds.includes(tag.id)) {
                             this.selectedTagIds.push(tag.id);
+                            return '';
                         }
+                        return match; // no match — keep in text
                     });
+
+                    this.queryText = plainText.trim().replace(/\s+/g, ' ');
                 },
 
                 updateSearchFromFilters() {
