@@ -159,7 +159,6 @@
                                         </button>
                                         <input type="date" x-ref="datePicker"
                                                @change="pickDate($event.target.value)"
-                                               :min="new Date().toLocaleDateString('en-CA')"
                                                class="absolute inset-0 opacity-0 w-full h-full cursor-pointer">
                                     </div>
                                     <button x-show="dateText || resolvedDate" @click="clearDate()" type="button"
@@ -479,6 +478,15 @@
                     this.resolvedDate = value;
                     this.dateError = '';
                     this.projects = null;
+
+                    const today = new Date();
+                    today.setHours(0, 0, 0, 0);
+                    if (d < today) {
+                        this.datePast = true;
+                        this.datePreview = 'Proposed date is in the past';
+                        return;
+                    }
+                    this.datePast = false;
 
                     try {
                         const response = await fetch('{{ route("tasks.parseDate") }}', {
