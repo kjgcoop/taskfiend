@@ -452,10 +452,8 @@
 
                 this.previewTimer = setTimeout(async () => {
                     try {
-                        const fd = new FormData();
-                        fd.append('name', previewValue);
-                        fd.append('_token', document.querySelector('meta[name="csrf-token"]').content);
-                        const res = await fetch(window.taskPreviewUrl, { method: 'POST', body: fd });
+                        const url = window.taskPreviewUrl + '?name=' + encodeURIComponent(previewValue);
+                        const res = await fetch(url);
                         if (res.ok) {
                             const data = await res.json();
                             this.preview = data;
