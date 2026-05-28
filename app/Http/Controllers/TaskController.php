@@ -918,6 +918,7 @@ class TaskController extends Controller
             'date_formatted'     => $task->date ? \Carbon\Carbon::parse($task->date)->format('l, F j, Y') : null,
             'time_formatted'     => $task->time ? \Carbon\Carbon::parse($task->time)->format('g:i A') : null,
             'project_name'       => $task->project?->name,
+            'project_url'        => $task->project ? route('projects.show', $task->project) : null,
             'recurrence_pattern' => $task->recurrence_pattern,
             'tags'               => $task->tags->map(fn ($t) => ['name' => $t->tag_name, 'color' => $t->color])->values()->toArray(),
             'inactive'           => in_array($task->status, ['done', 'archived']),

@@ -786,6 +786,7 @@
         if (projEl) {
             if (d.project_name) {
                 projEl.textContent = d.project_name;
+                if (d.project_url) projEl.href = d.project_url;
                 projEl.style.display = '';
             } else {
                 projEl.style.display = 'none';
