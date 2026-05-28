@@ -29,6 +29,7 @@ services:
       - "${APP_PORT:-8118}:443"
     volumes:
       - ./:/var/www/html
+      - ./docker/logs/nginx:/var/log/nginx
       - ./docker/nginx/nginx.conf.template:/etc/nginx/templates/default.conf.template
       - /etc/letsencrypt/live/${APP_DOMAIN}:/etc/letsencrypt/live/${APP_DOMAIN}:ro
       - /etc/letsencrypt/archive/${APP_DOMAIN}:/etc/letsencrypt/archive/${APP_DOMAIN}:ro
