@@ -31,11 +31,11 @@ Route::middleware('auth')->group(function () {
     Route::get('/day/archived-tasks', [DashboardController::class, 'dayArchivedTasks'])->name('day.archivedTasks');
 
     // /tasks index is retired — route removed to prevent access, controller code left intact
+    Route::get('/tasks/preview-quick-add', [TaskController::class, 'previewQuickAdd'])->name('tasks.previewQuickAdd');
+    Route::post('/tasks/parse-date', [TaskController::class, 'parseDate'])->name('tasks.parseDate');
     Route::resource('tasks', TaskController::class)->except(['index']);
     Route::get('/tasks/{task}/panel', [TaskController::class, 'panel'])->name('tasks.panel');
     Route::post('/tasks/{task}/update-field', [TaskController::class, 'updateField'])->name('tasks.updateField');
-    Route::post('/tasks/parse-date', [TaskController::class, 'parseDate'])->name('tasks.parseDate');
-    Route::post('/tasks/preview-quick-add', [TaskController::class, 'previewQuickAdd'])->name('tasks.previewQuickAdd');
     Route::post('/tasks/bulk-update', [TaskController::class, 'bulkUpdate'])->name('tasks.bulkUpdate');
     Route::post('/tasks/reorder', [TaskController::class, 'reorder'])->name('tasks.reorder');
     Route::post('/tasks/{task}/duplicate', [TaskController::class, 'duplicate'])->name('tasks.duplicate');
