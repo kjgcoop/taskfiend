@@ -23,7 +23,7 @@ class ProjectController extends Controller
             })
             ->withCount([
                 'tasks as open_tasks_count'      => fn ($q) => $q->where('status', 'incomplete'),
-                'tasks as done_tasks_count'       => fn ($q) => $q->where('status', 'done'),
+                'tasks as done_tasks_count'       => fn ($q) => $q->whereIn('status', ['done', 'archived']),
             ])
             ->with('creator')
             ->orderByRaw('LOWER(name)')
