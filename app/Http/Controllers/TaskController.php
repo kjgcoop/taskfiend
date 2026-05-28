@@ -161,66 +161,65 @@ class TaskController extends Controller
         $recurrencePattern = $validated['recurrence_pattern'] ?? null;
         $recurrenceFloating = !empty($validated['recurrence_floating']);
 
-        // Parse #project and @tag tokens from the task name (quick-add inline syntax).
-        // The full add form has dedicated dropdowns; only quick-add uses inline tokens.
-        if ($isQuickAdd) {
-            if (preg_match('/#([\w-]+)/', $taskName, $projectMatch)) {
-                // Track whether the #token was resolved so we only strip it when it was recognised.
-                $projectWasResolved = isset($validated['project_id']); // already set by autocomplete
-                if (!$projectWasResolved) {
-                    $projectQuery = strtolower($projectMatch[1]);
-                    // Normalize query by stripping hyphens so "#my-project" matches "My Project".
-                    $queryNorm    = str_replace('-', '', $projectQuery);
-                    // Strip hyphens, spaces, apostrophes, and periods from the stored name —
-                    // mirrors the JS slug: spaces→hyphens then /[^a-z0-9-]/g→'', then strip hyphens.
-                    // e.g. "KJ's Inbox" → "kjsinbox", "My Project" → "myproject" ✓
-                    $stripped = "LOWER(REPLACE(REPLACE(REPLACE(REPLACE(name, '-', ''), ' ', ''), '''', ''), '.', ''))";
-                    $project = Project::where(function ($q) use ($projectQuery, $queryNorm, $stripped) {
-                            $q->whereRaw('LOWER(name) = ?', [$projectQuery])
-                              ->orWhereRaw("{$stripped} = ?", [$queryNorm]);
-                        })
-                        ->activeForUser(Auth::id())
-                        ->first();
-                    if ($project) {
-                        $validated['project_id'] = $project->id;
-                        $projectWasResolved = true;
-                    }
-                }
-                // Only remove the token from the title if we actually matched a project.
-                // An unrecognised #word should be left as plain text.
-                if ($projectWasResolved) {
-                    $taskName = trim(preg_replace('/#[\w-]+\s*/', '', $taskName));
+        // Parse #project and @tag tokens from the task name.
+        // On quick-add, project_id may already be set by autocomplete — treat that as resolved.
+        // On the full add form, project_id is always submitted from the dropdown and does NOT
+        // indicate the #token was matched, so always do the lookup there.
+        if (preg_match('/#([\w-]+)/', $taskName, $projectMatch)) {
+            $projectWasResolved = $isQuickAdd && isset($validated['project_id']);
+            if (!$projectWasResolved) {
+                $projectQuery = strtolower($projectMatch[1]);
+                // Normalize query by stripping hyphens so "#my-project" matches "My Project".
+                $queryNorm    = str_replace('-', '', $projectQuery);
+                // Strip hyphens, spaces, apostrophes, and periods from the stored name —
+                // mirrors the JS slug: spaces→hyphens then /[^a-z0-9-]/g→'', then strip hyphens.
+                // e.g. "KJ's Inbox" → "kjsinbox", "My Project" → "myproject" ✓
+                $stripped = "LOWER(REPLACE(REPLACE(REPLACE(REPLACE(name, '-', ''), ' ', ''), '''', ''), '.', ''))";
+                $project = Project::where(function ($q) use ($projectQuery, $queryNorm, $stripped) {
+                        $q->whereRaw('LOWER(name) = ?', [$projectQuery])
+                          ->orWhereRaw("{$stripped} = ?", [$queryNorm]);
+                    })
+                    ->activeForUser(Auth::id())
+                    ->first();
+                if ($project) {
+                    $validated['project_id'] = $project->id;
+                    $projectWasResolved = true;
                 }
             }
+            // Only remove the token from the title if we actually matched a project.
+            // An unrecognised #word should be left as plain text.
+            if ($projectWasResolved) {
+                $taskName = trim(preg_replace('/#[\w-]+\s*/', '', $taskName));
+            }
+        }
 
-            if (preg_match_all('/@([\w-]+)/', $taskName, $tagMatches)) {
-                $parsedTagIds = [];
-                $matchedTagSlugs = [];
-                foreach ($tagMatches[1] as $tagSlug) {
-                    $tag = Tag::where(function ($q) use ($tagSlug) {
-                            // Exact match, hyphen-slug match (handles "Long Tag" → "@long-tag"),
-                            // space-stripped match (handles "5 minutes" → "@5minutes"),
-                            // and prefix match as a last resort.
-                            $q->whereRaw('LOWER(tag_name) = ?', [strtolower($tagSlug)])
-                              ->orWhereRaw("LOWER(REPLACE(tag_name, ' ', '-')) = ?", [strtolower($tagSlug)])
-                              ->orWhereRaw("LOWER(REPLACE(tag_name, ' ', '')) = ?", [strtolower($tagSlug)])
-                              ->orWhereRaw('LOWER(tag_name) LIKE ?', [strtolower($tagSlug) . '%']);
-                        })
-                        ->first();
-                    if ($tag) {
-                        $parsedTagIds[] = $tag->id;
-                        $matchedTagSlugs[] = preg_quote($tagSlug, '/');
-                    }
-                    // Unrecognised @word: leave it as plain text in the title.
+        if (preg_match_all('/@([\w-]+)/', $taskName, $tagMatches)) {
+            $parsedTagIds = [];
+            $matchedTagSlugs = [];
+            foreach ($tagMatches[1] as $tagSlug) {
+                $tag = Tag::where(function ($q) use ($tagSlug) {
+                        // Exact match, hyphen-slug match (handles "Long Tag" → "@long-tag"),
+                        // space-stripped match (handles "5 minutes" → "@5minutes"),
+                        // and prefix match as a last resort.
+                        $q->whereRaw('LOWER(tag_name) = ?', [strtolower($tagSlug)])
+                          ->orWhereRaw("LOWER(REPLACE(tag_name, ' ', '-')) = ?", [strtolower($tagSlug)])
+                          ->orWhereRaw("LOWER(REPLACE(tag_name, ' ', '')) = ?", [strtolower($tagSlug)])
+                          ->orWhereRaw('LOWER(tag_name) LIKE ?', [strtolower($tagSlug) . '%']);
+                    })
+                    ->first();
+                if ($tag) {
+                    $parsedTagIds[] = $tag->id;
+                    $matchedTagSlugs[] = preg_quote($tagSlug, '/');
                 }
-                if (!empty($parsedTagIds)) {
-                    $existingTagIds = $validated['tag_ids'] ?? [];
-                    $validated['tag_ids'] = array_unique(array_merge($existingTagIds, $parsedTagIds));
-                }
-                // Only strip the tokens that actually matched a tag.
-                if (!empty($matchedTagSlugs)) {
-                    $taskName = trim(preg_replace('/@(' . implode('|', $matchedTagSlugs) . ')\s*/', '', $taskName));
-                }
+                // Unrecognised @word: leave it as plain text in the title.
+            }
+            if (!empty($parsedTagIds)) {
+                $existingTagIds = $validated['tag_ids'] ?? [];
+                $validated['tag_ids'] = array_unique(array_merge($existingTagIds, $parsedTagIds));
+            }
+            // Only strip the tokens that actually matched a tag.
+            if (!empty($matchedTagSlugs)) {
+                $taskName = trim(preg_replace('/@(' . implode('|', $matchedTagSlugs) . ')\s*/', '', $taskName));
             }
         }
 
