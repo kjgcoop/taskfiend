@@ -665,6 +665,80 @@
             </div>
             @endif {{-- end removed details card --}}
 
+            <!-- Status Log -->
+            <div class="bg-[#202020] border border-gray-700 shadow-sm sm:rounded-lg p-6" x-data="{ expanded: false }">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-sm font-semibold text-gray-400 uppercase tracking-widest">Status</h3>
+                    @if($project->statusLogs->count() > 1)
+                        <button @click="expanded = !expanded"
+                                class="text-xs text-gray-500 hover:text-gray-300 transition-colors">
+                            <span x-show="!expanded">Show all ({{ $project->statusLogs->count() }})</span>
+                            <span x-show="expanded" x-cloak>Show less</span>
+                        </button>
+                    @endif
+                </div>
+
+                @if($project->statusLogs->count() > 0)
+                    {{-- Most recent entry always visible --}}
+                    @php $latest = $project->statusLogs->first(); @endphp
+                    <div class="mb-4 p-4 bg-gray-800/60 border border-gray-700 rounded-lg">
+                        <div class="flex items-center justify-between mb-2">
+                            <div class="flex items-center gap-2">
+                                <span class="text-sm font-medium text-gray-300">{{ $latest->user->name }}</span>
+                                <span class="text-xs text-gray-500">{{ $latest->created_at->diffForHumans() }}</span>
+                            </div>
+                            @if($latest->user_id === Auth::id() || $project->user_id === Auth::id())
+                                <form method="POST" action="{{ route('projects.statusLogs.destroy', [$project, $latest]) }}">
+                                    @csrf @method('DELETE')
+                                    <button type="submit" class="text-xs text-gray-600 hover:text-red-400 transition-colors">Delete</button>
+                                </form>
+                            @endif
+                        </div>
+                        <div class="text-sm text-gray-300 whitespace-pre-wrap">{{ $latest->body }}</div>
+                    </div>
+
+                    {{-- Older entries, collapsed by default --}}
+                    @if($project->statusLogs->count() > 1)
+                        <div x-show="expanded" x-cloak class="space-y-3 mb-4">
+                            @foreach($project->statusLogs->skip(1) as $log)
+                                <div class="p-3 border border-gray-700/60 rounded-lg">
+                                    <div class="flex items-center justify-between mb-1">
+                                        <div class="flex items-center gap-2">
+                                            <span class="text-sm font-medium text-gray-400">{{ $log->user->name }}</span>
+                                            <span class="text-xs text-gray-600">{{ $log->created_at->diffForHumans() }}</span>
+                                        </div>
+                                        @if($log->user_id === Auth::id() || $project->user_id === Auth::id())
+                                            <form method="POST" action="{{ route('projects.statusLogs.destroy', [$project, $log]) }}">
+                                                @csrf @method('DELETE')
+                                                <button type="submit" class="text-xs text-gray-600 hover:text-red-400 transition-colors">Delete</button>
+                                            </form>
+                                        @endif
+                                    </div>
+                                    <div class="text-sm text-gray-500 whitespace-pre-wrap">{{ $log->body }}</div>
+                                </div>
+                            @endforeach
+                        </div>
+                    @endif
+                @else
+                    <p class="text-sm text-gray-600 italic mb-4">No status updates yet.</p>
+                @endif
+
+                @if(!$isInactive)
+                    <form method="POST" action="{{ route('projects.statusLogs.store', $project) }}">
+                        @csrf
+                        <textarea name="body" rows="2" required
+                                  placeholder="Post a status update..."
+                                  class="w-full rounded-md bg-gray-700 border-gray-600 text-gray-100 placeholder-gray-500 shadow-sm focus:border-blue-500 focus:ring-blue-500 px-3 py-2 text-sm resize-none"></textarea>
+                        <div class="flex justify-end mt-2">
+                            <button type="submit"
+                                    class="px-3 py-1.5 bg-blue-600 text-white text-sm rounded hover:bg-blue-700">
+                                Post
+                            </button>
+                        </div>
+                    </form>
+                @endif
+            </div>
+
             <!-- Project Tasks -->
             <div class="bg-[#202020] border border-gray-700 shadow-sm sm:rounded-lg p-6" x-data="taskFilter(@js($projects), @js($tags), @js($users), @js($locations))">
                 <div class="flex items-center justify-between mb-4">
