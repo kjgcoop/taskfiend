@@ -370,6 +370,9 @@ class ProjectController extends Controller
         try {
             if ($field === 'assignee_ids') {
                 $assigneeIds = $request->input('assignee_ids', []);
+                if (!in_array($project->user_id, $assigneeIds)) {
+                    $assigneeIds[] = $project->user_id;
+                }
                 $project->assignees()->sync($assigneeIds);
                 $this->logChange($project, 'updated assignees');
             } else {

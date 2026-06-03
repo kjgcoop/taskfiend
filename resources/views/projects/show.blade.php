@@ -297,9 +297,10 @@
                         @if(!$isInactive)
                             <div class="space-y-2 mb-2 max-h-40 overflow-y-auto border border-gray-600 bg-[#101010] rounded p-3">
                                 @foreach($users as $user)
-                                    <label class="flex items-center">
+                                    <label class="flex items-center {{ $user->id === $project->user_id ? 'opacity-50 cursor-not-allowed' : '' }}">
                                         <input type="checkbox" value="{{ $user->id }}" x-model="fields.assignee_ids"
-                                               class="rounded border-gray-600 bg-gray-700 text-blue-600 focus:ring-blue-500">
+                                               class="rounded border-gray-600 bg-gray-700 text-blue-600 focus:ring-blue-500"
+                                               {{ $user->id === $project->user_id ? 'disabled' : '' }}>
                                         <span class="ml-2 text-sm text-gray-300">{{ $user->name }} ({{ $user->email }})</span>
                                     </label>
                                 @endforeach
@@ -522,9 +523,10 @@
                                     <div x-show="editing.assignee_ids" class="mt-1">
                                         <div class="space-y-2 mb-2 max-h-48 overflow-y-auto border border-gray-600 bg-[#101010] rounded p-3">
                                             @foreach($users as $user)
-                                                <label class="flex items-center">
+                                                <label class="flex items-center {{ $user->id === $project->user_id ? 'opacity-50 cursor-not-allowed' : '' }}">
                                                     <input type="checkbox" value="{{ $user->id }}" x-model="fields.assignee_ids"
-                                                           class="rounded border-gray-600 bg-gray-700 text-blue-600 focus:ring-blue-500">
+                                                           class="rounded border-gray-600 bg-gray-700 text-blue-600 focus:ring-blue-500"
+                                                           {{ $user->id === $project->user_id ? 'disabled' : '' }}>
                                                     <span class="ml-2 text-sm text-gray-300">{{ $user->name }} ({{ $user->email }})</span>
                                                 </label>
                                             @endforeach
