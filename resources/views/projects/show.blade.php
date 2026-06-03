@@ -55,8 +55,13 @@
             </span>
 
             {{-- Status log button --}}
+            @php
+                $statusTooltip = $project->statusLogs->count() > 0
+                    ? Str::limit(strip_tags($project->statusLogs->first()->body), 100)
+                    : 'Status log';
+            @endphp
             <button @click="showStatus = true; statusTab = 'post'"
-                    title="Status log{{ $project->statusLogs->count() > 0 ? ' (' . $project->statusLogs->count() . ')' : '' }}"
+                    title="{{ $statusTooltip }}"
                     class="relative shrink-0 p-2 text-gray-400 hover:text-gray-100 hover:bg-gray-700 rounded transition-colors">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
@@ -145,9 +150,9 @@
             <div x-show="showStatus" x-cloak
                  class="fixed inset-0 z-50 flex items-center justify-center bg-black/60"
                  @keydown.escape.window="showStatus = false">
-                <div class="bg-gray-800 border border-gray-600 rounded-lg w-full max-w-lg shadow-xl overflow-y-auto max-h-[85vh]"
+                <div class="bg-gray-800 border border-gray-600 rounded-lg w-full max-w-lg shadow-xl flex flex-col h-[520px]"
                      @click.stop>
-                    <div class="flex items-center justify-between px-6 pt-5 pb-4 border-b border-gray-700">
+                    <div class="flex items-center justify-between px-6 pt-5 pb-4 border-b border-gray-700 shrink-0">
                         <div class="flex gap-1">
                             @if(!$isInactive)
                             <button @click="statusTab = 'post'"
@@ -174,20 +179,22 @@
 
                     {{-- Post Update tab --}}
                     @if(!$isInactive)
-                    <div x-show="statusTab === 'post'" class="p-6">
-                        @if($project->statusLogs->count() > 0)
-                            @php $latest = $project->statusLogs->first(); @endphp
-                            <div class="mb-5 p-3 bg-gray-900/60 border border-gray-700 rounded-lg">
-                                <div class="flex items-center gap-2 mb-1">
-                                    <span class="text-xs font-medium text-gray-400">{{ $latest->user->name }}</span>
-                                    <span class="text-xs text-gray-600">{{ $latest->created_at->diffForHumans() }}</span>
+                    <div x-show="statusTab === 'post'" class="flex flex-col flex-1 overflow-hidden p-6">
+                        <div class="overflow-y-auto flex-1 mb-4">
+                            @if($project->statusLogs->count() > 0)
+                                @php $latest = $project->statusLogs->first(); @endphp
+                                <div class="p-3 bg-gray-900/60 border border-gray-700 rounded-lg">
+                                    <div class="flex items-center gap-2 mb-1">
+                                        <span class="text-xs font-medium text-gray-400">{{ $latest->user->name }}</span>
+                                        <span class="text-xs text-gray-600">{{ $latest->created_at->diffForHumans() }}</span>
+                                    </div>
+                                    <div class="markdown-body text-sm text-gray-400">{!! render_body($latest->body) !!}</div>
                                 </div>
-                                <p class="text-sm text-gray-400 whitespace-pre-wrap">{{ $latest->body }}</p>
-                            </div>
-                        @endif
-                        <form method="POST" action="{{ route('projects.statusLogs.store', $project) }}">
+                            @endif
+                        </div>
+                        <form method="POST" action="{{ route('projects.statusLogs.store', $project) }}" class="shrink-0">
                             @csrf
-                            <textarea name="body" rows="4" required autofocus
+                            <textarea name="body" rows="4" required
                                       placeholder="What's the current status?"
                                       class="w-full rounded-md bg-gray-700 border-gray-600 text-gray-100 placeholder-gray-500 shadow-sm focus:border-blue-500 focus:ring-blue-500 px-3 py-2 text-sm resize-none"></textarea>
                             <div class="flex justify-end mt-3 gap-2">
@@ -205,7 +212,7 @@
                     @endif
 
                     {{-- History tab --}}
-                    <div x-show="statusTab === 'history'" class="p-6">
+                    <div x-show="statusTab === 'history'" class="overflow-y-auto flex-1 p-6">
                         @if($project->statusLogs->count() > 0)
                             <div class="space-y-4">
                                 @foreach($project->statusLogs as $log)
@@ -222,7 +229,7 @@
                                                 </form>
                                             @endif
                                         </div>
-                                        <p class="text-sm text-gray-400 whitespace-pre-wrap">{{ $log->body }}</p>
+                                        <div class="markdown-body text-sm text-gray-400">{!! render_body($log->body) !!}</div>
                                     </div>
                                 @endforeach
                             </div>
