@@ -124,20 +124,17 @@
                                         @php
                                             $daysUntil = (int) now()->startOfDay()->diffInDays($project->end_date, false);
                                             if ($daysUntil === 0) {
-                                                $dotColor = 'bg-orange-400';
                                                 $textColor = $hasBg ? 'text-orange-300' : 'text-orange-400';
                                                 $archiveLabel = 'archives tonight';
                                             } elseif ($daysUntil <= 7) {
-                                                $dotColor = 'bg-orange-500';
                                                 $textColor = $hasBg ? 'text-orange-300' : 'text-orange-500';
                                                 $archiveLabel = 'archives in ' . $daysUntil . ' ' . Str::plural('day', $daysUntil);
                                             } else {
-                                                $dotColor = 'bg-gray-500';
                                                 $textColor = $hasBg ? 'text-gray-300' : 'text-gray-500';
                                                 $archiveLabel = 'archives ' . $project->end_date->format('M j');
                                             }
                                         @endphp
-                                        <span class="inline-flex items-center gap-1 {{ $textColor }}"><span class="inline-block w-1.5 h-1.5 rounded-full {{ $dotColor }}"></span>{{ $archiveLabel }}</span>
+                                        <span class="ml-1 {{ $textColor }}">{{ $archiveLabel }}</span>
                                     @endif
                                 </span>
                                 <div class="flex items-center gap-2">
