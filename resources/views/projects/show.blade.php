@@ -152,7 +152,7 @@
                  @keydown.escape.window="showStatus = false">
                 <div class="bg-gray-800 border border-gray-600 rounded-lg w-full max-w-lg shadow-xl flex flex-col h-[520px]"
                      @click.stop>
-                    <div class="flex items-center justify-between px-6 pt-5 pb-4 border-b border-gray-700 shrink-0">
+                    <div class="flex items-center justify-between px-6 pt-2 pb-2 border-b border-gray-700 shrink-0">
                         <div class="flex gap-1">
                             @if(!$isInactive)
                             <button @click="statusTab = 'post'"
