@@ -523,10 +523,33 @@
                             </div>
                         @endif
                         @if(!$isInactive)
-                        <form method="POST" action="{{ route('projects.reminders.store', $project) }}" class="space-y-2">
+                        <form method="POST" action="{{ route('projects.reminders.store', $project) }}"
+                              class="space-y-2"
+                              x-data="reminderDateInput('{{ old('date', $activeReminder?->date?->format('Y-m-d')) }}')">
                             @csrf
-                            <input type="date" name="date" value="{{ old('date', $activeReminder?->date?->format('Y-m-d')) }}" required
-                                   class="w-full rounded-md bg-gray-700 border-gray-600 text-gray-100 shadow-sm focus:border-blue-500 focus:ring-blue-500 px-3 py-2 text-sm">
+                            {{-- Natural language date input --}}
+                            <div>
+                                <div class="flex gap-2 items-center">
+                                    <input type="text" x-model="dateText"
+                                           @input.debounce.300ms="previewDate()"
+                                           placeholder="today, June 5, next Friday…"
+                                           class="flex-1 rounded-md bg-gray-700 border-gray-600 text-gray-100 placeholder-gray-500 shadow-sm focus:border-blue-500 focus:ring-blue-500 px-3 py-2 text-sm">
+                                    <div class="relative shrink-0">
+                                        <button type="button" @click="$refs.calPicker.showPicker()"
+                                                class="p-2 bg-gray-700 border border-gray-600 rounded-md hover:bg-gray-600 text-gray-400 hover:text-gray-200"
+                                                title="Open calendar">
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                                            </svg>
+                                        </button>
+                                        <input type="date" x-ref="calPicker" @change="pickDate($event.target.value)"
+                                               class="absolute inset-0 opacity-0 w-full h-full cursor-pointer">
+                                    </div>
+                                </div>
+                                <input type="hidden" name="date" :value="resolvedDate">
+                                <p x-show="datePreview" x-text="datePreview" class="mt-1 text-xs text-green-400"></p>
+                                <p x-show="dateError" x-text="dateError" class="mt-1 text-xs text-red-400"></p>
+                            </div>
                             <input type="text" name="recurrence_pattern" value="{{ old('recurrence_pattern', $activeReminder?->recurrence_pattern) }}"
                                    placeholder="Recurrence (e.g. weekly, every Thursday)"
                                    class="w-full rounded-md bg-gray-700 border-gray-600 text-gray-100 placeholder-gray-500 shadow-sm focus:border-blue-500 focus:ring-blue-500 px-3 py-2 text-sm">
@@ -1055,6 +1078,62 @@
                     } catch (error) {
                         console.error('Error:', error);
                         this.fieldError = 'An error occurred while saving. Check the server logs.';
+                    }
+                },
+            };
+        }
+
+        function reminderDateInput(initial) {
+            return {
+                dateText: '',
+                resolvedDate: initial || '',
+                datePreview: '',
+                dateError: '',
+
+                init() {
+                    if (this.resolvedDate && /^\d{4}-\d{2}-\d{2}$/.test(this.resolvedDate)) {
+                        const d = new Date(this.resolvedDate + 'T12:00:00');
+                        this.dateText = d.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+                        this.previewDate();
+                    }
+                },
+
+                pickDate(value) {
+                    if (!value) return;
+                    this.resolvedDate = value;
+                    const d = new Date(value + 'T12:00:00');
+                    this.dateText = d.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+                    this.datePreview = this.dateText;
+                    this.dateError = '';
+                },
+
+                async previewDate() {
+                    const input = this.dateText.trim();
+                    if (!input) { this.datePreview = ''; this.dateError = ''; this.resolvedDate = ''; return; }
+                    try {
+                        const resp = await fetch('{{ route('tasks.parseDate') }}', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                                'Accept': 'application/json',
+                            },
+                            body: JSON.stringify({ input }),
+                        });
+                        const data = await resp.json();
+                        if (data.success) {
+                            this.resolvedDate = data.date;
+                            this.datePreview = data.formatted;
+                            this.dateError = '';
+                        } else {
+                            this.resolvedDate = '';
+                            this.datePreview = '';
+                            this.dateError = 'Could not parse this date';
+                        }
+                    } catch (e) {
+                        this.resolvedDate = '';
+                        this.datePreview = '';
+                        this.dateError = '';
                     }
                 },
             };
