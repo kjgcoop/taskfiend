@@ -122,6 +122,22 @@
                                     @endif
                                 </span>
                                 <div class="flex items-center gap-2">
+                                    @if($project->end_date)
+                                        @php
+                                            $daysUntil = (int) now()->startOfDay()->diffInDays($project->end_date, false);
+                                            if ($daysUntil === 0) {
+                                                $textColor = $hasBg ? 'text-orange-300' : 'text-orange-400';
+                                                $archiveLabel = 'archives tonight';
+                                            } elseif ($daysUntil <= 7) {
+                                                $textColor = $hasBg ? 'text-orange-300' : 'text-orange-500';
+                                                $archiveLabel = 'archives in ' . $daysUntil . ' ' . Str::plural('day', $daysUntil);
+                                            } else {
+                                                $textColor = $hasBg ? 'text-gray-300' : 'text-gray-500';
+                                                $archiveLabel = 'archives ' . $project->end_date->format('M j');
+                                            }
+                                        @endphp
+                                        <span class="text-sm {{ $textColor }}">{{ $archiveLabel }}</span>
+                                    @endif
                                     @if($project->status !== 'incomplete')
                                     <span class="inline-block px-2 py-1 text-xs rounded
                                         @if($project->status === 'done') bg-green-100 text-green-800

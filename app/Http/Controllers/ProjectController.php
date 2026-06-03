@@ -8,6 +8,7 @@ use App\Models\Task;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 
 class ProjectController extends Controller
@@ -49,6 +50,7 @@ class ProjectController extends Controller
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'description' => 'nullable|string',
+            'end_date' => 'nullable|date',
             'assignee_ids' => 'nullable|array',
             'assignee_ids.*' => 'exists:users,id',
         ]);
@@ -56,6 +58,7 @@ class ProjectController extends Controller
         $project = Project::create([
             'name' => $validated['name'],
             'description' => $validated['description'] ?? null,
+            'end_date' => $validated['end_date'] ?? null,
             'user_id' => Auth::id(),
             'status' => 'incomplete',
         ]);
@@ -354,7 +357,7 @@ class ProjectController extends Controller
         }
 
         $field = $request->input('field');
-        $allowedFields = ['name', 'description', 'status', 'assignee_ids'];
+        $allowedFields = ['name', 'description', 'status', 'end_date', 'assignee_ids'];
 
         if (!in_array($field, $allowedFields)) {
             return response()->json(['success' => false, 'message' => 'Invalid field'], 400);
@@ -367,6 +370,9 @@ class ProjectController extends Controller
         try {
             if ($field === 'assignee_ids') {
                 $assigneeIds = $request->input('assignee_ids', []);
+                if (!in_array($project->user_id, $assigneeIds)) {
+                    $assigneeIds[] = $project->user_id;
+                }
                 $project->assignees()->sync($assigneeIds);
                 $this->logChange($project, 'updated assignees');
             } else {
@@ -386,6 +392,10 @@ class ProjectController extends Controller
                     return response()->json(['success' => false, 'message' => 'Name cannot be empty'], 400);
                 }
 
+                if ($field === 'end_date') {
+                    $value = $value ? \Carbon\Carbon::parse($value)->toDateString() : null;
+                }
+
                 $old = $project->$field;
                 $project->$field = $value;
                 $project->save();
@@ -394,7 +404,12 @@ class ProjectController extends Controller
 
             return response()->json(['success' => true]);
         } catch (\Exception $e) {
-            return response()->json(['success' => false, 'message' => 'An error occurred'], 500);
+            Log::error('ProjectController::updateField failed', [
+                'project_id' => $project->id,
+                'field'      => $field,
+                'error'      => $e->getMessage(),
+            ]);
+            return response()->json(['success' => false, 'message' => 'An error occurred: ' . $e->getMessage()], 500);
         }
     }
 

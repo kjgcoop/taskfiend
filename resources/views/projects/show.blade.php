@@ -156,6 +156,29 @@
                         <p class="text-green-600 text-sm mt-0.5">Tasks in this project are hidden from your task lists.</p>
                     </div>
                 </div>
+            @elseif($project->end_date)
+                @php
+                    $daysUntil = (int) now()->startOfDay()->diffInDays($project->end_date, false);
+                    if ($daysUntil < 0) {
+                        $urgency = ['bg' => 'bg-red-950/40', 'border' => 'border-red-700/60', 'icon' => 'text-red-400', 'head' => 'text-red-300', 'sub' => 'text-red-500'];
+                        $label = 'Past end date — will be archived overnight';
+                    } elseif ($daysUntil === 0) {
+                        $urgency = ['bg' => 'bg-orange-950/40', 'border' => 'border-orange-600/60', 'icon' => 'text-orange-400', 'head' => 'text-orange-300', 'sub' => 'text-orange-500'];
+                        $label = 'Scheduled to be archived tonight';
+                    } elseif ($daysUntil <= 7) {
+                        $urgency = ['bg' => 'bg-orange-950/30', 'border' => 'border-orange-700/50', 'icon' => 'text-orange-500', 'head' => 'text-orange-400', 'sub' => 'text-orange-600'];
+                        $label = 'Archiving in ' . $daysUntil . ' ' . Str::plural('day', $daysUntil) . ' — ' . $project->end_date->format('F j');
+                    } else {
+                        $urgency = ['bg' => 'bg-gray-800/60', 'border' => 'border-gray-600/60', 'icon' => 'text-gray-400', 'head' => 'text-gray-300', 'sub' => 'text-gray-500'];
+                        $label = 'Scheduled to archive on ' . $project->end_date->format('F j, Y');
+                    }
+                @endphp
+                <div class="{{ $urgency['bg'] }} border {{ $urgency['border'] }} rounded-lg p-4 flex items-center gap-3">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 shrink-0 {{ $urgency['icon'] }}" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                    <p class="text-sm {{ $urgency['head'] }}">{{ $label }}</p>
+                </div>
             @endif
 
             {{-- Details Modal (triggered by "Details" in the three-dot menu) --}}
@@ -218,6 +241,24 @@
                         @endif
                     </div>
 
+                    {{-- End Date --}}
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-400 mb-1">End Date <span class="text-gray-500 font-normal">(optional)</span></label>
+                        @if(!$isInactive)
+                            <div class="flex gap-2">
+                                <input type="date" x-model="fields.end_date"
+                                       class="flex-1 rounded-md bg-gray-700 border-gray-600 text-gray-100 shadow-sm focus:border-blue-500 focus:ring-blue-500 px-3 py-2 text-sm">
+                                <button @click="saveField('end_date')"
+                                        class="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700">
+                                    Save
+                                </button>
+                            </div>
+                            <p class="mt-1 text-xs text-gray-500">The project will be automatically archived the morning after this date.</p>
+                        @else
+                            <p class="text-gray-300 px-1">{{ $project->end_date ? $project->end_date->format('F j, Y') : '—' }}</p>
+                        @endif
+                    </div>
+
                     {{-- Status --}}
                     <div class="mb-4">
                         <label class="block text-sm font-medium text-gray-400 mb-1">Status</label>
@@ -256,9 +297,10 @@
                         @if(!$isInactive)
                             <div class="space-y-2 mb-2 max-h-40 overflow-y-auto border border-gray-600 bg-[#101010] rounded p-3">
                                 @foreach($users as $user)
-                                    <label class="flex items-center">
+                                    <label class="flex items-center {{ $user->id === $project->user_id ? 'opacity-50 cursor-not-allowed' : '' }}">
                                         <input type="checkbox" value="{{ $user->id }}" x-model="fields.assignee_ids"
-                                               class="rounded border-gray-600 bg-gray-700 text-blue-600 focus:ring-blue-500">
+                                               class="rounded border-gray-600 bg-gray-700 text-blue-600 focus:ring-blue-500"
+                                               {{ $user->id === $project->user_id ? 'disabled' : '' }}>
                                         <span class="ml-2 text-sm text-gray-300">{{ $user->name }} ({{ $user->email }})</span>
                                     </label>
                                 @endforeach
@@ -328,6 +370,8 @@
                         <label class="block text-sm font-medium text-gray-400 mb-1">Created By</label>
                         <p class="text-sm text-gray-300">{{ $project->creator->name }}</p>
                     </div>
+
+                    <div x-show="fieldError" x-cloak class="mb-4 p-3 bg-red-900/50 border border-red-700 rounded text-sm text-red-300" x-text="fieldError"></div>
 
                     <div class="flex justify-end">
                         <button @click="showDetails = false"
@@ -479,9 +523,10 @@
                                     <div x-show="editing.assignee_ids" class="mt-1">
                                         <div class="space-y-2 mb-2 max-h-48 overflow-y-auto border border-gray-600 bg-[#101010] rounded p-3">
                                             @foreach($users as $user)
-                                                <label class="flex items-center">
+                                                <label class="flex items-center {{ $user->id === $project->user_id ? 'opacity-50 cursor-not-allowed' : '' }}">
                                                     <input type="checkbox" value="{{ $user->id }}" x-model="fields.assignee_ids"
-                                                           class="rounded border-gray-600 bg-gray-700 text-blue-600 focus:ring-blue-500">
+                                                           class="rounded border-gray-600 bg-gray-700 text-blue-600 focus:ring-blue-500"
+                                                           {{ $user->id === $project->user_id ? 'disabled' : '' }}>
                                                     <span class="ml-2 text-sm text-gray-300">{{ $user->name }} ({{ $user->email }})</span>
                                                 </label>
                                             @endforeach
@@ -762,10 +807,12 @@
                 projectId: projectId,
                 showDetails: false,
                 editing: {},
+                fieldError: null,
                 fields: {
                     name: @js($project->name),
                     description: @js($project->description ?? ''),
                     status: @js($project->status),
+                    end_date: @js($project->end_date ? $project->end_date->format('Y-m-d') : ''),
                     assignee_ids: @js($project->assignees->pluck('id')->toArray()),
                 },
                 original: {},
@@ -796,6 +843,7 @@
                 },
 
                 async saveField(field) {
+                    this.fieldError = null;
                     try {
                         const formData = new FormData();
                         formData.append('_token', document.querySelector('meta[name="csrf-token"]').content);
@@ -821,13 +869,11 @@
                             this.editing[field] = false;
                             window.location.reload();
                         } else {
-                            alert('Error: ' + (data.message || 'Failed to update'));
-                            this.fields[field] = JSON.parse(JSON.stringify(this.original[field]));
+                            this.fieldError = data.message || 'Failed to update';
                         }
                     } catch (error) {
                         console.error('Error:', error);
-                        alert('An error occurred while saving');
-                        this.fields[field] = JSON.parse(JSON.stringify(this.original[field]));
+                        this.fieldError = 'An error occurred while saving. Check the server logs.';
                     }
                 },
             };
