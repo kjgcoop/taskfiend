@@ -156,6 +156,29 @@
                         <p class="text-green-600 text-sm mt-0.5">Tasks in this project are hidden from your task lists.</p>
                     </div>
                 </div>
+            @elseif($project->end_date)
+                @php
+                    $daysUntil = (int) now()->startOfDay()->diffInDays($project->end_date, false);
+                    if ($daysUntil < 0) {
+                        $urgency = ['bg' => 'bg-red-950/40', 'border' => 'border-red-700/60', 'icon' => 'text-red-400', 'head' => 'text-red-300', 'sub' => 'text-red-500'];
+                        $label = 'Past end date — will be archived overnight';
+                    } elseif ($daysUntil === 0) {
+                        $urgency = ['bg' => 'bg-orange-950/40', 'border' => 'border-orange-600/60', 'icon' => 'text-orange-400', 'head' => 'text-orange-300', 'sub' => 'text-orange-500'];
+                        $label = 'Scheduled to be archived tonight';
+                    } elseif ($daysUntil <= 7) {
+                        $urgency = ['bg' => 'bg-orange-950/30', 'border' => 'border-orange-700/50', 'icon' => 'text-orange-500', 'head' => 'text-orange-400', 'sub' => 'text-orange-600'];
+                        $label = 'Archiving in ' . $daysUntil . ' ' . Str::plural('day', $daysUntil) . ' — ' . $project->end_date->format('F j');
+                    } else {
+                        $urgency = ['bg' => 'bg-gray-800/60', 'border' => 'border-gray-600/60', 'icon' => 'text-gray-400', 'head' => 'text-gray-300', 'sub' => 'text-gray-500'];
+                        $label = 'Scheduled to archive on ' . $project->end_date->format('F j, Y');
+                    }
+                @endphp
+                <div class="{{ $urgency['bg'] }} border {{ $urgency['border'] }} rounded-lg p-4 flex items-center gap-3">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 shrink-0 {{ $urgency['icon'] }}" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                    <p class="text-sm {{ $urgency['head'] }}">{{ $label }}</p>
+                </div>
             @endif
 
             {{-- Details Modal (triggered by "Details" in the three-dot menu) --}}
