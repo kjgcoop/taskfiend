@@ -77,6 +77,11 @@ class Project extends Model
         return $this->hasMany(ProjectStatusLog::class)->latest()->limit(1);
     }
 
+    public function reminders(): HasMany
+    {
+        return $this->hasMany(ProjectReminder::class);
+    }
+
     /**
      * Scope to incomplete projects the given user can interact with:
      * projects they own, are assigned to at the project level, or have

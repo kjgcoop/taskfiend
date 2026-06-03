@@ -3,10 +3,12 @@
 namespace App\Http\Controllers;
 
 use App\Models\Project;
+use App\Models\ProjectReminder;
 use App\Models\ProjectStatusLog;
 use App\Models\Tag;
 use App\Models\Task;
 use App\Models\User;
+use App\Services\DateParser;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
@@ -211,6 +213,12 @@ class ProjectController extends Controller
 
         $project->load(['creator', 'assignees', 'changeLogs.user', 'statusLogs.user']);
 
+        $activeReminder = $project->reminders()
+            ->where('user_id', Auth::id())
+            ->where('dismissed', false)
+            ->orderBy('date')
+            ->first();
+
         $users = User::where('email_enabled_at', null)
             ->orderByRaw('LOWER(name)')
             ->get();
@@ -239,7 +247,7 @@ class ProjectController extends Controller
             'project', 'tasks', 'breakdown',
             'completedTasks', 'completedTasksHasMore', 'completedTasksTotal',
             'archivedTasks', 'archivedTasksHasMore', 'archivedTasksTotal',
-            'users', 'projects', 'tags', 'locations', 'sort'
+            'users', 'projects', 'tags', 'locations', 'sort', 'activeReminder'
         ));
     }
 
@@ -609,6 +617,82 @@ class ProjectController extends Controller
         return response($contents)
             ->header('Content-Type', $mimeType)
             ->header('Cache-Control', 'private, max-age=86400');
+    }
+
+    public function storeReminder(Request $request, Project $project)
+    {
+        $this->authorizeProjectAccess($project);
+
+        $request->validate([
+            'date'                => 'required|date',
+            'recurrence_pattern'  => 'nullable|string|max:100',
+            'recurrence_floating' => 'nullable|boolean',
+        ]);
+
+        $pattern = $request->input('recurrence_pattern') ?: null;
+
+        if ($pattern && !(new DateParser)->isValidRecurrencePattern($pattern)) {
+            return back()->withErrors(['recurrence_pattern' => 'Unrecognized recurrence pattern.'])->withInput();
+        }
+
+        // Replace any existing undismissed reminder for this user on this project
+        ProjectReminder::where('project_id', $project->id)
+            ->where('user_id', Auth::id())
+            ->where('dismissed', false)
+            ->delete();
+
+        $project->reminders()->create([
+            'user_id'             => Auth::id(),
+            'date'                => $request->input('date'),
+            'recurrence_pattern'  => $pattern,
+            'recurrence_floating' => $request->boolean('recurrence_floating'),
+        ]);
+
+        $this->logChange($project, 'set a project reminder for ' . $request->input('date'));
+
+        return back()->with('success', 'Reminder set.');
+    }
+
+    public function dismissReminder(Request $request, Project $project, ProjectReminder $reminder)
+    {
+        $this->authorizeProjectAccess($project);
+
+        if ($reminder->user_id !== Auth::id()) {
+            abort(403);
+        }
+
+        $reminder->update(['dismissed' => true]);
+
+        if ($reminder->recurrence_pattern) {
+            $dateParser = new DateParser;
+            $base = $reminder->recurrence_floating ? now() : $reminder->date;
+            $next = $dateParser->getNextOccurrence($reminder->recurrence_pattern, $base);
+
+            if ($next) {
+                $project->reminders()->create([
+                    'user_id'             => Auth::id(),
+                    'date'                => $next->toDateString(),
+                    'recurrence_pattern'  => $reminder->recurrence_pattern,
+                    'recurrence_floating' => $reminder->recurrence_floating,
+                ]);
+            }
+        }
+
+        return back()->with('success', 'Reminder dismissed.');
+    }
+
+    public function destroyReminder(Request $request, Project $project, ProjectReminder $reminder)
+    {
+        $this->authorizeProjectAccess($project);
+
+        if ($reminder->user_id !== Auth::id()) {
+            abort(403);
+        }
+
+        $reminder->delete();
+        $this->logChange($project, 'removed project reminder');
+
+        return back()->with('success', 'Reminder removed.');
     }
 
     public function storeStatusLog(Request $request, Project $project)

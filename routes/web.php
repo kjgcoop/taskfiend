@@ -47,6 +47,9 @@ Route::middleware('auth')->group(function () {
     Route::post('/projects/{project}/update-field', [ProjectController::class, 'updateField'])->name('projects.updateField');
     Route::post('/projects/{project}/set-default', [ProjectController::class, 'setDefault'])->name('projects.setDefault');
     Route::post('/projects/{project}/toggle-heart', [ProjectController::class, 'toggleHeart'])->name('projects.toggleHeart');
+    Route::post('/projects/{project}/reminders', [ProjectController::class, 'storeReminder'])->name('projects.reminders.store');
+    Route::post('/projects/{project}/reminders/{reminder}/dismiss', [ProjectController::class, 'dismissReminder'])->name('projects.reminders.dismiss');
+    Route::delete('/projects/{project}/reminders/{reminder}', [ProjectController::class, 'destroyReminder'])->name('projects.reminders.destroy');
     Route::post('/projects/{project}/status-logs', [ProjectController::class, 'storeStatusLog'])->name('projects.statusLogs.store');
     Route::delete('/projects/{project}/status-logs/{statusLog}', [ProjectController::class, 'destroyStatusLog'])->name('projects.statusLogs.destroy');
     Route::get('/projects/{project}/background', [ProjectController::class, 'showBackground'])->name('projects.background');

@@ -291,6 +291,36 @@
                 </div>
             @endif
 
+            {{-- Reminder banner --}}
+            @if($activeReminder)
+                @php
+                    $reminderDays = (int) now()->startOfDay()->diffInDays($activeReminder->date, false);
+                @endphp
+                <div class="bg-blue-950/30 border border-blue-700/50 rounded-lg p-4 flex items-center justify-between gap-3">
+                    <div class="flex items-center gap-3">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 shrink-0 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                        </svg>
+                        <p class="text-sm text-blue-300">
+                            @if($reminderDays < 0)
+                                Reminder was set for {{ $activeReminder->date->format('M j') }}
+                            @elseif($reminderDays === 0)
+                                Reminder for today
+                            @else
+                                Reminder in {{ $reminderDays }} {{ Str::plural('day', $reminderDays) }} &mdash; {{ $activeReminder->date->format('M j') }}
+                            @endif
+                            @if($activeReminder->recurrence_pattern)
+                                <span class="text-blue-400/60 text-xs ml-1">({{ $activeReminder->recurrence_pattern }})</span>
+                            @endif
+                        </p>
+                    </div>
+                    <form method="POST" action="{{ route('projects.reminders.dismiss', [$project, $activeReminder]) }}">
+                        @csrf
+                        <button type="submit" class="text-xs text-blue-400/60 hover:text-blue-300 transition-colors whitespace-nowrap">Got it</button>
+                    </form>
+                </div>
+            @endif
+
             {{-- Details Modal (triggered by "Details" in the three-dot menu) --}}
             @if($project->user_id === Auth::id())
             <div x-show="showDetails" x-cloak
@@ -474,6 +504,47 @@
                         </div>
                     </div>
                     @endif
+
+                    {{-- Reminder --}}
+                    <div class="mb-5">
+                        <label class="block text-sm font-medium text-gray-400 mb-2">Reminder <span class="text-gray-500 font-normal">(optional)</span></label>
+                        @if($activeReminder)
+                            <div class="flex items-center justify-between mb-2 p-2 bg-blue-950/40 border border-blue-700/50 rounded text-sm">
+                                <span class="text-blue-300">
+                                    {{ $activeReminder->date->format('M j, Y') }}
+                                    @if($activeReminder->recurrence_pattern)
+                                        &middot; <span class="text-blue-400/70">{{ $activeReminder->recurrence_pattern }}</span>
+                                    @endif
+                                </span>
+                                <form method="POST" action="{{ route('projects.reminders.destroy', [$project, $activeReminder]) }}">
+                                    @csrf @method('DELETE')
+                                    <button type="submit" class="text-xs text-gray-500 hover:text-red-400 transition-colors ml-3">Remove</button>
+                                </form>
+                            </div>
+                        @endif
+                        @if(!$isInactive)
+                        <form method="POST" action="{{ route('projects.reminders.store', $project) }}" class="space-y-2">
+                            @csrf
+                            <input type="date" name="date" value="{{ old('date', $activeReminder?->date?->format('Y-m-d')) }}" required
+                                   class="w-full rounded-md bg-gray-700 border-gray-600 text-gray-100 shadow-sm focus:border-blue-500 focus:ring-blue-500 px-3 py-2 text-sm">
+                            <input type="text" name="recurrence_pattern" value="{{ old('recurrence_pattern', $activeReminder?->recurrence_pattern) }}"
+                                   placeholder="Recurrence (e.g. weekly, every Thursday)"
+                                   class="w-full rounded-md bg-gray-700 border-gray-600 text-gray-100 placeholder-gray-500 shadow-sm focus:border-blue-500 focus:ring-blue-500 px-3 py-2 text-sm">
+                            @error('recurrence_pattern')<p class="text-xs text-red-400">{{ $message }}</p>@enderror
+                            <label class="flex items-center gap-2 text-sm text-gray-400">
+                                <input type="checkbox" name="recurrence_floating" value="1"
+                                       {{ old('recurrence_floating', $activeReminder?->recurrence_floating) ? 'checked' : '' }}
+                                       class="rounded border-gray-600 bg-gray-700 text-blue-600 focus:ring-blue-500">
+                                Floating (recur from completion date)
+                            </label>
+                            <div class="flex justify-end">
+                                <button type="submit" class="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded">
+                                    {{ $activeReminder ? 'Update' : 'Set Reminder' }}
+                                </button>
+                            </div>
+                        </form>
+                        @endif
+                    </div>
 
                     {{-- Created By (read-only) --}}
                     <div class="mb-5">

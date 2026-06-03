@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Assignment;
 use App\Models\ChangeLog;
 use App\Models\Project;
+use App\Models\ProjectReminder;
 use App\Models\Tag;
 use App\Models\Task;
 use App\Models\User;
@@ -358,10 +359,18 @@ class DashboardController extends Controller
 
         $breakdown = $this->projectBreakdown($tasks);
 
+        $projectReminders = ProjectReminder::where('user_id', Auth::id())
+            ->where('dismissed', false)
+            ->whereDate('date', '<=', $dateStr)
+            ->with('project')
+            ->orderBy('date')
+            ->get();
+
         return view('dashboard.day', array_merge(compact(
             'tasks', 'date', 'carbonDate', 'overdueCount', 'sort', 'breakdown',
             'completedTasks', 'completedTasksTotal', 'completedTasksHasMore',
-            'archivedTasks', 'archivedTasksTotal', 'archivedTasksHasMore'
+            'archivedTasks', 'archivedTasksTotal', 'archivedTasksHasMore',
+            'projectReminders'
         ), $this->quickAddData()));
     }
 
