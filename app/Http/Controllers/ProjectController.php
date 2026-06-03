@@ -27,7 +27,10 @@ class ProjectController extends Controller
                 'tasks as open_tasks_count'      => fn ($q) => $q->where('status', 'incomplete'),
                 'tasks as done_tasks_count'       => fn ($q) => $q->whereIn('status', ['done', 'archived']),
             ])
-            ->with('creator')
+            ->with([
+                'creator',
+                'latestStatusLog',
+            ])
             ->orderByRaw('LOWER(name)')
             ->get();
 

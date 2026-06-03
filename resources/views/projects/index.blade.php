@@ -95,7 +95,8 @@
                                             </svg>
                                         </button>
                                     @endif
-                                    <h3 class="font-semibold text-lg truncate {{ $hasBg ? 'text-white' : 'text-gray-100' }}">{{ $project->name }}</h3>
+                                    <h3 class="font-semibold text-lg truncate {{ $hasBg ? 'text-white' : 'text-gray-100' }}"
+                                        title="{{ $project->description ? Str::limit($project->description, 200) : '' }}">{{ $project->name }}</h3>
                                 </div>
                                 <span x-data="{ copied: false }" class="shrink-0 flex items-center gap-1 mt-0.5">
                                     <span class="text-xs {{ $hasBg ? 'text-gray-300' : 'text-gray-500' }}">#{{ $project->id }}</span>
@@ -111,8 +112,8 @@
                                     </button>
                                 </span>
                             </div>
-                            @if($project->description)
-                                <p class="text-sm {{ $hasBg ? 'text-gray-200' : 'text-gray-400' }} mt-2">{{ Str::limit($project->description, 100) }}</p>
+                            @if($project->latestStatusLog->first())
+                                <p class="text-sm {{ $hasBg ? 'text-gray-200' : 'text-gray-400' }} mt-2">{{ Str::limit(strip_tags($project->latestStatusLog->first()->body), 100) }}</p>
                             @endif
                             <div class="flex items-center justify-between mt-4">
                                 <span class="text-sm {{ $hasBg ? 'text-gray-300' : 'text-gray-500' }}">

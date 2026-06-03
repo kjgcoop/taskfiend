@@ -72,6 +72,11 @@ class Project extends Model
         return $this->hasMany(ProjectStatusLog::class)->latest();
     }
 
+    public function latestStatusLog(): HasMany
+    {
+        return $this->hasMany(ProjectStatusLog::class)->latest()->limit(1);
+    }
+
     /**
      * Scope to incomplete projects the given user can interact with:
      * projects they own, are assigned to at the project level, or have
