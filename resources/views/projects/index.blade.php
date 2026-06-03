@@ -123,11 +123,7 @@
                                     @if($project->end_date)
                                         @php
                                             $daysUntil = (int) now()->startOfDay()->diffInDays($project->end_date, false);
-                                            if ($daysUntil < 0) {
-                                                $dotColor = 'bg-red-500';
-                                                $textColor = $hasBg ? 'text-red-300' : 'text-red-400';
-                                                $archiveLabel = 'past end date';
-                                            } elseif ($daysUntil === 0) {
+                                            if ($daysUntil === 0) {
                                                 $dotColor = 'bg-orange-400';
                                                 $textColor = $hasBg ? 'text-orange-300' : 'text-orange-400';
                                                 $archiveLabel = 'archives tonight';
