@@ -347,6 +347,8 @@
                         <p class="text-sm text-gray-300">{{ $project->creator->name }}</p>
                     </div>
 
+                    <div x-show="fieldError" x-cloak class="mb-4 p-3 bg-red-900/50 border border-red-700 rounded text-sm text-red-300" x-text="fieldError"></div>
+
                     <div class="flex justify-end">
                         <button @click="showDetails = false"
                                 class="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-gray-300 rounded text-sm">
@@ -780,6 +782,7 @@
                 projectId: projectId,
                 showDetails: false,
                 editing: {},
+                fieldError: null,
                 fields: {
                     name: @js($project->name),
                     description: @js($project->description ?? ''),
@@ -815,6 +818,7 @@
                 },
 
                 async saveField(field) {
+                    this.fieldError = null;
                     try {
                         const formData = new FormData();
                         formData.append('_token', document.querySelector('meta[name="csrf-token"]').content);
@@ -840,13 +844,11 @@
                             this.editing[field] = false;
                             window.location.reload();
                         } else {
-                            alert('Error: ' + (data.message || 'Failed to update'));
-                            this.fields[field] = JSON.parse(JSON.stringify(this.original[field]));
+                            this.fieldError = data.message || 'Failed to update';
                         }
                     } catch (error) {
                         console.error('Error:', error);
-                        alert('An error occurred while saving');
-                        this.fields[field] = JSON.parse(JSON.stringify(this.original[field]));
+                        this.fieldError = 'An error occurred while saving. Check the server logs.';
                     }
                 },
             };
