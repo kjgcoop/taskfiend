@@ -120,6 +120,8 @@
                                     @if($project->done_tasks_count > 0)
                                         &middot; {{ $project->done_tasks_count }} completed
                                     @endif
+                                </span>
+                                <div class="flex items-center gap-2">
                                     @if($project->end_date)
                                         @php
                                             $daysUntil = (int) now()->startOfDay()->diffInDays($project->end_date, false);
@@ -134,10 +136,8 @@
                                                 $archiveLabel = 'archives ' . $project->end_date->format('M j');
                                             }
                                         @endphp
-                                        <span class="ml-1 {{ $textColor }}">{{ $archiveLabel }}</span>
+                                        <span class="text-sm {{ $textColor }}">{{ $archiveLabel }}</span>
                                     @endif
-                                </span>
-                                <div class="flex items-center gap-2">
                                     @if($project->status !== 'incomplete')
                                     <span class="inline-block px-2 py-1 text-xs rounded
                                         @if($project->status === 'done') bg-green-100 text-green-800
