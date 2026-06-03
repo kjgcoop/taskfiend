@@ -20,7 +20,7 @@ class ResetPassword extends Command
             return 1;
         }
 
-        $password = $this->argument('password') ?? substr(base64_encode(uniqid()), 0, 10);
+        $password = $this->argument('password') ?? \Illuminate\Support\Str::random(15);
 
         $user->password = Hash::make($password);
         $user->save();
