@@ -27,6 +27,15 @@
                             @error('description')<p class="mt-1 text-sm text-red-600">{{ $message }}</p>@enderror
                         </div>
 
+                        <div class="mb-4">
+                            <label for="end_date" class="block text-sm font-medium text-gray-300 mb-2">End Date <span class="text-gray-500 font-normal">(optional)</span></label>
+                            <input type="date" name="end_date" id="end_date"
+                                   class="w-full rounded-md bg-gray-700 border-gray-600 text-gray-100 placeholder-gray-500 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                                   value="{{ old('end_date') }}">
+                            <p class="mt-1 text-xs text-gray-500">The project will be automatically archived the morning after this date.</p>
+                            @error('end_date')<p class="mt-1 text-sm text-red-600">{{ $message }}</p>@enderror
+                        </div>
+
                         <div class="mb-6">
                             <label class="block text-sm font-medium text-gray-300 mb-2">Assign To</label>
                             <div class="space-y-2">

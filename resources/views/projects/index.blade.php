@@ -137,7 +137,7 @@
                                                 $archiveLabel = 'archives ' . $project->end_date->format('M j');
                                             }
                                         @endphp
-                                        &middot; <span class="inline-flex items-center gap-1 {{ $textColor }}"><span class="inline-block w-1.5 h-1.5 rounded-full {{ $dotColor }}"></span>{{ $archiveLabel }}</span>
+                                        <span class="inline-flex items-center gap-1 {{ $textColor }}"><span class="inline-block w-1.5 h-1.5 rounded-full {{ $dotColor }}"></span>{{ $archiveLabel }}</span>
                                     @endif
                                 </span>
                                 <div class="flex items-center gap-2">

@@ -50,6 +50,7 @@ class ProjectController extends Controller
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'description' => 'nullable|string',
+            'end_date' => 'nullable|date',
             'assignee_ids' => 'nullable|array',
             'assignee_ids.*' => 'exists:users,id',
         ]);
@@ -57,6 +58,7 @@ class ProjectController extends Controller
         $project = Project::create([
             'name' => $validated['name'],
             'description' => $validated['description'] ?? null,
+            'end_date' => $validated['end_date'] ?? null,
             'user_id' => Auth::id(),
             'status' => 'incomplete',
         ]);
