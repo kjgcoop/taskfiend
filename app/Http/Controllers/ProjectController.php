@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Project;
+use App\Models\ProjectStatusLog;
 use App\Models\Tag;
 use App\Models\Task;
 use App\Models\User;
@@ -26,7 +27,10 @@ class ProjectController extends Controller
                 'tasks as open_tasks_count'      => fn ($q) => $q->where('status', 'incomplete'),
                 'tasks as done_tasks_count'       => fn ($q) => $q->whereIn('status', ['done', 'archived']),
             ])
-            ->with('creator')
+            ->with([
+                'creator',
+                'latestStatusLog',
+            ])
             ->orderByRaw('LOWER(name)')
             ->get();
 
@@ -205,7 +209,7 @@ class ProjectController extends Controller
         $archivedTasksHasMore = $archivedTasksRaw->count() > $perPage;
         $archivedTasks = $archivedTasksHasMore ? $archivedTasksRaw->slice(0, $perPage) : $archivedTasksRaw;
 
-        $project->load(['creator', 'assignees', 'changeLogs.user']);
+        $project->load(['creator', 'assignees', 'changeLogs.user', 'statusLogs.user']);
 
         $users = User::where('email_enabled_at', null)
             ->orderByRaw('LOWER(name)')
@@ -607,6 +611,40 @@ class ProjectController extends Controller
             ->header('Cache-Control', 'private, max-age=86400');
     }
 
+    public function storeStatusLog(Request $request, Project $project)
+    {
+        $this->authorizeProjectMember($project);
+
+        $request->validate(['body' => 'required|string|max:10000']);
+
+        $log = $project->statusLogs()->create([
+            'user_id' => Auth::id(),
+            'body'    => $request->input('body'),
+        ]);
+
+        $this->logChange($project, 'posted a status update');
+
+        return back()->with('success', 'Status posted.');
+    }
+
+    public function destroyStatusLog(Request $request, Project $project, ProjectStatusLog $statusLog)
+    {
+        $this->authorizeProjectMember($project);
+
+        if ($statusLog->project_id !== $project->id) {
+            abort(404);
+        }
+
+        if ($statusLog->user_id !== Auth::id() && $project->user_id !== Auth::id()) {
+            abort(403, 'You can only delete your own status updates, unless you are the project creator.');
+        }
+
+        $statusLog->delete();
+        $this->logChange($project, 'deleted a status update');
+
+        return back()->with('success', 'Status update deleted.');
+    }
+
     protected function authorizeProjectAccess(Project $project)
     {
         $isCreator = $project->user_id === Auth::id();
@@ -619,6 +657,16 @@ class ProjectController extends Controller
 
         if (!$isCreator && !$isAssignee && !$hasTaskInProject) {
             abort(403, 'You do not have access to this project.');
+        }
+    }
+
+    protected function authorizeProjectMember(Project $project)
+    {
+        $isMember = $project->user_id === Auth::id()
+            || $project->assignees()->where('users.id', Auth::id())->exists();
+
+        if (!$isMember) {
+            abort(403, 'You must be a project member to do this.');
         }
     }
 

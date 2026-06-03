@@ -1,6 +1,6 @@
 <x-app-layout>
     <x-slot name="header">
-        <div class="flex items-center gap-2 w-full" x-data="{ showSaveTemplate: false, showMenu: false }">
+        <div class="flex items-center gap-2 w-full" x-data="{ showSaveTemplate: false, showMenu: false, showStatus: false, statusTab: 'post' }">
             {{-- Star / default toggle --}}
             @if($project->is_default)
                 <span title="Default project" class="text-yellow-400 shrink-0">
@@ -53,6 +53,23 @@
                     <span x-show="copied" x-cloak class="text-xs text-green-400">Copied!</span>
                 </button>
             </span>
+
+            {{-- Status log button --}}
+            @php
+                $statusTooltip = $project->statusLogs->count() > 0
+                    ? Str::limit(strip_tags($project->statusLogs->first()->body), 100)
+                    : 'Status log';
+            @endphp
+            <button @click="showStatus = true; statusTab = 'post'"
+                    title="{{ $statusTooltip }}"
+                    class="relative shrink-0 p-2 text-gray-400 hover:text-gray-100 hover:bg-gray-700 rounded transition-colors">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                </svg>
+                @if($project->statusLogs->count() > 0)
+                    <span class="absolute -top-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-gray-600 text-[10px] text-gray-300">{{ $project->statusLogs->count() }}</span>
+                @endif
+            </button>
 
             {{-- Three-dot menu --}}
             <div class="relative shrink-0" @click.outside="showMenu = false">
@@ -127,6 +144,99 @@
                             </button>
                         </div>
                     </form>
+                </div>
+            </div>
+            {{-- Status Log Modal --}}
+            <div x-show="showStatus" x-cloak
+                 class="fixed inset-0 z-50 flex items-center justify-center bg-black/60"
+                 @keydown.escape.window="showStatus = false">
+                <div class="bg-gray-800 border border-gray-600 rounded-lg w-full max-w-lg shadow-xl flex flex-col h-[520px]"
+                     @click.stop>
+                    <div class="flex items-center justify-between px-6 pt-2 pb-2 border-b border-gray-700 shrink-0">
+                        <div class="flex gap-1">
+                            @if(!$isInactive)
+                            <button @click="statusTab = 'post'"
+                                    :class="statusTab === 'post' ? 'bg-gray-700 text-gray-100' : 'text-gray-400 hover:text-gray-200'"
+                                    class="px-3 py-1.5 rounded text-sm font-medium transition-colors">
+                                Post Update
+                            </button>
+                            @endif
+                            <button @click="statusTab = 'history'"
+                                    :class="statusTab === 'history' ? 'bg-gray-700 text-gray-100' : 'text-gray-400 hover:text-gray-200'"
+                                    class="px-3 py-1.5 rounded text-sm font-medium transition-colors">
+                                History
+                                @if($project->statusLogs->count() > 0)
+                                    <span class="ml-1 px-1.5 py-0.5 text-xs rounded-full bg-gray-700 text-gray-400">{{ $project->statusLogs->count() }}</span>
+                                @endif
+                            </button>
+                        </div>
+                        <button @click="showStatus = false" class="text-gray-400 hover:text-gray-100">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                        </button>
+                    </div>
+
+                    {{-- Post Update tab --}}
+                    @if(!$isInactive)
+                    <div x-show="statusTab === 'post'" class="flex flex-col flex-1 overflow-hidden p-6">
+                        <div class="overflow-y-auto flex-1 mb-4">
+                            @if($project->statusLogs->count() > 0)
+                                @php $latest = $project->statusLogs->first(); @endphp
+                                <div class="p-3 bg-gray-900/60 border border-gray-700 rounded-lg">
+                                    <div class="flex items-center gap-2 mb-1">
+                                        <span class="text-xs font-medium text-gray-400">{{ $latest->user->name }}</span>
+                                        <span class="text-xs text-gray-600">{{ $latest->created_at->diffForHumans() }}</span>
+                                    </div>
+                                    <div class="markdown-body text-sm text-gray-400">{!! render_body($latest->body) !!}</div>
+                                </div>
+                            @endif
+                        </div>
+                        <form method="POST" action="{{ route('projects.statusLogs.store', $project) }}" class="shrink-0">
+                            @csrf
+                            <textarea name="body" rows="4" required
+                                      placeholder="What's the current status?"
+                                      class="w-full rounded-md bg-gray-700 border-gray-600 text-gray-100 placeholder-gray-500 shadow-sm focus:border-blue-500 focus:ring-blue-500 px-3 py-2 text-sm resize-none"></textarea>
+                            <div class="flex justify-end mt-3 gap-2">
+                                <button type="button" @click="showStatus = false"
+                                        class="px-3 py-1.5 bg-gray-700 hover:bg-gray-600 text-gray-300 rounded text-sm">
+                                    Cancel
+                                </button>
+                                <button type="submit"
+                                        class="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded text-sm">
+                                    Post
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                    @endif
+
+                    {{-- History tab --}}
+                    <div x-show="statusTab === 'history'" class="overflow-y-auto flex-1 p-6">
+                        @if($project->statusLogs->count() > 0)
+                            <div class="space-y-4">
+                                @foreach($project->statusLogs as $log)
+                                    <div class="border-b border-gray-700 pb-4 last:border-0 last:pb-0">
+                                        <div class="flex items-center justify-between mb-1">
+                                            <div class="flex items-center gap-2">
+                                                <span class="text-sm font-medium text-gray-300">{{ $log->user->name }}</span>
+                                                <span class="text-xs text-gray-500">{{ $log->created_at->diffForHumans() }}</span>
+                                            </div>
+                                            @if($log->user_id === Auth::id() || $project->user_id === Auth::id())
+                                                <form method="POST" action="{{ route('projects.statusLogs.destroy', [$project, $log]) }}">
+                                                    @csrf @method('DELETE')
+                                                    <button type="submit" class="text-xs text-gray-600 hover:text-red-400 transition-colors">Delete</button>
+                                                </form>
+                                            @endif
+                                        </div>
+                                        <div class="markdown-body text-sm text-gray-400">{!! render_body($log->body) !!}</div>
+                                    </div>
+                                @endforeach
+                            </div>
+                        @else
+                            <p class="text-sm text-gray-600 italic">No status updates yet.</p>
+                        @endif
+                    </div>
                 </div>
             </div>
         </div>

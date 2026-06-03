@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Str;
 
 class Project extends Model
 {
@@ -64,6 +65,16 @@ class Project extends Model
     public function template(): BelongsTo
     {
         return $this->belongsTo(ProjectTemplate::class, 'template_id');
+    }
+
+    public function statusLogs(): HasMany
+    {
+        return $this->hasMany(ProjectStatusLog::class)->latest();
+    }
+
+    public function latestStatusLog(): HasMany
+    {
+        return $this->hasMany(ProjectStatusLog::class)->latest()->limit(1);
     }
 
     /**
