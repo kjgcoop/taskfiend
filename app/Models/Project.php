@@ -16,6 +16,7 @@ class Project extends Model
         'background_image',
         'user_id',
         'status',
+        'end_date',
         'is_default',
         'is_hearted',
         'template_id',
@@ -24,6 +25,7 @@ class Project extends Model
     protected $casts = [
         'is_default' => 'boolean',
         'is_hearted' => 'boolean',
+        'end_date'   => 'date',
     ];
 
     protected $attributes = [

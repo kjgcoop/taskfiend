@@ -218,6 +218,24 @@
                         @endif
                     </div>
 
+                    {{-- End Date --}}
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-400 mb-1">End Date <span class="text-gray-500 font-normal">(optional)</span></label>
+                        @if(!$isInactive)
+                            <div class="flex gap-2">
+                                <input type="date" x-model="fields.end_date"
+                                       class="flex-1 rounded-md bg-gray-700 border-gray-600 text-gray-100 shadow-sm focus:border-blue-500 focus:ring-blue-500 px-3 py-2 text-sm">
+                                <button @click="saveField('end_date')"
+                                        class="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700">
+                                    Save
+                                </button>
+                            </div>
+                            <p class="mt-1 text-xs text-gray-500">The project will be automatically archived the morning after this date.</p>
+                        @else
+                            <p class="text-gray-300 px-1">{{ $project->end_date ? $project->end_date->format('F j, Y') : '—' }}</p>
+                        @endif
+                    </div>
+
                     {{-- Status --}}
                     <div class="mb-4">
                         <label class="block text-sm font-medium text-gray-400 mb-1">Status</label>
@@ -766,6 +784,7 @@
                     name: @js($project->name),
                     description: @js($project->description ?? ''),
                     status: @js($project->status),
+                    end_date: @js($project->end_date ? $project->end_date->format('Y-m-d') : ''),
                     assignee_ids: @js($project->assignees->pluck('id')->toArray()),
                 },
                 original: {},

@@ -354,7 +354,7 @@ class ProjectController extends Controller
         }
 
         $field = $request->input('field');
-        $allowedFields = ['name', 'description', 'status', 'assignee_ids'];
+        $allowedFields = ['name', 'description', 'status', 'end_date', 'assignee_ids'];
 
         if (!in_array($field, $allowedFields)) {
             return response()->json(['success' => false, 'message' => 'Invalid field'], 400);
@@ -384,6 +384,10 @@ class ProjectController extends Controller
 
                 if ($field === 'name' && empty(trim($value))) {
                     return response()->json(['success' => false, 'message' => 'Name cannot be empty'], 400);
+                }
+
+                if ($field === 'end_date') {
+                    $value = $value ? \Carbon\Carbon::parse($value)->toDateString() : null;
                 }
 
                 $old = $project->$field;
