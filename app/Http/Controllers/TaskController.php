@@ -161,11 +161,12 @@ class TaskController extends Controller
         $recurrencePattern = $validated['recurrence_pattern'] ?? null;
         $recurrenceFloating = !empty($validated['recurrence_floating']);
 
-        // Parse #project and @tag tokens from the task name (quick-add inline syntax).
-        // Strip these before DateParser runs so it receives a clean task name.
+        // Parse #project and @tag tokens from the task name.
+        // On quick-add, project_id may already be set by autocomplete — treat that as resolved.
+        // On the full add form, project_id is always submitted from the dropdown and does NOT
+        // indicate the #token was matched, so always do the lookup there.
         if (preg_match('/#([\w-]+)/', $taskName, $projectMatch)) {
-            // Track whether the #token was resolved so we only strip it when it was recognised.
-            $projectWasResolved = isset($validated['project_id']); // already set by autocomplete
+            $projectWasResolved = $isQuickAdd && isset($validated['project_id']);
             if (!$projectWasResolved) {
                 $projectQuery = strtolower($projectMatch[1]);
                 // Normalize query by stripping hyphens so "#my-project" matches "My Project".
@@ -291,9 +292,8 @@ class TaskController extends Controller
             ]);
         }
 
-        // Auto-parse date and recurrence from task name only for quick-add.
-        // The full Add Task form has dedicated fields; the task name is stored as-is.
-        if (!$recurrencePattern && $request->boolean('quick_add')) {
+        // Auto-parse date and recurrence from task name when no explicit pattern was provided.
+        if (!$recurrencePattern) {
             // Check for unrecognized recurrence patterns first
             $unrecognizedError = $dateParser->detectUnrecognizedPattern($taskName);
             if ($unrecognizedError) {

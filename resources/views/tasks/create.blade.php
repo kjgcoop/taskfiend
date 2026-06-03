@@ -534,6 +534,7 @@
                 autocompleteIndex: 0,
                 autocompleteQuery: '',
                 confirmedTagSlugs: [],
+                confirmedProjectSlugs: [],
 
                 // Number of non-empty lines — drives multi-task UI
                 get lineCount() {
@@ -546,7 +547,10 @@
                     for (const slug of this.confirmedTagSlugs) {
                         name = name.replace(new RegExp('@' + slug + '(?=\\s|$)', 'g'), '');
                     }
-                    name = name.replace(/#\w+/g, '');
+                    // Only remove #slugs that were actually matched to a project via autocomplete
+                    for (const slug of this.confirmedProjectSlugs) {
+                        name = name.replace(new RegExp('#' + slug + '(?=\\s|$)', 'g'), '');
+                    }
                     return name.trim().replace(/\s+/g, ' ');
                 },
 
@@ -687,6 +691,7 @@
 
                     if (this.autocompleteType === 'project') {
                         newBefore = beforeCursor.replace(/#\w*$/, '#' + slug + ' ');
+                        this.confirmedProjectSlugs.push(slug);
 
                         // In single-line mode, also auto-select the project dropdown.
                         // In multi-line mode the server handles per-line project assignment.
