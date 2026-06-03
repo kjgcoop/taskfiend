@@ -8,8 +8,8 @@ use Illuminate\Support\Facades\Hash;
 
 class ResetPassword extends Command
 {
-    protected $signature = 'user:password {email} {password}';
-    protected $description = 'Reset a user\'s password';
+    protected $signature = 'user:password {email} {password?}';
+    protected $description = 'Reset a user\'s password (generates one if not provided)';
 
     public function handle()
     {
@@ -20,10 +20,12 @@ class ResetPassword extends Command
             return 1;
         }
 
-        $user->password = Hash::make($this->argument('password'));
+        $password = $this->argument('password') ?? substr(base64_encode(uniqid()), 0, 10);
+
+        $user->password = Hash::make($password);
         $user->save();
 
-        $this->info("Password updated for {$user->email}.");
+        $this->info("Password updated for {$user->email}: {$password}");
         return 0;
     }
 }
