@@ -80,7 +80,7 @@ class CommentController extends Controller
             [$path, $fileSize, $mimeType] = $this->storeScaled($file, 'comment_attachments');
 
             $commentData['file_path'] = $path;
-            $commentData['original_filename'] = $file->getClientOriginalName();
+            $commentData['original_filename'] = basename($file->getClientOriginalName());
             $commentData['mime_type'] = $mimeType;
             $commentData['file_size'] = $fileSize;
         }

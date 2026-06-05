@@ -73,7 +73,7 @@ class TaskAttachmentController extends Controller
         $attachment = $task->attachments()->create([
             'user_id' => Auth::id(),
             'file_path' => $path,
-            'original_filename' => $file->getClientOriginalName(),
+            'original_filename' => basename($file->getClientOriginalName()),
             'mime_type' => $mimeType,
             'file_size' => $fileSize,
         ]);

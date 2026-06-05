@@ -808,10 +808,15 @@
         const tagsEl = group.querySelector('[data-task-tags-display]');
         if (tagsEl) {
             if (d.tags && d.tags.length > 0) {
-                tagsEl.innerHTML = d.tags.map(t =>
-                    `<span class="inline-block px-2 py-1 text-xs rounded"
-                           style="background-color:${t.color}22;color:${t.color}">${t.name}</span>`
-                ).join('');
+                tagsEl.innerHTML = '';
+                d.tags.forEach(t => {
+                    const span = document.createElement('span');
+                    span.className = 'inline-block px-2 py-1 text-xs rounded';
+                    span.style.backgroundColor = `${t.color}22`;
+                    span.style.color = t.color;
+                    span.textContent = t.name;
+                    tagsEl.appendChild(span);
+                });
                 tagsEl.style.display = '';
                 const row = group.querySelector('[data-filterable]');
                 if (row) row.dataset.tags = d.tags.map(t => t.name.toLowerCase()).join('|');

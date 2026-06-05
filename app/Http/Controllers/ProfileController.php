@@ -61,6 +61,9 @@ class ProfileController extends Controller
         // Resize to 200x200 square (center crop) using GD
         $file = $request->file('profile_image');
         $src = imagecreatefromstring(file_get_contents($file->getRealPath()));
+        if (!$src) {
+            return Redirect::route('profile.edit')->withErrors(['profile_image' => 'Could not process the image. Please try a different file.']);
+        }
         $srcW = imagesx($src);
         $srcH = imagesy($src);
 
