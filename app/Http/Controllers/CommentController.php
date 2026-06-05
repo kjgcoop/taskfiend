@@ -37,8 +37,9 @@ class CommentController extends Controller
         $maxFileSizeLabel = env('MAX_FILE_SIZE', '22M');
         $maxFileSizeKb = (int) $maxFileSizeLabel * 1024;
 
+        $longTextMax = (int) env('LONG_TEXT_MAX_CHARS', 10000);
         $validated = $request->validate([
-            'comment' => 'required|string',
+            'comment' => "required|string|max:{$longTextMax}",
             'attachment' => [
                 'nullable',
                 'file',
@@ -71,7 +72,6 @@ class CommentController extends Controller
 
         $commentData = [
             'user_id' => Auth::id(),
-            'task_id' => $task->id,
             'comment' => $validated['comment'],
         ];
 
@@ -85,7 +85,7 @@ class CommentController extends Controller
             $commentData['file_size'] = $fileSize;
         }
 
-        $comment = Comment::create($commentData);
+        $comment = $task->comments()->create($commentData);
 
         $task->changeLogs()->create([
             'date' => now(),

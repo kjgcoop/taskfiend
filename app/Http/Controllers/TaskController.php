@@ -106,16 +106,17 @@ class TaskController extends Controller
 
     public function store(Request $request)
     {
+        $longTextMax = (int) env('LONG_TEXT_MAX_CHARS', 10000);
         $validated = $request->validate([
             'name' => 'required|string',  // max enforced per-line below to support bulk (multi-line) input
-            'description' => 'nullable|string',
+            'description' => "nullable|string|max:{$longTextMax}",
             'location' => 'nullable|string|max:255',
             'date' => 'nullable|string|max:255',
             'time' => 'nullable|date_format:H:i',
             'duration_minutes' => 'nullable|string|max:20',
             'project_id' => 'nullable|exists:projects,id',
             'parent_id' => 'nullable|exists:tasks,id',
-            'recurrence_pattern' => 'nullable|string',
+            'recurrence_pattern' => 'nullable|string|max:100',
             'recurrence_floating' => 'nullable|boolean',
             'tag_ids' => 'nullable|array',
             'tag_ids.*' => 'exists:tags,id',
@@ -142,9 +143,20 @@ class TaskController extends Controller
             }
         }
 
+        // Guard against excessively large bulk input before any expensive processing.
+        $bulkMaxChars = (int) env('BULK_INPUT_MAX_CHARS', 10000);
+        $bulkMaxLines = (int) env('BULK_INPUT_MAX_LINES', 100);
+        if (strlen($validated['name']) > $bulkMaxChars) {
+            return $this->storeError($request, ['name' => "Input is too long. Maximum {$bulkMaxChars} characters total."]);
+        }
+
         // Detect bulk (multi-line) input. Each non-empty line becomes a separate task.
         $lines = array_values(array_filter(array_map('trim', explode("\n", $validated['name']))));
         $isQuickAdd = $request->boolean('quick_add');
+
+        if (count($lines) > $bulkMaxLines) {
+            return $this->storeError($request, ['name' => "Too many lines. Maximum is {$bulkMaxLines} tasks at once."]);
+        }
 
         if (count($lines) > 1) {
             return $this->storeBulk($request, $validated, $lines, $isQuickAdd);
@@ -493,9 +505,10 @@ class TaskController extends Controller
         $this->authorizeTaskAccess($task);
         $this->assertProjectActive($task, asJson: $request->ajax() || $request->wantsJson());
 
+        $longTextMax = (int) env('LONG_TEXT_MAX_CHARS', 10000);
         $validated = $request->validate([
             'name' => 'required|string|max:255',
-            'description' => 'nullable|string',
+            'description' => "nullable|string|max:{$longTextMax}",
             'location' => 'nullable|string|max:255',
             'show_map' => 'nullable|boolean',
             'date' => 'nullable|string|max:255',
@@ -503,7 +516,7 @@ class TaskController extends Controller
             'duration_minutes' => 'nullable|string|max:20',
             'project_id' => 'nullable|exists:projects,id',
             'parent_id' => 'nullable|exists:tasks,id',
-            'recurrence_pattern' => 'nullable|string',
+            'recurrence_pattern' => 'nullable|string|max:100',
             'recurrence_floating' => 'nullable|boolean',
             'status' => 'in:incomplete,done,archived',
             'tag_ids' => 'nullable|array',
@@ -770,6 +783,17 @@ class TaskController extends Controller
             } else {
                 $value = $request->input('value');
 
+                $longTextMax = (int) env('LONG_TEXT_MAX_CHARS', 10000);
+                if ($field === 'name' && strlen((string) $value) > 255) {
+                    return response()->json(['success' => false, 'message' => 'Name cannot exceed 255 characters.'], 422);
+                }
+                if ($field === 'description' && strlen((string) $value) > $longTextMax) {
+                    return response()->json(['success' => false, 'message' => "Description cannot exceed {$longTextMax} characters."], 422);
+                }
+                if ($field === 'recurrence_pattern' && strlen((string) $value) > 100) {
+                    return response()->json(['success' => false, 'message' => 'Recurrence pattern is too long.'], 422);
+                }
+
                 // Parse natural language dates
                 if ($field === 'date' && $value) {
                     $parsed = $this->resolveNaturalDate($value);
@@ -989,6 +1013,10 @@ class TaskController extends Controller
         $input = trim($request->input('name', ''));
 
         if (empty($input)) {
+            return response()->json(['has_special' => false]);
+        }
+
+        if (strlen($input) > 500) {
             return response()->json(['has_special' => false]);
         }
 

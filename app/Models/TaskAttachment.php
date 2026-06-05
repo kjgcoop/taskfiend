@@ -9,7 +9,6 @@ class TaskAttachment extends Model
 {
     protected $fillable = [
         'user_id',
-        'task_id',
         'file_path',
         'original_filename',
         'mime_type',

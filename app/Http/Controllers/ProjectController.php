@@ -53,9 +53,10 @@ class ProjectController extends Controller
 
     public function store(Request $request)
     {
+        $longTextMax = (int) env('LONG_TEXT_MAX_CHARS', 10000);
         $validated = $request->validate([
             'name' => 'required|string|max:255',
-            'description' => 'nullable|string',
+            'description' => "nullable|string|max:{$longTextMax}",
             'end_date' => 'nullable|date',
             'assignee_ids' => 'nullable|array',
             'assignee_ids.*' => 'exists:users,id',
@@ -402,6 +403,13 @@ class ProjectController extends Controller
 
                 if ($field === 'name' && empty(trim($value))) {
                     return response()->json(['success' => false, 'message' => 'Name cannot be empty'], 400);
+                }
+                if ($field === 'name' && strlen((string) $value) > 255) {
+                    return response()->json(['success' => false, 'message' => 'Name cannot exceed 255 characters.'], 422);
+                }
+                $longTextMax = (int) env('LONG_TEXT_MAX_CHARS', 10000);
+                if ($field === 'description' && strlen((string) $value) > $longTextMax) {
+                    return response()->json(['success' => false, 'message' => "Description cannot exceed {$longTextMax} characters."], 422);
                 }
 
                 if ($field === 'end_date') {

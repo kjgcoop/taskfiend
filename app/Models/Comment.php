@@ -9,7 +9,6 @@ class Comment extends Model
 {
     protected $fillable = [
         'user_id',
-        'task_id',
         'comment',
         'file_path',
         'original_filename',

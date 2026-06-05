@@ -70,9 +70,8 @@ class TaskAttachmentController extends Controller
         $file = $request->file('attachment');
         [$path, $fileSize, $mimeType] = $this->storeScaled($file, 'task_attachments');
 
-        $attachment = TaskAttachment::create([
+        $attachment = $task->attachments()->create([
             'user_id' => Auth::id(),
-            'task_id' => $task->id,
             'file_path' => $path,
             'original_filename' => $file->getClientOriginalName(),
             'mime_type' => $mimeType,
