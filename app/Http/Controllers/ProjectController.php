@@ -596,6 +596,8 @@ class ProjectController extends Controller
 
     public function showBackground(Project $project)
     {
+        $this->authorizeProjectAccess($project);
+
         if (!$project->background_image) {
             abort(404);
         }
