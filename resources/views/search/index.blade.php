@@ -488,8 +488,8 @@
                     const afterCursor = input.substring(cursorPos);
 
                     // Check if we're typing a project (#) or tag (@)
-                    const projectMatch = beforeCursor.match(/#(\w*)$/);
-                    const tagMatch = beforeCursor.match(/@(\w*)$/);
+                    const projectMatch = beforeCursor.match(/#([\w-]*)$/);
+                    const tagMatch = beforeCursor.match(/@([\w-]*)$/);
 
                     if (projectMatch) {
                         this.autocompleteType = 'project';
@@ -547,11 +547,11 @@
                     // Replace the incomplete word with the selected name
                     let newBefore;
                     if (this.autocompleteType === 'project') {
-                        const slug = name.toLowerCase().replace(/[^a-z0-9]/g, '');
-                        newBefore = beforeCursor.replace(/#\w*$/, '#' + slug + ' ');
+                        const slug = slugify(name);
+                        newBefore = beforeCursor.replace(/#[\w-]*$/, '#' + slug + ' ');
                     } else {
-                        const slug = name.toLowerCase().replace(/[^a-z0-9]/g, '');
-                        newBefore = beforeCursor.replace(/@\w*$/, '@' + slug + ' ');
+                        const slug = slugify(name);
+                        newBefore = beforeCursor.replace(/@[\w-]*$/, '@' + slug + ' ');
                     }
 
                     this.searchInput = newBefore + afterCursor;
@@ -583,7 +583,7 @@
                     // Process #project tokens — strip only those that match a known project;
                     // unmatched tokens (e.g. #notaproject) are kept in the text query.
                     let projectFound = false;
-                    let plainText = input.replace(/#(\w+)/g, (match, token) => {
+                    let plainText = input.replace(/#([\w-]+)/g, (match, token) => {
                         if (projectFound) return match;
                         const name = token.toLowerCase();
                         if (name === 'inbox') {
@@ -592,7 +592,7 @@
                             return '';
                         }
                         const project = this.projects.find(p =>
-                            p.name.toLowerCase().replace(/[^a-z0-9]/g, '') === name.replace(/[^a-z0-9]/g, '')
+                            slugify(p.name) === name
                         );
                         if (project) {
                             this.selectedProjectId = project.id;
@@ -603,10 +603,10 @@
                     });
 
                     // Process @tag tokens — same logic: only strip matched tags.
-                    plainText = plainText.replace(/@(\w+)/g, (match, token) => {
+                    plainText = plainText.replace(/@([\w-]+)/g, (match, token) => {
                         const name = token.toLowerCase();
                         const tag = this.tags.find(t =>
-                            t.tag_name.toLowerCase().replace(/[^a-z0-9]/g, '') === name.replace(/[^a-z0-9]/g, '')
+                            slugify(t.tag_name) === name
                         );
                         if (tag && !this.selectedTagIds.includes(tag.id)) {
                             this.selectedTagIds.push(tag.id);
@@ -634,9 +634,23 @@
                 rebuildSearchInput() {
                     let parts = [];
 
-                    // Add plain query text
-                    if (this.queryText) {
-                        parts.push(this.queryText);
+                    // Derive plain text from the current searchInput by stripping #project and
+                    // @tag tokens, so any text the user has typed is preserved even if queryText
+                    // hasn't been synced yet (e.g. user typed then changed the project dropdown).
+                    let plainText = this.searchInput
+                        .replace(/#[\w-]+/g, '')
+                        .replace(/@[\w-]+/g, '')
+                        .trim()
+                        .replace(/\s+/g, ' ');
+
+                    // Fall back to queryText when searchInput has no plain text yet (e.g. on init
+                    // before the user has typed anything and searchInput is still empty).
+                    if (!plainText && this.queryText) {
+                        plainText = this.queryText;
+                    }
+
+                    if (plainText) {
+                        parts.push(plainText);
                     }
 
                     // Add project syntax
@@ -646,8 +660,7 @@
                         } else {
                             let project = this.projects.find(p => p.id == this.selectedProjectId);
                             if (project) {
-                                let projectSlug = project.name.toLowerCase().replace(/[^a-z0-9]/g, '');
-                                parts.push('#' + projectSlug);
+                                parts.push('#' + slugify(project.name));
                             }
                         }
                     }
@@ -656,8 +669,7 @@
                     this.selectedTagIds.forEach(tagId => {
                         let tag = this.tags.find(t => t.id == tagId);
                         if (tag) {
-                            let tagSlug = tag.tag_name.toLowerCase().replace(/[^a-z0-9]/g, '');
-                            parts.push('@' + tagSlug);
+                            parts.push('@' + slugify(tag.tag_name));
                         }
                     });
 
