@@ -33,12 +33,11 @@ class ProjectController extends Controller
                 'creator',
                 'latestStatusLog',
             ])
-            ->get()
-            ->sort(fn ($a, $b) => strnatcasecmp($a->name, $b->name))
-            ->values();
+            ->get();
 
-        $projects         = $all->where('status', 'incomplete');
-        $inactiveProjects = $all->whereIn('status', ['done', 'archived']);
+        $natSort = fn ($a, $b) => strnatcasecmp($a->name, $b->name);
+        $projects         = $all->where('status', 'incomplete')->sort($natSort)->values();
+        $inactiveProjects = $all->whereIn('status', ['done', 'archived'])->sort($natSort)->values();
 
         return view('projects.index', compact('projects', 'inactiveProjects'));
     }
