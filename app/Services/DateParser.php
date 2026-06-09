@@ -112,9 +112,13 @@ class DateParser
         } elseif (preg_match($patterns['tomorrow'], $input)) {
             $result['date'] = Carbon::tomorrow()->format('Y-m-d');
             $result['name'] = trim(preg_replace($patterns['tomorrow'], '', $input));
+            // Secondary pass: extract any recurrence pattern left in the name after stripping "tomorrow"
+            $result = $this->extractRecurrenceFromName($result, $patterns);
         } elseif (preg_match($patterns['today'], $input)) {
             $result['date'] = Carbon::today()->format('Y-m-d');
             $result['name'] = trim(preg_replace($patterns['today'], '', $input));
+            // Secondary pass: extract any recurrence pattern left in the name after stripping "today"
+            $result = $this->extractRecurrenceFromName($result, $patterns);
         } elseif (preg_match($patterns['next_day_of_week'], $input, $matches)) {
             $dayName = ucfirst(strtolower($matches[1]));
             $result['date'] = $this->getNextDayOfWeek($dayName)->format('Y-m-d');
@@ -197,6 +201,22 @@ class DateParser
             $result['name'] = trim(preg_replace($patterns['date_iso'], '', $input));
         }
 
+        // Secondary pass: if a recurrence branch already fired but "today" or "tomorrow"
+        // is still in the name, honour the explicit date override and strip the token.
+        if ($result['recurrence_pattern'] !== null) {
+            if (preg_match('/\btoday\b/i', $result['name'])) {
+                $result['date'] = Carbon::today()->format('Y-m-d');
+                $result['name'] = trim(preg_replace('/\s+/', ' ',
+                    preg_replace('/\btoday\b\s*/i', '', $result['name'])
+                ));
+            } elseif (preg_match('/\btomorrow\b/i', $result['name'])) {
+                $result['date'] = Carbon::tomorrow()->format('Y-m-d');
+                $result['name'] = trim(preg_replace('/\s+/', ' ',
+                    preg_replace('/\btomorrow\b\s*/i', '', $result['name'])
+                ));
+            }
+        }
+
         $result['name'] = trim($result['name']);
         if (empty($result['name'])) {
             $result['name'] = $input;
@@ -205,6 +225,74 @@ class DateParser
         // Set floating flag if "every!" was used and a recurrence pattern was found
         if ($recurrenceFloating && $result['recurrence_pattern']) {
             $result['recurrence_floating'] = true;
+        }
+
+        return $result;
+    }
+
+    /**
+     * After a date-only token (today/tomorrow) fires, check whether the remaining
+     * name contains a recurrence pattern and extract it, preserving the already-set date.
+     */
+    protected function extractRecurrenceFromName(array $result, array $patterns): array
+    {
+        $name = $result['name'];
+
+        // Try each recurrence pattern against the remaining name in priority order.
+        // We intentionally skip date-only patterns (today/tomorrow/next X/dates) to
+        // avoid re-parsing dates that were already stripped.
+        $recurrenceChecks = [
+            'daily'                 => fn($m) => ['daily', null],
+            'weekdays'              => fn($m) => ['weekdays', null],
+            'weekends'              => fn($m) => ['weekends', null],
+            'every_other_day_literal' => fn($m) => ['every other day', null],
+            'every_other_weekday'   => fn($m) => ["every other " . ucfirst(strtolower($m[1])), null],
+            'every_other_week'      => fn($m) => ['every other week', null],
+            'every_n_days'          => fn($m) => ["every {$m[1]} days", null],
+            'every_n_months'        => fn($m) => ["every {$m[1]} months", null],
+            'monthly'               => fn($m) => ['monthly', null],
+            'weekly_literal'        => fn($m) => ['weekly', null],
+            'every_n_weeks'         => fn($m) => ["every {$m[1]} weeks", null],
+            'monthly_ordinal'       => fn($m) => [
+                "every " . (['1st' => 'first', '2nd' => 'second', '3rd' => 'third', '4th' => 'fourth'][$m[1]] ?? strtolower($m[1])) . " {$m[2]}",
+                null,
+            ],
+            'yearly'                => fn($m) => ['yearly', null],
+        ];
+
+        foreach ($recurrenceChecks as $key => $builder) {
+            if (preg_match($patterns[$key], $name, $m)) {
+                [$recurrence] = $builder($m);
+                $result['recurrence_pattern'] = $recurrence;
+                $result['name'] = trim(preg_replace('/\s+/', ' ',
+                    preg_replace($patterns[$key], '', $name)
+                ));
+                return $result;
+            }
+        }
+
+        // Check for day-of-week recurrence (plural or "every X")
+        if (preg_match_all($patterns['day_of_week'], $name, $allDayMatches)) {
+            $dayName     = null;
+            $isRecurring = false;
+            foreach ($allDayMatches[1] as $idx => $captured) {
+                $full   = $allDayMatches[0][$idx];
+                $plural = strlen($full) > strlen($captured);
+                $every  = (bool) preg_match('/\bevery\s+' . preg_quote($captured, '/') . '\b/i', $name);
+                if ($plural || $every) {
+                    $dayName     = ucfirst(strtolower($captured));
+                    $isRecurring = true;
+                    break;
+                }
+                $dayName = ucfirst(strtolower($captured));
+            }
+            if ($isRecurring && $dayName) {
+                $result['recurrence_pattern'] = $dayName;
+                $cap = preg_quote(strtolower($dayName), '/');
+                $result['name'] = trim(preg_replace('/\s+/', ' ',
+                    preg_replace('/\bevery\s+' . $cap . 's?\b\s*|\b' . $cap . 's?\b\s*/i', '', $name)
+                ));
+            }
         }
 
         return $result;
