@@ -29,6 +29,11 @@ class DateParser
             'recurrence_pattern' => null,
             'recurrence_floating' => false,
             'nodate' => $nodate,
+            // true when the date was explicitly typed by the user (today, tomorrow, a day
+            // name, a specific month/day, etc.); false when it is a default computed from
+            // the recurrence interval (yearly → today+1yr, weekly → today+1wk, etc.).
+            // Controllers use this to decide whether to override a pre-filled date.
+            'date_explicit' => false,
         ];
 
         if ($nodate) {
@@ -83,6 +88,7 @@ class DateParser
             $dayName = ucfirst(strtolower($matches[1]));
             $result['recurrence_pattern'] = "every other {$dayName}";
             $result['date'] = $this->getNextDayOfWeek($dayName)->format('Y-m-d');
+            $result['date_explicit'] = true;
             $result['name'] = trim(preg_replace($patterns['every_other_weekday'], '', $input));
         } elseif (preg_match($patterns['every_other_week'], $input, $matches)) {
             $result['recurrence_pattern'] = 'every other week';
@@ -113,17 +119,20 @@ class DateParser
             $result['name'] = trim(preg_replace($patterns['every_n_weeks'], '', $input));
         } elseif (preg_match($patterns['tomorrow'], $input)) {
             $result['date'] = Carbon::tomorrow()->format('Y-m-d');
+            $result['date_explicit'] = true;
             $result['name'] = trim(preg_replace($patterns['tomorrow'], '', $input));
             // Secondary pass: extract any recurrence pattern left in the name after stripping "tomorrow"
             $result = $this->extractRecurrenceFromName($result, $patterns);
         } elseif (preg_match($patterns['today'], $input)) {
             $result['date'] = Carbon::today()->format('Y-m-d');
+            $result['date_explicit'] = true;
             $result['name'] = trim(preg_replace($patterns['today'], '', $input));
             // Secondary pass: extract any recurrence pattern left in the name after stripping "today"
             $result = $this->extractRecurrenceFromName($result, $patterns);
         } elseif (preg_match($patterns['next_day_of_week'], $input, $matches)) {
             $dayName = ucfirst(strtolower($matches[1]));
             $result['date'] = $this->getNextDayOfWeek($dayName)->format('Y-m-d');
+            $result['date_explicit'] = true;
             $result['name'] = trim(preg_replace($patterns['next_day_of_week'], '', $input));
         } elseif (preg_match($patterns['monthly_ordinal'], $input, $matches)) {
             // Checked before day_of_week so that "every first Monday" is not swallowed
@@ -133,11 +142,13 @@ class DateParser
             $dayName = $matches[2];
             $result['recurrence_pattern'] = "every {$ordinal} {$dayName}";
             $result['date'] = $this->getNextOrdinalDay($ordinal, $dayName)->format('Y-m-d');
+            $result['date_explicit'] = true;
             $result['name'] = trim(preg_replace($patterns['monthly_ordinal'], '', $input));
         } elseif (preg_match($patterns['multi_days_full'], $input, $matches)) {
             $abbr = $this->normalizeMultiDayToAbbr($matches[0]);
             $result['recurrence_pattern'] = $abbr;
             $result['date'] = $this->getNextMultiDay($abbr)->format('Y-m-d');
+            $result['date_explicit'] = true;
             $result['name'] = trim(preg_replace($patterns['multi_days_full'], '', $input));
         } elseif (preg_match_all($patterns['day_of_week'], $input, $allDayMatches)) {
             // Scan ALL day-name hits to separate:
@@ -169,6 +180,7 @@ class DateParser
                 // If a separate plain day was also present, use it as the first-occurrence date.
                 $dateDay = $lastPlainDay ?? $recurringDay;
                 $result['date'] = $this->getNextDayOfWeek($dateDay)->format('Y-m-d');
+                $result['date_explicit'] = true;
                 // Strip the recurring token ("every Thursday" / "Thursdays") …
                 $rcap = preg_quote(strtolower($recurringDay), '/');
                 $name = preg_replace('/\bevery\s+' . $rcap . 's?\b\s*|\b' . $rcap . 's?\b\s*/i', '', $input);
@@ -183,6 +195,7 @@ class DateParser
                 // embedded in prose ("Letter on Sunday Tuesday" → "Letter on Sunday") stay.
                 $dayName = $lastPlainDay;
                 $result['date'] = $this->getNextDayOfWeek($dayName)->format('Y-m-d');
+                $result['date_explicit'] = true;
                 $cap = preg_quote(strtolower($dayName), '/');
                 $result['name'] = trim(preg_replace('/\s+/', ' ',
                     preg_replace('/\bevery\s+' . $cap . 's?\b\s*|\b' . $cap . 's?\b\s*/i', '', $input)
@@ -191,11 +204,13 @@ class DateParser
         } elseif (preg_match($patterns['multi_days'], $input, $matches)) {
             $result['recurrence_pattern'] = $matches[0];
             $result['date'] = $this->getNextMultiDay($matches[0])->format('Y-m-d');
+            $result['date_explicit'] = true;
             $result['name'] = trim(preg_replace($patterns['multi_days'], '', $input));
         } elseif (preg_match($patterns['monthly_day'], $input, $matches)) {
             $day = (int) $matches[1];
             $result['recurrence_pattern'] = "every {$day}";
             $result['date'] = $this->getNextMonthDay($day)->format('Y-m-d');
+            $result['date_explicit'] = true;
             $result['name'] = trim(preg_replace($patterns['monthly_day'], '', $input));
         } elseif (preg_match($patterns['every_n_years'], $input, $matches)) {
             $years = (int) $matches[1];
@@ -211,22 +226,26 @@ class DateParser
             $day   = (int) $matches[2];
             $result['recurrence_pattern'] = "every " . ucfirst(strtolower($month)) . " {$day}";
             $result['date'] = $this->getNextMonthDayDate($month, $day)->format('Y-m-d');
+            $result['date_explicit'] = true;
             $result['name'] = trim(preg_replace($patterns['every_month_day'], '', $input));
         } elseif (preg_match($patterns['date_month_day'], $input, $matches)) {
             $month = $matches[1];
             $day = (int) $matches[2];
             $result['date'] = $this->getNextMonthDayDate($month, $day)->format('Y-m-d');
+            $result['date_explicit'] = true;
             $result['name'] = trim(preg_replace($patterns['date_month_day'], '', $input));
         } elseif (preg_match($patterns['date_slash'], $input, $matches)) {
             $month = (int) $matches[1];
             $day = (int) $matches[2];
             $result['date'] = $this->getNextDate($month, $day)->format('Y-m-d');
+            $result['date_explicit'] = true;
             $result['name'] = trim(preg_replace($patterns['date_slash'], '', $input));
         } elseif (preg_match($patterns['date_iso'], $input, $matches)) {
             $year = (int) $matches[1];
             $month = (int) $matches[2];
             $day = (int) $matches[3];
             $result['date'] = Carbon::create($year, $month, $day)->format('Y-m-d');
+            $result['date_explicit'] = true;
             $result['name'] = trim(preg_replace($patterns['date_iso'], '', $input));
         }
 
@@ -235,11 +254,13 @@ class DateParser
         if ($result['recurrence_pattern'] !== null) {
             if (preg_match('/\btoday\b/i', $result['name'])) {
                 $result['date'] = Carbon::today()->format('Y-m-d');
+                $result['date_explicit'] = true;
                 $result['name'] = trim(preg_replace('/\s+/', ' ',
                     preg_replace('/\btoday\b\s*/i', '', $result['name'])
                 ));
             } elseif (preg_match('/\btomorrow\b/i', $result['name'])) {
                 $result['date'] = Carbon::tomorrow()->format('Y-m-d');
+                $result['date_explicit'] = true;
                 $result['name'] = trim(preg_replace('/\s+/', ' ',
                     preg_replace('/\btomorrow\b\s*/i', '', $result['name'])
                 ));

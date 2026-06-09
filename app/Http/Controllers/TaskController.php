@@ -318,9 +318,12 @@ class TaskController extends Controller
                 // Explicit "nodate" token always clears date and time.
                 $date = null;
                 $time = null;
-            } elseif (!$date || $parsed['date'] !== null) {
-                // A date keyword in the task name (e.g. "tomorrow") overrides the
-                // day-view's pre-filled hidden date.
+            } elseif (!$date || ($parsed['date'] !== null && $parsed['date_explicit'])) {
+                // An explicitly-typed date token (today, tomorrow, a day name, a specific
+                // month/day, etc.) overrides the day-view's pre-filled hidden date.
+                // Recurrence-interval defaults (yearly → today+1yr, weekly → today+1wk,
+                // etc.) do NOT override a pre-filled date; they only apply when there is
+                // no date already set.
                 $date = $parsed['date'];
                 $time = $parsed['time'];
             }
@@ -1944,7 +1947,7 @@ class TaskController extends Controller
             if ($parsed['nodate']) {
                 $date = null;
                 $time = null;
-            } elseif (!$date || $parsed['date'] !== null) {
+            } elseif (!$date || ($parsed['date'] !== null && $parsed['date_explicit'])) {
                 $date = $parsed['date'];
                 $time = $parsed['time'];
             }
