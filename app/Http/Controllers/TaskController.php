@@ -300,7 +300,7 @@ class TaskController extends Controller
         // Validate explicitly provided recurrence pattern
         if ($recurrencePattern && !$dateParser->isValidRecurrencePattern($recurrencePattern)) {
             return $this->storeError($request, [
-                'recurrence_pattern' => "The recurrence pattern '{$recurrencePattern}' is not recognized. Supported patterns include: daily, every other day, every 4 days, weekdays, weekends, every Monday/Tuesday/etc., every other Monday/Tuesday/etc., every 2 weeks, every 1st (monthly), every first Monday (monthly), yearly."
+                'recurrence_pattern' => "The recurrence pattern '{$recurrencePattern}' is not recognized. Supported patterns include: daily, every other day, every 4 days, weekdays, weekends, every Monday/Tuesday/etc., every other Monday/Tuesday/etc., every 2 weeks, every 1st (monthly), every first Monday (monthly), yearly, every 2 years, every January 3 (annual on specific date)."
             ]);
         }
 
@@ -576,7 +576,7 @@ class TaskController extends Controller
         if (isset($validated['recurrence_pattern']) && !empty($validated['recurrence_pattern'])) {
             $dateParser = new DateParser();
             if (!$dateParser->isValidRecurrencePattern($validated['recurrence_pattern'])) {
-                $msg = "The recurrence pattern '{$validated['recurrence_pattern']}' is not recognized. Supported patterns include: daily, every other day, every 4 days, weekdays, weekends, every Monday/Tuesday/etc., every other Monday/Tuesday/etc., every 2 weeks, every 1st (monthly), every first Monday (monthly), yearly.";
+                $msg = "The recurrence pattern '{$validated['recurrence_pattern']}' is not recognized. Supported patterns include: daily, every other day, every 4 days, weekdays, weekends, every Monday/Tuesday/etc., every other Monday/Tuesday/etc., every 2 weeks, every 1st (monthly), every first Monday (monthly), yearly, every 2 years, every January 3 (annual on specific date).";
                 if ($request->ajax()) {
                     return response()->json(['success' => false, 'message' => $msg], 422);
                 }
@@ -1739,7 +1739,7 @@ class TaskController extends Controller
             $dateParser = new DateParser();
             if (!$dateParser->isValidRecurrencePattern($globalRecurrence)) {
                 return $this->storeError($request, [
-                    'recurrence_pattern' => "The recurrence pattern '{$globalRecurrence}' is not recognized. Supported patterns include: daily, every other day, every 4 days, weekdays, weekends, every Monday/Tuesday/etc., every other Monday/Tuesday/etc., every 2 weeks, every 1st (monthly), every first Monday (monthly), yearly.",
+                    'recurrence_pattern' => "The recurrence pattern '{$globalRecurrence}' is not recognized. Supported patterns include: daily, every other day, every 4 days, weekdays, weekends, every Monday/Tuesday/etc., every other Monday/Tuesday/etc., every 2 weeks, every 1st (monthly), every first Monday (monthly), yearly, every 2 years, every January 3 (annual on specific date).",
                 ]);
             }
         }

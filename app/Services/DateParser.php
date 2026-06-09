@@ -56,6 +56,8 @@ class DateParser
             'monthly_ordinal' => '/\bevery (first|1st|second|2nd|third|3rd|fourth|4th|last) (monday|tuesday|wednesday|thursday|friday|saturday|sunday)\b/i',
             'monthly_day' => '/\bevery (\d{1,2})(st|nd|rd|th)?(?!\s+(days?|weeks?|months?|years?))\b/i',
             'yearly' => '/\b(yearly|every year)\b/i',
+            'every_n_years' => '/\bevery (\d+) years?\b/i',
+            'every_month_day' => '/\bevery (january|february|march|april|may|june|july|august|september|october|november|december) (\d{1,2})\b/i',
             'date_month_day' => '/\b(january|february|march|april|may|june|july|august|september|october|november|december) (\d{1,2})\b/i',
             'date_slash' => '/\b(\d{1,2})\/(\d{1,2})\b/',
             'date_iso' => '/\b(\d{4})-(\d{2})-(\d{2})\b/',
@@ -195,10 +197,21 @@ class DateParser
             $result['recurrence_pattern'] = "every {$day}";
             $result['date'] = $this->getNextMonthDay($day)->format('Y-m-d');
             $result['name'] = trim(preg_replace($patterns['monthly_day'], '', $input));
+        } elseif (preg_match($patterns['every_n_years'], $input, $matches)) {
+            $years = (int) $matches[1];
+            $result['recurrence_pattern'] = "every {$years} years";
+            $result['date'] = Carbon::today()->addYears($years)->format('Y-m-d');
+            $result['name'] = trim(preg_replace($patterns['every_n_years'], '', $input));
         } elseif (preg_match($patterns['yearly'], $input, $matches)) {
             $result['recurrence_pattern'] = 'yearly';
             $result['date'] = Carbon::today()->addYear()->format('Y-m-d');
             $result['name'] = trim(preg_replace($patterns['yearly'], '', $input));
+        } elseif (preg_match($patterns['every_month_day'], $input, $matches)) {
+            $month = $matches[1];
+            $day   = (int) $matches[2];
+            $result['recurrence_pattern'] = "every " . ucfirst(strtolower($month)) . " {$day}";
+            $result['date'] = $this->getNextMonthDayDate($month, $day)->format('Y-m-d');
+            $result['name'] = trim(preg_replace($patterns['every_month_day'], '', $input));
         } elseif (preg_match($patterns['date_month_day'], $input, $matches)) {
             $month = $matches[1];
             $day = (int) $matches[2];
@@ -273,6 +286,7 @@ class DateParser
                 "every " . (['1st' => 'first', '2nd' => 'second', '3rd' => 'third', '4th' => 'fourth'][$m[1]] ?? strtolower($m[1])) . " {$m[2]}",
                 null,
             ],
+            'every_n_years'         => fn($m) => ["every {$m[1]} years", null],
             'yearly'                => fn($m) => ['yearly', null],
         ];
 
@@ -434,14 +448,13 @@ class DateParser
         return $date;
     }
 
-    protected function getNextMonthDayDate(string $month, int $day): Carbon
+    protected function getNextMonthDayDate(string $month, int $day, Carbon $currentDate = null): Carbon
     {
+        $ref      = $currentDate ? $currentDate->copy() : Carbon::today();
         $monthNum = Carbon::parse($month . ' 1')->month;
-        $year = Carbon::today()->year;
+        $date     = Carbon::create($ref->year, $monthNum, $day);
 
-        $date = Carbon::create($year, $monthNum, $day);
-
-        if ($date->isPast()) {
+        if ($date->lte($ref)) {
             $date->addYear();
         }
 
@@ -586,6 +599,17 @@ class DateParser
             return $currentDate->copy()->addYear();
         }
 
+        if (preg_match('/^every (\d+) years?$/', $normalizedPattern, $matches)) {
+            $years = (int) $matches[1];
+            return $currentDate->copy()->addYears($years);
+        }
+
+        if (preg_match('/^every (january|february|march|april|may|june|july|august|september|october|november|december) (\d{1,2})$/i', $normalizedPattern, $matches)) {
+            $month = $matches[1];
+            $day   = (int) $matches[2];
+            return $this->getNextMonthDayDate($month, $day, $currentDate);
+        }
+
         return null;
     }
 
@@ -620,7 +644,7 @@ class DateParser
                 if ($parsed['recurrence_pattern'] !== null) {
                     return null;
                 }
-                return "The recurrence pattern in '{$input}' was not recognized. Supported patterns include: daily, every other day, weekdays, weekends, weekly, every other week, every Monday/Tuesday/etc., every other Monday/Tuesday/etc., every 2 weeks, monthly, every month, every 3 months, every 1st (monthly), every first Monday (monthly), yearly.";
+                return "The recurrence pattern in '{$input}' was not recognized. Supported patterns include: daily, every other day, weekdays, weekends, weekly, every other week, every Monday/Tuesday/etc., every other Monday/Tuesday/etc., every 2 weeks, monthly, every month, every 3 months, every 1st (monthly), every first Monday (monthly), yearly, every 2 years, every January 3 (annual on specific date).";
             }
         }
 
@@ -638,7 +662,9 @@ class DateParser
         $nextWord = strtolower(rtrim($m[1], '.,;:!?'));
 
         $dayNames = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
-        $recurrenceVocab = array_merge($dayNames, [
+        $monthNames = ['january', 'february', 'march', 'april', 'may', 'june',
+                       'july', 'august', 'september', 'october', 'november', 'december'];
+        $recurrenceVocab = array_merge($dayNames, $monthNames, [
             'other', 'day', 'days', 'week', 'weeks', 'month', 'months', 'year', 'years',
             'first', 'second', 'third', 'fourth', 'last',
             '1st', '2nd', '3rd', '4th',
@@ -656,6 +682,6 @@ class DateParser
             return null;
         }
 
-        return "The recurrence pattern in '{$input}' was not recognized. Supported patterns include: daily, every other day, weekdays, weekends, weekly, every other week, every Monday/Tuesday/etc., every other Monday/Tuesday/etc., every 2 weeks, monthly, every month, every 3 months, every 1st (monthly), every first Monday (monthly), yearly.";
+        return "The recurrence pattern in '{$input}' was not recognized. Supported patterns include: daily, every other day, weekdays, weekends, weekly, every other week, every Monday/Tuesday/etc., every other Monday/Tuesday/etc., every 2 weeks, monthly, every month, every 3 months, every 1st (monthly), every first Monday (monthly), yearly, every 2 years, every January 3 (annual on specific date).";
     }
 }
