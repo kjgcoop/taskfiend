@@ -123,6 +123,10 @@
         </div>
 
         <script>
+        function slugify(name) {
+            return name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+        }
+
         function toggleSortReversed() {
             const p = new URLSearchParams(window.location.search);
             if (p.get('reversed') === '1') { p.delete('reversed'); } else { p.set('reversed', '1'); }

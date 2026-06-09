@@ -511,10 +511,10 @@
 
                 let slug, prefix, suffix = ' ';
                 if (this.autocompleteType === 'project') {
-                    slug   = name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+                    slug   = slugify(name);
                     prefix = '#';
                 } else if (this.autocompleteType === 'tag') {
-                    slug   = name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+                    slug   = slugify(name);
                     prefix = '@';
                 } else if (this.autocompleteType === 'location') {
                     if (!isFilter && this.autocompleteLocationQuoted) {
@@ -524,7 +524,7 @@
                         suffix = '" ';
                     } else {
                         // Unquoted form: lowercase, spaces → hyphens
-                        slug   = name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+                        slug   = slugify(name);
                         prefix = (!isFilter && this.autocompleteLocationMap) ? '++' : '+';
                     }
                 } else {
