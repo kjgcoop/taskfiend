@@ -138,38 +138,54 @@ class DateParser
             $result['date'] = $this->getNextMultiDay($abbr)->format('Y-m-d');
             $result['name'] = trim(preg_replace($patterns['multi_days_full'], '', $input));
         } elseif (preg_match_all($patterns['day_of_week'], $input, $allDayMatches)) {
-            // Scan ALL day-name hits to handle two tricky cases:
-            // 1. "Friday Fridays" — preg_match alone finds "Friday" (non-recurring),
-            //    missing the plural "Fridays" that signals recurrence.
-            // 2. "letter on Sunday Tuesday" — "Sunday" is embedded in the sentence;
-            //    the scheduling day is the LAST day name in the input.
-            // Strategy: keep updating $dayName on every non-recurring hit (so we end
-            // up with the last one), but break immediately if we find a recurring hit.
-            $dayName     = null;
-            $isRecurring = false;
+            // Scan ALL day-name hits to separate:
+            // - A recurring day ("every Thursday", "Thursdays") → sets recurrence_pattern
+            // - A plain day name → sets the first-occurrence date
+            //
+            // Cases handled:
+            // 1. "Friday Fridays" — plural signals recurrence; singular is the date.
+            // 2. "letter on Sunday Tuesday" — both plain; last one is the scheduling date,
+            //    earlier ones stay in the title.
+            // 3. "Do stuff Wednesday every Thursday" — Wednesday is the first-occurrence
+            //    date, every Thursday is the recurrence pattern.
+            // 4. Only a recurring day ("every Thursday") — date = next Thursday.
+            $recurringDay    = null;
+            $lastPlainDay    = null;
             foreach ($allDayMatches[1] as $idx => $captured) {
                 $full   = $allDayMatches[0][$idx];
                 $plural = strlen($full) > strlen($captured);
                 $every  = (bool) preg_match('/\bevery\s+' . preg_quote($captured, '/') . '\b/i', $input);
-                if ($plural || $every) {
-                    $dayName     = ucfirst(strtolower($captured));
-                    $isRecurring = true;
-                    break; // first recurring indicator wins
+                if (($plural || $every) && $recurringDay === null) {
+                    $recurringDay = ucfirst(strtolower($captured));
+                } elseif (!$plural && !$every) {
+                    $lastPlainDay = ucfirst(strtolower($captured));
                 }
-                // Always update so the loop leaves us with the LAST non-recurring day
-                $dayName = ucfirst(strtolower($captured));
             }
-            if ($isRecurring) {
-                $result['recurrence_pattern'] = $dayName;
+
+            if ($recurringDay !== null) {
+                $result['recurrence_pattern'] = $recurringDay;
+                // If a separate plain day was also present, use it as the first-occurrence date.
+                $dateDay = $lastPlainDay ?? $recurringDay;
+                $result['date'] = $this->getNextDayOfWeek($dateDay)->format('Y-m-d');
+                // Strip the recurring token ("every Thursday" / "Thursdays") …
+                $rcap = preg_quote(strtolower($recurringDay), '/');
+                $name = preg_replace('/\bevery\s+' . $rcap . 's?\b\s*|\b' . $rcap . 's?\b\s*/i', '', $input);
+                // … and also strip the plain date day if it was a different day from the recurrence.
+                if ($lastPlainDay !== null && strtolower($lastPlainDay) !== strtolower($recurringDay)) {
+                    $dcap = preg_quote(strtolower($lastPlainDay), '/');
+                    $name = preg_replace('/\b' . $dcap . 's?\b\s*/i', '', $name);
+                }
+                $result['name'] = trim(preg_replace('/\s+/', ' ', $name));
+            } else {
+                // Only plain day names — last one is the scheduling date; earlier ones
+                // embedded in prose ("Letter on Sunday Tuesday" → "Letter on Sunday") stay.
+                $dayName = $lastPlainDay;
+                $result['date'] = $this->getNextDayOfWeek($dayName)->format('Y-m-d');
+                $cap = preg_quote(strtolower($dayName), '/');
+                $result['name'] = trim(preg_replace('/\s+/', ' ',
+                    preg_replace('/\bevery\s+' . $cap . 's?\b\s*|\b' . $cap . 's?\b\s*/i', '', $input)
+                ));
             }
-            $result['date'] = $this->getNextDayOfWeek($dayName)->format('Y-m-d');
-            // Remove only the selected day's tokens from the title so that other day
-            // names embedded in the prose ("Letter on Sunday Tuesday" → "Letter on Sunday")
-            // are left intact.  Collapse any resulting double-spaces.
-            $cap = preg_quote(strtolower($dayName), '/');
-            $result['name'] = trim(preg_replace('/\s+/', ' ',
-                preg_replace('/\bevery\s+' . $cap . 's?\b\s*|\b' . $cap . 's?\b\s*/i', '', $input)
-            ));
         } elseif (preg_match($patterns['multi_days'], $input, $matches)) {
             $result['recurrence_pattern'] = $matches[0];
             $result['date'] = $this->getNextMultiDay($matches[0])->format('Y-m-d');
