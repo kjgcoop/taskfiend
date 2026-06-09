@@ -33,8 +33,9 @@ class ProjectController extends Controller
                 'creator',
                 'latestStatusLog',
             ])
-            ->orderByRaw('LOWER(name)')
-            ->get();
+            ->get()
+            ->sort(fn ($a, $b) => strnatcasecmp($a->name, $b->name))
+            ->values();
 
         $projects         = $all->where('status', 'incomplete');
         $inactiveProjects = $all->whereIn('status', ['done', 'archived']);
@@ -224,7 +225,9 @@ class ProjectController extends Controller
             ->orderByRaw('LOWER(name)')
             ->get();
 
-        $projects = Project::activeForUser(Auth::id())->orderByRaw('LOWER(name)')->get(['id', 'name', 'is_hearted']);
+        $projects = Project::activeForUser(Auth::id())->get(['id', 'name', 'is_hearted'])
+            ->sort(fn ($a, $b) => strnatcasecmp($a->name, $b->name))
+            ->values();
 
         $tags = Tag::orderByRaw('LOWER(tag_name)')->get(['id', 'tag_name', 'color']);
 

@@ -65,7 +65,7 @@ class TaskController extends Controller
 
     public function create(Request $request)
     {
-        $projects = Project::activeForUser(Auth::id())->orderByRaw('LOWER(name)')->get();
+        $projects = Project::activeForUser(Auth::id())->get()->sort(fn ($a, $b) => strnatcasecmp($a->name, $b->name))->values();
 
         $tags = Tag::orderByRaw('LOWER(tag_name)')->get();
         $users = User::whereNull('email_enabled_at')->get();
@@ -404,7 +404,7 @@ class TaskController extends Controller
         $task->load(['creator', 'project', 'tags', 'assignees', 'assignments.assignedBy',
                      'attachments', 'comments.user', 'changeLogs.user', 'children', 'parent']);
 
-        $projects = Project::activeForUser(Auth::id())->orderByRaw('LOWER(name)')->get();
+        $projects = Project::activeForUser(Auth::id())->get()->sort(fn ($a, $b) => strnatcasecmp($a->name, $b->name))->values();
 
         $tags = Tag::orderByRaw('LOWER(tag_name)')->get();
         $users = User::whereNull('email_enabled_at')->get();
@@ -449,7 +449,7 @@ class TaskController extends Controller
         $task->load(['creator', 'project', 'tags', 'assignees', 'assignments.assignedBy',
                      'attachments', 'comments.user', 'changeLogs.user', 'children', 'parent']);
 
-        $projects = Project::activeForUser(Auth::id())->orderByRaw('LOWER(name)')->get();
+        $projects = Project::activeForUser(Auth::id())->get()->sort(fn ($a, $b) => strnatcasecmp($a->name, $b->name))->values();
 
         $tags = Tag::orderByRaw('LOWER(tag_name)')->get();
         $users = User::whereNull('email_enabled_at')->get();
@@ -476,7 +476,7 @@ class TaskController extends Controller
         $this->authorizeTaskAccess($task);
         $this->assertProjectActive($task);
 
-        $projects = Project::activeForUser(Auth::id())->orderByRaw('LOWER(name)')->get();
+        $projects = Project::activeForUser(Auth::id())->get()->sort(fn ($a, $b) => strnatcasecmp($a->name, $b->name))->values();
 
         $tags = Tag::orderByRaw('LOWER(tag_name)')->get();
         $users = User::whereNull('email_enabled_at')->get();

@@ -42,7 +42,7 @@ class DashboardController extends Controller
     /** Projects, tags, users, and locations needed by the quick-add autocomplete. */
     private function quickAddData(): array
     {
-        $projects = Project::activeForUser(Auth::id())->orderByRaw('LOWER(name)')->get(['id', 'name']);
+        $projects = Project::activeForUser(Auth::id())->get(['id', 'name'])->sort(fn ($a, $b) => strnatcasecmp($a->name, $b->name))->values();
 
         $tags = Tag::orderByRaw('LOWER(tag_name)')->get(['id', 'tag_name', 'color']);
 
