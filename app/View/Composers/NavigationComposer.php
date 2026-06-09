@@ -39,8 +39,9 @@ class NavigationComposer
         $navProjects = collect();
         if (Auth::check()) {
             $navProjects = Project::activeForUser(Auth::id())
-                ->orderByRaw('LOWER(name)')
-                ->get(['id', 'name', 'background_image', 'is_hearted']);
+                ->get(['id', 'name', 'background_image', 'is_hearted'])
+                ->sort(fn ($a, $b) => strnatcasecmp($a->name, $b->name))
+                ->values();
         }
 
         $navTags = Tag::orderByRaw('LOWER(tag_name)')->get(['id', 'tag_name', 'color']);
