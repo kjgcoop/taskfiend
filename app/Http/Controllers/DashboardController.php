@@ -77,6 +77,9 @@ class DashboardController extends Controller
     {
         $sort     = $request->input('sort', 'date');
         $reversed = $request->boolean('reversed');
+        $perPage  = (int) env('PAGINATION_PER_PAGE', 100);
+        $page     = max(1, (int) $request->input('page', 1));
+        $offset   = ($page - 1) * $perPage;
 
         $tasksQuery = Task::query()
             ->where(function ($q) {
@@ -93,11 +96,18 @@ class DashboardController extends Controller
             ->with(['creator', 'project', 'tags', 'assignees', 'attachments', 'comments', 'completionLog.user']);
 
         $this->applySortOrder($tasksQuery, $sort, $reversed);
-        $tasks = $tasksQuery->get();
+
+        $totalCount = $tasksQuery->count();
+        $tasksRaw   = $tasksQuery->skip($offset)->take($perPage + 1)->get();
+        $hasMore    = $tasksRaw->count() > $perPage;
+        $tasks      = $hasMore ? $tasksRaw->slice(0, $perPage) : $tasksRaw;
 
         $breakdown = $this->projectBreakdown($tasks);
 
-        return view('dashboard.overdue', array_merge(compact('tasks', 'sort', 'breakdown'), $this->quickAddData()));
+        return view('dashboard.overdue', array_merge(
+            compact('tasks', 'sort', 'breakdown', 'totalCount', 'hasMore', 'page', 'perPage'),
+            $this->quickAddData()
+        ));
     }
 
     public function undated(Request $request)
