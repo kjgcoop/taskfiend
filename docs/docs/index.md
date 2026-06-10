@@ -1,4 +1,22 @@
-# Hello!
+# Task Fiend
 
-This documentation exists so I could pare down the README. If there's a disagreement between what this says and what that says, trust that one.
+Task Fiend is a self-hosted to-do list for small groups of people who trust each other. It was built because no existing tool handled multi-user task assignment in quite the right way, and because watching an AI write software is genuinely fun.
 
+It's not designed to scale to thousands of users. It assumes at least one person in the group is comfortable running a server and typing commands.
+
+## Quick links
+
+- **New here?** Start with [Installation](getting-started/installation.md)
+- **Coming from Todoist?** See [Migrating from Todoist](getting-started/todoist-import.md)
+- **Feature overview:** [What it does](features/overview.md)
+- **Running in production:** [Docker deployment](self-hosting/docker.md)
+
+## What makes it different
+
+- Tasks and projects are **private by default** — only the creator and explicitly assigned people can see them
+- **No deletion** — tasks are archived, not destroyed
+- A **quick-add bar** on every list view lets you create tasks with natural language dates, projects, tags, and assignees all in one line
+- **Recurring tasks** automatically create the next instance when you complete the current one
+- A full **changelog** is kept for every task, project, and tag
+
+If you find a disagreement between this documentation and the README in the repository, trust this one.

@@ -5,13 +5,20 @@ nav:
   - About: about.md
   - Getting Started:
     - Installation: getting-started/installation.md
-    - Todoist Import: getting-started/todoist-import.md
-  - Features: 
-    - Feature Overview: features/overview.md
-    - Admin-Like Functionality: features/admin-functionality.md
-    - Dates: features/dates.md
-    - Inline Values: features/inline.md
-    - Todoist Import: features/todoist-import.md
+    - Migrating from Todoist: getting-started/todoist-import.md
+  - Features:
+    - Overview: features/overview.md
+    - Quick-Add & Inline Syntax: features/inline.md
+    - Dates & Recurrence: features/dates.md
+    - Recurring Tasks: features/recurring-tasks.md
+    - Admin Functions: features/admin-functionality.md
+  - Self-Hosting:
+    - Docker: self-hosting/docker.md
+    - Security: self-hosting/security.md
+  - For Developers:
+    - Overview: developers/index.md
+    - API Reference: developers/api.md
+    - Testing: developers/testing.md
   - Privacy Policy: privacy.md
 theme: 
   name: material
