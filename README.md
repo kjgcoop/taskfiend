@@ -1,3 +1,7 @@
+## Documentation
+
+Full documentation is available at [taskfiend.kjcoop.com](https://taskfiend.kjcoop.com).
+
 ## About Task Fiend
 This is a vibe-coded to-do list software that is a lot like many of the other open source task lists out there. None of them were *perfect* and watching machines program is fun, so I asked Claude to code one for me.
 
