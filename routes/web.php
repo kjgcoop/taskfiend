@@ -11,10 +11,12 @@ use App\Http\Controllers\TagController;
 use App\Http\Controllers\TaskAttachmentController;
 use App\Http\Controllers\TaskController;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\NotificationsController;
 use App\Http\Controllers\OtherLinksController;
 use App\Http\Controllers\ProjectTemplateController;
 
 Route::middleware('auth')->group(function () {
+    Route::get('/notifications/feed', [NotificationsController::class, 'feed'])->name('notifications.feed');
     Route::get('/other-links', [OtherLinksController::class, 'index'])->name('other.links');
     Route::get('/other-links/{path}', [OtherLinksController::class, 'show'])->name('other.links.link')->where('path', '.+');
 

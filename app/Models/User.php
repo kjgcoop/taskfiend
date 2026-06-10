@@ -25,6 +25,7 @@ class User extends Authenticatable
         'email',
         'password',
         'email_enabled_at',
+        'notifications_read_at',
         'profile_image',
     ];
 
@@ -48,6 +49,7 @@ class User extends Authenticatable
         return [
 //            'email_verified_at' => 'datetime',
             'email_enabled_at' => 'datetime',
+            'notifications_read_at' => 'datetime',
             'password' => 'hashed',
         ];
     }

@@ -4,6 +4,7 @@ namespace App\View\Composers;
 
 use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
+use App\Http\Controllers\NotificationsController;
 use App\Models\Project;
 use App\Models\Tag;
 
@@ -49,5 +50,6 @@ class NavigationComposer
         $view->with('otherLinksFiles', $otherLinksFiles);
         $view->with('navProjects', $navProjects);
         $view->with('navTags', $navTags);
+        $view->with('unreadNotifications', NotificationsController::unreadCount());
     }
 }
