@@ -716,7 +716,7 @@
 
 </div>{{-- end panel body x-data --}}
 
-<script>
+<script nonce="{{ csp_nonce() }}">
 (function () {
     // Define taskPanelEditor for this specific task.
     // This function is called by Alpine.js via x-data="taskPanelEditor(id)".

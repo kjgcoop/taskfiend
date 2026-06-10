@@ -22,13 +22,10 @@ A full security audit was completed covering: IDOR/authorization, file upload sa
 | Input validation | No server-side limits on bulk task input, descriptions, or comments | Fixed |
 | APP_DEBUG | `.env.example` defaulted to `APP_DEBUG=true` | Fixed |
 | Security headers | No `X-Frame-Options`, `X-Content-Type-Options`, `Referrer-Policy`, or `Permissions-Policy` | Fixed |
+| Content Security Policy | No CSP header; inline scripts had no nonces | Fixed |
 | API rate limiting | None | Already present (`throttle:30,1`) |
 | CSRF | All state-changing web routes protected | No issue found |
 | SQL injection | No raw query interpolation | No issue found |
-
-### Deferred: Content Security Policy (CSP)
-
-A strict CSP would require `nonce` attributes on inline `<script>` blocks across 16+ view files. This is a meaningful refactor and was deferred. When implemented, every `<script>` tag in Blade templates will need a server-generated nonce passed from the middleware, and the CSP header should be set to `script-src 'self' 'nonce-{value}'`.
 
 ---
 
@@ -80,10 +77,32 @@ Applied to every response via `SecurityHeaders` middleware:
 
 | Header | Value |
 |---|---|
+| `Content-Security-Policy` | See below |
 | `X-Frame-Options` | `SAMEORIGIN` |
 | `X-Content-Type-Options` | `nosniff` |
 | `Referrer-Policy` | `strict-origin-when-cross-origin` |
 | `Permissions-Policy` | `camera=(), microphone=(), geolocation=()` |
+
+### Content Security Policy
+
+A per-request nonce is generated in `SecurityHeaders` middleware and bound to the service container via `app('csp-nonce')`. The `csp_nonce()` helper makes it available in Blade templates. Laravel's `Vite::useCspNonce()` ensures the compiled asset `<script>` tag also receives the nonce.
+
+Every inline `<script>` block across all 17 affected view files carries `nonce="{{ csp_nonce() }}"`.
+
+Effective policy:
+```
+default-src 'self';
+script-src 'self' 'nonce-{per-request value}';
+style-src 'self' 'unsafe-inline';
+img-src 'self' data:;
+font-src 'self';
+connect-src 'self';
+base-uri 'self';
+form-action 'self';
+frame-ancestors 'none';
+```
+
+`style-src` uses `'unsafe-inline'` because Alpine.js's `x-show` directive and tag/project colour rendering produce 80+ static `style=""` HTML attributes that cannot be covered by nonces. Script injection is the primary XSS vector; the script-src nonce policy addresses it.
 
 ---
 

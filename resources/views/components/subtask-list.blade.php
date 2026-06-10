@@ -1,7 +1,7 @@
 @props(['tasks', 'parent'])
 
 @pushOnce('scripts')
-<script>
+<script nonce="{{ csp_nonce() }}">
     window.listQuickComplete = window.listQuickComplete || function () {
         return {
             done: false,

@@ -227,7 +227,7 @@
         </div>
     </div>
 
-    <script>
+    <script nonce="{{ csp_nonce() }}">
     function changelogLoader(url, initialHasMore, initialNextPage) {
         return {
             hasMore:  initialHasMore,
@@ -256,7 +256,7 @@
     </script>
 
     @if(!isset($task) && !isset($project) && !isset($tag))
-    <script>
+    <script nonce="{{ csp_nonce() }}">
     function multiSelect(initialValues) {
         return {
             open: false,

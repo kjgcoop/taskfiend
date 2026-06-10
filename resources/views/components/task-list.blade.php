@@ -1,7 +1,7 @@
 @props(['tasks', 'depth' => 0, 'hideDate' => false, 'readOnly' => false, 'viewDate' => null, 'showAsArchived' => false, 'sortable' => false, 'reorderUrl' => null])
 
 @pushOnce('scripts')
-<script>
+<script nonce="{{ csp_nonce() }}">
     window.taskPreviewUrl = '{{ route('tasks.previewQuickAdd') }}';
 
     document.addEventListener('alpine:init', () => {

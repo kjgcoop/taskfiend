@@ -950,7 +950,7 @@
 
     @if($project->user_id === Auth::id())
     @push('scripts')
-    <script>
+    <script nonce="{{ csp_nonce() }}">
         function projectHeaderEditor(projectId, initialName) {
             return {
                 projectId: projectId,
@@ -1142,7 +1142,7 @@
     @endpush
     @endif
 
-<script>
+<script nonce="{{ csp_nonce() }}">
 function setDefaultProject(projectId) {
     fetch(`/projects/${projectId}/set-default`, {
         method: 'POST',

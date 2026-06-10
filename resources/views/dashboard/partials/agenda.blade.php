@@ -95,7 +95,7 @@
 @endphp
 
 @pushOnce('scripts')
-<script>
+<script nonce="{{ csp_nonce() }}">
     window.agendaQuickComplete = function () {
         return {
             done: false,

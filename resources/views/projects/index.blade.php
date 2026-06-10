@@ -207,7 +207,7 @@
             @endif
         </div>
     </div>
-<script>
+<script nonce="{{ csp_nonce() }}">
 function toggleHeartProject(projectId, btn) {
     fetch(`/projects/${projectId}/toggle-heart`, {
         method: 'POST',

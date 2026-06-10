@@ -7,7 +7,7 @@
         <meta name="session-check-interval" content="{{ config('session.check_interval', 60) }}">
 
         <!-- Restore saved sort preference before page renders (avoids visible re-sort) -->
-        <script>(function(){var p=new URLSearchParams(window.location.search);if(!p.has('sort')){var s=localStorage.getItem('task_sort_'+window.location.pathname);if(s){p.set('sort',s);location.replace(location.pathname+'?'+p.toString());}}}());</script>
+        <script nonce="{{ csp_nonce() }}">(function(){var p=new URLSearchParams(window.location.search);if(!p.has('sort')){var s=localStorage.getItem('task_sort_'+window.location.pathname);if(s){p.set('sort',s);location.replace(location.pathname+'?'+p.toString());}}}());</script>
 
         <title>{{ config('app.name', 'Laravel') }} - {{ substr(trim(strip_tags($header)), 0, 100) }}</title>
 
@@ -122,7 +122,7 @@
             </main>
         </div>
 
-        <script>
+        <script nonce="{{ csp_nonce() }}">
         function slugify(name) {
             return name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
         }
@@ -301,7 +301,7 @@
             </div>
         </div>
 
-        <script>
+        <script nonce="{{ csp_nonce() }}">
             document.addEventListener('alpine:init', () => {
                 Alpine.store('taskCount', {
                     total: 0,
@@ -515,7 +515,7 @@
             </div>
         </div>
 
-        <script>
+        <script nonce="{{ csp_nonce() }}">
             window.taskPanelOverlay = function () {
                 return {
                     open: false,
@@ -917,7 +917,7 @@
             </template>
         </div>
 
-        <script>
+        <script nonce="{{ csp_nonce() }}">
             window.undoToastManager = function () {
                 return {
                     toasts: [],
@@ -989,7 +989,7 @@
             };
         </script>
 
-        <script>
+        <script nonce="{{ csp_nonce() }}">
             (function () {
                 const seconds = parseInt(
                     document.querySelector('meta[name="session-check-interval"]')?.content || '60',
