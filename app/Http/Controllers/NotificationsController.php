@@ -8,6 +8,7 @@ use App\Models\Task;
 use App\Models\Tag;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 
 class NotificationsController extends Controller
@@ -55,32 +56,39 @@ class NotificationsController extends Controller
             return 0;
         }
 
-        $userId = $user->id;
+        return Cache::remember("notifications.unread.{$user->id}", 60, function () use ($user) {
+            $userId = $user->id;
 
-        $taskIds = Task::where('creator_id', $userId)
-            ->orWhereHas('assignees', fn($q) => $q->where('users.id', $userId))
-            ->pluck('id');
+            $taskIds = Task::where('creator_id', $userId)
+                ->orWhereHas('assignees', fn($q) => $q->where('users.id', $userId))
+                ->pluck('id');
 
-        $projectIds = Project::where('user_id', $userId)
-            ->orWhereHas('assignees', fn($q) => $q->where('users.id', $userId))
-            ->pluck('id');
+            $projectIds = Project::where('user_id', $userId)
+                ->orWhereHas('assignees', fn($q) => $q->where('users.id', $userId))
+                ->pluck('id');
 
-        $query = ChangeLog::where('user_id', '!=', $userId)
-            ->where(function ($q) use ($taskIds, $projectIds) {
-                $q->where(function ($sq) use ($taskIds) {
-                    $sq->where('entity_type', 'tasks')
-                       ->whereIn('entity_id', $taskIds);
-                })->orWhere(function ($sq) use ($projectIds) {
-                    $sq->where('entity_type', 'projects')
-                       ->whereIn('entity_id', $projectIds);
+            $query = ChangeLog::where('user_id', '!=', $userId)
+                ->where(function ($q) use ($taskIds, $projectIds) {
+                    $q->where(function ($sq) use ($taskIds) {
+                        $sq->where('entity_type', 'tasks')
+                           ->whereIn('entity_id', $taskIds);
+                    })->orWhere(function ($sq) use ($projectIds) {
+                        $sq->where('entity_type', 'projects')
+                           ->whereIn('entity_id', $projectIds);
+                    });
                 });
-            });
 
-        if ($user->notifications_read_at) {
-            $query->where('date', '>', $user->notifications_read_at);
-        }
+            if ($user->notifications_read_at) {
+                $query->where('date', '>', $user->notifications_read_at);
+            }
 
-        return $query->count();
+            return $query->count();
+        });
+    }
+
+    public static function clearCache(int $userId): void
+    {
+        Cache::forget("notifications.unread.{$userId}");
     }
 
     /**
@@ -92,8 +100,9 @@ class NotificationsController extends Controller
 
         $this->attachEntities($logs);
 
-        // Mark as read
+        // Mark as read and clear cache so badge resets immediately
         Auth::user()->update(['notifications_read_at' => now()]);
+        self::clearCache(Auth::id());
 
         $html = view('notifications.feed', compact('logs'))->render();
 
