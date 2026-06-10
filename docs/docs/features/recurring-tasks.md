@@ -56,6 +56,15 @@ Prefix your recurrence pattern with `every!` (with an exclamation mark) to make 
 
 Useful for habits where slipping a day shouldn't cause permanent catch-up.
 
+## Undoing an accidental completion
+
+If you complete a recurring task by mistake, the original instance is now marked done and a new one has been created for the next occurrence. To undo:
+
+1. Move the newly created instance's date back to the original due date
+2. Mark the completed instance as incomplete again
+
+The next time you complete the task, a new instance will be created at the correct future date — the series doesn't drift just because you manually adjusted one instance's date.
+
 ## Tips and edge cases
 
 - If you complete a recurring task and a next instance already exists for that date, a duplicate won't be created
