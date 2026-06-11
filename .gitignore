@@ -27,6 +27,9 @@ Thumbs.db
 /playwright-report
 /test-results
 /.claude/
+!/.claude/hooks/
+!/.claude/hooks/*.sh
+!/.claude/settings.json
 .env.testing
 resources/links/For-Claude-Code.md
 resources/links/Read-Me.md

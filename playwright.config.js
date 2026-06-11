@@ -55,8 +55,8 @@ export default defineConfig({
   /* Run your local dev server before starting the tests */
   webServer: {
     command: 'php artisan serve --env=testing --port=8003',
-    url: 'http://localhost:8003',
-    reuseExistingServer: false,
+    url: 'http://localhost:8003/login',
+    reuseExistingServer: true,
     stdout: 'ignore',
     stderr: 'pipe',
   },

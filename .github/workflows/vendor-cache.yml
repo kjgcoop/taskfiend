@@ -33,12 +33,23 @@ jobs:
       - name: Archive vendor
         run: tar -czf vendor.tar.gz vendor/
 
-      - name: Commit vendor archive to target branch
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install npm dependencies and build assets
+        run: npm install && npm run build
+
+      - name: Archive public/build
+        run: tar -czf public-build.tar.gz public/build/
+
+      - name: Commit archives to target branch
         run: |
           git config user.email "actions@github.com"
           git config user.name "GitHub Actions"
           TARGET="${{ github.event.inputs.target_branch || 'vendor-cache' }}"
           git checkout -B "$TARGET"
-          git add -f vendor.tar.gz
-          git commit -m "chore: cache vendor dependencies [skip ci]"
+          git add -f vendor.tar.gz public-build.tar.gz
+          git commit -m "chore: cache vendor and frontend build assets [skip ci]"
           git push origin "$TARGET" --force
