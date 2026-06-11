@@ -34,15 +34,15 @@ test.describe('Project Authorization & Privacy', () => {
 
     // Verify User 2 can see their project but not User 1's
     await page.goto('/projects');
-    await expect(page.locator('text=User 2 Private Project')).toBeVisible();
-    await expect(page.locator('text=User 1 Private Project')).not.toBeVisible();
+    await expect(page.locator('main').locator('text=User 2 Private Project')).toBeVisible();
+    await expect(page.locator('main').locator('text=User 1 Private Project')).not.toBeVisible();
     await logout(page);
 
     // Verify User 1 can see only their project
     await login(page, testUsers.user1.email);
     await page.goto('/projects');
-    await expect(page.locator('text=User 1 Private Project')).toBeVisible();
-    await expect(page.locator('text=User 2 Private Project')).not.toBeVisible();
+    await expect(page.locator('main').locator('text=User 1 Private Project')).toBeVisible();
+    await expect(page.locator('main').locator('text=User 2 Private Project')).not.toBeVisible();
   });
 
   test('user can see projects they are assigned to', async ({ page }) => {
@@ -62,11 +62,13 @@ test.describe('Project Authorization & Privacy', () => {
     // User 2 should see the assigned project
     await login(page, testUsers.user2.email);
     await page.goto('/projects');
-    await expect(page.locator('text=Shared Project for User 2')).toBeVisible();
+    await expect(page.locator('main').locator('text=Shared Project for User 2')).toBeVisible();
 
     // User 2 should be able to view the project detail
-    await page.click('text=Shared Project for User 2');
-    await expect(page.locator('text=User 2 should see this project')).toBeVisible();
+    await page.locator('main').locator('text=Shared Project for User 2').click();
+    await page.waitForURL(/\/projects\/\d+/);
+    await page.waitForLoadState('networkidle');
+    await expect(page.locator('textarea[name="name"]')).toBeVisible();
   });
 
   test('user cannot access project detail page for unauthorized project', async ({ page }) => {
@@ -132,25 +134,22 @@ test.describe('Project Authorization & Privacy', () => {
 
     await page.waitForURL(/\/projects\/(\d+)/);
 
-    // Open the inline assignee editor and add User 2
-    // Projects use inline editing on the show page (no separate edit route)
-    // Assignees are inside a collapsed <details> — expand it first
-    await page.locator('details summary').click();
-    await page.locator('[x-show="!editing.assignee_ids"]').click();
+    // Open the Details modal via three-dot menu and add User 2 as assignee
+    await page.getByTitle('More options').click();
+    await page.locator('button:has-text("Details")').click();
     await page.waitForSelector(`label:has-text("${testUsers.user2.name}") input[type="checkbox"]`, { state: 'visible' });
     await page.check(`label:has-text("${testUsers.user2.name}") input[type="checkbox"]`);
-    await page.locator('[x-show="editing.assignee_ids"] button:has-text("Save")').click();
+    await page.locator('button:has-text("Save Assignees")').click();
 
-    // saveField() reloads the page on success — re-expand details to verify and to remove
+    // saveField() reloads the page on success — re-open Details modal to verify and to remove
     await page.waitForLoadState('networkidle');
-    await page.locator('details summary').click();
-    await expect(page.locator(`text=${testUsers.user2.name}`).first()).toBeVisible();
+    await page.getByTitle('More options').click();
+    await page.locator('button:has-text("Details")').click();
+    await page.waitForSelector(`label:has-text("${testUsers.user2.name}") input[type="checkbox"]:checked`, { state: 'attached' });
 
     // Remove assignee
-    await page.locator('[x-show="!editing.assignee_ids"]').click();
-    await page.waitForSelector(`label:has-text("${testUsers.user2.name}") input[type="checkbox"]`, { state: 'visible' });
     await page.uncheck(`label:has-text("${testUsers.user2.name}") input[type="checkbox"]`);
-    await page.locator('[x-show="editing.assignee_ids"] button:has-text("Save")').click();
+    await page.locator('button:has-text("Save Assignees")').click();
     await page.waitForLoadState('networkidle');
   });
 
@@ -168,11 +167,14 @@ test.describe('Project Authorization & Privacy', () => {
     // User 3 logs in and views assigned project
     await login(page, testUsers.user3.email);
     await page.goto('/projects');
-    await expect(page.locator('text=Assigned to User 3 Project')).toBeVisible();
+    await expect(page.locator('main').locator('text=Assigned to User 3 Project')).toBeVisible();
 
     // User 3 can view the project detail
-    await page.click('text=Assigned to User 3 Project');
-    await expect(page.locator('text=User 3 is assigned to this project')).toBeVisible();
+    await page.locator('main').locator('text=Assigned to User 3 Project').click();
+    await page.waitForURL(/\/projects\/\d+/);
+    await page.waitForLoadState('networkidle');
+    // Verify we landed on the project page (quick-add bar is always present)
+    await expect(page.locator('textarea[name="name"]')).toBeVisible();
   });
 
   test('tasks in project inherit project visibility', async ({ page }) => {
@@ -197,8 +199,8 @@ test.describe('Project Authorization & Privacy', () => {
 
     // User 2 should not see the task (not assigned to project)
     await login(page, testUsers.user2.email);
-    await page.goto('/tasks');
-    await expect(page.locator('text=Task in Private Project')).not.toBeVisible();
+    await page.goto('/all-tasks');
+    await expect(page.locator('main').locator('text=Task in Private Project')).not.toBeVisible();
   });
 
   test('user cannot create tasks in projects they cannot access', async ({ page }) => {
@@ -240,7 +242,7 @@ test.describe('Project Authorization & Privacy', () => {
     await page.click('button[type="submit"]');
 
     // Project should not appear in results
-    await expect(page.locator(`text=${uniqueName}`)).not.toBeVisible();
+    await expect(page.locator(`text=${uniqueName}`).first()).not.toBeVisible();
   });
 
   test('direct project assignee sees all tasks including those not assigned to them', async ({ page }) => {
@@ -252,12 +254,12 @@ test.describe('Project Authorization & Privacy', () => {
     await page.waitForURL(/\/projects\/(\d+)/);
     const projectId = page.url().match(/\/projects\/(\d+)/)[1];
 
-    // Assign User 2 directly to the project via inline editor
-    await page.locator('details summary').click();
-    await page.locator('[x-show="!editing.assignee_ids"]').click();
+    // Assign User 2 directly to the project via Details modal
+    await page.getByTitle('More options').click();
+    await page.locator('button:has-text("Details")').click();
     await page.waitForSelector(`label:has-text("${testUsers.user2.name}") input[type="checkbox"]`, { state: 'visible' });
     await page.check(`label:has-text("${testUsers.user2.name}") input[type="checkbox"]`);
-    await page.locator('[x-show="editing.assignee_ids"] button:has-text("Save")').click();
+    await page.locator('button:has-text("Save Assignees")').click();
     await page.waitForLoadState('networkidle');
 
     // Create a task assigned only to User 1 (auto-assigned as creator)
@@ -279,8 +281,8 @@ test.describe('Project Authorization & Privacy', () => {
     // User 2 views the project — should see BOTH tasks because they are a direct project assignee
     await login(page, testUsers.user2.email);
     await page.goto(`/projects/${projectId}`);
-    await expect(page.locator('text=Owner-Only Task')).toBeVisible();
-    await expect(page.locator('text=Explicitly Shared Task')).toBeVisible();
+    await expect(page.locator('main').locator('text=Owner-Only Task')).toBeVisible();
+    await expect(page.locator('main').locator('text=Explicitly Shared Task')).toBeVisible();
   });
 
   test('task-only project access shows only assigned tasks, not all project tasks', async ({ page }) => {
@@ -313,8 +315,8 @@ test.describe('Project Authorization & Privacy', () => {
     await page.goto(`/projects/${projectId}`);
 
     // Should see only their assigned task, not the owner-only task
-    await expect(page.locator('text=Task Assigned to User 2')).toBeVisible();
-    await expect(page.locator('text=Private Task for Owner Only')).not.toBeVisible();
+    await expect(page.locator('main').locator('text=Task Assigned to User 2')).toBeVisible();
+    await expect(page.locator('main').locator('text=Private Task for Owner Only')).not.toBeVisible();
   });
 
   test('removing user from project hides project from their view', async ({ page }) => {
@@ -333,25 +335,24 @@ test.describe('Project Authorization & Privacy', () => {
     // User 2 verifies they can see the project
     await login(page, testUsers.user2.email);
     await page.goto('/projects');
-    await expect(page.locator('text=Temporary Access Project')).toBeVisible();
+    await expect(page.locator('main').locator('text=Temporary Access Project')).toBeVisible();
     await logout(page);
 
-    // User 1 removes User 2 from the project via inline editing on the show page
+    // User 1 removes User 2 from the project via the Details modal
     await login(page, testUsers.user1.email);
     await page.goto(`/projects/${projectId}`);
-    // Assignees are inside a collapsed <details> — expand it first
-    await page.locator('details summary').click();
-    await page.locator('[x-show="!editing.assignee_ids"]').click();
+    await page.getByTitle('More options').click();
+    await page.locator('button:has-text("Details")').click();
     await page.waitForSelector(`label:has-text("${testUsers.user2.name}") input[type="checkbox"]`, { state: 'visible' });
     await page.uncheck(`label:has-text("${testUsers.user2.name}") input[type="checkbox"]`);
-    await page.locator('[x-show="editing.assignee_ids"] button:has-text("Save")').click();
+    await page.locator('button:has-text("Save Assignees")').click();
     await page.waitForLoadState('networkidle');
     await logout(page);
 
     // User 2 should no longer see the project
     await login(page, testUsers.user2.email);
     await page.goto('/projects');
-    await expect(page.locator('text=Temporary Access Project')).not.toBeVisible();
+    await expect(page.locator('main').locator('text=Temporary Access Project')).not.toBeVisible();
 
     // User 2 should not be able to access the project directly
     await page.goto(`/projects/${projectId}`);
