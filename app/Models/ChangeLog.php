@@ -2,10 +2,8 @@
 
 namespace App\Models;
 
-use App\Http\Controllers\NotificationsController;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Support\Facades\Cache;
 
 class ChangeLog extends Model
 {
@@ -33,30 +31,58 @@ class ChangeLog extends Model
     protected static function booted(): void
     {
         static::created(function (ChangeLog $log) {
-            // Bust the notification cache for all users involved in the changed entity
-            // so their badge count updates within the next cache TTL cycle.
-            $userIds = collect();
-
-            if ($log->entity_type === 'tasks') {
-                $task = Task::find($log->entity_id);
-                if ($task) {
-                    $userIds = $task->assignees()->pluck('users.id')
-                        ->push($task->creator_id)
-                        ->unique();
-                }
-            } elseif ($log->entity_type === 'projects') {
-                $project = Project::find($log->entity_id);
-                if ($project) {
-                    $userIds = $project->assignees()->pluck('users.id')
-                        ->push($project->user_id)
-                        ->unique();
-                }
+            // Only fan out for tasks and projects (not tags, which aren't "shared")
+            if (!in_array($log->entity_type, ['tasks', 'projects'])) {
+                return;
             }
 
-            foreach ($userIds as $uid) {
-                if ($uid !== $log->user_id) {
-                    NotificationsController::clearCache($uid);
+            $actor = User::find($log->user_id);
+            if (!$actor) {
+                return;
+            }
+
+            if ($log->entity_type === 'tasks') {
+                $entity = Task::find($log->entity_id);
+                if (!$entity) return;
+                $recipientIds = $entity->assignees()->pluck('users.id')
+                    ->push($entity->creator_id)
+                    ->unique();
+            } else {
+                $entity = Project::find($log->entity_id);
+                if (!$entity) return;
+                $recipientIds = $entity->assignees()->pluck('users.id')
+                    ->push($entity->user_id)
+                    ->unique();
+            }
+
+            $entityName = $log->entity_type === 'tasks'
+                ? $entity->name
+                : $entity->name;
+
+            $rows = [];
+            $now  = now();
+
+            foreach ($recipientIds as $uid) {
+                if ($uid == $log->user_id) {
+                    continue; // don't notify the person who made the change
                 }
+                $rows[] = [
+                    'user_id'       => $uid,
+                    'actor_id'      => $log->user_id,
+                    'actor_name'    => $actor->name,
+                    'change_log_id' => $log->id,
+                    'entity_type'   => $log->entity_type,
+                    'entity_id'     => $log->entity_id,
+                    'entity_name'   => $entityName,
+                    'description'   => $log->description,
+                    'seen'          => false,
+                    'created_at'    => $now,
+                    'updated_at'    => $now,
+                ];
+            }
+
+            if (!empty($rows)) {
+                ActivityNotification::insert($rows);
             }
         });
     }
