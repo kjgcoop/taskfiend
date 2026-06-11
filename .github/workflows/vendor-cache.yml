@@ -7,6 +7,10 @@ on:
         description: 'Branch to commit vendor back to'
         required: true
         default: 'vendor-cache'
+  push:
+    paths:
+      - '.github/workflows/vendor-cache.yml'
+      - 'composer.lock'
 
 jobs:
   build:
@@ -33,7 +37,8 @@ jobs:
         run: |
           git config user.email "actions@github.com"
           git config user.name "GitHub Actions"
-          git checkout -B ${{ github.event.inputs.target_branch }}
+          TARGET="${{ github.event.inputs.target_branch || 'vendor-cache' }}"
+          git checkout -B "$TARGET"
           git add -f vendor.tar.gz
           git commit -m "chore: cache vendor dependencies [skip ci]"
-          git push origin ${{ github.event.inputs.target_branch }} --force
+          git push origin "$TARGET" --force
