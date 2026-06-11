@@ -1,0 +1,39 @@
+name: Build vendor cache
+
+on:
+  workflow_dispatch:
+    inputs:
+      target_branch:
+        description: 'Branch to commit vendor back to'
+        required: true
+        default: 'vendor-cache'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          tools: composer
+
+      - name: Install composer dependencies (no dev)
+        run: composer install --no-interaction --prefer-dist --no-dev --no-scripts
+
+      - name: Dump autoload
+        run: composer dump-autoload --no-interaction --no-dev
+
+      - name: Archive vendor
+        run: tar -czf vendor.tar.gz vendor/
+
+      - name: Commit vendor archive to target branch
+        run: |
+          git config user.email "actions@github.com"
+          git config user.name "GitHub Actions"
+          git checkout -B ${{ github.event.inputs.target_branch }}
+          git add -f vendor.tar.gz
+          git commit -m "chore: cache vendor dependencies [skip ci]"
+          git push origin ${{ github.event.inputs.target_branch }} --force
