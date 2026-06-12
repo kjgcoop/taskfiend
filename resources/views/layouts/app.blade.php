@@ -124,6 +124,17 @@
             if (p.get('reversed') === '1') { p.delete('reversed'); } else { p.set('reversed', '1'); }
             window.location.href = window.location.pathname + '?' + p.toString();
         }
+
+        function sortBy(val, saveLocal) {
+            const p = new URLSearchParams(window.location.search);
+            p.set('sort', val);
+            if (saveLocal !== false) localStorage.setItem('task_sort_' + window.location.pathname, val);
+            window.location.href = window.location.pathname + '?' + p.toString();
+        }
+
+        function confirmSubmit(el, msg) {
+            if (confirm(msg)) el.closest('form').submit();
+        }
         </script>
         @stack('scripts')
 

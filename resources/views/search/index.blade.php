@@ -316,7 +316,7 @@
                         <div class="flex items-center gap-2">
                             <label for="sort-results" class="text-sm text-gray-400">Sort:</label>
                             <select id="sort-results"
-                                    onchange="(function(v){const p=new URLSearchParams(window.location.search);p.set('sort',v);window.location.href=window.location.pathname+'?'+p.toString()})(this.value)"
+                                    @change="sortBy($event.target.value, false)"
                                     class="rounded-md bg-gray-700 border-gray-600 text-gray-100 text-sm shadow-sm focus:border-blue-500 focus:ring-blue-500">
                                 <option value="date"     {{ request('sort', 'date') === 'date'     ? 'selected' : '' }}>Date & Time</option>
                                 <option value="created"  {{ request('sort') === 'created'          ? 'selected' : '' }}>Date Added</option>
@@ -324,7 +324,7 @@
                                 <option value="duration" {{ request('sort') === 'duration'         ? 'selected' : '' }}>Duration</option>
                                 <option value="location" {{ request('sort') === 'location'         ? 'selected' : '' }}>Location</option>
                             </select>
-                            <button onclick="toggleSortReversed()"
+                            <button @click="toggleSortReversed()"
                                     title="{{ request()->boolean('reversed') ? 'Reversed — click to restore' : 'Reverse sort order' }}"
                                     class="p-1 rounded transition-colors {{ request()->boolean('reversed') ? 'text-blue-400 hover:text-blue-300' : 'text-gray-500 hover:text-gray-300' }}">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">

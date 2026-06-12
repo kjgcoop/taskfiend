@@ -60,7 +60,7 @@
                     <form method="POST" action="{{ route('tags.destroy', $tag) }}" class="ml-auto">
                         @csrf
                         @method('DELETE')
-                        <button type="submit" class="text-sm text-red-600 hover:underline" onclick="return confirm('Are you sure you want to delete this tag?')">
+                        <button type="submit" class="text-sm text-red-600 hover:underline" @click.prevent="confirmSubmit($el, 'Are you sure you want to delete this tag?')">
                             Delete Tag
                         </button>
                     </form>

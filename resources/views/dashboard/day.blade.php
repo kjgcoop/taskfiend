@@ -168,7 +168,7 @@
                         </svg>
                     </button>
                     <div class="flex items-center gap-2">
-                        <select id="sort-select" onchange="(function(v){const p=new URLSearchParams(window.location.search);p.set('sort',v);localStorage.setItem('task_sort_'+window.location.pathname,v);window.location.href=window.location.pathname+'?'+p.toString()})(this.value)"
+                        <select id="sort-select" @change="sortBy($event.target.value)"
                                 class="text-sm bg-gray-700 border border-gray-600 rounded px-2 py-1 text-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500">
                             <option value="date" {{ $sort === 'date' ? 'selected' : '' }}>Date & Time</option>
                             <option value="created" {{ $sort === 'created' ? 'selected' : '' }}>Date Added</option>
@@ -178,7 +178,7 @@
                             <option value="custom" {{ $sort === 'custom' ? 'selected' : '' }}>Custom Sort</option>
                         </select>
                         @if($sort !== 'custom')
-                        <button onclick="toggleSortReversed()"
+                        <button @click="toggleSortReversed()"
                                 title="{{ request()->boolean('reversed') ? 'Reversed — click to restore' : 'Reverse sort order' }}"
                                 class="p-1 rounded transition-colors {{ request()->boolean('reversed') ? 'text-blue-400 hover:text-blue-300' : 'text-gray-500 hover:text-gray-300' }}">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
@@ -277,7 +277,7 @@
                         <p class="text-sm text-gray-300">Created after midnight — task scheduled for <strong class="text-amber-300">${todayLabel}</strong>.</p>
                         <a href="${todayUrl}" class="text-xs text-amber-400 hover:text-amber-300 underline mt-0.5 inline-block">View today's tasks</a>
                     </div>
-                    <button onclick="this.closest('[data-stale-toast]').remove()" class="flex-shrink-0 text-gray-500 hover:text-gray-300 mt-0.5" aria-label="Dismiss">
+                    <button @click="$el.closest('[data-stale-toast]').remove()" class="flex-shrink-0 text-gray-500 hover:text-gray-300 mt-0.5" aria-label="Dismiss">
                         <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
                         </svg>

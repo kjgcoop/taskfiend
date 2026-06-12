@@ -7,7 +7,7 @@
 <!-- Panel Header -->
 <div class="sticky top-0 z-10 flex items-center justify-between px-4 py-3 bg-gray-900 border-b border-gray-700">
     <div class="flex items-center gap-2 min-w-0">
-        <button onclick="closeTaskPanel()"
+        <button @click="closeTaskPanel()"
                 class="flex-shrink-0 p-1.5 text-gray-400 hover:text-gray-100 rounded hover:bg-gray-700 transition"
                 title="Close panel">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -17,7 +17,7 @@
         <span class="text-xs text-gray-500 uppercase tracking-wide font-medium flex-shrink-0">Task #{{ $task->id }}</span>
         <button x-data="copyButton"
                 @click.prevent="navigator.clipboard.writeText('{{ route('tasks.show', $task) }}'); copied = true; setTimeout(() => copied = false, 1500)"
-                onclick="event.stopPropagation()"
+                @click.stop
                 title="Copy link"
                 class="flex-shrink-0 p-1 text-gray-600 hover:text-gray-300 rounded transition">
             <svg x-show="!copied" class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -302,7 +302,7 @@
                 @if($task->location)
                     @if($task->show_map)
                         @php $mapUrl = sprintf(config('taskfiend.maps_url_template', 'https://maps.google.com/?q=%s'), urlencode($task->location)); @endphp
-                        <a href="{{ $mapUrl }}" target="_blank" rel="noopener" onclick="event.stopPropagation()"
+                        <a href="{{ $mapUrl }}" target="_blank" rel="noopener" @click.stop
                            title="{{ $task->location }}"
                            class="inline-flex items-center gap-1 text-sm text-orange-400 hover:underline">{{ $task->location }}<svg class="inline w-3 h-3 opacity-70 flex-shrink-0" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M1 9L9 1M9 1H4M9 1V6"/></svg></a>
                     @else
@@ -576,7 +576,7 @@
                                             @csrf
                                             @method('DELETE')
                                             <button type="submit" class="text-xs text-red-600 hover:underline"
-                                                    onclick="return confirm('Delete this comment?')">Delete</button>
+                                                    @click.prevent="confirmSubmit($el, 'Delete this comment?')">Delete</button>
                                         </form>
                                     @endif
                                 </div>
@@ -676,7 +676,7 @@
                                                 @csrf
                                                 @method('DELETE')
                                                 <button type="submit" class="text-xs text-red-600 hover:underline"
-                                                        onclick="return confirm('Delete this attachment?')">Delete</button>
+                                                        @click.prevent="confirmSubmit($el, 'Delete this attachment?')">Delete</button>
                                             </form>
                                         @endif
                                     </div>
