@@ -417,33 +417,36 @@
 
     @push('scripts')
     <script nonce="{{ csp_nonce() }}">
-        function searchSectionLoader(initialHasMore, ajaxUrl) {
-            return {
-                hasMore: initialHasMore,
-                nextPage: 2,
-                loading: false,
-                async loadMore() {
-                    if (this.loading || !this.hasMore) return;
-                    this.loading = true;
-                    try {
-                        const res  = await fetch(ajaxUrl + '&page=' + this.nextPage, {
-                            headers: { 'X-Requested-With': 'XMLHttpRequest' }
-                        });
-                        const data = await res.json();
-                        this.$refs.list.insertAdjacentHTML('beforeend', data.html);
-                        this.hasMore  = data.hasMore;
-                        this.nextPage = data.nextPage;
-                    } catch (e) {
-                        console.error('Failed to load more search results:', e);
-                    } finally {
-                        this.loading = false;
-                    }
-                },
-            };
-        }
+        document.addEventListener('alpine:init', () => {
+            Alpine.data('searchSectionLoader', function(initialHasMore, ajaxUrl) {
+                return {
+                    hasMore: initialHasMore,
+                    nextPage: 2,
+                    loading: false,
+                    async loadMore() {
+                        if (this.loading || !this.hasMore) return;
+                        this.loading = true;
+                        try {
+                            const res  = await fetch(ajaxUrl + '&page=' + this.nextPage, {
+                                headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                            });
+                            const data = await res.json();
+                            this.$refs.list.insertAdjacentHTML('beforeend', data.html);
+                            this.hasMore  = data.hasMore;
+                            this.nextPage = data.nextPage;
+                        } catch (e) {
+                            console.error('Failed to load more search results:', e);
+                        } finally {
+                            this.loading = false;
+                        }
+                    },
+                };
+            });
+        });
 
-        function searchFilter(projects, tags, initialExpanded) {
-            return {
+        document.addEventListener('alpine:init', () => {
+            Alpine.data('searchFilter', function(projects, tags, initialExpanded) {
+                return {
                 projects: projects,
                 tags: tags,
                 expanded: initialExpanded,
@@ -680,8 +683,9 @@
                     // Make sure hidden fields are up to date before submitting
                     this.parseSearchInput();
                 }
-            };
-        }
+                };
+            });
+        });
     </script>
     @endpush
 </x-app-layout>

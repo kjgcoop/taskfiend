@@ -1,22 +1,9 @@
 <x-app-layout>
     <x-slot name="header">
         <div class="flex justify-between items-center">
-            <div class="flex-1 min-w-0 mr-4" x-data="{
-                editing: false,
-                name: @js($task->name),
-                original: @js($task->name),
-                async save() {
-                    const fd = new FormData();
-                    fd.append('_token', document.querySelector('meta[name=\'csrf-token\']').content);
-                    fd.append('field', 'name');
-                    fd.append('value', this.name.trim());
-                    const res = await fetch('/tasks/{{ $task->id }}/update-field', { method: 'POST', body: fd });
-                    const data = await res.json();
-                    if (data.success) { window.location.reload(); }
-                    else { alert('Error saving: ' + (data.message || 'Failed')); this.name = this.original; this.editing = false; }
-                },
-                cancel() { this.name = this.original; this.editing = false; }
-            }">
+            <div class="flex-1 min-w-0 mr-4"
+                 x-data="taskShowNameEditor"
+                 x-init="name = @js($task->name); original = @js($task->name); taskId = {{ $task->id }}">
                 <div x-show="!editing">
                     <h2 @if(!$isInactive) @click="editing = true; $nextTick(() => $refs.nameInput.focus())" @endif
                         class="font-semibold text-xl text-gray-100 leading-tight task-title {{ !$isInactive ? 'cursor-pointer hover:text-gray-300' : '' }}">
@@ -35,7 +22,7 @@
                 @endif
                 <div class="flex items-center gap-1.5 mt-0.5">
                     <span class="text-sm text-gray-600">#{{ $task->id }}</span>
-                    <button x-data="{ copied: false }"
+                    <button x-data="copyButton"
                             @click="navigator.clipboard.writeText('{{ route('tasks.show', $task) }}'); copied = true; setTimeout(() => copied = false, 1500)"
                             title="Copy link"
                             class="p-0.5 text-gray-600 hover:text-gray-300 rounded transition">
@@ -630,7 +617,7 @@
             </div>
 
             <!-- Tabbed sections: Subtasks, Attachments, Comments, History -->
-            <div x-data="{ tab: 'comments' }" class="bg-[#202020] border border-gray-700 overflow-hidden shadow-sm sm:rounded-lg">
+            <div x-data="tabSwitcher" class="bg-[#202020] border border-gray-700 overflow-hidden shadow-sm sm:rounded-lg">
 
                 <!-- Tab bar -->
                 <div class="flex border-b border-gray-700 overflow-x-auto">
@@ -828,7 +815,30 @@
 
     @push('scripts')
     <script nonce="{{ csp_nonce() }}">
-        function taskEditor(taskId) {
+        document.addEventListener('alpine:init', () => {
+            Alpine.data('taskShowNameEditor', function() {
+                return {
+                    editing: false,
+                    name: '',
+                    original: '',
+                    taskId: null,
+                    async save() {
+                        const fd = new FormData();
+                        fd.append('_token', document.querySelector('meta[name=\'csrf-token\']').content);
+                        fd.append('field', 'name');
+                        fd.append('value', this.name.trim());
+                        const res = await fetch('/tasks/' + this.taskId + '/update-field', { method: 'POST', body: fd });
+                        const data = await res.json();
+                        if (data.success) { window.location.reload(); }
+                        else { alert('Error saving: ' + (data.message || 'Failed')); this.name = this.original; this.editing = false; }
+                    },
+                    cancel() { this.name = this.original; this.editing = false; }
+                };
+            });
+        });
+
+        document.addEventListener('alpine:init', () => {
+        Alpine.data('taskEditor', function(taskId) {
             return {
                 taskId: taskId,
                 editing: {},
@@ -1100,7 +1110,8 @@
                     }
                 },
             };
-        }
+        });
+        });
     </script>
     @endpush
 </x-app-layout>

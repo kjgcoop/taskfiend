@@ -15,7 +15,7 @@
             </svg>
         </button>
         <span class="text-xs text-gray-500 uppercase tracking-wide font-medium flex-shrink-0">Task #{{ $task->id }}</span>
-        <button x-data="{ copied: false }"
+        <button x-data="copyButton"
                 @click.prevent="navigator.clipboard.writeText('{{ route('tasks.show', $task) }}'); copied = true; setTimeout(() => copied = false, 1500)"
                 onclick="event.stopPropagation()"
                 title="Copy link"
@@ -521,7 +521,7 @@
     @endif
 
     <!-- Tabbed section: Comments / Subtasks / Attachments -->
-    <div x-data="{ tab: 'comments' }" class="border border-gray-700 rounded-lg bg-[#202020]">
+    <div x-data="tabSwitcher" class="border border-gray-700 rounded-lg bg-[#202020]">
 
         <!-- Tab bar -->
         <div class="flex border-b border-gray-700 overflow-x-auto">
@@ -720,7 +720,8 @@
 (function () {
     // Define taskPanelEditor for this specific task.
     // This function is called by Alpine.js via x-data="taskPanelEditor(id)".
-    window.taskPanelEditor = function (taskId) {
+    document.addEventListener('alpine:init', () => {
+    Alpine.data('taskPanelEditor', function (taskId) {
         return {
             taskId: taskId,
             editing: {},
@@ -1097,6 +1098,7 @@
                 }
             },
         };
-    };
+    });
+    });
 })();
 </script>

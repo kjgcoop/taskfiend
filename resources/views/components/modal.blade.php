@@ -14,24 +14,26 @@ $maxWidth = [
 ][$maxWidth];
 @endphp
 
-<div
-    x-data="{
-        show: @js($show),
+<script nonce="{{ csp_nonce() }}">
+document.addEventListener('alpine:init', () => {
+    Alpine.data('modal', () => ({
+        show: false,
         focusables() {
-            // All focusable element types...
-            let selector = 'a, button, input:not([type=\'hidden\']), textarea, select, details, [tabindex]:not([tabindex=\'-1\'])'
-            return [...$el.querySelectorAll(selector)]
-                // All non-disabled elements...
-                .filter(el => ! el.hasAttribute('disabled'))
+            let selector = 'a, button, input:not([type=\'hidden\']), textarea, select, details, [tabindex]:not([tabindex=\'-1\'])';
+            return [...this.$el.querySelectorAll(selector)].filter(el => !el.hasAttribute('disabled'));
         },
-        firstFocusable() { return this.focusables()[0] },
-        lastFocusable() { return this.focusables().slice(-1)[0] },
-        nextFocusable() { return this.focusables()[this.nextFocusableIndex()] || this.firstFocusable() },
-        prevFocusable() { return this.focusables()[this.prevFocusableIndex()] || this.lastFocusable() },
-        nextFocusableIndex() { return (this.focusables().indexOf(document.activeElement) + 1) % (this.focusables().length + 1) },
-        prevFocusableIndex() { return Math.max(0, this.focusables().indexOf(document.activeElement)) -1 },
-    }"
-    x-init="$watch('show', value => {
+        firstFocusable() { return this.focusables()[0]; },
+        lastFocusable() { return this.focusables().slice(-1)[0]; },
+        nextFocusable() { return this.focusables()[this.nextFocusableIndex()] || this.firstFocusable(); },
+        prevFocusable() { return this.focusables()[this.prevFocusableIndex()] || this.lastFocusable(); },
+        nextFocusableIndex() { return (this.focusables().indexOf(document.activeElement) + 1) % (this.focusables().length + 1); },
+        prevFocusableIndex() { return Math.max(0, this.focusables().indexOf(document.activeElement)) - 1; },
+    }));
+});
+</script>
+<div
+    x-data="modal"
+    x-init="show = @js($show); $watch('show', value => {
         if (value) {
             document.body.classList.add('overflow-y-hidden');
             {{ $attributes->has('focusable') ? 'setTimeout(() => firstFocusable().focus(), 100)' : '' }}

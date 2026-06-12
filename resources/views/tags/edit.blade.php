@@ -21,7 +21,7 @@
                             @error('tag_name')<p class="mt-1 text-sm text-red-600">{{ $message }}</p>@enderror
                         </div>
 
-                        <div class="mb-6" x-data="{ selected: '{{ old('color', $tag->color) }}' }">
+                        <div class="mb-6" x-data="colorPicker" x-init="selected = '{{ old('color', $tag->color) }}'">
                             <label class="block text-sm font-medium text-gray-300 mb-2">Color</label>
                             <input type="hidden" name="color" :value="selected">
                             <div class="flex flex-wrap gap-2">
@@ -69,4 +69,11 @@
             </div>
         </div>
     </div>
+    @push('scripts')
+    <script nonce="{{ csp_nonce() }}">
+        document.addEventListener('alpine:init', () => {
+            Alpine.data('colorPicker', () => ({ selected: '' }));
+        });
+    </script>
+    @endpush
 </x-app-layout>

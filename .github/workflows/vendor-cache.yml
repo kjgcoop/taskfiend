@@ -11,6 +11,7 @@ on:
     paths:
       - '.github/workflows/vendor-cache.yml'
       - 'composer.lock'
+      - 'package-lock.json'
 
 jobs:
   build:

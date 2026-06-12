@@ -1,6 +1,6 @@
 <x-app-layout>
     <x-slot name="header">
-        <div class="flex items-center gap-2 w-full" x-data="{ showMenu: false }">
+        <div class="flex items-center gap-2 w-full" x-data="dropdown">
             {{-- Inline-editable tag name + count badge --}}
             <div x-data="tagHeaderEditor({{ $tag->id }}, @js($tag->tag_name), @js($tag->color))" class="flex items-center gap-2 min-w-0">
                 <h2 x-show="!editing"
@@ -24,7 +24,7 @@
 
             {{-- ID + copy link --}}
             <span class="text-sm text-gray-500 shrink-0">#{{ $tag->id }}</span>
-            <span x-data="{ copied: false }" class="shrink-0">
+            <span x-data="copyButton" class="shrink-0">
                 <button @click="navigator.clipboard.writeText('[tag:{{ $tag->id }}]').then(() => { copied = true; setTimeout(() => copied = false, 2000) })"
                         title="Copy tag reference [tag:{{ $tag->id }}]"
                         class="text-gray-500 hover:text-gray-300 transition-colors">
@@ -38,17 +38,17 @@
             </span>
 
             {{-- Three-dot menu --}}
-            <div class="relative shrink-0" @click.outside="showMenu = false">
-                <button @click="showMenu = !showMenu"
+            <div class="relative shrink-0" @click.outside="open = false">
+                <button @click="open = !open"
                         class="p-2 text-gray-400 hover:text-gray-100 hover:bg-gray-700 rounded transition-colors"
                         title="More options">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
                         <path d="M10 6a2 2 0 110-4 2 2 0 010 4zm0 6a2 2 0 110-4 2 2 0 010 4zm0 6a2 2 0 110-4 2 2 0 010 4z" />
                     </svg>
                 </button>
-                <div x-show="showMenu" x-cloak
+                <div x-show="open" x-cloak
                      class="absolute right-0 mt-1 w-40 bg-gray-800 border border-gray-600 rounded shadow-lg z-10">
-                    <button @click="showMenu = false; $dispatch('open-tag-details')"
+                    <button @click="open = false; $dispatch('open-tag-details')"
                             class="w-full text-left px-4 py-2 text-gray-200 hover:bg-gray-700">
                         Details
                     </button>
@@ -203,8 +203,9 @@
 
     @push('scripts')
     <script nonce="{{ csp_nonce() }}">
-        function tagHeaderEditor(tagId, initialName, initialColor) {
-            return {
+        document.addEventListener('alpine:init', () => {
+            Alpine.data('tagHeaderEditor', function(tagId, initialName, initialColor) {
+                return {
                 tagId: tagId,
                 name: initialName,
                 color: initialColor,
@@ -256,11 +257,13 @@
                         this.editing = false;
                     }
                 },
-            };
-        }
+                };
+            });
+        });
 
-        function tagEditor(tagId) {
-            return {
+        document.addEventListener('alpine:init', () => {
+            Alpine.data('tagEditor', function(tagId) {
+                return {
                 tagId: tagId,
                 showDetails: false,
                 editing: {},
@@ -307,8 +310,9 @@
                         this.fields[field] = JSON.parse(JSON.stringify(this.original[field]));
                     }
                 },
-            };
-        }
+                };
+            });
+        });
     </script>
     @endpush
 </x-app-layout>

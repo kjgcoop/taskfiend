@@ -1,6 +1,6 @@
 <x-app-layout>
     <x-slot name="header">
-        <div class="flex items-center gap-2 w-full" x-data="{ showSaveTemplate: false, showMenu: false, showStatus: false, statusTab: 'post' }">
+        <div class="flex items-center gap-2 w-full" x-data="projectHeaderControls">
             {{-- Star / default toggle --}}
             @if($project->is_default)
                 <span title="Default project" class="text-yellow-400 shrink-0">
@@ -41,7 +41,7 @@
 
             {{-- ID + copy link --}}
             <span class="text-sm text-gray-500 shrink-0">#{{ $project->id }}</span>
-            <span x-data="{ copied: false }" class="shrink-0">
+            <span x-data="copyButton" class="shrink-0">
                 <button @click="navigator.clipboard.writeText('{{ route('projects.show', $project) }}').then(() => { copied = true; setTimeout(() => copied = false, 2000) })"
                         title="Copy link"
                         class="text-gray-500 hover:text-gray-300 transition-colors">
@@ -951,193 +951,202 @@
     @if($project->user_id === Auth::id())
     @push('scripts')
     <script nonce="{{ csp_nonce() }}">
-        function projectHeaderEditor(projectId, initialName) {
-            return {
-                projectId: projectId,
-                name: initialName,
-                original: initialName,
-                editing: false,
+        document.addEventListener('alpine:init', () => {
+            Alpine.data('projectHeaderControls', () => ({
+                showSaveTemplate: false,
+                showMenu: false,
+                showStatus: false,
+                statusTab: 'post'
+            }));
 
-                startEdit() {
-                    this.original = this.name;
-                    this.editing = true;
-                    this.$nextTick(() => {
-                        if (this.$refs.nameInput) {
-                            this.$refs.nameInput.focus();
-                            this.$refs.nameInput.select();
-                        }
-                    });
-                },
+            Alpine.data('projectHeaderEditor', function (projectId, initialName) {
+                return {
+                    projectId: projectId,
+                    name: initialName,
+                    original: initialName,
+                    editing: false,
 
-                cancel() {
-                    this.name = this.original;
-                    this.editing = false;
-                },
-
-                async save() {
-                    if (this.name.trim() === this.original.trim()) {
-                        this.editing = false;
-                        return;
-                    }
-                    const formData = new FormData();
-                    formData.append('_token', document.querySelector('meta[name="csrf-token"]').content);
-                    formData.append('field', 'name');
-                    formData.append('value', this.name.trim());
-                    try {
-                        const resp = await fetch(`/projects/${this.projectId}/update-field`, {
-                            method: 'POST',
-                            body: formData,
+                    startEdit() {
+                        this.original = this.name;
+                        this.editing = true;
+                        this.$nextTick(() => {
+                            if (this.$refs.nameInput) {
+                                this.$refs.nameInput.focus();
+                                this.$refs.nameInput.select();
+                            }
                         });
-                        const data = await resp.json();
-                        if (data.success) {
-                            this.original = this.name.trim();
+                    },
+
+                    cancel() {
+                        this.name = this.original;
+                        this.editing = false;
+                    },
+
+                    async save() {
+                        if (this.name.trim() === this.original.trim()) {
                             this.editing = false;
-                        } else {
-                            alert(data.message || 'Failed to save');
+                            return;
+                        }
+                        const formData = new FormData();
+                        formData.append('_token', document.querySelector('meta[name="csrf-token"]').content);
+                        formData.append('field', 'name');
+                        formData.append('value', this.name.trim());
+                        try {
+                            const resp = await fetch(`/projects/${this.projectId}/update-field`, {
+                                method: 'POST',
+                                body: formData,
+                            });
+                            const data = await resp.json();
+                            if (data.success) {
+                                this.original = this.name.trim();
+                                this.editing = false;
+                            } else {
+                                alert(data.message || 'Failed to save');
+                                this.name = this.original;
+                                this.editing = false;
+                            }
+                        } catch (e) {
+                            alert('An error occurred while saving');
                             this.name = this.original;
                             this.editing = false;
                         }
-                    } catch (e) {
-                        alert('An error occurred while saving');
-                        this.name = this.original;
-                        this.editing = false;
-                    }
-                },
-            };
-        }
+                    },
+                };
+            });
 
-        function projectEditor(projectId) {
-            return {
-                projectId: projectId,
-                showDetails: false,
-                editing: {},
-                fieldError: null,
-                fields: {
-                    name: @js($project->name),
-                    description: @js($project->description ?? ''),
-                    status: @js($project->status),
-                    end_date: @js($project->end_date ? $project->end_date->format('Y-m-d') : ''),
-                    assignee_ids: @js($project->assignees->pluck('id')->toArray()),
-                },
-                original: {},
+            Alpine.data('projectEditor', function (projectId) {
+                return {
+                    projectId: projectId,
+                    showDetails: false,
+                    editing: {},
+                    fieldError: null,
+                    fields: {
+                        name: @js($project->name),
+                        description: @js($project->description ?? ''),
+                        status: @js($project->status),
+                        end_date: @js($project->end_date ? $project->end_date->format('Y-m-d') : ''),
+                        assignee_ids: @js($project->assignees->pluck('id')->toArray()),
+                    },
+                    original: {},
 
-                init() {
-                    this.original = JSON.parse(JSON.stringify(this.fields));
-                },
+                    init() {
+                        this.original = JSON.parse(JSON.stringify(this.fields));
+                    },
 
-                startEdit(field) {
-                    this.editing[field] = true;
-                    if (field === 'name') {
-                        this.$nextTick(() => {
-                            const input = this.$el.querySelector('input[x-model="fields.name"]');
-                            if (input) { input.focus(); input.select(); }
-                        });
-                    }
-                    if (field === 'description') {
-                        this.$nextTick(() => {
-                            const ta = this.$el.querySelector('textarea[x-model="fields.description"]');
-                            if (ta) ta.focus();
-                        });
-                    }
-                },
-
-                cancelEdit(field) {
-                    this.editing[field] = false;
-                    this.fields[field] = JSON.parse(JSON.stringify(this.original[field]));
-                },
-
-                async saveField(field) {
-                    this.fieldError = null;
-                    try {
-                        const formData = new FormData();
-                        formData.append('_token', document.querySelector('meta[name="csrf-token"]').content);
-                        formData.append('field', field);
-
-                        if (Array.isArray(this.fields[field])) {
-                            this.fields[field].forEach(value => {
-                                formData.append(field + '[]', value);
+                    startEdit(field) {
+                        this.editing[field] = true;
+                        if (field === 'name') {
+                            this.$nextTick(() => {
+                                const input = this.$el.querySelector('input[x-model="fields.name"]');
+                                if (input) { input.focus(); input.select(); }
                             });
-                        } else {
-                            formData.append('value', this.fields[field]);
                         }
-
-                        const response = await fetch(`/projects/${this.projectId}/update-field`, {
-                            method: 'POST',
-                            body: formData,
-                        });
-
-                        const data = await response.json();
-
-                        if (data.success) {
-                            this.original[field] = JSON.parse(JSON.stringify(this.fields[field]));
-                            this.editing[field] = false;
-                            window.location.reload();
-                        } else {
-                            this.fieldError = data.message || 'Failed to update';
+                        if (field === 'description') {
+                            this.$nextTick(() => {
+                                const ta = this.$el.querySelector('textarea[x-model="fields.description"]');
+                                if (ta) ta.focus();
+                            });
                         }
-                    } catch (error) {
-                        console.error('Error:', error);
-                        this.fieldError = 'An error occurred while saving. Check the server logs.';
-                    }
-                },
-            };
-        }
+                    },
 
-        function reminderDateInput(initial) {
-            return {
-                dateText: '',
-                resolvedDate: initial || '',
-                datePreview: '',
-                dateError: '',
+                    cancelEdit(field) {
+                        this.editing[field] = false;
+                        this.fields[field] = JSON.parse(JSON.stringify(this.original[field]));
+                    },
 
-                init() {
-                    if (this.resolvedDate && /^\d{4}-\d{2}-\d{2}$/.test(this.resolvedDate)) {
-                        const d = new Date(this.resolvedDate + 'T12:00:00');
+                    async saveField(field) {
+                        this.fieldError = null;
+                        try {
+                            const formData = new FormData();
+                            formData.append('_token', document.querySelector('meta[name="csrf-token"]').content);
+                            formData.append('field', field);
+
+                            if (Array.isArray(this.fields[field])) {
+                                this.fields[field].forEach(value => {
+                                    formData.append(field + '[]', value);
+                                });
+                            } else {
+                                formData.append('value', this.fields[field]);
+                            }
+
+                            const response = await fetch(`/projects/${this.projectId}/update-field`, {
+                                method: 'POST',
+                                body: formData,
+                            });
+
+                            const data = await response.json();
+
+                            if (data.success) {
+                                this.original[field] = JSON.parse(JSON.stringify(this.fields[field]));
+                                this.editing[field] = false;
+                                window.location.reload();
+                            } else {
+                                this.fieldError = data.message || 'Failed to update';
+                            }
+                        } catch (error) {
+                            console.error('Error:', error);
+                            this.fieldError = 'An error occurred while saving. Check the server logs.';
+                        }
+                    },
+                };
+            });
+
+            Alpine.data('reminderDateInput', function (initial) {
+                return {
+                    dateText: '',
+                    resolvedDate: initial || '',
+                    datePreview: '',
+                    dateError: '',
+
+                    init() {
+                        if (this.resolvedDate && /^\d{4}-\d{2}-\d{2}$/.test(this.resolvedDate)) {
+                            const d = new Date(this.resolvedDate + 'T12:00:00');
+                            this.dateText = d.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+                            this.previewDate();
+                        }
+                    },
+
+                    pickDate(value) {
+                        if (!value) return;
+                        this.resolvedDate = value;
+                        const d = new Date(value + 'T12:00:00');
                         this.dateText = d.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-                        this.previewDate();
-                    }
-                },
+                        this.datePreview = this.dateText;
+                        this.dateError = '';
+                    },
 
-                pickDate(value) {
-                    if (!value) return;
-                    this.resolvedDate = value;
-                    const d = new Date(value + 'T12:00:00');
-                    this.dateText = d.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-                    this.datePreview = this.dateText;
-                    this.dateError = '';
-                },
-
-                async previewDate() {
-                    const input = this.dateText.trim();
-                    if (!input) { this.datePreview = ''; this.dateError = ''; this.resolvedDate = ''; return; }
-                    try {
-                        const resp = await fetch('{{ route('tasks.parseDate') }}', {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json',
-                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
-                                'Accept': 'application/json',
-                            },
-                            body: JSON.stringify({ input }),
-                        });
-                        const data = await resp.json();
-                        if (data.success) {
-                            this.resolvedDate = data.date;
-                            this.datePreview = data.formatted;
-                            this.dateError = '';
-                        } else {
+                    async previewDate() {
+                        const input = this.dateText.trim();
+                        if (!input) { this.datePreview = ''; this.dateError = ''; this.resolvedDate = ''; return; }
+                        try {
+                            const resp = await fetch('{{ route('tasks.parseDate') }}', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                                    'Accept': 'application/json',
+                                },
+                                body: JSON.stringify({ input }),
+                            });
+                            const data = await resp.json();
+                            if (data.success) {
+                                this.resolvedDate = data.date;
+                                this.datePreview = data.formatted;
+                                this.dateError = '';
+                            } else {
+                                this.resolvedDate = '';
+                                this.datePreview = '';
+                                this.dateError = 'Could not parse this date';
+                            }
+                        } catch (e) {
                             this.resolvedDate = '';
                             this.datePreview = '';
-                            this.dateError = 'Could not parse this date';
+                            this.dateError = '';
                         }
-                    } catch (e) {
-                        this.resolvedDate = '';
-                        this.datePreview = '';
-                        this.dateError = '';
-                    }
-                },
-            };
-        }
+                    },
+                };
+            });
+        });
     </script>
     @endpush
     @endif

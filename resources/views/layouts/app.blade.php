@@ -82,6 +82,7 @@
                 .drag-handle { opacity: 0.4 !important; }
             }
         </style>
+    @livewireStyles
     </head>
     <body class="font-sans antialiased bg-black text-gray-100">
         <div class="min-h-screen bg-black">
@@ -105,16 +106,7 @@
 
             <!-- Page Content -->
             <main>
-                <div x-data="{
-                        pad: 0,
-                        init() {
-                            const bar = document.getElementById('bulk-edit-bar');
-                            if (!bar) return;
-                            const update = () => { this.pad = bar.offsetHeight || 0; };
-                            new ResizeObserver(update).observe(bar);
-                            this.$watch(() => Alpine.store('bulkEdit').selected.length, update);
-                        }
-                     }"
+                <div x-data="mainPadding"
                      :style="pad > 0 ? 'padding-bottom: ' + (pad + 16) + 'px' : ''"
                      @keydown.escape.window="$store.bulkEdit.exitIfActive()">
                     {{ $slot }}
@@ -137,7 +129,7 @@
 
         <!-- Bulk Edit Bottom Bar -->
         <div id="bulk-edit-bar"
-             x-data="bulkEditBar()"
+             x-data="bulkEditBar"
              x-cloak
              x-show="$store.bulkEdit.active && $store.bulkEdit.selected.length > 0"
              x-transition:enter="transition ease-out duration-200 transform"
@@ -226,7 +218,7 @@
                 </div>
 
                 <!-- Tag multi-select -->
-                <div class="flex items-center gap-1.5 relative" x-data="{ open: false }" @click.outside="open = false">
+                <div class="flex items-center gap-1.5 relative" x-data="dropdown" @click.outside="open = false">
                     <label class="text-xs text-gray-400 whitespace-nowrap">Tags</label>
                     <button @click="open = !open"
                             type="button"
@@ -342,10 +334,24 @@
                     deselectAll() { this.selected = []; },
                     get count() { return this.selected.length; }
                 });
+
+                Alpine.data('mainPadding', function() {
+                    return {
+                        pad: 0,
+                        init() {
+                            const bar = document.getElementById('bulk-edit-bar');
+                            if (!bar) return;
+                            const update = () => { this.pad = bar.offsetHeight || 0; };
+                            new ResizeObserver(update).observe(bar);
+                            this.$watch(() => Alpine.store('bulkEdit').selected.length, update);
+                        }
+                    };
+                });
             });
 
-            window.bulkEditBar = function () {
-                return {
+            document.addEventListener('alpine:init', () => {
+                Alpine.data('bulkEditBar', function () {
+                    return {
                     date: '',
                     dateError: '',
                     clearDate: false,
@@ -460,14 +466,15 @@
                             this.submitting = false;
                         }
                     },
-                };
-            };
+                    };
+                });
+            });
 
         </script>
 
         <!-- Task Side Panel Overlay -->
         <div id="task-panel-overlay"
-             x-data="taskPanelOverlay()"
+             x-data="taskPanelOverlay"
              @open-task-panel.window="openTask($event.detail.taskId)"
              @close-task-panel.window="close()"
              @reload-task-panel.window="openTask($event.detail.taskId)"
@@ -516,8 +523,9 @@
         </div>
 
         <script nonce="{{ csp_nonce() }}">
-            window.taskPanelOverlay = function () {
-                return {
+            document.addEventListener('alpine:init', () => {
+                Alpine.data('taskPanelOverlay', function () {
+                    return {
                     open: false,
                     loading: false,
                     error: false,
@@ -660,8 +668,9 @@
                         u.searchParams.delete('task');
                         return u.toString();
                     },
-                };
-            };
+                    };
+                });
+            });
 
             // Global helpers so panel content and task list can trigger the panel
             window.openTaskPanel = function (taskId) {
@@ -880,7 +889,7 @@
         </script>
 
         <!-- Undo-completion toast stack -->
-        <div x-data="undoToastManager()"
+        <div x-data="undoToastManager"
              @task-completed.window="add($event.detail)"
              class="fixed bottom-4 right-4 z-50 flex flex-col-reverse gap-2 items-end pointer-events-none"
              aria-live="polite">
@@ -918,8 +927,9 @@
         </div>
 
         <script nonce="{{ csp_nonce() }}">
-            window.undoToastManager = function () {
-                return {
+            document.addEventListener('alpine:init', () => {
+                Alpine.data('undoToastManager', function () {
+                    return {
                     toasts: [],
 
                     add({ taskId, taskName, undoUrl, recurring, group, form }) {
@@ -985,8 +995,9 @@
                             }
                         }
                     },
-                };
-            };
+                    };
+                });
+            });
         </script>
 
         <script nonce="{{ csp_nonce() }}">
@@ -1009,5 +1020,6 @@
                 }, seconds * 1000);
             })();
         </script>
+    @livewireScripts
     </body>
 </html>

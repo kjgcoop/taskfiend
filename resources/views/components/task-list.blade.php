@@ -43,7 +43,8 @@
         });
     });
 
-    window.listQuickComplete = function () {
+    document.addEventListener('alpine:init', () => {
+    Alpine.data('listQuickComplete', function () {
         return {
             done: false,
             loading: false,
@@ -89,9 +90,11 @@
                 }
             }
         };
-    };
+    });
+    });
 
-    window.taskFilter = function (projects, tags, users, locations) {
+    document.addEventListener('alpine:init', () => {
+    Alpine.data('taskFilter', function (projects, tags, users, locations) {
         return {
             query: '',
             noResults: false,
@@ -714,7 +717,8 @@
                 window.dispatchEvent(new CustomEvent('filter-updated'));
             }
         }
-    };
+    });
+    });
 
     // Live-update list rows when the side panel saves a field
     window.addEventListener('task-panel-updated', (e) => {
@@ -877,7 +881,7 @@
 
             $marginLeft = $depth * 24; // 24px per level
         @endphp
-        <div data-task-group data-task-group-id="{{ $task->id }}" x-data="{ subtasksOpen: true }">
+        <div data-task-group data-task-group-id="{{ $task->id }}" x-data="subtaskGroup">
         <div class="bg-[#202020] p-4 rounded-lg shadow hover:shadow-md transition border border-gray-700 group"
              data-filterable
              data-task-name="{{ strtolower($task->name) }}"
@@ -973,7 +977,7 @@
                     <div class="mt-1 w-6 h-6 rounded-full border-2 border-gray-700" title="Project is inactive"></div>
                 @else
                 <form x-show="!$store.bulkEdit.active"
-                      x-data="listQuickComplete()" @submit.prevent="submit()"
+                      x-data="listQuickComplete" @submit.prevent="submit()"
                       @undo-complete.stop="done = false"
                       method="POST" action="{{ route('tasks.update', $task) }}" @click.stop
                       data-task-id="{{ $task->id }}"
@@ -1026,7 +1030,7 @@
                     <div x-show="error" x-text="error" class="mt-1 text-xs text-red-400 max-w-xs" style="display:none"></div>
                 </form>
                 @endif
-                    <button x-data="{ copied: false }"
+                    <button x-data="copyButton"
                             @click.prevent.stop="navigator.clipboard.writeText('{{ route('tasks.show', $task) }}'); copied = true; setTimeout(() => copied = false, 1500)"
                             title="Copy link to this task"
                             class="text-[10px] leading-none mt-1 transition-colors cursor-pointer"
