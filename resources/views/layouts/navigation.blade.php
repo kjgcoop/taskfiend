@@ -161,6 +161,9 @@
                              style="display: none;"
                              @click="open = false">
                             <div class="rounded-md ring-1 ring-black ring-opacity-5 py-1 bg-[#202020]">
+                                <a href="https://taskfiend.kjcoop.com" class="block w-full px-4 py-2 text-start text-sm leading-5 text-gray-300 hover:bg-gray-700 focus:outline-none transition duration-150 ease-in-out">
+                                    Documentation
+                                </a>
                                 <a href="{{ route('templates.index') }}" class="block w-full px-4 py-2 text-start text-sm leading-5 text-gray-300 hover:bg-gray-700 focus:outline-none transition duration-150 ease-in-out {{ request()->routeIs('templates.*') ? 'bg-gray-700 text-gray-100' : '' }}">
                                     {{ __('Templates') }}
                                 </a>
