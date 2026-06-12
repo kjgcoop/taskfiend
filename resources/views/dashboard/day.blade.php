@@ -255,7 +255,7 @@
     </div>
 
     @push('scripts')
-    <script>
+    <script nonce="{{ csp_nonce() }}">
         // ── Stale-page banner ────────────────────────────────────────────────────
         document.addEventListener('alpine:init', () => {
             Alpine.data('staleBanner', (pageDate, dayRoute) => ({

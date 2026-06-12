@@ -416,7 +416,7 @@
     </div>
 
     @push('scripts')
-    <script>
+    <script nonce="{{ csp_nonce() }}">
         function searchSectionLoader(initialHasMore, ajaxUrl) {
             return {
                 hasMore: initialHasMore,

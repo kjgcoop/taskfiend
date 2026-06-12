@@ -1,5 +1,12 @@
 <?php
 
+if (! function_exists('csp_nonce')) {
+    function csp_nonce(): string
+    {
+        return app()->bound('csp-nonce') ? app('csp-nonce') : '';
+    }
+}
+
 if (! function_exists('render_title')) {
     /**
      * Render a task title with inline code spans (`backtick` → <code>).

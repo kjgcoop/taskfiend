@@ -827,7 +827,7 @@
     </div>
 
     @push('scripts')
-    <script>
+    <script nonce="{{ csp_nonce() }}">
         function taskEditor(taskId) {
             return {
                 taskId: taskId,

@@ -16,7 +16,7 @@
                 @forelse($tags as $tag)
                     <div class="bg-[#202020] border border-gray-700 p-4 rounded-lg shadow hover:shadow-md transition cursor-pointer border-l-4"
                          style="border-left-color: {{ $tag->color }}"
-                         onclick="window.location='{{ route('tags.show', $tag) }}'">
+                         @click="window.location='{{ route('tags.show', $tag) }}'">
                         <h3 class="font-semibold text-lg" style="color: {{ $tag->color }}">
                             {{ $tag->tag_name }}
                         </h3>

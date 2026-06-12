@@ -47,7 +47,7 @@
 
 @once
 @push('scripts')
-<script>
+<script nonce="{{ csp_nonce() }}">
 function completedTasksLoader(initialHasMore, initialNextPage, ajaxUrl, totalCount) {
     return {
         showCompleted: false,

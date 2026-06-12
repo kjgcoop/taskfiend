@@ -78,7 +78,7 @@
         </div>
     </div>
 
-    <script>
+    <script nonce="{{ csp_nonce() }}">
         window.addEventListener('task-panel-updated', (e) => {
             const d = e.detail;
             const chip = document.querySelector(`[data-task-group-id="${d.id}"]`);

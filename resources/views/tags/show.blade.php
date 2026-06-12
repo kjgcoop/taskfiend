@@ -202,7 +202,7 @@
     </div>
 
     @push('scripts')
-    <script>
+    <script nonce="{{ csp_nonce() }}">
         function tagHeaderEditor(tagId, initialName, initialColor) {
             return {
                 tagId: tagId,
