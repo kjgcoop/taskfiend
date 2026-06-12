@@ -32,9 +32,10 @@ class TaskStoreTest extends TestCase
         $this->user = User::factory()->create();
 
         $this->project = Project::create([
-            'name'    => 'My Project',
-            'user_id' => $this->user->id,
-            'status'  => 'incomplete',
+            'name'       => 'My Project',
+            'user_id'    => $this->user->id,
+            'status'     => 'incomplete',
+            'is_default' => true,
         ]);
     }
 
@@ -457,7 +458,7 @@ class TaskStoreTest extends TestCase
     public function test_quick_add_rejects_unrecognized_recurrence_in_name(): void
     {
         $response = $this->actingAs($this->user)->post('/tasks', [
-            'name'       => 'Gym every fortnight',
+            'name'       => 'Gym every weeks',
             'project_id' => $this->project->id,
             'quick_add'  => true,
         ]);

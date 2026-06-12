@@ -304,8 +304,10 @@ class TaskController extends Controller
             ]);
         }
 
-        // Auto-parse date and recurrence from task name when no explicit pattern was provided.
-        if (!$recurrencePattern) {
+        // Auto-parse date and recurrence from task name when using quick-add and no
+        // explicit pattern was provided. The regular form has dedicated fields for
+        // date and recurrence, so the name is stored verbatim there.
+        if ($isQuickAdd && !$recurrencePattern) {
             // Check for unrecognized recurrence patterns first
             $unrecognizedError = $dateParser->detectUnrecognizedPattern($taskName);
             if ($unrecognizedError) {

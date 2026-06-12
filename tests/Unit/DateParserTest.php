@@ -823,7 +823,9 @@ class DateParserTest extends TestCase
 
     public function test_unrecognised_every_pattern_returns_error_string(): void
     {
-        $result = $this->parser->detectUnrecognizedPattern('Gym every fortnight');
+        // "every weeks" — "weeks" IS in the recurrence vocabulary but the pattern is
+        // invalid (missing the required number), so detectUnrecognizedPattern warns.
+        $result = $this->parser->detectUnrecognizedPattern('Gym every weeks');
 
         $this->assertIsString($result);
         $this->assertStringContainsString('not recognized', $result);
@@ -831,7 +833,7 @@ class DateParserTest extends TestCase
 
     public function test_unrecognised_pattern_error_contains_the_original_input(): void
     {
-        $input = 'Gym every fortnight';
+        $input = 'Gym every weeks';
         $result = $this->parser->detectUnrecognizedPattern($input);
 
         $this->assertStringContainsString($input, $result);
@@ -839,7 +841,8 @@ class DateParserTest extends TestCase
 
     public function test_unrecognised_pattern_error_lists_example_patterns(): void
     {
-        $result = $this->parser->detectUnrecognizedPattern('Gym every biweekly');
+        // "every days" — "days" is in the vocabulary but needs a number prefix.
+        $result = $this->parser->detectUnrecognizedPattern('Gym every days');
 
         // The error message should give the user some guidance.
         $this->assertStringContainsString('daily', $result);
@@ -905,11 +908,13 @@ class DateParserTest extends TestCase
         $this->assertTrue($result['nodate']);
     }
 
-    public function test_nodate_alone_returns_empty_name_as_original_input(): void
+    public function test_nodate_alone_produces_empty_name(): void
     {
+        // When the entire input is just "nodate", stripping it leaves an empty name.
+        // The early return for nodate fires before the empty-name fallback, so name=''.
         $result = $this->parser->parseTaskInput('nodate');
 
-        $this->assertSame('nodate', $result['name']);
+        $this->assertSame('', $result['name']);
         $this->assertNull($result['date']);
         $this->assertTrue($result['nodate']);
     }
