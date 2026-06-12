@@ -1035,9 +1035,9 @@ class DateParserTest extends TestCase
 
         $this->assertSame('Gym', $result['name']);
         $this->assertSame('tue,thu', $result['recurrence_pattern']);
-        // From Thursday (today), getNextMultiDay starts tomorrow (Friday) and
-        // walks forward to the next Tuesday.
-        $this->assertSame('2026-03-31', $result['date']);
+        // getNextMultiDay with no currentDate starts from Carbon::today() (not tomorrow).
+        // Today is Thursday which IS in {tue,thu}, so the first occurrence is today.
+        $this->assertSame('2026-03-26', $result['date']);
     }
 
     // =========================================================================

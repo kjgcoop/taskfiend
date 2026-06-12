@@ -32,10 +32,9 @@ class TaskStoreTest extends TestCase
         $this->user = User::factory()->create();
 
         $this->project = Project::create([
-            'name'       => 'My Project',
-            'user_id'    => $this->user->id,
-            'status'     => 'incomplete',
-            'is_default' => true,
+            'name'    => 'My Project',
+            'user_id' => $this->user->id,
+            'status'  => 'incomplete',
         ]);
     }
 
@@ -432,8 +431,9 @@ class TaskStoreTest extends TestCase
         $tag = $this->createTag('urgent');
 
         $this->actingAs($this->user)->post('/tasks', [
-            'name'      => 'Do something @urgent',
-            'quick_add' => true,
+            'name'       => 'Do something @urgent',
+            'project_id' => $this->project->id,
+            'quick_add'  => true,
         ]);
 
         $task = Task::where('creator_id', $this->user->id)->latest()->first();
