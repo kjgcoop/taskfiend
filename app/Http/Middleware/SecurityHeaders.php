@@ -30,6 +30,7 @@ class SecurityHeaders
         $csp = implode('; ', [
             "default-src 'self'",
             "script-src 'self' 'nonce-{$nonce}' 'unsafe-eval'",
+            "script-src-attr 'unsafe-inline'",
             "style-src 'self' 'unsafe-inline'",
             "img-src 'self' data:",
             "font-src 'self'",
