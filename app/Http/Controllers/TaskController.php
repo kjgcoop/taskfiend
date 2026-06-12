@@ -124,10 +124,18 @@ class TaskController extends Controller
             'assignee_ids.*' => 'exists:users,id',
         ]);
 
-        // Block task creation inside inactive projects
+        // Block task creation inside inaccessible or inactive projects
         if (!empty($validated['project_id'])) {
-            $targetProject = Project::find($validated['project_id']);
-            if ($targetProject && in_array($targetProject->status, ['done', 'archived'])) {
+            $targetProject = Project::where('id', $validated['project_id'])
+                ->where(function ($q) {
+                    $q->where('user_id', Auth::id())
+                      ->orWhereHas('assignees', fn($q2) => $q2->where('users.id', Auth::id()));
+                })
+                ->first();
+            if (!$targetProject) {
+                return $this->storeError($request, ['project_id' => 'You do not have access to this project.']);
+            }
+            if (in_array($targetProject->status, ['done', 'archived'])) {
                 return $this->storeError($request, ['project_id' => 'Cannot create tasks in an inactive project.']);
             }
         }
@@ -552,6 +560,23 @@ class TaskController extends Controller
                 return response()->json(['success' => false, 'message' => $msg], 422);
             }
             return back()->withErrors(['date' => $msg])->withInput();
+        }
+
+        // Validate project access when project is being changed
+        if (isset($validated['project_id']) && $validated['project_id'] != $task->project_id) {
+            $targetProject = Project::where('id', $validated['project_id'])
+                ->where(function ($q) {
+                    $q->where('user_id', Auth::id())
+                      ->orWhereHas('assignees', fn($q2) => $q2->where('users.id', Auth::id()));
+                })
+                ->first();
+            if (!$targetProject) {
+                $msg = 'You do not have access to this project.';
+                if ($request->ajax()) {
+                    return response()->json(['success' => false, 'message' => $msg], 403);
+                }
+                return back()->withErrors(['project_id' => $msg])->withInput();
+            }
         }
 
         // Validate parent change (prevent circular references)
