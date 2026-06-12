@@ -975,7 +975,7 @@
                 <form x-show="!$store.bulkEdit.active"
                       x-data="listQuickComplete()" @submit.prevent="submit()"
                       @undo-complete.stop="done = false"
-                      method="POST" action="{{ route('tasks.update', $task) }}" onclick="event.stopPropagation()"
+                      method="POST" action="{{ route('tasks.update', $task) }}" @click.stop
                       data-task-id="{{ $task->id }}"
                       data-task-name="{{ $task->name }}"
                       data-undo-url="{{ route('tasks.updateField', $task) }}"
@@ -1049,7 +1049,7 @@
                             <span class="text-gray-600">↳ Subtask of:</span>
                             <a href="{{ route('tasks.show', $task->parent) }}"
                                class="text-blue-400 hover:underline"
-                               onclick="event.stopPropagation()">
+                               @click.stop>
                                 {{ $task->parent->name }}
                             </a>
                         </div>
@@ -1093,7 +1093,7 @@
                         @endif
                         @if($task->project)
                             <a href="{{ route('projects.show', $task->project) }}"
-                               onclick="event.stopPropagation()"
+                               @click.stop
                                class="text-blue-400 hover:text-blue-300 hover:underline"
                                data-task-project-display>{{ $task->project->name }}</a>
                         @endif
@@ -1110,7 +1110,7 @@
                             @if($task->show_map)
                                 @php $mapUrl = sprintf(config('taskfiend.maps_url_template', 'https://maps.google.com/?q=%s'), urlencode($task->location)); @endphp
                                 <a href="{{ $mapUrl }}" target="_blank" rel="noopener"
-                                   onclick="event.stopPropagation()"
+                                   @click.stop
                                    title="{{ $task->location }}"
                                    class="inline-flex items-center gap-0.5 border border-orange-400 text-orange-400 rounded px-1.5 py-0.5 hover:bg-orange-400/10 hover:underline"
                                    data-task-location-display>{{ $locDisplay }}<svg class="inline w-2.5 h-2.5 opacity-70 flex-shrink-0" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M1 9L9 1M9 1H4M9 1V6"/></svg></a>
@@ -1140,7 +1140,7 @@
                          @if($task->tags->count() === 0) style="display:none" @endif>
                         @foreach($task->tags as $tag)
                             <a href="{{ route('tags.show', $tag) }}"
-                               onclick="event.stopPropagation()"
+                               @click.stop
                                class="inline-block px-2 py-1 text-xs rounded hover:opacity-75"
                                style="background-color: {{ $tag->color }}22; color: {{ $tag->color }}">
                                 {{ $tag->tag_name }}

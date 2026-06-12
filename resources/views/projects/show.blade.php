@@ -10,7 +10,7 @@
                 </span>
             @elseif($project->user_id === Auth::id() && $project->status === 'incomplete')
                 <button id="set-default-btn"
-                        onclick="setDefaultProject({{ $project->id }})"
+                        @click="setDefaultProject({{ $project->id }})"
                         title="Set as default project"
                         class="text-gray-600 hover:text-yellow-400 transition-colors shrink-0">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 20 20" stroke="currentColor" stroke-width="1.5">
