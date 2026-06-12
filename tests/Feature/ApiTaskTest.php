@@ -172,7 +172,7 @@ class ApiTaskTest extends TestCase
 
     public function test_create_rejects_unrecognized_recurrence_in_name(): void
     {
-        $response = $this->apiPost(['name' => 'Gym every biweekly']);
+        $response = $this->apiPost(['name' => 'Gym every weeks']);
 
         $response->assertStatus(422)
                  ->assertJson(['success' => false]);

@@ -191,6 +191,45 @@
                         <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
                     </svg>
                 </a>
+
+                <!-- Notifications Bell -->
+                <div class="relative" x-data="{ open: false, loaded: false, html: '' }" @click.outside="open = false">
+                    <button @click="open = !open; if (open && !loaded) { loaded = true; fetch('{{ route('notifications.feed') }}', { headers: { 'X-Requested-With': 'XMLHttpRequest', 'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content } }).then(r => r.json()).then(d => { html = d.html; document.getElementById('notif-badge').remove && document.getElementById('notif-badge').remove(); }) }"
+                            class="relative inline-flex items-center justify-center w-9 h-9 text-gray-400 hover:text-gray-100 rounded-md hover:bg-gray-700 transition-colors"
+                            title="Notifications">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6 6 0 10-12 0v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                        </svg>
+                        @if($unreadNotifications > 0)
+                        <span id="notif-badge" class="absolute -top-1 -right-1 inline-flex items-center justify-center w-4 h-4 text-xs font-bold text-white bg-red-500 rounded-full">
+                            {{ $unreadNotifications > 9 ? '9+' : $unreadNotifications }}
+                        </span>
+                        @endif
+                    </button>
+
+                    <div x-show="open"
+                         x-transition:enter="transition ease-out duration-200"
+                         x-transition:enter-start="opacity-0 scale-95"
+                         x-transition:enter-end="opacity-100 scale-100"
+                         x-transition:leave="transition ease-in duration-75"
+                         x-transition:leave-start="opacity-100 scale-100"
+                         x-transition:leave-end="opacity-0 scale-95"
+                         class="absolute right-0 top-full mt-2 w-80 rounded-md shadow-lg bg-gray-800 border border-gray-700 z-50 overflow-hidden"
+                         style="display: none;">
+                        <div class="px-4 py-2 border-b border-gray-700 flex items-center justify-between">
+                            <span class="text-sm font-semibold text-gray-200">Activity</span>
+                            <a href="{{ route('changelogs.user') }}" class="text-xs text-blue-400 hover:underline">View all</a>
+                        </div>
+                        <div class="max-h-96 overflow-y-auto">
+                            <template x-if="!loaded">
+                                <div class="px-4 py-6 text-center text-sm text-gray-500">Loading…</div>
+                            </template>
+                            <template x-if="loaded">
+                                <div x-html="html"></div>
+                            </template>
+                        </div>
+                    </div>
+                </div>
                 @endauth
                 @auth
                 <x-dropdown align="right" width="48">
@@ -313,9 +352,9 @@
                         <span class="block ps-6 pe-4 py-2 text-sm text-gray-500 italic">No active projects</span>
                     @endforelse
                     <a href="{{ route('projects.create') }}"
-                       class="relative block w-full ps-3 pe-4 py-2 border-l-4 border-transparent text-base font-medium focus:outline-none transition duration-150 ease-in-out overflow-hidden {{ $hasBg ? 'border-b-2 border-[#202020]' : 'text-gray-400 hover:text-gray-100 hover:bg-gray-700 hover:border-gray-500' }}"
+                       class="relative block w-full ps-3 pe-4 py-2 border-l-4 border-transparent text-base font-medium focus:outline-none transition duration-150 ease-in-out overflow-hidden text-gray-400 hover:text-gray-100 hover:bg-gray-700 hover:border-gray-500"
                     >
-                        <span class="relative flex items-center gap-1.5 {{ $hasBg ? 'text-white' : '' }}">
+                        <span class="relative flex items-center gap-1.5">
                             Add New Project
                         </span>
                     </a>

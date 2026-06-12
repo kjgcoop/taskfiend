@@ -1,0 +1,46 @@
+site_name: Task Fiend Documentation
+site_url: https://taskfiend.kjcoop.com/
+nav:
+  - Home: index.md
+  - About: about.md
+  - Getting Started:
+    - Installation: getting-started/installation.md
+    - Migrating from Todoist: getting-started/todoist-import.md
+  - Features:
+    - Overview: features/overview.md
+    - Quick-Add & Inline Syntax: features/inline.md
+    - Dates & Recurrence: features/dates.md
+    - Recurring Tasks: features/recurring-tasks.md
+    - Admin Functions: features/admin-functionality.md
+  - Self-Hosting:
+    - Docker: self-hosting/docker.md
+    - Security: self-hosting/security.md
+  - For Developers:
+    - Overview: developers/index.md
+    - API Reference: developers/api.md
+    - Testing: developers/testing.md
+  - Privacy Policy: privacy.md
+theme: 
+  name: material
+  favicon: img/favicon.ico
+  logo: img/favicon.svg
+  palette:
+    scheme: slate
+    primary: deep purple
+    accent: green
+extra_css:
+  - css/style.css
+extra:
+  consent:
+    title: Cookie consent
+    description: >- 
+      We use only essential cookies to recognize your repeated visits and preferences, but sometimes it feels good to hit the reject button.
+    actions:
+      - reject
+copyright: >
+  Copyright &copy; 2026 KJ Coop – 
+  <a href="#__consent">Change cookie settings</a>
+markdown_extensions:
+  - attr_list
+  - md_in_html
+

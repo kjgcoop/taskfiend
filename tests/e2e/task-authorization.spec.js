@@ -33,14 +33,14 @@ test.describe('Task Authorization & Privacy', () => {
     await page.waitForURL(/\/tasks\/\d+/);
 
     // Verify User 2 can see their task
-    await page.goto('/tasks');
+    await page.goto('/all-tasks');
     await expect(page.locator('text=User 2 Private Task')).toBeVisible();
     await expect(page.locator('text=User 1 Private Task')).not.toBeVisible();
     await logout(page);
 
     // Verify User 1 can see only their task
     await login(page, testUsers.user1.email);
-    await page.goto('/tasks');
+    await page.goto('/all-tasks');
     await expect(page.locator('text=User 1 Private Task')).toBeVisible();
     await expect(page.locator('text=User 2 Private Task')).not.toBeVisible();
   });
@@ -61,7 +61,7 @@ test.describe('Task Authorization & Privacy', () => {
 
     // User 2 should see the assigned task
     await login(page, testUsers.user2.email);
-    await page.goto('/tasks');
+    await page.goto('/all-tasks');
     await expect(page.locator('text=Shared Task for User 2')).toBeVisible();
 
     // User 2 should be able to view the task detail
@@ -176,12 +176,12 @@ test.describe('Task Authorization & Privacy', () => {
 
     // User 3 logs in and views assigned task
     await login(page, testUsers.user3.email);
-    await page.goto('/tasks');
-    await expect(page.locator('text=Assigned to User 3')).toBeVisible();
+    await page.goto('/all-tasks');
+    await expect(page.locator('main').locator('text=Assigned to User 3').first()).toBeVisible();
 
     // User 3 can view the task
-    await page.click('text=Assigned to User 3');
-    await expect(page.locator('text=User 3 is assigned')).toBeVisible();
+    await page.locator('main').locator('text=Assigned to User 3').first().click();
+    await expect(page.locator('main').locator('text=User 3 is assigned').first()).toBeVisible();
 
     // User 3 should be able to mark task as done (as assignee)
     // but should not be able to edit task details (only creator can)

@@ -18,7 +18,7 @@ import { login, logout, testUsers } from './helpers/auth.js';
  * Returns the task name so callers can locate rows.
  */
 async function quickAddTask(page, name) {
-  await page.fill('input[placeholder="Add a task..."]', name);
+  await page.fill('textarea[name="name"]', name);
   await page.keyboard.press('Enter');
   // Wait for the row to appear in the list
   await expect(page.locator(`[data-task-name="${name.toLowerCase()}"]`)).toBeVisible({ timeout: 5000 });
@@ -101,7 +101,7 @@ test.describe('Bulk Editing', () => {
     // The bulk-mode header span has exact text "Bulk edit"
     await expect(page.getByText('Bulk edit', { exact: true })).toBeVisible();
     // The create-task form is hidden
-    await expect(page.locator('input[placeholder="Add a task..."]')).not.toBeVisible();
+    await expect(page.locator('textarea[name="name"]')).not.toBeVisible();
   });
 
   test('clicking the toggle again exits bulk edit mode', async ({ page }) => {
@@ -109,7 +109,7 @@ test.describe('Bulk Editing', () => {
     await exitBulkMode(page);
 
     // Back to create mode
-    await expect(page.locator('input[placeholder="Add a task..."]')).toBeVisible();
+    await expect(page.locator('textarea[name="name"]')).toBeVisible();
     // Exact match avoids hitting the hidden "Confirm bulk edit" heading
     await expect(page.getByText('Bulk edit', { exact: true })).not.toBeVisible();
   });
@@ -363,6 +363,6 @@ test.describe('Bulk Editing', () => {
     await page.waitForLoadState('networkidle');
 
     // Create-task input should be visible again (bulk mode off)
-    await expect(page.locator('input[placeholder="Add a task..."]')).toBeVisible();
+    await expect(page.locator('textarea[name="name"]')).toBeVisible();
   });
 });

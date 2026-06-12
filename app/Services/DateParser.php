@@ -57,7 +57,7 @@ class DateParser
             'next_day_of_week' => '/\bnext\s+(monday|tuesday|wednesday|thursday|friday|saturday|sunday)\b/i',
             'day_of_week' => '/\b(monday|tuesday|wednesday|thursday|friday|saturday|sunday)s?\b/i',
             'multi_days_full' => '/\b(monday|tuesday|wednesday|thursday|friday|saturday|sunday)(\s*,\s*(monday|tuesday|wednesday|thursday|friday|saturday|sunday))+\b/i',
-            'multi_days' => '/\b(mon|tues?|weds?|thurs?|fri|sat|suns?)(\s*,\s*(mon|tues?|weds?|thurs?|fri|sat|suns?))+\b/i',
+            'multi_days' => '/\b(mon|tues?|weds?|thu(?:rs?)?|fri|sat|suns?)(\s*,\s*(mon|tues?|weds?|thu(?:rs?)?|fri|sat|suns?))+\b/i',
             'monthly_ordinal' => '/\bevery (first|1st|second|2nd|third|3rd|fourth|4th|last) (monday|tuesday|wednesday|thursday|friday|saturday|sunday)\b/i',
             'monthly_day' => '/\bevery (\d{1,2})(st|nd|rd|th)?(?!\s+(days?|weeks?|months?|years?))\b/i',
             'yearly' => '/\b(yearly|every year)\b/i',

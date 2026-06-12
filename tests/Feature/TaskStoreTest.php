@@ -431,8 +431,9 @@ class TaskStoreTest extends TestCase
         $tag = $this->createTag('urgent');
 
         $this->actingAs($this->user)->post('/tasks', [
-            'name'      => 'Do something @urgent',
-            'quick_add' => true,
+            'name'       => 'Do something @urgent',
+            'project_id' => $this->project->id,
+            'quick_add'  => true,
         ]);
 
         $task = Task::where('creator_id', $this->user->id)->latest()->first();
@@ -457,7 +458,7 @@ class TaskStoreTest extends TestCase
     public function test_quick_add_rejects_unrecognized_recurrence_in_name(): void
     {
         $response = $this->actingAs($this->user)->post('/tasks', [
-            'name'       => 'Gym every fortnight',
+            'name'       => 'Gym every weeks',
             'project_id' => $this->project->id,
             'quick_add'  => true,
         ]);

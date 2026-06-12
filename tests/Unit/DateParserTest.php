@@ -769,6 +769,11 @@ class DateParserTest extends TestCase
             ['every 15'],
             ['every 15th'],
             ['every 3rd Sunday'],
+            // Patterns that were previously untested:
+            ['every 2 years'],
+            ['every January 3'],
+            ['every other Friday'],
+            ['tue,thu'],
         ];
     }
 
@@ -818,7 +823,9 @@ class DateParserTest extends TestCase
 
     public function test_unrecognised_every_pattern_returns_error_string(): void
     {
-        $result = $this->parser->detectUnrecognizedPattern('Gym every fortnight');
+        // "every weeks" — "weeks" IS in the recurrence vocabulary but the pattern is
+        // invalid (missing the required number), so detectUnrecognizedPattern warns.
+        $result = $this->parser->detectUnrecognizedPattern('Gym every weeks');
 
         $this->assertIsString($result);
         $this->assertStringContainsString('not recognized', $result);
@@ -826,7 +833,7 @@ class DateParserTest extends TestCase
 
     public function test_unrecognised_pattern_error_contains_the_original_input(): void
     {
-        $input = 'Gym every fortnight';
+        $input = 'Gym every weeks';
         $result = $this->parser->detectUnrecognizedPattern($input);
 
         $this->assertStringContainsString($input, $result);
@@ -834,9 +841,311 @@ class DateParserTest extends TestCase
 
     public function test_unrecognised_pattern_error_lists_example_patterns(): void
     {
-        $result = $this->parser->detectUnrecognizedPattern('Gym every biweekly');
+        // "every days" — "days" is in the vocabulary but needs a number prefix.
+        $result = $this->parser->detectUnrecognizedPattern('Gym every days');
 
         // The error message should give the user some guidance.
         $this->assertStringContainsString('daily', $result);
+    }
+
+    // =========================================================================
+    // parseTaskInput() — every N years (previously untested)
+    // =========================================================================
+
+    public function test_every_n_years_pattern(): void
+    {
+        $result = $this->parser->parseTaskInput('Renew passport every 2 years');
+
+        $this->assertSame('Renew passport', $result['name']);
+        $this->assertSame('every 2 years', $result['recurrence_pattern']);
+        $this->assertSame('2028-03-26', $result['date']); // today + 2 years
+        $this->assertFalse($result['recurrence_floating']);
+    }
+
+    public function test_every_1_year_singular_sets_pattern(): void
+    {
+        $result = $this->parser->parseTaskInput('File taxes every 1 year');
+
+        $this->assertSame('every 1 years', $result['recurrence_pattern']);
+        $this->assertSame('2027-03-26', $result['date']); // today + 1 year
+    }
+
+    // =========================================================================
+    // parseTaskInput() — every [Month] [day] annual pattern (previously untested)
+    // =========================================================================
+
+    public function test_every_month_day_future_in_same_year(): void
+    {
+        // every April 15 — April 15 2026 is still in the future from March 26
+        $result = $this->parser->parseTaskInput('Tax reminder every April 15');
+
+        $this->assertSame('Tax reminder', $result['name']);
+        $this->assertSame('every April 15', $result['recurrence_pattern']);
+        $this->assertSame('2026-04-15', $result['date']);
+    }
+
+    public function test_every_month_day_past_in_current_year_wraps_to_next_year(): void
+    {
+        // every January 3 — Jan 3 2026 has already passed
+        $result = $this->parser->parseTaskInput('New Year check every January 3');
+
+        $this->assertSame('New Year check', $result['name']);
+        $this->assertSame('every January 3', $result['recurrence_pattern']);
+        $this->assertSame('2027-01-03', $result['date']);
+    }
+
+    // =========================================================================
+    // parseTaskInput() — nodate token (previously untested)
+    // =========================================================================
+
+    public function test_nodate_token_clears_date_and_is_removed_from_name(): void
+    {
+        $result = $this->parser->parseTaskInput('Buy groceries nodate');
+
+        $this->assertSame('Buy groceries', $result['name']);
+        $this->assertNull($result['date']);
+        $this->assertNull($result['recurrence_pattern']);
+        $this->assertTrue($result['nodate']);
+    }
+
+    public function test_nodate_alone_produces_empty_name(): void
+    {
+        // When the entire input is just "nodate", stripping it leaves an empty name.
+        // The early return for nodate fires before the empty-name fallback, so name=''.
+        $result = $this->parser->parseTaskInput('nodate');
+
+        $this->assertSame('', $result['name']);
+        $this->assertNull($result['date']);
+        $this->assertTrue($result['nodate']);
+    }
+
+    // =========================================================================
+    // parseTaskInput() — secondary pass: recurrence extracted after today/tomorrow
+    // =========================================================================
+
+    public function test_today_with_recurring_day_in_remaining_name(): void
+    {
+        // "today" fires first and strips the date token; secondary pass picks up "Mondays"
+        $result = $this->parser->parseTaskInput('Stand-up today Mondays');
+
+        $this->assertSame('Stand-up', $result['name']);
+        $this->assertSame('2026-03-26', $result['date']); // today (not next Monday)
+        $this->assertSame('Monday', $result['recurrence_pattern']);
+    }
+
+    public function test_tomorrow_with_recurrence_keyword_in_remaining_name(): void
+    {
+        // "tomorrow" fires first; secondary pass finds "daily"
+        $result = $this->parser->parseTaskInput('Morning run tomorrow daily');
+
+        $this->assertSame('Morning run', $result['name']);
+        $this->assertSame('2026-03-27', $result['date']); // tomorrow
+        $this->assertSame('daily', $result['recurrence_pattern']);
+    }
+
+    public function test_today_with_every_n_weeks_in_remaining_name(): void
+    {
+        $result = $this->parser->parseTaskInput('Oil change today every 3 weeks');
+
+        $this->assertSame('Oil change', $result['name']);
+        $this->assertSame('2026-03-26', $result['date']); // today preserved
+        $this->assertSame('every 3 weeks', $result['recurrence_pattern']);
+    }
+
+    // =========================================================================
+    // parseTaskInput() — floating recurrence with specific day-of-week (previously untested)
+    // =========================================================================
+
+    public function test_floating_with_specific_day_of_week(): void
+    {
+        $result = $this->parser->parseTaskInput('Team sync every! Monday');
+
+        $this->assertSame('Team sync', $result['name']);
+        $this->assertSame('Monday', $result['recurrence_pattern']);
+        $this->assertTrue($result['recurrence_floating']);
+        $this->assertSame('2026-03-30', $result['date']); // next Monday
+    }
+
+    public function test_floating_with_plural_day_of_week(): void
+    {
+        $result = $this->parser->parseTaskInput('Stand-up every! Thursdays');
+
+        $this->assertSame('Thursday', $result['recurrence_pattern']);
+        $this->assertTrue($result['recurrence_floating']);
+    }
+
+    public function test_floating_with_every_other_weekday(): void
+    {
+        $result = $this->parser->parseTaskInput('Yoga every! other Wednesday');
+
+        $this->assertSame('every other Wednesday', $result['recurrence_pattern']);
+        $this->assertTrue($result['recurrence_floating']);
+    }
+
+    public function test_floating_with_monthly_ordinal(): void
+    {
+        $result = $this->parser->parseTaskInput('Book club every! first Monday');
+
+        $this->assertSame('every first Monday', $result['recurrence_pattern']);
+        $this->assertTrue($result['recurrence_floating']);
+    }
+
+    // =========================================================================
+    // parseTaskInput() — date_explicit flag (previously untested)
+    // =========================================================================
+
+    public function test_date_explicit_is_true_for_today(): void
+    {
+        $result = $this->parser->parseTaskInput('Call dentist today');
+
+        $this->assertTrue($result['date_explicit']);
+    }
+
+    public function test_date_explicit_is_true_for_day_name(): void
+    {
+        $result = $this->parser->parseTaskInput('Call dentist Monday');
+
+        $this->assertTrue($result['date_explicit']);
+    }
+
+    public function test_date_explicit_is_false_for_daily_recurrence(): void
+    {
+        // Date is computed as "today" but was not explicitly typed — it defaults from the pattern.
+        $result = $this->parser->parseTaskInput('Morning run daily');
+
+        $this->assertFalse($result['date_explicit']);
+    }
+
+    public function test_date_explicit_is_false_for_weekly_recurrence(): void
+    {
+        $result = $this->parser->parseTaskInput('Team meeting weekly');
+
+        $this->assertFalse($result['date_explicit']);
+    }
+
+    // =========================================================================
+    // parseTaskInput() — two-day multi-day pattern (previously untested)
+    // =========================================================================
+
+    public function test_two_day_abbreviated_multi_day(): void
+    {
+        // From Thursday, next day in tue/thu is today (Thursday), but getNextMultiDay
+        // always starts from tomorrow, so the next is Tuesday.
+        $result = $this->parser->parseTaskInput('Gym tue,thu');
+
+        $this->assertSame('Gym', $result['name']);
+        $this->assertSame('tue,thu', $result['recurrence_pattern']);
+        // getNextMultiDay with no currentDate starts from Carbon::today() (not tomorrow).
+        // Today is Thursday which IS in {tue,thu}, so the first occurrence is today.
+        $this->assertSame('2026-03-26', $result['date']);
+    }
+
+    // =========================================================================
+    // getNextOccurrence() — every N years (previously untested)
+    // =========================================================================
+
+    public function test_next_occurrence_every_n_years(): void
+    {
+        $next = $this->parser->getNextOccurrence('every 2 years', Carbon::parse('2026-03-26'));
+
+        $this->assertSame('2028-03-26', $next->format('Y-m-d'));
+    }
+
+    public function test_next_occurrence_every_1_year(): void
+    {
+        $next = $this->parser->getNextOccurrence('every 1 years', Carbon::parse('2026-03-26'));
+
+        $this->assertSame('2027-03-26', $next->format('Y-m-d'));
+    }
+
+    // =========================================================================
+    // getNextOccurrence() — every [Month] [day] (previously untested)
+    // =========================================================================
+
+    public function test_next_occurrence_every_april_15_from_before_april(): void
+    {
+        $next = $this->parser->getNextOccurrence('every April 15', Carbon::parse('2026-03-26'));
+
+        $this->assertSame('2026-04-15', $next->format('Y-m-d'));
+    }
+
+    public function test_next_occurrence_every_january_3_when_date_has_passed(): void
+    {
+        $next = $this->parser->getNextOccurrence('every January 3', Carbon::parse('2026-03-26'));
+
+        $this->assertSame('2027-01-03', $next->format('Y-m-d'));
+    }
+
+    public function test_next_occurrence_every_december_25_from_early_december(): void
+    {
+        $next = $this->parser->getNextOccurrence('every December 25', Carbon::parse('2026-12-01'));
+
+        $this->assertSame('2026-12-25', $next->format('Y-m-d'));
+    }
+
+    // =========================================================================
+    // getNextOccurrence() — monthly day clipped in short months (edge case)
+    // =========================================================================
+
+    public function test_next_occurrence_every_31_in_february_clips_to_28(): void
+    {
+        // February has only 28 days in 2026 — the parser silently clips to the last day.
+        $next = $this->parser->getNextOccurrence('every 31', Carbon::parse('2026-02-01'));
+
+        $this->assertSame('2026-02-28', $next->format('Y-m-d'));
+    }
+
+    public function test_next_occurrence_every_30_in_february_clips_to_28(): void
+    {
+        $next = $this->parser->getNextOccurrence('every 30', Carbon::parse('2026-02-01'));
+
+        $this->assertSame('2026-02-28', $next->format('Y-m-d'));
+    }
+
+    // =========================================================================
+    // getNextOccurrence() — ordinal when occurrence does not exist in that month
+    // =========================================================================
+
+    public function test_next_occurrence_fifth_monday_skips_to_month_with_five_mondays(): void
+    {
+        // "every fourth Monday" — April 2026 has Mondays on 6, 13, 20, 27 (four of them).
+        // From March 26, fourth Monday of March (23rd) is past; next is April 27.
+        $next = $this->parser->getNextOccurrence('every fourth Monday', Carbon::parse('2026-03-26'));
+
+        $this->assertSame('2026-04-27', $next->format('Y-m-d'));
+    }
+
+    // =========================================================================
+    // isValidRecurrencePattern() — additional patterns (previously untested)
+    // =========================================================================
+
+    public function test_every_n_years_is_valid(): void
+    {
+        $this->assertTrue($this->parser->isValidRecurrencePattern('every 2 years'));
+    }
+
+    public function test_every_month_day_is_valid(): void
+    {
+        $this->assertTrue($this->parser->isValidRecurrencePattern('every January 3'));
+    }
+
+    public function test_every_other_friday_is_valid(): void
+    {
+        $this->assertTrue($this->parser->isValidRecurrencePattern('every other Friday'));
+    }
+
+    public function test_two_day_multi_day_is_valid(): void
+    {
+        $this->assertTrue($this->parser->isValidRecurrencePattern('tue,thu'));
+    }
+
+    public function test_every_second_tuesday_is_valid(): void
+    {
+        $this->assertTrue($this->parser->isValidRecurrencePattern('every second Tuesday'));
+    }
+
+    public function test_every_fourth_friday_is_valid(): void
+    {
+        $this->assertTrue($this->parser->isValidRecurrencePattern('every fourth Friday'));
     }
 }

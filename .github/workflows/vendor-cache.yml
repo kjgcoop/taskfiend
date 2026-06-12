@@ -1,0 +1,55 @@
+name: Build vendor cache
+
+on:
+  workflow_dispatch:
+    inputs:
+      target_branch:
+        description: 'Branch to commit vendor back to'
+        required: true
+        default: 'vendor-cache'
+  push:
+    paths:
+      - '.github/workflows/vendor-cache.yml'
+      - 'composer.lock'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          tools: composer
+
+      - name: Install composer dependencies (no dev)
+        run: composer install --no-interaction --prefer-dist --no-dev --no-scripts
+
+      - name: Dump autoload
+        run: composer dump-autoload --no-interaction --no-dev
+
+      - name: Archive vendor
+        run: tar -czf vendor.tar.gz vendor/
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install npm dependencies and build assets
+        run: npm install && npm run build
+
+      - name: Archive public/build
+        run: tar -czf public-build.tar.gz public/build/
+
+      - name: Commit archives to target branch
+        run: |
+          git config user.email "actions@github.com"
+          git config user.name "GitHub Actions"
+          TARGET="${{ github.event.inputs.target_branch || 'vendor-cache' }}"
+          git checkout -B "$TARGET"
+          git add -f vendor.tar.gz public-build.tar.gz
+          git commit -m "chore: cache vendor and frontend build assets [skip ci]"
+          git push origin "$TARGET" --force
