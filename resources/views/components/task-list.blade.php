@@ -1098,7 +1098,7 @@
                                data-task-project-display>{{ $task->project->name }}</a>
                         @endif
                         @if($task->recurrence_pattern)
-                            <span class="text-purple-400" data-task-recurrence-display>{{ $task->recurrence_pattern }}</span>
+                            <span class="text-purple-400" data-task-recurrence-display>{{ $task->recurrence_pattern }} {{ $task->floating ? '*' : '' }}</span>
                         @endif
                         @if($task->location)
                             @php
