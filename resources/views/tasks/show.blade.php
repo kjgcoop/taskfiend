@@ -452,7 +452,7 @@
                 <div class="mt-4">
                     <span class="text-sm font-medium text-gray-500">Description</span>
                     <div @if(!$isInactive) @click="if (!$event.target.closest('a')) startEdit('description')" @endif x-show="!editing.description" class="mt-1 p-2 rounded min-h-[40px] {{ !$isInactive ? 'cursor-pointer hover:bg-gray-700' : '' }}">
-                        <div class="markdown-body" x-show="fields.description" x-html="renderedDescription"></div>
+                        <div class="markdown-body" x-show="fields.description" x-ref="descHtml"></div>
                         <p x-show="!fields.description" class="text-gray-400 italic">{{ $isInactive ? 'No description' : 'Click to add description' }}</p>
                     </div>
                     @if(!$isInactive)
@@ -904,6 +904,7 @@
 
                 init() {
                     this.original = JSON.parse(JSON.stringify(this.fields));
+                    this.$nextTick(() => { if (this.$refs.descHtml) this.$refs.descHtml.innerHTML = this.renderedDescription; });
                 },
 
                 startEdit(field) {
@@ -1082,6 +1083,7 @@
                         this.editing[field] = false;
                         if (field === 'description' && data.rendered_description !== undefined) {
                             this.renderedDescription = data.rendered_description;
+                            this.$nextTick(() => { if (this.$refs.descHtml) this.$refs.descHtml.innerHTML = this.renderedDescription; });
                         }
                         return true;
                     } else {

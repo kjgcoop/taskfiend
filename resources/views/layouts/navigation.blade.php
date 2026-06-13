@@ -228,7 +228,7 @@
                                 <div class="px-4 py-6 text-center text-sm text-gray-500">Loading…</div>
                             </template>
                             <template x-if="loaded">
-                                <div x-html="html"></div>
+                                <div x-ref="notifHtml"></div>
                             </template>
                         </div>
                     </div>
@@ -463,7 +463,6 @@ document.addEventListener('alpine:init', () => {
     Alpine.data('notificationsMenu', () => ({
         open: false,
         loaded: false,
-        html: '',
         async toggle() {
             this.open = !this.open;
             if (this.open && !this.loaded) {
@@ -476,7 +475,7 @@ document.addEventListener('alpine:init', () => {
                         }
                     });
                     const d = await res.json();
-                    this.html = d.html;
+                    if (this.$refs.notifHtml) this.$refs.notifHtml.innerHTML = d.html;
                     const badge = document.getElementById('notif-badge');
                     if (badge) badge.remove();
                 } catch {}

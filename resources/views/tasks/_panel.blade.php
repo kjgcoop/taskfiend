@@ -396,7 +396,7 @@ $_panelTaskJson = json_encode([
              x-show="!editing.description"
              class="mt-1 p-2 rounded min-h-[40px] {{ !$isInactive ? 'cursor-pointer hover:bg-gray-700' : '' }}">
             <div class="markdown-body" x-show="fields.description"
-                 x-html="renderedDescription"></div>
+                 x-ref="descHtml"></div>
             <p x-show="!fields.description" class="text-sm text-gray-400 italic">
                 {{ $isInactive ? 'No description' : 'Click to add description' }}
             </p>

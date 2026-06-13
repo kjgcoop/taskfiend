@@ -523,7 +523,10 @@
                     this.allProjects = taskData.allProjects || [];
                     this.original = JSON.parse(JSON.stringify(Object.assign({}, this.fields, { dateText: this.dateText })));
                     const descEl = el.querySelector('[data-rendered-description]');
-                    if (descEl) this.renderedDescription = descEl.innerHTML;
+                    if (descEl) {
+                        this.renderedDescription = descEl.innerHTML;
+                        this.$nextTick(() => { if (this.$refs.descHtml) this.$refs.descHtml.innerHTML = this.renderedDescription; });
+                    }
                 },
 
                 startEdit(field) {
@@ -711,7 +714,10 @@
                         this.original[field] = JSON.parse(JSON.stringify(this.fields[field]));
                         this.editing[field] = false;
                         if (data.taskData) window.dispatchEvent(new CustomEvent('task-panel-updated', { detail: data.taskData }));
-                        if (field === 'description' && data.rendered_description !== undefined) this.renderedDescription = data.rendered_description;
+                        if (field === 'description' && data.rendered_description !== undefined) {
+                            this.renderedDescription = data.rendered_description;
+                            this.$nextTick(() => { if (this.$refs.descHtml) this.$refs.descHtml.innerHTML = this.renderedDescription; });
+                        }
                         return true;
                     } else {
                         alert('Error saving ' + field + ': ' + (data.message || 'Failed to update'));
