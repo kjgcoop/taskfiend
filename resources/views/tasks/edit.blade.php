@@ -187,7 +187,7 @@
                                        @input="onInput"
                                        @focus="open = true"
                                        @keydown.escape="open = false"
-                                       @keydown.enter.prevent="if (filtered.length > 0) select(filtered[0])"
+                                       @keydown.enter.prevent="filtered.length > 0 && select(filtered[0])"
                                        placeholder="Search for a parent task…"
                                        autocomplete="off"
                                        class="w-full rounded-md bg-gray-700 border-gray-600 text-gray-100 placeholder-gray-500 shadow-sm focus:border-blue-500 focus:ring-blue-500 pr-8">

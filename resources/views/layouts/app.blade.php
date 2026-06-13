@@ -197,7 +197,7 @@
                     <span x-show="naturalDateLoading" class="text-xs text-gray-500" style="display:none">…</span>
                     <span x-show="naturalDateError" x-text="naturalDateError" class="text-xs text-red-400 whitespace-nowrap" style="display:none"></span>
                     <label class="flex items-center gap-1 text-xs text-gray-400 cursor-pointer whitespace-nowrap ml-0.5" title="Remove date from all selected tasks">
-                        <input type="checkbox" x-model="clearDate" @change="if (clearDate) { date = ''; naturalDate = ''; naturalDateError = ''; }"
+                        <input type="checkbox" x-model="clearDate" @change="clearDate ? clearDateFields() : null"
                                class="rounded border-gray-500 bg-gray-600 text-blue-500 focus:ring-blue-500 focus:ring-offset-gray-900">
                         <span>Clear</span>
                     </label>
@@ -382,6 +382,8 @@
                     confirming: false,
                     submitting: false,
                     confirmMessage: '',
+
+                    clearDateFields() { this.date = ''; this.naturalDate = ''; this.naturalDateError = ''; },
 
                     checkDate() {
                         if (!this.date) { this.clearDate = true; return; }

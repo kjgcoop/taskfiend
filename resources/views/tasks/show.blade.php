@@ -405,7 +405,7 @@
                                        @input="fields.parent_id = ''; parentOpen = true"
                                        @focus="parentOpen = true"
                                        @keydown.escape="parentOpen = false"
-                                       @keydown.enter.prevent="if (parentFiltered.length > 0) selectParent(parentFiltered[0])"
+                                       @keydown.enter.prevent="parentFiltered.length > 0 && selectParent(parentFiltered[0])"
                                        placeholder="Search for a parent task…"
                                        autocomplete="off"
                                        class="w-full rounded-md bg-gray-700 border-gray-600 text-gray-100 placeholder-gray-500 shadow-sm focus:border-blue-500 focus:ring-blue-500 pr-8">
@@ -451,7 +451,7 @@
                 <!-- Description -->
                 <div class="mt-4">
                     <span class="text-sm font-medium text-gray-500">Description</span>
-                    <div @if(!$isInactive) @click="if (!$event.target.closest('a')) startEdit('description')" @endif x-show="!editing.description" class="mt-1 p-2 rounded min-h-[40px] {{ !$isInactive ? 'cursor-pointer hover:bg-gray-700' : '' }}">
+                    <div @if(!$isInactive) @click="$event.target.closest('a') || startEdit('description')" @endif x-show="!editing.description" class="mt-1 p-2 rounded min-h-[40px] {{ !$isInactive ? 'cursor-pointer hover:bg-gray-700' : '' }}">
                         <div class="markdown-body" x-show="fields.description" x-ref="descHtml"></div>
                         <p x-show="!fields.description" class="text-gray-400 italic">{{ $isInactive ? 'No description' : 'Click to add description' }}</p>
                     </div>

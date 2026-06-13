@@ -39,7 +39,7 @@
                                 <span class="text-gray-400 text-sm">#</span>
                                 <input type="text" maxlength="6"
                                     :value="selected.replace('#', '')"
-                                    @input="if ($event.target.value.match(/^[0-9a-fA-F]{6}$/)) selected = '#' + $event.target.value"
+                                    @input="$event.target.value.match(/^[0-9a-fA-F]{6}$/) && (selected = '#' + $event.target.value)"
                                     class="w-24 rounded-md bg-gray-700 border-gray-600 text-gray-100 text-sm px-2 py-1 focus:border-blue-500 focus:ring-blue-500"
                                     placeholder="3B82F6">
                             </div>
