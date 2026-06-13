@@ -2,37 +2,8 @@
 
 @pushOnce('scripts')
 <script nonce="{{ csp_nonce() }}">
-    window.listQuickComplete = window.listQuickComplete || function () {
-        return {
-            done: false,
-            loading: false,
-            async submit() {
-                this.loading = true;
-                const form = this.$el;
-                try {
-                    const res = await fetch(form.action, {
-                        method: 'POST',
-                        headers: { 'X-Requested-With': 'XMLHttpRequest' },
-                        body: new FormData(form),
-                    });
-                    if (res.ok) {
-                        this.done = true;
-                        await new Promise(r => setTimeout(r, 400));
-                        const group = form.closest('[data-task-group]');
-                        if (group) {
-                            group.style.transition = 'opacity 0.3s';
-                            group.style.opacity = '0';
-                            setTimeout(() => group.style.display = 'none', 300);
-                        }
-                    }
-                } catch {
-                    form.submit();
-                } finally {
-                    this.loading = false;
-                }
-            }
-        };
-    };
+    // listQuickComplete is registered via Alpine.data() in task-list's @pushOnce
+    // No re-registration needed here.
 </script>
 @endPushOnce
 
@@ -52,7 +23,7 @@
                     @elseif($task->status === 'archived')
                         <span class="inline-block w-5 h-5 rounded-full bg-gray-500 flex-shrink-0" title="Archived"></span>
                     @else
-                        <form x-data="listQuickComplete()" @submit.prevent="submit()"
+                        <form x-data="listQuickComplete" @submit.prevent="submit()"
                               method="POST" action="{{ route('tasks.update', $task) }}" class="inline">
                             @csrf
                             @method('PUT')
