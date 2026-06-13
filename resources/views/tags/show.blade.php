@@ -1,8 +1,12 @@
 <x-app-layout>
     <x-slot name="header">
-        <div class="flex items-center gap-2 w-full" x-data="{ showMenu: false }">
+        <div class="flex items-center gap-2 w-full" x-data="dropdown">
             {{-- Inline-editable tag name + count badge --}}
-            <div x-data="tagHeaderEditor({{ $tag->id }}, @js($tag->tag_name), @js($tag->color))" class="flex items-center gap-2 min-w-0">
+            <div x-data="tagHeaderEditor"
+                 data-tag-id="{{ $tag->id }}"
+                 data-tag-name="{{ $tag->tag_name }}"
+                 data-tag-color="{{ $tag->color }}"
+                 class="flex items-center gap-2 min-w-0">
                 <h2 x-show="!editing"
                     @click="startEdit()"
                     class="font-semibold text-xl leading-tight truncate cursor-pointer hover:opacity-80 transition-opacity"
@@ -24,8 +28,8 @@
 
             {{-- ID + copy link --}}
             <span class="text-sm text-gray-500 shrink-0">#{{ $tag->id }}</span>
-            <span x-data="{ copied: false }" class="shrink-0">
-                <button @click="navigator.clipboard.writeText('[tag:{{ $tag->id }}]').then(() => { copied = true; setTimeout(() => copied = false, 2000) })"
+            <span x-data="copyButton" class="shrink-0">
+                <button @click="copy('[tag:{{ $tag->id }}]')"
                         title="Copy tag reference [tag:{{ $tag->id }}]"
                         class="text-gray-500 hover:text-gray-300 transition-colors">
                     <span x-show="!copied">
@@ -38,17 +42,17 @@
             </span>
 
             {{-- Three-dot menu --}}
-            <div class="relative shrink-0" @click.outside="showMenu = false">
-                <button @click="showMenu = !showMenu"
+            <div class="relative shrink-0" @click.outside="open = false">
+                <button @click="open = !open"
                         class="p-2 text-gray-400 hover:text-gray-100 hover:bg-gray-700 rounded transition-colors"
                         title="More options">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
                         <path d="M10 6a2 2 0 110-4 2 2 0 010 4zm0 6a2 2 0 110-4 2 2 0 010 4zm0 6a2 2 0 110-4 2 2 0 010 4z" />
                     </svg>
                 </button>
-                <div x-show="showMenu" x-cloak
+                <div x-show="open" x-cloak
                      class="absolute right-0 mt-1 w-40 bg-gray-800 border border-gray-600 rounded shadow-lg z-10">
-                    <button @click="showMenu = false; $dispatch('open-tag-details')"
+                    <button @click="openDetails('open-tag-details')"
                             class="w-full text-left px-4 py-2 text-gray-200 hover:bg-gray-700">
                         Details
                     </button>
@@ -57,7 +61,7 @@
         </div>
     </x-slot>
 
-    <div class="py-12" x-data="tagEditor({{ $tag->id }})"
+    <div class="py-12" x-data="tagEditor" data-tag-id="{{ $tag->id }}"
          @open-tag-details.window="showDetails = true">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-6">
 
@@ -109,7 +113,7 @@
                             <span class="text-gray-400 text-sm">#</span>
                             <input type="text" maxlength="6"
                                 :value="fields.color.replace('#', '')"
-                                @input="if ($event.target.value.match(/^[0-9a-fA-F]{6}$/)) fields.color = '#' + $event.target.value"
+                                @input="$event.target.value.match(/^[0-9a-fA-F]{6}$/) && (fields.color = '#' + $event.target.value)"
                                 class="w-24 rounded-md bg-gray-700 border-gray-600 text-gray-100 text-sm px-2 py-1 focus:border-blue-500 focus:ring-blue-500"
                                 placeholder="3B82F6">
                         </div>
@@ -137,7 +141,12 @@
             </div>
 
             <!-- Tagged Tasks -->
-            <div class="bg-[#202020] border border-gray-700 shadow-sm sm:rounded-lg p-6" x-data="taskFilter(@js($projects), @js($allTags), @js($users), @js($locations))">
+            <div class="bg-[#202020] border border-gray-700 shadow-sm sm:rounded-lg p-6"
+                 x-data="taskFilter"
+                 data-projects="{{ json_encode($projects) }}"
+                 data-tags="{{ json_encode($allTags) }}"
+                 data-users="{{ json_encode($users) }}"
+                 data-locations="{{ json_encode($locations) }}">
                 <div class="flex items-center justify-between mb-4">
                     <button type="button"
                             @click="showIncomplete = !showIncomplete"
@@ -151,7 +160,7 @@
                         </svg>
                     </button>
                     <div class="flex items-center gap-2">
-                        <select id="sort-select" onchange="(function(v){const p=new URLSearchParams(window.location.search);p.set('sort',v);localStorage.setItem('task_sort_'+window.location.pathname,v);window.location.href=window.location.pathname+'?'+p.toString()})(this.value)"
+                        <select id="sort-select" @change="sortBy($event.target.value)"
                                 class="text-sm bg-gray-700 border border-gray-600 rounded px-2 py-1 text-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500">
                             <option value="date" {{ $sort === 'date' ? 'selected' : '' }}>Date & Time</option>
                             <option value="created" {{ $sort === 'created' ? 'selected' : '' }}>Date Added</option>
@@ -161,7 +170,7 @@
                             <option value="custom" {{ $sort === 'custom' ? 'selected' : '' }}>Custom Sort</option>
                         </select>
                         @if($sort !== 'custom')
-                        <button onclick="toggleSortReversed()"
+                        <button @click="toggleSortReversed()"
                                 title="{{ request()->boolean('reversed') ? 'Reversed — click to restore' : 'Reverse sort order' }}"
                                 class="p-1 rounded transition-colors {{ request()->boolean('reversed') ? 'text-blue-400 hover:text-blue-300' : 'text-gray-500 hover:text-gray-300' }}">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
@@ -203,13 +212,21 @@
 
     @push('scripts')
     <script nonce="{{ csp_nonce() }}">
-        function tagHeaderEditor(tagId, initialName, initialColor) {
-            return {
-                tagId: tagId,
-                name: initialName,
-                color: initialColor,
-                original: initialName,
+        document.addEventListener('alpine:init', () => {
+            Alpine.data('tagHeaderEditor', function() {
+                return {
+                tagId: 0,
+                name: '',
+                color: '',
+                original: '',
                 editing: false,
+
+                init() {
+                    this.tagId = parseInt(this.$el.dataset.tagId);
+                    this.name = this.$el.dataset.tagName || '';
+                    this.color = this.$el.dataset.tagColor || '';
+                    this.original = this.name;
+                },
 
                 startEdit() {
                     this.original = this.name;
@@ -256,12 +273,14 @@
                         this.editing = false;
                     }
                 },
-            };
-        }
+                };
+            });
+        });
 
-        function tagEditor(tagId) {
-            return {
-                tagId: tagId,
+        document.addEventListener('alpine:init', () => {
+            Alpine.data('tagEditor', function() {
+                return {
+                tagId: 0,
                 showDetails: false,
                 editing: {},
                 fields: {
@@ -271,6 +290,7 @@
                 original: {},
 
                 init() {
+                    this.tagId = parseInt(this.$el.dataset.tagId) || 0;
                     this.original = JSON.parse(JSON.stringify(this.fields));
                 },
 
@@ -307,8 +327,9 @@
                         this.fields[field] = JSON.parse(JSON.stringify(this.original[field]));
                     }
                 },
-            };
-        }
+                };
+            });
+        });
     </script>
     @endpush
 </x-app-layout>

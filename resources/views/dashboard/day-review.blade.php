@@ -9,46 +9,11 @@
                         <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" />
                     </svg>
                 </a>
-                <div x-data="{
-                    editing: false,
-                    input: '',
-                    error: false,
-                    currentDate: '{{ $carbonDate->format('Y-m-d') }}',
-                    activate() {
-                        this.input = this.currentDate;
-                        this.error = false;
-                        this.editing = true;
-                        this.$nextTick(() => { this.$refs.dateInput.focus(); this.$refs.dateInput.select(); });
-                    },
-                    cancel() {
-                        this.editing = false;
-                        this.error = false;
-                    },
-                    async navigate() {
-                        const val = this.input.trim();
-                        if (!val) { this.cancel(); return; }
-                        const resp = await fetch('{{ route('tasks.parseDate') }}', {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json',
-                                'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content,
-                                'Accept': 'application/json',
-                            },
-                            body: JSON.stringify({ input: val })
-                        });
-                        const data = await resp.json();
-                        if (data.success) {
-                            if (data.date === this.currentDate) { this.cancel(); return; }
-                            window.location.href = '{{ route('day') }}?date=' + data.date;
-                        } else {
-                            this.error = true;
-                        }
-                    },
-                    pickDate(value) {
-                        if (!value || value === this.currentDate) return;
-                        window.location.href = '{{ route('day') }}?date=' + value;
-                    }
-                }" @click.outside="cancel()">
+                <div x-data="dayDateEditor"
+                     data-current-date="{{ $carbonDate->format('Y-m-d') }}"
+                     data-parse-route="{{ route('day') }}"
+                     data-parse-date-url="{{ route('tasks.parseDate') }}"
+                     @click.outside="cancel()">
                     <h2 x-show="!editing"
                         @click="activate()"
                         class="font-semibold text-xl text-gray-100 leading-tight cursor-pointer hover:text-gray-300 transition-colors select-none"

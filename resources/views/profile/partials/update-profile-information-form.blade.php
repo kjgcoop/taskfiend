@@ -36,7 +36,7 @@
                 <label class="cursor-pointer px-4 py-2 bg-gray-700 border border-gray-600 rounded-md text-sm text-gray-300 hover:bg-gray-600 transition">
                     {{ __('Choose Photo') }}
                     <input type="file" name="profile_image" accept="image/*" class="hidden"
-                           onchange="this.closest('form').submit()">
+                           @change="$el.closest('form').submit()">
                 </label>
             </form>
             @if($user->profile_image)
@@ -91,10 +91,9 @@
 
             @if (session('status') === 'profile-updated')
                 <p
-                    x-data="{ show: true }"
+                    x-data="flashMessage"
                     x-show="show"
                     x-transition
-                    x-init="setTimeout(() => show = false, 2000)"
                     class="text-sm text-gray-400"
                 >{{ __('Saved.') }}</p>
             @endif

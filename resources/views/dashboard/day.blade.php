@@ -9,46 +9,11 @@
                         </svg>
                     </a>
                 @endif
-                <div x-data="{
-                    editing: false,
-                    input: '',
-                    error: false,
-                    currentDate: '{{ $carbonDate->format('Y-m-d') }}',
-                    activate() {
-                        this.input = this.currentDate;
-                        this.error = false;
-                        this.editing = true;
-                        this.$nextTick(() => { this.$refs.dateInput.focus(); this.$refs.dateInput.select(); });
-                    },
-                    cancel() {
-                        this.editing = false;
-                        this.error = false;
-                    },
-                    async navigate() {
-                        const val = this.input.trim();
-                        if (!val) { this.cancel(); return; }
-                        const resp = await fetch('{{ route('tasks.parseDate') }}', {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json',
-                                'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content,
-                                'Accept': 'application/json',
-                            },
-                            body: JSON.stringify({ input: val })
-                        });
-                        const data = await resp.json();
-                        if (data.success) {
-                            if (data.date === this.currentDate) { this.cancel(); return; }
-                            window.location.href = '{{ route('day') }}?date=' + data.date;
-                        } else {
-                            this.error = true;
-                        }
-                    },
-                    pickDate(value) {
-                        if (!value || value === this.currentDate) return;
-                        window.location.href = '{{ route('day') }}?date=' + value;
-                    }
-                }" @click.outside="cancel()">
+                <div x-data="dayDateEditor"
+                     data-current-date="{{ $carbonDate->format('Y-m-d') }}"
+                     data-parse-route="{{ route('day') }}"
+                     data-parse-date-url="{{ route('tasks.parseDate') }}"
+                     @click.outside="cancel()">
                     <h2 x-show="!editing"
                         @click="activate()"
                         class="font-semibold text-xl text-gray-100 leading-tight cursor-pointer hover:text-gray-300 transition-colors select-none"
@@ -106,7 +71,7 @@
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
 
             {{-- Stale-page banner: shown when this day page is past its date --}}
-            <div x-data="staleBanner('{{ $carbonDate->format('Y-m-d') }}', '{{ route('day') }}')"
+            <div x-data="staleBanner" data-date="{{ $carbonDate->format('Y-m-d') }}" data-reload-url="{{ route('day') }}"
                  x-show="stale"
                  x-cloak
                  x-transition:enter="transition ease-out duration-200"
@@ -190,7 +155,12 @@
             </div>
 
             {{-- List view --}}
-            <div x-cloak x-show="$store.dayView.current === 'list'" x-data="taskFilter(@js($projects), @js($tags), @js($users), @js($locations))">
+            <div x-cloak x-show="$store.dayView.current === 'list'"
+                 x-data="taskFilter"
+                 data-projects="{{ json_encode($projects) }}"
+                 data-tags="{{ json_encode($tags) }}"
+                 data-users="{{ json_encode($users) }}"
+                 data-locations="{{ json_encode($locations) }}">
                 {{-- Fold chevron + sort row --}}
                 <div class="flex items-center justify-between mb-2">
                     <button type="button"
@@ -205,7 +175,7 @@
                         </svg>
                     </button>
                     <div class="flex items-center gap-2">
-                        <select id="sort-select" onchange="(function(v){const p=new URLSearchParams(window.location.search);p.set('sort',v);localStorage.setItem('task_sort_'+window.location.pathname,v);window.location.href=window.location.pathname+'?'+p.toString()})(this.value)"
+                        <select id="sort-select" @change="sortBy($event.target.value)"
                                 class="text-sm bg-gray-700 border border-gray-600 rounded px-2 py-1 text-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500">
                             <option value="date" {{ $sort === 'date' ? 'selected' : '' }}>Date & Time</option>
                             <option value="created" {{ $sort === 'created' ? 'selected' : '' }}>Date Added</option>
@@ -215,7 +185,7 @@
                             <option value="custom" {{ $sort === 'custom' ? 'selected' : '' }}>Custom Sort</option>
                         </select>
                         @if($sort !== 'custom')
-                        <button onclick="toggleSortReversed()"
+                        <button @click="toggleSortReversed()"
                                 title="{{ request()->boolean('reversed') ? 'Reversed — click to restore' : 'Reverse sort order' }}"
                                 class="p-1 rounded transition-colors {{ request()->boolean('reversed') ? 'text-blue-400 hover:text-blue-300' : 'text-gray-500 hover:text-gray-300' }}">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
@@ -258,15 +228,17 @@
     <script nonce="{{ csp_nonce() }}">
         // ── Stale-page banner ────────────────────────────────────────────────────
         document.addEventListener('alpine:init', () => {
-            Alpine.data('staleBanner', (pageDate, dayRoute) => ({
-                pageDate,
-                dayRoute,
+            Alpine.data('staleBanner', function () { return {
+                pageDate: '',
+                dayRoute: '',
                 stale: false,
                 pageDateLabel: '',
                 todayLabel: '',
                 todayUrl: '',
 
                 init() {
+                    this.pageDate = this.$el.dataset.date || '';
+                    this.dayRoute = this.$el.dataset.reloadUrl || '';
                     this._check();
                     document.addEventListener('visibilitychange', () => {
                         if (!document.hidden) this._check();
@@ -288,7 +260,7 @@
                             .toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
                     }
                 },
-            }));
+            }; });
         });
 
         // ── Post-create toast (shown after reload when a stale-page task was added) ──
@@ -314,7 +286,7 @@
                         <p class="text-sm text-gray-300">Created after midnight — task scheduled for <strong class="text-amber-300">${todayLabel}</strong>.</p>
                         <a href="${todayUrl}" class="text-xs text-amber-400 hover:text-amber-300 underline mt-0.5 inline-block">View today's tasks</a>
                     </div>
-                    <button onclick="this.closest('[data-stale-toast]').remove()" class="flex-shrink-0 text-gray-500 hover:text-gray-300 mt-0.5" aria-label="Dismiss">
+                    <button @click="$el.closest('[data-stale-toast]').remove()" class="flex-shrink-0 text-gray-500 hover:text-gray-300 mt-0.5" aria-label="Dismiss">
                         <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
                         </svg>
@@ -327,6 +299,58 @@
                 toast.style.opacity = '1';
                 toast.style.transform = 'translateY(0)';
             }));
+        });
+
+        document.addEventListener('alpine:init', () => {
+            Alpine.data('dayDateEditor', function() {
+                return {
+                    editing: false,
+                    input: '',
+                    error: false,
+                    currentDate: '',
+                    parseRoute: '',
+                    parseDateUrl: '',
+                    init() {
+                        this.currentDate = this.$el.dataset.currentDate || '';
+                        this.parseRoute = this.$el.dataset.parseRoute || '';
+                        this.parseDateUrl = this.$el.dataset.parseDateUrl || '';
+                    },
+                    activate() {
+                        this.input = this.currentDate;
+                        this.error = false;
+                        this.editing = true;
+                        this.$nextTick(() => { this.$refs.dateInput.focus(); this.$refs.dateInput.select(); });
+                    },
+                    cancel() {
+                        this.editing = false;
+                        this.error = false;
+                    },
+                    async navigate() {
+                        const val = this.input.trim();
+                        if (!val) { this.cancel(); return; }
+                        const resp = await fetch(this.parseDateUrl, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content,
+                                'Accept': 'application/json',
+                            },
+                            body: JSON.stringify({ input: val })
+                        });
+                        const data = await resp.json();
+                        if (data.success) {
+                            if (data.date === this.currentDate) { this.cancel(); return; }
+                            window.location.href = this.parseRoute + '?date=' + data.date;
+                        } else {
+                            this.error = true;
+                        }
+                    },
+                    pickDate(value) {
+                        if (!value || value === this.currentDate) return;
+                        window.location.href = this.parseRoute + '?date=' + value;
+                    }
+                };
+            });
         });
 
         document.addEventListener('alpine:init', () => {

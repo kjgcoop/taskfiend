@@ -8,7 +8,10 @@
     <div class="py-12">
         <div class="max-w-3xl mx-auto sm:px-6 lg:px-8">
             <div class="bg-[#202020] overflow-hidden shadow-sm sm:rounded-lg border border-gray-700">
-                <div class="p-6" x-data="taskCreator(@js($projects), @js($tags))">
+                <div class="p-6"
+                     x-data="taskCreator"
+                     data-projects="{{ json_encode($projects) }}"
+                     data-tags="{{ json_encode($tags) }}">
                     {{-- Bulk-creation result banner (shown after partial success redirect) --}}
                     @if(session('bulk_errors'))
                     <div class="mb-6 p-4 bg-red-900/30 border border-red-700 rounded-md">
@@ -138,7 +141,7 @@
                             @error('location')<p class="mt-1 text-sm text-red-600">{{ $message }}</p>@enderror
                         </div>
 
-                        <div class="mb-4 grid grid-cols-2 gap-4" x-data="dateInput('{{ old('date', $preselectedDate) }}')">
+                        <div class="mb-4 grid grid-cols-2 gap-4" x-data="dateInput" data-initial-date="{{ old('date', $preselectedDate) }}">
                             <div>
                                 <label for="date" class="block text-sm font-medium text-gray-300 mb-2">Date (Optional)</label>
                                 <div class="flex gap-2 items-start">
@@ -171,7 +174,7 @@
                                     <span x-text="datePreview"></span>
                                     <span x-show="projects && projects.length > 0" class="flex flex-wrap items-baseline gap-x-1">
                                         <span class="text-gray-500">&mdash;</span>
-                                        <span x-text="(projects||[]).reduce((s,p)=>s+p.count,0) + ((projects||[]).reduce((s,p)=>s+p.count,0)===1?' task':' tasks')"></span>
+                                        <span x-text="projectTaskCount + (projectTaskCount === 1 ? ' task' : ' tasks')"></span>
                                         <template x-for="proj in (projects || [])" :key="proj.name">
                                             <span class="relative group inline-flex items-baseline gap-x-0.5">
                                                 <span class="text-gray-500">·</span>
@@ -280,31 +283,7 @@
                             ])->values()->all();
                         @endphp
                         <div class="mb-4"
-                             x-data="{
-                                 search: @js($_oldParentName),
-                                 selectedId: @js($_oldParentId),
-                                 open: false,
-                                 tasks: @js($_parentsForCombo),
-                                 get filtered() {
-                                     const q = this.search.toLowerCase().trim();
-                                     if (!q) return this.tasks.slice(0, 10);
-                                     return this.tasks.filter(t => t.rawName.toLowerCase().includes(q)).slice(0, 10);
-                                 },
-                                 select(task) {
-                                     this.selectedId = task.id;
-                                     this.search = task.rawName;
-                                     this.open = false;
-                                 },
-                                 clear() {
-                                     this.selectedId = '';
-                                     this.search = '';
-                                     this.open = false;
-                                 },
-                                 onInput() {
-                                     this.selectedId = '';
-                                     this.open = true;
-                                 }
-                             }" @click.outside="open = false">
+                             x-data="parentTaskCombo" @click.outside="open = false">
                             <label class="block text-sm font-medium text-gray-300 mb-2">
                                 Parent Task <span class="font-normal text-gray-500">(Optional – type to search)</span>
                             </label>
@@ -314,7 +293,7 @@
                                        @input="onInput"
                                        @focus="open = true"
                                        @keydown.escape="open = false"
-                                       @keydown.enter.prevent="if (filtered.length > 0) select(filtered[0])"
+                                       @keydown.enter.prevent="filtered.length > 0 && select(filtered[0])"
                                        placeholder="Search for a parent task…"
                                        autocomplete="off"
                                        class="w-full rounded-md bg-gray-700 border-gray-600 text-gray-100 placeholder-gray-500 shadow-sm focus:border-blue-500 focus:ring-blue-500 pr-8">
@@ -398,16 +377,25 @@
 
     @push('scripts')
     <script nonce="{{ csp_nonce() }}">
-        function dateInput(initialDate) {
+        document.addEventListener('alpine:init', () => {
+        Alpine.data('dateInput', function() {
             return {
                 dateText: '',
-                resolvedDate: initialDate || '',
+                resolvedDate: '',
                 datePreview: '',
                 dateError: '',
                 datePast: false,
                 projects: null,
 
+                get projectTaskCount() {
+                    let n = 0;
+                    if (this.projects) { for (const p of this.projects) n += p.count; }
+                    return n;
+                },
+
                 init() {
+                    const initialDate = this.$el.dataset.initialDate || '';
+                    this.resolvedDate = initialDate;
                     // Convert Y-m-d initial value to human-readable text
                     if (this.resolvedDate && /^\d{4}-\d{2}-\d{2}$/.test(this.resolvedDate)) {
                         const d = new Date(this.resolvedDate + 'T12:00:00');
@@ -516,12 +504,14 @@
                     this.projects = null;
                 },
             };
-        }
+        });
+        });
 
-        function taskCreator(projects, tags) {
+        document.addEventListener('alpine:init', () => {
+        Alpine.data('taskCreator', function() {
             return {
-                projects: projects,
-                tags: tags,
+                projects: [],
+                tags: [],
                 taskName: @js(old('name', '')),
                 selectedProjectId: @js(old('project_id', $preselectedProjectId ?? '')),
                 selectedTagIds: @js(old('tag_ids', [])),
@@ -562,12 +552,15 @@
                 },
 
                 init() {
+                    const el = this.$el;
+                    this.projects = JSON.parse(el.dataset.projects || '[]');
+                    this.tags = JSON.parse(el.dataset.tags || '[]');
                     // Auto-resize the textarea when the page loads with a pre-filled value
                     this.$nextTick(() => {
-                        const el = this.$refs.nameInput;
-                        if (el && el.value) {
-                            el.style.height = 'auto';
-                            el.style.height = Math.min(el.scrollHeight, 240) + 'px';
+                        const input = this.$refs.nameInput;
+                        if (input && input.value) {
+                            input.style.height = 'auto';
+                            input.style.height = Math.min(input.scrollHeight, 240) + 'px';
                         }
                     });
                 },
@@ -806,7 +799,26 @@
                     }
                 }
             };
-        }
+        });
+        });
+    </script>
+    <script nonce="{{ csp_nonce() }}">
+    document.addEventListener('alpine:init', () => {
+        Alpine.data('parentTaskCombo', () => ({
+            search: @js($_oldParentName),
+            selectedId: @js($_oldParentId),
+            open: false,
+            tasks: @js($_parentsForCombo),
+            get filtered() {
+                const q = this.search.toLowerCase().trim();
+                if (!q) return this.tasks.slice(0, 10);
+                return this.tasks.filter(t => t.rawName.toLowerCase().includes(q)).slice(0, 10);
+            },
+            select(task) { this.selectedId = task.id; this.search = task.rawName; this.open = false; },
+            clear() { this.selectedId = ''; this.search = ''; this.open = false; },
+            onInput() { this.selectedId = ''; this.open = true; },
+        }));
+    });
     </script>
     @endpush
 </x-app-layout>

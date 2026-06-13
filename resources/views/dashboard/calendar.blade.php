@@ -15,7 +15,7 @@
         </div>
     </x-slot>
 
-    <div class="py-12">
+    <div class="py-12" x-data>
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
             <div class="flex gap-3 mb-4">
                 <a href="{{ route('overdue') }}" class="inline-flex items-center gap-2 px-4 py-2 bg-[#202020] border border-gray-600 text-gray-400 hover:bg-gray-700 rounded-md text-sm transition">
@@ -58,7 +58,7 @@
                                     @foreach($dayTasks->take(3) as $task)
                                         <button type="button"
                                                 data-task-group-id="{{ $task->id }}"
-                                                onclick="openTaskPanel({{ $task->id }})"
+                                                @click="$dispatch('open-task-panel', { taskId: {{ $task->id }} })"
                                                 class="block w-full text-left text-xs p-1 bg-blue-900 text-blue-200 rounded truncate hover:bg-blue-800 task-title">
                                             {!! render_title($task->name) !!}
                                         </button>
@@ -140,7 +140,7 @@
                 const btn = document.createElement('button');
                 btn.type = 'button';
                 btn.dataset.taskGroupId = d.id;
-                btn.setAttribute('onclick', `openTaskPanel(${d.id})`);
+                btn.addEventListener('click', () => window.dispatchEvent(new CustomEvent('open-task-panel', { detail: { taskId: d.id } })));
                 btn.className = 'block w-full text-left text-xs p-1 bg-blue-900 text-blue-200 rounded truncate hover:bg-blue-800';
                 btn.textContent = d.name;
                 btn.style.opacity = '0';

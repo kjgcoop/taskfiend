@@ -105,16 +105,7 @@
 
             <!-- Page Content -->
             <main>
-                <div x-data="{
-                        pad: 0,
-                        init() {
-                            const bar = document.getElementById('bulk-edit-bar');
-                            if (!bar) return;
-                            const update = () => { this.pad = bar.offsetHeight || 0; };
-                            new ResizeObserver(update).observe(bar);
-                            this.$watch(() => Alpine.store('bulkEdit').selected.length, update);
-                        }
-                     }"
+                <div x-data="mainPadding"
                      :style="pad > 0 ? 'padding-bottom: ' + (pad + 16) + 'px' : ''"
                      @keydown.escape.window="$store.bulkEdit.exitIfActive()">
                     {{ $slot }}
@@ -132,12 +123,23 @@
             if (p.get('reversed') === '1') { p.delete('reversed'); } else { p.set('reversed', '1'); }
             window.location.href = window.location.pathname + '?' + p.toString();
         }
+
+        function sortBy(val, saveLocal) {
+            const p = new URLSearchParams(window.location.search);
+            p.set('sort', val);
+            if (saveLocal !== false) localStorage.setItem('task_sort_' + window.location.pathname, val);
+            window.location.href = window.location.pathname + '?' + p.toString();
+        }
+
+        function confirmSubmit(el, msg) {
+            if (confirm(msg)) el.closest('form').submit();
+        }
         </script>
         @stack('scripts')
 
         <!-- Bulk Edit Bottom Bar -->
         <div id="bulk-edit-bar"
-             x-data="bulkEditBar()"
+             x-data="bulkEditBar"
              x-cloak
              x-show="$store.bulkEdit.active && $store.bulkEdit.selected.length > 0"
              x-transition:enter="transition ease-out duration-200 transform"
@@ -195,7 +197,7 @@
                     <span x-show="naturalDateLoading" class="text-xs text-gray-500" style="display:none">…</span>
                     <span x-show="naturalDateError" x-text="naturalDateError" class="text-xs text-red-400 whitespace-nowrap" style="display:none"></span>
                     <label class="flex items-center gap-1 text-xs text-gray-400 cursor-pointer whitespace-nowrap ml-0.5" title="Remove date from all selected tasks">
-                        <input type="checkbox" x-model="clearDate" @change="if (clearDate) { date = ''; naturalDate = ''; naturalDateError = ''; }"
+                        <input type="checkbox" x-model="clearDate" @change="clearDate ? clearDateFields() : null"
                                class="rounded border-gray-500 bg-gray-600 text-blue-500 focus:ring-blue-500 focus:ring-offset-gray-900">
                         <span>Clear</span>
                     </label>
@@ -226,7 +228,7 @@
                 </div>
 
                 <!-- Tag multi-select -->
-                <div class="flex items-center gap-1.5 relative" x-data="{ open: false }" @click.outside="open = false">
+                <div class="flex items-center gap-1.5 relative" x-data="dropdown" @click.outside="open = false">
                     <label class="text-xs text-gray-400 whitespace-nowrap">Tags</label>
                     <button @click="open = !open"
                             type="button"
@@ -303,6 +305,21 @@
 
         <script nonce="{{ csp_nonce() }}">
             document.addEventListener('alpine:init', () => {
+                Alpine.data('dropdown', () => ({
+                    open: false,
+                    openDetails(eventName) { this.open = false; this.$dispatch(eventName); },
+                }));
+                Alpine.data('clickableCard', () => ({
+                    go() { const h = this.$el.dataset.href; if (h) location.href = h; },
+                }));
+                Alpine.data('copyButton', () => ({
+                    copied: false,
+                    copy(text) { navigator.clipboard.writeText(text); this.copied = true; setTimeout(() => { this.copied = false; }, 1500); },
+                }));
+                Alpine.data('flashMessage', () => ({
+                    show: true,
+                    init() { setTimeout(() => { this.show = false; }, 2000); },
+                }));
                 Alpine.store('taskCount', {
                     total: 0,
                     visible: 0,
@@ -342,10 +359,24 @@
                     deselectAll() { this.selected = []; },
                     get count() { return this.selected.length; }
                 });
+
+                Alpine.data('mainPadding', function() {
+                    return {
+                        pad: 0,
+                        init() {
+                            const bar = document.getElementById('bulk-edit-bar');
+                            if (!bar) return;
+                            const update = () => { this.pad = bar.offsetHeight || 0; };
+                            new ResizeObserver(update).observe(bar);
+                            this.$watch(() => Alpine.store('bulkEdit').selected.length, update);
+                        }
+                    };
+                });
             });
 
-            window.bulkEditBar = function () {
-                return {
+            document.addEventListener('alpine:init', () => {
+                Alpine.data('bulkEditBar', function () {
+                    return {
                     date: '',
                     dateError: '',
                     clearDate: false,
@@ -358,6 +389,8 @@
                     confirming: false,
                     submitting: false,
                     confirmMessage: '',
+
+                    clearDateFields() { this.date = ''; this.naturalDate = ''; this.naturalDateError = ''; },
 
                     checkDate() {
                         if (!this.date) { this.clearDate = true; return; }
@@ -460,14 +493,275 @@
                             this.submitting = false;
                         }
                     },
-                };
-            };
+                    };
+                });
+            });
 
+
+            document.addEventListener('alpine:init', () => {
+        Alpine.data('taskPanelEditor', function () {
+            return {
+                taskId: 0,
+                editing: {},
+                renderedDescription: '',
+                fields: {
+                    name: '', description: '', location: '', status: '',
+                    date: '', time: '', duration_minutes: '', project_id: '',
+                    recurrence_pattern: '', recurrence_floating: false,
+                    show_map: false, tag_ids: [], assignee_ids: [],
+                },
+                original: {},
+                dateText: '',
+                datePreview: '',
+                dateError: '',
+                datePast: false,
+                projects: null,
+                get projectTaskCount() { let n = 0; if (this.projects) { for (const p of this.projects) n += p.count; } return n; },
+                nameAC: { show: false, type: null, query: '', results: [], activeIndex: -1 },
+                allTags: [],
+                allProjects: [],
+                _nextOccurrenceAction: null,
+
+                init() {
+                    const el = this.$el;
+                    const taskData = JSON.parse(el.dataset.taskJson || '{}');
+                    this.taskId = taskData.taskId || 0;
+                    if (taskData.fields) this.fields = Object.assign(this.fields, taskData.fields);
+                    this.dateText = taskData.dateText || '';
+                    this.allTags = taskData.allTags || [];
+                    this.allProjects = taskData.allProjects || [];
+                    this.original = JSON.parse(JSON.stringify(Object.assign({}, this.fields, { dateText: this.dateText })));
+                    const descEl = el.querySelector('[data-rendered-description]');
+                    if (descEl) {
+                        this.renderedDescription = descEl.innerHTML;
+                        this.$nextTick(() => { if (this.$refs.descHtml) this.$refs.descHtml.innerHTML = this.renderedDescription; });
+                    }
+                },
+
+                startEdit(field) {
+                    this.editing[field] = true;
+                    this.$nextTick(() => this.$refs[field + 'Input']?.focus());
+                },
+
+                startEditDate() {
+                    this.editing.date = true;
+                    this.datePreview = '';
+                    this.dateError = '';
+                    this.datePast = false;
+                    this.$nextTick(() => {
+                        if (this.$refs.dateInput) {
+                            this.$refs.dateInput.focus();
+                            this.$refs.dateInput.select();
+                        }
+                    });
+                },
+
+                cancelEdit(field) {
+                    this.editing[field] = false;
+                    if (field === 'name') {
+                        this.nameAC = { show: false, type: null, query: '', results: [], activeIndex: -1 };
+                    }
+                    if (field === 'date') {
+                        this.dateText = this.original.dateText || '';
+                        this.datePreview = '';
+                        this.dateError = '';
+                        this.datePast = false;
+                        this.projects = null;
+                    }
+                    this.resetField(field);
+                },
+
+                resetField(field) {
+                    this.fields[field] = JSON.parse(JSON.stringify(this.original[field]));
+                },
+
+                handleNameInput(e) {
+                    const val = this.fields.name;
+                    const pos = e.target.selectionStart;
+                    const textToCursor = val.substring(0, pos);
+                    const tagMatch = textToCursor.match(/@([\w-]*)$/);
+                    const projectMatch = !tagMatch && textToCursor.match(/#([\w-]*)$/);
+
+                    if (tagMatch) {
+                        const q = tagMatch[1].toLowerCase();
+                        this.nameAC.type = 'tag';
+                        this.nameAC.query = q;
+                        this.nameAC.results = this.allTags.filter(t => {
+                            const slug = t.name.toLowerCase().replace(/[^a-z0-9-]/g, '');
+                            return t.name.toLowerCase().startsWith(q) || slug.startsWith(q);
+                        }).slice(0, 8);
+                        this.nameAC.show = this.nameAC.results.length > 0;
+                        this.nameAC.activeIndex = -1;
+                    } else if (projectMatch) {
+                        const q = projectMatch[1].toLowerCase();
+                        this.nameAC.type = 'project';
+                        this.nameAC.query = q;
+                        this.nameAC.results = this.allProjects.filter(p => {
+                            const slug = p.name.toLowerCase().replace(/[^a-z0-9-]/g, '');
+                            return p.name.toLowerCase().startsWith(q) || slug.startsWith(q);
+                        }).slice(0, 8);
+                        this.nameAC.show = this.nameAC.results.length > 0;
+                        this.nameAC.activeIndex = -1;
+                    } else {
+                        this.nameAC.show = false;
+                    }
+                },
+
+                handleNameKeydown(e) {
+                    if (this.nameAC.show) {
+                        if (e.key === 'ArrowDown') { e.preventDefault(); this.nameAC.activeIndex = Math.min(this.nameAC.activeIndex + 1, this.nameAC.results.length - 1); return; }
+                        if (e.key === 'ArrowUp') { e.preventDefault(); this.nameAC.activeIndex = Math.max(this.nameAC.activeIndex - 1, -1); return; }
+                        if (e.key === 'Enter' && this.nameAC.activeIndex >= 0) { e.preventDefault(); this.selectNameAutocomplete(this.nameAC.results[this.nameAC.activeIndex]); return; }
+                        if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); this.nameAC.show = false; return; }
+                        if (e.key === 'Enter') { this.nameAC.show = false; }
+                    }
+                    if (e.key === 'Enter') { e.preventDefault(); this.saveField('name'); }
+                    else if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); this.cancelEdit('name'); }
+                },
+
+                selectNameAutocomplete(item) {
+                    const input = this.$refs.nameInput;
+                    const val = this.fields.name;
+                    const pos = input ? input.selectionStart : val.length;
+                    const textToCursor = val.substring(0, pos);
+                    const prefix = this.nameAC.type === 'tag' ? '@' : '#';
+                    const slug = item.name.toLowerCase().replace(/[^a-z0-9-]/g, '');
+                    const newBeforeCursor = textToCursor.replace(new RegExp(prefix + '[\\w-]*$'), prefix + slug + ' ');
+                    this.fields.name = newBeforeCursor + val.substring(pos);
+                    if (this.nameAC.type === 'tag') {
+                        if (!this.fields.tag_ids.includes(item.id)) this.fields.tag_ids = [...this.fields.tag_ids, item.id];
+                    } else {
+                        this.fields.project_id = item.id;
+                    }
+                    this.nameAC = { show: false, type: null, query: '', results: [], activeIndex: -1 };
+                    this.$nextTick(() => { if (input) input.focus(); });
+                },
+
+                async previewDate() {
+                    const input = this.dateText.trim();
+                    if (!input) { this.datePreview = ''; this.dateError = ''; this.projects = null; return; }
+                    try {
+                        const response = await fetch('/tasks/parse-date', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content, 'Accept': 'application/json' },
+                            body: JSON.stringify({ input }),
+                        });
+                        const data = await response.json();
+                        if (data.success) {
+                            const today = new Date(); today.setHours(0,0,0,0);
+                            const resolved = new Date(data.date + 'T00:00:00');
+                            if (resolved < today) {
+                                this.datePast = true; this.datePreview = 'Proposed date is in the past'; this.fields.date = data.date; this.projects = null;
+                            } else {
+                                this.datePast = false; this.projects = data.projects ?? null; this.datePreview = data.formatted; this.dateError = ''; this.fields.date = data.date;
+                            }
+                        } else {
+                            this.datePast = false; this.datePreview = ''; this.dateError = 'Could not parse this date'; this.projects = null;
+                        }
+                    } catch (e) {
+                        this.datePast = false; this.datePreview = ''; this.dateError = ''; this.projects = null;
+                    }
+                },
+
+                async pickDate(value) {
+                    if (!value) return;
+                    const now = new Date();
+                    const today = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0') + '-' + String(now.getDate()).padStart(2, '0');
+                    if (value < today) {
+                        this.dateError = 'Date cannot be in the past'; this.dateText = ''; this.fields.date = ''; this.datePreview = ''; this.$refs.datePicker.value = ''; return;
+                    }
+                    const d = new Date(value + 'T12:00:00');
+                    this.dateText = d.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+                    this.fields.date = value; this.dateError = ''; this.projects = null;
+                    try {
+                        const response = await fetch('/tasks/parse-date', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content, 'Accept': 'application/json' },
+                            body: JSON.stringify({ input: value }),
+                        });
+                        const data = await response.json();
+                        this.projects = data.success ? (data.projects ?? null) : null;
+                    } catch (e) { this.projects = null; }
+                    this.datePreview = this.dateText;
+                },
+
+                async saveDateField() {
+                    const input = this.dateText.trim();
+                    if (!input) { this.fields.date = ''; await this.saveField('date'); return; }
+                    this.fields.date = input;
+                    await this.saveField('date');
+                },
+
+                async clearDate() {
+                    this.dateText = ''; this.fields.date = ''; this.datePreview = ''; this.dateError = ''; this.datePast = false; this.projects = null;
+                    await this.saveField('date');
+                },
+
+                async _saveFieldRequest(field) {
+                    if (field === 'name') this.fields.name = this.fields.name.replace(/[@#][\w-]+\s*/g, '').trim();
+                    if (field === 'date') { const input = this.dateText.trim(); this.fields.date = input || ''; }
+
+                    const formData = new FormData();
+                    formData.append('_token', document.querySelector('meta[name="csrf-token"]').content);
+                    formData.append('field', field);
+                    if (Array.isArray(this.fields[field])) {
+                        this.fields[field].forEach(value => formData.append(field + '[]', value));
+                    } else {
+                        formData.append('value', this.fields[field]);
+                    }
+                    if (field === 'name') {
+                        if (JSON.stringify([...this.fields.tag_ids].sort()) !== JSON.stringify([...this.original.tag_ids].sort())) {
+                            this.fields.tag_ids.forEach(id => formData.append('tag_ids[]', id));
+                        }
+                        if (this.fields.project_id !== this.original.project_id) formData.append('new_project_id', this.fields.project_id);
+                    }
+                    if (field === 'status' && this._nextOccurrenceAction) formData.append('next_occurrence_action', this._nextOccurrenceAction);
+
+                    const response = await fetch('/tasks/' + this.taskId + '/update-field', { method: 'POST', body: formData });
+                    const data = await response.json();
+                    if (data.success) {
+                        this.original[field] = JSON.parse(JSON.stringify(this.fields[field]));
+                        this.editing[field] = false;
+                        if (data.taskData) window.dispatchEvent(new CustomEvent('task-panel-updated', { detail: data.taskData }));
+                        if (field === 'description' && data.rendered_description !== undefined) {
+                            this.renderedDescription = data.rendered_description;
+                            this.$nextTick(() => { if (this.$refs.descHtml) this.$refs.descHtml.innerHTML = this.renderedDescription; });
+                        }
+                        return true;
+                    } else {
+                        alert('Error saving ' + field + ': ' + (data.message || 'Failed to update'));
+                        this.resetField(field);
+                        return false;
+                    }
+                },
+
+                async saveField(field) {
+                    try {
+                        if (field === 'status' && this.fields.status === 'incomplete'
+                                && ['done', 'archived'].includes(this.original.status) && this.fields.recurrence_pattern) {
+                            const archive = confirm('Recurring Task: Marking as Incomplete\n\nWhen this task was completed, the next occurrence was automatically created.\n\nWould you like to archive that next occurrence?\n\nOK = archive it · Cancel = keep it');
+                            this._nextOccurrenceAction = archive ? 'archive' : 'keep';
+                        } else {
+                            this._nextOccurrenceAction = null;
+                        }
+                        const otherEditingFields = Object.keys(this.editing).filter(f => this.editing[f] && f !== field);
+                        for (const otherField of otherEditingFields) await this._saveFieldRequest(otherField);
+                        const ok = await this._saveFieldRequest(field);
+                        if (ok) window.reloadTaskPanel(this.taskId);
+                    } catch (error) {
+                        console.error('Error:', error);
+                        alert('An error occurred while saving');
+                        this.resetField(field);
+                    }
+                },
+            };
+        });
+            });
         </script>
 
         <!-- Task Side Panel Overlay -->
         <div id="task-panel-overlay"
-             x-data="taskPanelOverlay()"
+             x-data="taskPanelOverlay"
              @open-task-panel.window="openTask($event.detail.taskId)"
              @close-task-panel.window="close()"
              @reload-task-panel.window="openTask($event.detail.taskId)"
@@ -516,8 +810,9 @@
         </div>
 
         <script nonce="{{ csp_nonce() }}">
-            window.taskPanelOverlay = function () {
-                return {
+            document.addEventListener('alpine:init', () => {
+                Alpine.data('taskPanelOverlay', function () {
+                    return {
                     open: false,
                     loading: false,
                     error: false,
@@ -660,8 +955,9 @@
                         u.searchParams.delete('task');
                         return u.toString();
                     },
-                };
-            };
+                    };
+                });
+            });
 
             // Global helpers so panel content and task list can trigger the panel
             window.openTaskPanel = function (taskId) {
@@ -880,7 +1176,7 @@
         </script>
 
         <!-- Undo-completion toast stack -->
-        <div x-data="undoToastManager()"
+        <div x-data="undoToastManager"
              @task-completed.window="add($event.detail)"
              class="fixed bottom-4 right-4 z-50 flex flex-col-reverse gap-2 items-end pointer-events-none"
              aria-live="polite">
@@ -911,15 +1207,16 @@
                     </div>
                     <div class="h-0.5 bg-gray-700">
                         <div class="h-full bg-green-500 toast-countdown-bar"
-                             :style="`animation-duration: ${toast.duration}ms`"></div>
+                             :style="'animation-duration: ' + toast.duration + 'ms'"></div>
                     </div>
                 </div>
             </template>
         </div>
 
         <script nonce="{{ csp_nonce() }}">
-            window.undoToastManager = function () {
-                return {
+            document.addEventListener('alpine:init', () => {
+                Alpine.data('undoToastManager', function () {
+                    return {
                     toasts: [],
 
                     add({ taskId, taskName, undoUrl, recurring, group, form }) {
@@ -985,8 +1282,9 @@
                             }
                         }
                     },
-                };
-            };
+                    };
+                });
+            });
         </script>
 
         <script nonce="{{ csp_nonce() }}">

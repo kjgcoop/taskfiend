@@ -5,6 +5,12 @@
     window.taskPreviewUrl = '{{ route('tasks.previewQuickAdd') }}';
 
     document.addEventListener('alpine:init', () => {
+        Alpine.data('taskSortableList', () => ({
+            init() { initTaskSortable(this.$el); },
+        }));
+    });
+
+    document.addEventListener('alpine:init', () => {
         Alpine.store('taskCount', {
             total: 0,
             visible: 0,
@@ -43,7 +49,8 @@
         });
     });
 
-    window.listQuickComplete = function () {
+    document.addEventListener('alpine:init', () => {
+    Alpine.data('listQuickComplete', function () {
         return {
             done: false,
             loading: false,
@@ -89,9 +96,11 @@
                 }
             }
         };
-    };
+    });
+    });
 
-    window.taskFilter = function (projects, tags, users, locations) {
+    document.addEventListener('alpine:init', () => {
+    Alpine.data('taskFilter', function () {
         return {
             query: '',
             noResults: false,
@@ -102,10 +111,10 @@
             submitting: false,
 
             // Autocomplete state
-            projects: projects || [],
-            tags: tags || [],
-            users: users || [],
-            locations: locations || [],
+            projects: [],
+            tags: [],
+            users: [],
+            locations: [],
             showAutocomplete: false,
             autocompleteType: null,
             autocompleteQuery: '',
@@ -590,6 +599,11 @@
             },
 
             init() {
+                const el = this.$el;
+                if (el.dataset.projects) this.projects = JSON.parse(el.dataset.projects);
+                if (el.dataset.tags) this.tags = JSON.parse(el.dataset.tags);
+                if (el.dataset.users) this.users = JSON.parse(el.dataset.users);
+                if (el.dataset.locations) this.locations = JSON.parse(el.dataset.locations);
                 this.$nextTick(() => {
                     // Display any error message carried over from a partial bulk quick-add
                     const bulkErr = sessionStorage.getItem('quickAddBulkError');
@@ -714,7 +728,8 @@
                 window.dispatchEvent(new CustomEvent('filter-updated'));
             }
         }
-    };
+    });
+    });
 
     // Live-update list rows when the side panel saves a field
     window.addEventListener('task-panel-updated', (e) => {
@@ -840,8 +855,7 @@
 
 @if($sortable && !$readOnly && $depth === 0)
 <div class="space-y-2"
-     x-data
-     x-init="initTaskSortable($el)"
+     x-data="taskSortableList"
      @if($reorderUrl) data-reorder-url="{{ $reorderUrl }}" @endif
      @if($viewDate) data-view-date="{{ $viewDate }}" @endif>
 @else
@@ -877,7 +891,7 @@
 
             $marginLeft = $depth * 24; // 24px per level
         @endphp
-        <div data-task-group data-task-group-id="{{ $task->id }}" x-data="{ subtasksOpen: true }">
+        <div data-task-group data-task-group-id="{{ $task->id }}" x-data="subtaskGroup">
         <div class="bg-[#202020] p-4 rounded-lg shadow hover:shadow-md transition border border-gray-700 group"
              data-filterable
              data-task-name="{{ strtolower($task->name) }}"
@@ -973,7 +987,7 @@
                     <div class="mt-1 w-6 h-6 rounded-full border-2 border-gray-700" title="Project is inactive"></div>
                 @else
                 <form x-show="!$store.bulkEdit.active"
-                      x-data="listQuickComplete()" @submit.prevent="submit()"
+                      x-data="listQuickComplete" @submit.prevent="submit()"
                       @undo-complete.stop="done = false"
                       method="POST" action="{{ route('tasks.update', $task) }}" @click.stop
                       data-task-id="{{ $task->id }}"
@@ -1026,8 +1040,8 @@
                     <div x-show="error" x-text="error" class="mt-1 text-xs text-red-400 max-w-xs" style="display:none"></div>
                 </form>
                 @endif
-                    <button x-data="{ copied: false }"
-                            @click.prevent.stop="navigator.clipboard.writeText('{{ route('tasks.show', $task) }}'); copied = true; setTimeout(() => copied = false, 1500)"
+                    <button x-data="copyButton"
+                            @click.prevent.stop="copy('{{ route('tasks.show', $task) }}')"
                             title="Copy link to this task"
                             class="text-[10px] leading-none mt-1 transition-colors cursor-pointer"
                             :class="copied ? 'text-green-500' : 'text-gray-600 hover:text-gray-400'">
@@ -1041,7 +1055,7 @@
                      :class="$store.bulkEdit.active ? 'cursor-pointer' : 'cursor-pointer'"
                      @click="$store.bulkEdit.active
                          ? $store.bulkEdit.toggleTask({{ $task->id }})
-                         : ((event.ctrlKey || event.metaKey) ? window.open('{{ route('tasks.show', $task) }}', '_blank') : openTaskPanel({{ $task->id }}))"
+                         : (($event.ctrlKey || $event.metaKey) ? window.open('{{ route('tasks.show', $task) }}', '_blank') : $dispatch('open-task-panel', { taskId: {{ $task->id }} }))"
                      title="Click to peek · Ctrl+click or middle-click to open full page">
                     <!-- Show parent context if exists -->
                     @if($task->parent)

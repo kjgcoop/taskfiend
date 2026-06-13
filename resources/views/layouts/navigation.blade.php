@@ -1,4 +1,4 @@
-<nav x-data="{ open: false }" class="bg-[#202020] border-b border-gray-700">
+<nav x-data="dropdown" class="bg-[#202020] border-b border-gray-700">
     <!-- Primary Navigation Menu -->
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex justify-between h-16">
@@ -18,7 +18,7 @@
                     <!-- <x-nav-link :href="route('inbox')" :active="request()->routeIs('inbox')">
                         {{ __('Inbox') }}
                     </x-nav-link>-->
-                    <div class="relative flex items-center" x-data="{ open: false }" @click.outside="open = false" @close.stop="open = false">
+                    <div class="relative flex items-center" x-data="dropdown" @click.outside="open = false" @close.stop="open = false">
                         @php
                             $byDateActive = request()->routeIs('calendar') || request()->routeIs('overdue') || request()->routeIs('undated');
                         @endphp
@@ -56,7 +56,7 @@
                     <x-nav-link :href="route('search')" :active="request()->routeIs('search')">
                         {{ __('Search') }}
                     </x-nav-link>
-                    <div class="relative flex items-center" x-data="{ open: false }" @click.outside="open = false" @close.stop="open = false">
+                    <div class="relative flex items-center" x-data="dropdown" @click.outside="open = false" @close.stop="open = false">
                         <a href="{{ route('projects.index') }}" class="inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium leading-5 focus:outline-none transition duration-150 ease-in-out {{ request()->routeIs('projects.*') ? 'border-indigo-400 text-gray-100' : 'border-transparent text-gray-400 hover:text-gray-100 hover:border-gray-500' }}">
                             {{ __('Projects') }}
                         </a>
@@ -105,7 +105,7 @@
                             </div>
                         </div>
                     </div>
-                    <div class="relative flex items-center" x-data="{ open: false }" @click.outside="open = false" @close.stop="open = false">
+                    <div class="relative flex items-center" x-data="dropdown" @click.outside="open = false" @close.stop="open = false">
                         <a href="{{ route('tags.index') }}" class="inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium leading-5 focus:outline-none transition duration-150 ease-in-out {{ request()->routeIs('tags.*') ? 'border-indigo-400 text-gray-100' : 'border-transparent text-gray-400 hover:text-gray-100 hover:border-gray-500' }}">
                             {{ __('Tags') }}
                         </a>
@@ -143,7 +143,7 @@
                         </div>
                     </div>
                     <!-- More Dropdown (Templates + Activity + Other Links) -->
-                    <div class="relative flex items-center" x-data="{ open: false }" @click.outside="open = false" @close.stop="open = false">
+                    <div class="relative flex items-center" x-data="dropdown" @click.outside="open = false" @close.stop="open = false">
                         <button @click="open = !open" class="inline-flex items-center px-1 pt-1 border-b-2 border-transparent text-sm font-medium leading-5 text-gray-400 hover:text-gray-100 hover:border-gray-500 focus:outline-none transition duration-150 ease-in-out {{ request()->routeIs('templates.*') || request()->routeIs('changelogs.*') || request()->routeIs('other.links.*') ? 'border-indigo-400 text-gray-100' : '' }}">
                             {{ __('More') }}
                             <svg class="ms-1 fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
@@ -196,8 +196,8 @@
                 </a>
 
                 <!-- Notifications Bell -->
-                <div class="relative" x-data="{ open: false, loaded: false, html: '' }" @click.outside="open = false">
-                    <button @click="open = !open; if (open && !loaded) { loaded = true; fetch('{{ route('notifications.feed') }}', { headers: { 'X-Requested-With': 'XMLHttpRequest', 'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content } }).then(r => r.json()).then(d => { html = d.html; document.getElementById('notif-badge').remove && document.getElementById('notif-badge').remove(); }) }"
+                <div class="relative" x-data="notificationsMenu" @click.outside="open = false">
+                    <button @click="toggle()"
                             class="relative inline-flex items-center justify-center w-9 h-9 text-gray-400 hover:text-gray-100 rounded-md hover:bg-gray-700 transition-colors"
                             title="Notifications">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
@@ -228,7 +228,7 @@
                                 <div class="px-4 py-6 text-center text-sm text-gray-500">Loading…</div>
                             </template>
                             <template x-if="loaded">
-                                <div x-html="html"></div>
+                                <div x-ref="notifHtml"></div>
                             </template>
                         </div>
                     </div>
@@ -261,7 +261,7 @@
                         <!-- Authentication -->
                         <form method="POST" action="{{ route('logout') }}" id="logout-form-desktop">
                             @csrf
-                            <button type="button" data-testid="logout-btn" @click="document.getElementById('logout-form-desktop').submit()" class="block w-full px-4 py-2 text-start text-sm leading-5 text-gray-300 hover:bg-gray-700 focus:outline-none focus:bg-gray-700 transition duration-150 ease-in-out">
+                            <button type="button" data-testid="logout-btn" @click="$el.closest('form').requestSubmit()" class="block w-full px-4 py-2 text-start text-sm leading-5 text-gray-300 hover:bg-gray-700 focus:outline-none focus:bg-gray-700 transition duration-150 ease-in-out">
                                 {{ __('Log Out') }}
                             </button>
                         </form>
@@ -291,18 +291,18 @@
             <!-- <x-responsive-nav-link :href="route('inbox')" :active="request()->routeIs('inbox')">
                 {{ __('Inbox') }}
             </x-responsive-nav-link> -->
-            <div x-data="{ byDateOpen: false }">
+            <div x-data="dropdown">
                 <div class="flex">
                     <a href="{{ route('calendar') }}" class="flex-1 flex items-center ps-3 pe-4 py-2 border-l-4 text-base font-medium transition duration-150 ease-in-out focus:outline-none {{ request()->routeIs('calendar') || request()->routeIs('overdue') || request()->routeIs('undated') ? 'border-indigo-400 text-indigo-300 bg-gray-700' : 'border-transparent text-gray-400 hover:text-gray-100 hover:bg-gray-700 hover:border-gray-500' }}">
                         {{ __('By Date') }}
                     </a>
-                    <button @click="byDateOpen = !byDateOpen" class="px-4 py-2 text-gray-400 hover:text-gray-100 hover:bg-gray-700 focus:outline-none transition duration-150 ease-in-out">
-                        <svg class="h-5 w-5 transform transition-transform duration-200" :class="{'rotate-180': byDateOpen}" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                    <button @click="open = !open" class="px-4 py-2 text-gray-400 hover:text-gray-100 hover:bg-gray-700 focus:outline-none transition duration-150 ease-in-out">
+                        <svg class="h-5 w-5 transform transition-transform duration-200" :class="{'rotate-180': open}" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
                             <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
                         </svg>
                     </button>
                 </div>
-                <div x-show="byDateOpen" x-transition class="bg-[#101010]">
+                <div x-show="open" x-transition class="bg-[#101010]">
                     <x-responsive-nav-link :href="route('calendar')" :active="request()->routeIs('calendar')">
                         {{ __('Calendar') }}
                     </x-responsive-nav-link>
@@ -317,18 +317,18 @@
             <x-responsive-nav-link :href="route('search')" :active="request()->routeIs('search')">
                 {{ __('Search') }}
             </x-responsive-nav-link>
-            <div x-data="{ projectsOpen: false }">
+            <div x-data="dropdown">
                 <div class="flex">
                     <a href="{{ route('projects.index') }}" class="flex-1 flex items-center ps-3 pe-4 py-2 border-l-4 text-base font-medium transition duration-150 ease-in-out focus:outline-none {{ request()->routeIs('projects.*') ? 'border-indigo-400 text-indigo-300 bg-gray-700' : 'border-transparent text-gray-400 hover:text-gray-100 hover:bg-gray-700 hover:border-gray-500' }}">
                         {{ __('Projects') }}
                     </a>
-                    <button @click="projectsOpen = !projectsOpen" class="px-4 py-2 text-gray-400 hover:text-gray-100 hover:bg-gray-700 focus:outline-none transition duration-150 ease-in-out">
-                        <svg class="h-5 w-5 transform transition-transform duration-200" :class="{'rotate-180': projectsOpen}" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                    <button @click="open = !open" class="px-4 py-2 text-gray-400 hover:text-gray-100 hover:bg-gray-700 focus:outline-none transition duration-150 ease-in-out">
+                        <svg class="h-5 w-5 transform transition-transform duration-200" :class="{'rotate-180': open}" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
                             <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
                         </svg>
                     </button>
                 </div>
-                <div x-show="projectsOpen" x-transition class="bg-[#101010]">
+                <div x-show="open" x-transition class="bg-[#101010]">
                     @forelse($navProjects as $project)
                         @php $hasBg = !empty($project->background_image); @endphp
                         <a href="{{ route('projects.show', $project) }}"
@@ -360,18 +360,18 @@
                     </a>
                 </div>
             </div>
-            <div x-data="{ tagsOpen: false }">
+            <div x-data="dropdown">
                 <div class="flex">
                     <a href="{{ route('tags.index') }}" class="flex-1 flex items-center ps-3 pe-4 py-2 border-l-4 text-base font-medium transition duration-150 ease-in-out focus:outline-none {{ request()->routeIs('tags.*') ? 'border-indigo-400 text-indigo-300 bg-gray-700' : 'border-transparent text-gray-400 hover:text-gray-100 hover:bg-gray-700 hover:border-gray-500' }}">
                         {{ __('Tags') }}
                     </a>
-                    <button @click="tagsOpen = !tagsOpen" class="px-4 py-2 text-gray-400 hover:text-gray-100 hover:bg-gray-700 focus:outline-none transition duration-150 ease-in-out">
-                        <svg class="h-5 w-5 transform transition-transform duration-200" :class="{'rotate-180': tagsOpen}" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                    <button @click="open = !open" class="px-4 py-2 text-gray-400 hover:text-gray-100 hover:bg-gray-700 focus:outline-none transition duration-150 ease-in-out">
+                        <svg class="h-5 w-5 transform transition-transform duration-200" :class="{'rotate-180': open}" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
                             <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
                         </svg>
                     </button>
                 </div>
-                <div x-show="tagsOpen" x-transition class="bg-[#101010]">
+                <div x-show="open" x-transition class="bg-[#101010]">
                     @forelse($navTags as $tag)
                         <a href="{{ route('tags.show', $tag) }}"
                            class="block w-full ps-3 pe-4 py-2 border-l-4 text-base font-medium text-gray-400 hover:text-gray-100 hover:bg-gray-700 focus:outline-none transition duration-150 ease-in-out"
@@ -398,14 +398,14 @@
 
             @if($otherLinksFiles->isNotEmpty())
                 <!-- Other Links Collapsible Section -->
-                <div x-data="{ otherLinksOpen: false }" class="border-t border-gray-700">
-                    <button @click="otherLinksOpen = ! otherLinksOpen" class="w-full flex items-center justify-between px-4 py-2 text-base font-medium text-gray-400 hover:text-gray-100 hover:bg-gray-700 focus:outline-none focus:text-gray-100 focus:bg-gray-700 transition duration-150 ease-in-out">
+                <div x-data="dropdown" class="border-t border-gray-700">
+                    <button @click="open = !open" class="w-full flex items-center justify-between px-4 py-2 text-base font-medium text-gray-400 hover:text-gray-100 hover:bg-gray-700 focus:outline-none focus:text-gray-100 focus:bg-gray-700 transition duration-150 ease-in-out">
                         <span>{{ __('Other Links') }}</span>
-                        <svg class="h-5 w-5 transform transition-transform duration-200" :class="{'rotate-180': otherLinksOpen}" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                        <svg class="h-5 w-5 transform transition-transform duration-200" :class="{'rotate-180': open}" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
                             <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
                         </svg>
                     </button>
-                    <div x-show="otherLinksOpen" x-transition class="bg-[#101010]">
+                    <div x-show="open" x-transition class="bg-[#101010]">
                         @foreach($otherLinksFiles as $filename => $displayName)
                             <x-responsive-nav-link href="/other-links/{{ $filename }}" :active="request()->routeIs('other.links.link') && request()->route('path') === $filename">
                                 {{ $displayName }}
@@ -450,7 +450,7 @@
                 <!-- Authentication -->
                 <form method="POST" action="{{ route('logout') }}" id="logout-form-mobile">
                     @csrf
-                    <button type="button" data-testid="logout-btn" @click="document.getElementById('logout-form-mobile').submit()" class="block w-full px-4 py-2 text-start text-base font-medium text-gray-300 hover:bg-gray-700 focus:outline-none focus:bg-gray-700 transition duration-150 ease-in-out">
+                    <button type="button" data-testid="logout-btn" @click="$el.closest('form').requestSubmit()" class="block w-full px-4 py-2 text-start text-base font-medium text-gray-300 hover:bg-gray-700 focus:outline-none focus:bg-gray-700 transition duration-150 ease-in-out">
                         {{ __('Log Out') }}
                     </button>
                 </form>
@@ -458,4 +458,30 @@
         </div>
         @endauth
     </div>
+<script nonce="{{ csp_nonce() }}">
+document.addEventListener('alpine:init', () => {
+    Alpine.data('notificationsMenu', () => ({
+        open: false,
+        loaded: false,
+        async toggle() {
+            this.open = !this.open;
+            if (this.open && !this.loaded) {
+                this.loaded = true;
+                try {
+                    const res = await fetch('{{ route('notifications.feed') }}', {
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest',
+                            'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content
+                        }
+                    });
+                    const d = await res.json();
+                    if (this.$refs.notifHtml) this.$refs.notifHtml.innerHTML = d.html;
+                    const badge = document.getElementById('notif-badge');
+                    if (badge) badge.remove();
+                } catch {}
+            }
+        }
+    }));
+});
+</script>
 </nav>

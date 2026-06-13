@@ -1,24 +1,12 @@
 <x-app-layout>
     <x-slot name="header">
         <div class="flex justify-between items-center">
-            <div class="flex-1 min-w-0 mr-4" x-data="{
-                editing: false,
-                name: @js($task->name),
-                original: @js($task->name),
-                async save() {
-                    const fd = new FormData();
-                    fd.append('_token', document.querySelector('meta[name=\'csrf-token\']').content);
-                    fd.append('field', 'name');
-                    fd.append('value', this.name.trim());
-                    const res = await fetch('/tasks/{{ $task->id }}/update-field', { method: 'POST', body: fd });
-                    const data = await res.json();
-                    if (data.success) { window.location.reload(); }
-                    else { alert('Error saving: ' + (data.message || 'Failed')); this.name = this.original; this.editing = false; }
-                },
-                cancel() { this.name = this.original; this.editing = false; }
-            }">
+            <div class="flex-1 min-w-0 mr-4"
+                 x-data="taskShowNameEditor"
+                 data-task-name="{{ $task->name }}"
+                 data-task-id="{{ $task->id }}">
                 <div x-show="!editing">
-                    <h2 @if(!$isInactive) @click="editing = true; $nextTick(() => $refs.nameInput.focus())" @endif
+                    <h2 @if(!$isInactive) @click="startEditName()" @endif
                         class="font-semibold text-xl text-gray-100 leading-tight task-title {{ !$isInactive ? 'cursor-pointer hover:text-gray-300' : '' }}">
                         {!! render_title($task->name) !!}
                     </h2>
@@ -35,8 +23,8 @@
                 @endif
                 <div class="flex items-center gap-1.5 mt-0.5">
                     <span class="text-sm text-gray-600">#{{ $task->id }}</span>
-                    <button x-data="{ copied: false }"
-                            @click="navigator.clipboard.writeText('{{ route('tasks.show', $task) }}'); copied = true; setTimeout(() => copied = false, 1500)"
+                    <button x-data="copyButton"
+                            @click="copy('{{ route('tasks.show', $task) }}')"
                             title="Copy link"
                             class="p-0.5 text-gray-600 hover:text-gray-300 rounded transition">
                         <svg x-show="!copied" class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -79,7 +67,7 @@
     </div>
     @endif
 
-    <div class="py-12" x-data="taskEditor({{ $task->id }})" x-init="console.log('Alpine initialized', editing, fields)">
+    <div class="py-12" x-data="taskEditor" data-task-id="{{ $task->id }}">
         <div class="max-w-4xl mx-auto sm:px-6 lg:px-8 space-y-6">
             <!-- Task Details -->
             <div class="bg-[#202020] border border-gray-700 overflow-hidden shadow-sm sm:rounded-lg p-6">
@@ -210,7 +198,7 @@
                                 <span x-text="datePreview"></span>
                                 <span x-show="projects && projects.length > 0" class="flex flex-wrap items-baseline gap-x-1">
                                     <span class="text-gray-500">&mdash;</span>
-                                    <span x-text="(projects||[]).reduce((s,p)=>s+p.count,0) + ((projects||[]).reduce((s,p)=>s+p.count,0)===1?' task':' tasks')"></span>
+                                    <span x-text="projectTaskCount + (projectTaskCount === 1 ? ' task' : ' tasks')"></span>
                                     <template x-for="proj in (projects || [])" :key="proj.name">
                                         <span class="relative group inline-flex items-baseline gap-x-0.5">
                                             <span class="text-gray-500">·</span>
@@ -332,7 +320,7 @@
                                 @if($task->show_map)
                                     @php $mapUrl = sprintf(config('taskfiend.maps_url_template', 'https://maps.google.com/?q=%s'), urlencode($task->location)); @endphp
                                     <a href="{{ $mapUrl }}" target="_blank" rel="noopener"
-                                       onclick="event.stopPropagation()"
+                                       @click.stop
                                        class="inline-flex items-center gap-1 text-orange-400 hover:underline">{{ $task->location }}<svg class="inline w-3 h-3 opacity-70 flex-shrink-0" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M1 9L9 1M9 1H4M9 1V6"/></svg></a>
                                 @else
                                     <p class="text-gray-300">{{ $task->location }}</p>
@@ -417,7 +405,7 @@
                                        @input="fields.parent_id = ''; parentOpen = true"
                                        @focus="parentOpen = true"
                                        @keydown.escape="parentOpen = false"
-                                       @keydown.enter.prevent="if (parentFiltered.length > 0) selectParent(parentFiltered[0])"
+                                       @keydown.enter.prevent="parentFiltered.length > 0 && selectParent(parentFiltered[0])"
                                        placeholder="Search for a parent task…"
                                        autocomplete="off"
                                        class="w-full rounded-md bg-gray-700 border-gray-600 text-gray-100 placeholder-gray-500 shadow-sm focus:border-blue-500 focus:ring-blue-500 pr-8">
@@ -463,8 +451,8 @@
                 <!-- Description -->
                 <div class="mt-4">
                     <span class="text-sm font-medium text-gray-500">Description</span>
-                    <div @if(!$isInactive) @click="if (!$event.target.closest('a')) startEdit('description')" @endif x-show="!editing.description" class="mt-1 p-2 rounded min-h-[40px] {{ !$isInactive ? 'cursor-pointer hover:bg-gray-700' : '' }}">
-                        <div class="markdown-body" x-show="fields.description" x-html="renderedDescription"></div>
+                    <div @if(!$isInactive) @click="$event.target.closest('a') || startEdit('description')" @endif x-show="!editing.description" class="mt-1 p-2 rounded min-h-[40px] {{ !$isInactive ? 'cursor-pointer hover:bg-gray-700' : '' }}">
+                        <div class="markdown-body" x-show="fields.description" x-ref="descHtml"></div>
                         <p x-show="!fields.description" class="text-gray-400 italic">{{ $isInactive ? 'No description' : 'Click to add description' }}</p>
                     </div>
                     @if(!$isInactive)
@@ -630,7 +618,7 @@
             </div>
 
             <!-- Tabbed sections: Subtasks, Attachments, Comments, History -->
-            <div x-data="{ tab: 'comments' }" class="bg-[#202020] border border-gray-700 overflow-hidden shadow-sm sm:rounded-lg">
+            <div x-data="tabSwitcher" class="bg-[#202020] border border-gray-700 overflow-hidden shadow-sm sm:rounded-lg">
 
                 <!-- Tab bar -->
                 <div class="flex border-b border-gray-700 overflow-x-auto">
@@ -684,7 +672,7 @@
                                                 <form method="POST" action="{{ route('comments.destroy', [$task, $comment]) }}" class="inline">
                                                     @csrf
                                                     @method('DELETE')
-                                                    <button type="submit" class="text-xs text-red-600 hover:underline" onclick="return confirm('Are you sure?')">
+                                                    <button type="submit" class="text-xs text-red-600 hover:underline" @click.prevent="confirmSubmit($el, 'Are you sure?')">
                                                         Delete
                                                     </button>
                                                 </form>
@@ -712,7 +700,7 @@
                             <textarea name="comment" rows="3" required
                                       class="w-full rounded-md bg-gray-700 border-gray-600 text-gray-100 placeholder-gray-500 shadow-sm focus:border-blue-500 focus:ring-blue-500 mb-2"
                                       placeholder="Add a comment..."></textarea>
-                            <div class="flex items-center gap-4" x-data="{ fileName: '' }">
+                            <div class="flex items-center gap-4" x-data="fileInput">
                                 <label class="flex items-center gap-2 cursor-pointer">
                                     <span class="px-3 py-1.5 bg-gray-700 border border-gray-600 text-gray-300 text-sm rounded hover:bg-gray-600">Choose file</span>
                                     <span class="text-sm text-gray-400" x-text="fileName || 'No file chosen'"></span>
@@ -781,7 +769,7 @@
                                                     <form method="POST" action="{{ route('attachments.destroy', [$task, $attachment]) }}" class="inline">
                                                         @csrf
                                                         @method('DELETE')
-                                                        <button type="submit" class="text-sm text-red-600 hover:underline" onclick="return confirm('Are you sure?')">
+                                                        <button type="submit" class="text-sm text-red-600 hover:underline" @click.prevent="confirmSubmit($el, 'Are you sure?')">
                                                             Delete
                                                         </button>
                                                     </form>
@@ -798,7 +786,7 @@
                         @if(!$isInactive)
                         <form method="POST" action="{{ route('attachments.store', $task) }}" enctype="multipart/form-data">
                             @csrf
-                            <div class="flex items-center gap-2" x-data="{ fileName: '' }">
+                            <div class="flex items-center gap-2" x-data="fileInput">
                                 <label class="flex items-center gap-2 cursor-pointer">
                                     <span class="px-3 py-1.5 bg-gray-700 border border-gray-600 text-gray-300 text-sm rounded hover:bg-gray-600">Choose file</span>
                                     <span class="text-sm text-gray-400" x-text="fileName || 'No file chosen'"></span>
@@ -828,9 +816,43 @@
 
     @push('scripts')
     <script nonce="{{ csp_nonce() }}">
-        function taskEditor(taskId) {
+        document.addEventListener('alpine:init', () => {
+            Alpine.data('taskShowNameEditor', function() {
+                return {
+                    editing: false,
+                    name: '',
+                    original: '',
+                    taskId: null,
+                    init() {
+                        this.name = this.$el.dataset.taskName || '';
+                        this.original = this.name;
+                        this.taskId = parseInt(this.$el.dataset.taskId) || null;
+                    },
+                    async save() {
+                        const fd = new FormData();
+                        fd.append('_token', document.querySelector('meta[name=\'csrf-token\']').content);
+                        fd.append('field', 'name');
+                        fd.append('value', this.name.trim());
+                        const res = await fetch('/tasks/' + this.taskId + '/update-field', { method: 'POST', body: fd });
+                        const data = await res.json();
+                        if (data.success) { window.location.reload(); }
+                        else { alert('Error saving: ' + (data.message || 'Failed')); this.name = this.original; this.editing = false; }
+                    },
+                    cancel() { this.name = this.original; this.editing = false; },
+                    startEditName() {
+                        this.editing = true;
+                        this.$nextTick(() => {
+                            if (this.$refs.nameInput) this.$refs.nameInput.focus();
+                        });
+                    }
+                };
+            });
+        });
+
+        document.addEventListener('alpine:init', () => {
+        Alpine.data('taskEditor', function() {
             return {
-                taskId: taskId,
+                taskId: 0,
                 editing: {},
                 renderedDescription: @js(render_body($task->description ?? '')),
                 fields: {
@@ -855,6 +877,11 @@
                 dateError: '',
                 datePast: false,
                 projects: null,
+                get projectTaskCount() {
+                    let n = 0;
+                    if (this.projects) { for (const p of this.projects) n += p.count; }
+                    return n;
+                },
                 _datePreviewTimeout: null,
                 parentSearch: @js($task->parent ? $task->parent->name : ''),
                 parentOpen: false,
@@ -876,7 +903,9 @@
                 },
 
                 init() {
+                    this.taskId = parseInt(this.$el.dataset.taskId) || 0;
                     this.original = JSON.parse(JSON.stringify(this.fields));
+                    this.$nextTick(() => { if (this.$refs.descHtml) this.$refs.descHtml.innerHTML = this.renderedDescription; });
                 },
 
                 startEdit(field) {
@@ -1055,6 +1084,7 @@
                         this.editing[field] = false;
                         if (field === 'description' && data.rendered_description !== undefined) {
                             this.renderedDescription = data.rendered_description;
+                            this.$nextTick(() => { if (this.$refs.descHtml) this.$refs.descHtml.innerHTML = this.renderedDescription; });
                         }
                         return true;
                     } else {
@@ -1100,7 +1130,8 @@
                     }
                 },
             };
-        }
+        });
+        });
     </script>
     @endpush
 </x-app-layout>

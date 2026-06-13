@@ -32,7 +32,7 @@
                         </div>
 
                         {{-- Project multi-select --}}
-                        <div class="min-w-44" x-data="multiSelect({{ json_encode(request('projects', [])) }})">
+                        <div class="min-w-44" x-data="multiSelect" data-selected="{{ json_encode(request('projects', [])) }}">
                             <label class="block text-xs text-gray-400 mb-1">Project</label>
                             <div class="relative">
                                 <button type="button" @click="open = !open"
@@ -59,7 +59,7 @@
                         </div>
 
                         {{-- Tag multi-select --}}
-                        <div class="min-w-44" x-data="multiSelect({{ json_encode(request('tags', [])) }})">
+                        <div class="min-w-44" x-data="multiSelect" data-selected="{{ json_encode(request('tags', [])) }}">
                             <label class="block text-xs text-gray-400 mb-1">Tag</label>
                             <div class="relative">
                                 <button type="button" @click="open = !open"
@@ -144,7 +144,7 @@
                             &larr; Back to Task
                         </a>
                     </div>
-                    <div x-data="changelogLoader('{{ route('changelogs.task', $task) }}', {{ $hasMore ? 'true' : 'false' }}, {{ $page + 1 }})">
+                    <div x-data="changelogLoader" data-url="{{ route('changelogs.task', $task) }}" data-has-more="{{ $hasMore ? 'true' : 'false' }}" data-next-page="{{ $page + 1 }}">
                         <div x-ref="entries" class="space-y-2">
                             @include('changelogs.partials.context-entries')
                         </div>
@@ -164,7 +164,7 @@
                             &larr; Back to Project
                         </a>
                     </div>
-                    <div x-data="changelogLoader('{{ route('changelogs.project', $project) }}', {{ $hasMore ? 'true' : 'false' }}, {{ $page + 1 }})">
+                    <div x-data="changelogLoader" data-url="{{ route('changelogs.project', $project) }}" data-has-more="{{ $hasMore ? 'true' : 'false' }}" data-next-page="{{ $page + 1 }}">
                         <div x-ref="entries" class="space-y-2">
                             @include('changelogs.partials.context-entries')
                         </div>
@@ -184,7 +184,7 @@
                             &larr; Back to Tag
                         </a>
                     </div>
-                    <div x-data="changelogLoader('{{ route('changelogs.tag', $tag) }}', {{ $hasMore ? 'true' : 'false' }}, {{ $page + 1 }})">
+                    <div x-data="changelogLoader" data-url="{{ route('changelogs.tag', $tag) }}" data-has-more="{{ $hasMore ? 'true' : 'false' }}" data-next-page="{{ $page + 1 }}">
                         <div x-ref="entries" class="space-y-2">
                             @include('changelogs.partials.context-entries')
                         </div>
@@ -200,7 +200,7 @@
 
                 @else
                     {{-- User activity view with lazy loading --}}
-                    <div x-data="activityLoader({{ $hasMore ? 'true' : 'false' }}, {{ $page + 1 }})">
+                    <div x-data="activityLoader" data-has-more="{{ $hasMore ? 'true' : 'false' }}" data-next-page="{{ $page + 1 }}">
 
                         <div id="activity-entries" class="space-y-2">
                             @include('changelogs.partials.entries')
@@ -228,15 +228,22 @@
     </div>
 
     <script nonce="{{ csp_nonce() }}">
-    function changelogLoader(url, initialHasMore, initialNextPage) {
+    document.addEventListener('alpine:init', () => {
+    Alpine.data('changelogLoader', function () {
         return {
-            hasMore:  initialHasMore,
-            nextPage: initialNextPage,
+            hasMore:  false,
+            nextPage: 2,
             loading:  false,
+
+            init() {
+                this.hasMore  = this.$el.dataset.hasMore === 'true';
+                this.nextPage = parseInt(this.$el.dataset.nextPage) || 2;
+            },
 
             async loadMore() {
                 if (this.loading || !this.hasMore) return;
                 this.loading = true;
+                const url = this.$el.dataset.url;
                 try {
                     const res  = await fetch(url + '?page=' + this.nextPage, {
                         headers: { 'X-Requested-With': 'XMLHttpRequest' }
@@ -252,23 +259,33 @@
                 }
             },
         };
-    }
+    });
+    });
     </script>
 
     @if(!isset($task) && !isset($project) && !isset($tag))
     <script nonce="{{ csp_nonce() }}">
-    function multiSelect(initialValues) {
+    document.addEventListener('alpine:init', () => {
+    Alpine.data('multiSelect', function () {
         return {
             open: false,
-            selected: (initialValues || []).map(String),
+            selected: [],
+            init() {
+                this.selected = JSON.parse(this.$el.dataset.selected || '[]').map(String);
+            },
         };
-    }
+    });
 
-    function activityLoader(initialHasMore, initialNextPage) {
+    Alpine.data('activityLoader', function () {
         return {
-            hasMore:  initialHasMore,
-            nextPage: initialNextPage,
+            hasMore:  false,
+            nextPage: 2,
             loading:  false,
+
+            init() {
+                this.hasMore  = this.$el.dataset.hasMore === 'true';
+                this.nextPage = parseInt(this.$el.dataset.nextPage) || 2;
+            },
 
             async loadMore() {
                 if (this.loading || !this.hasMore) return;
@@ -295,7 +312,8 @@
                 }
             },
         };
-    }
+    });
+    });
     </script>
     @endif
 </x-app-layout>

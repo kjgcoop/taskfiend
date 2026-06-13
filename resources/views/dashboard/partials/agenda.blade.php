@@ -96,8 +96,8 @@
 
 @pushOnce('scripts')
 <script nonce="{{ csp_nonce() }}">
-    window.agendaQuickComplete = function () {
-        return {
+    document.addEventListener('alpine:init', () => {
+    Alpine.data('agendaQuickComplete', () => ({
             done: false,
             loading: false,
             async submit() {
@@ -129,8 +129,8 @@
                     this.loading = false;
                 }
             }
-        };
-    };
+    }));
+    });
 </script>
 @endPushOnce
 
@@ -148,7 +148,7 @@
                     @if($task->status === 'done')
                         <span class="w-3 h-3 rounded-full bg-green-600 flex-shrink-0" title="Completed"></span>
                     @else
-                        <form x-data="agendaQuickComplete()" @submit.prevent="submit()"
+                        <form x-data="agendaQuickComplete" @submit.prevent="submit()"
                               method="POST" action="{{ route('tasks.update', $task) }}" class="flex-shrink-0">
                             @csrf
                             @method('PUT')
@@ -184,12 +184,8 @@
     @endif
 
     {{-- Time grid — clips to auto range unless full-day mode is on --}}
-    <div x-data="{
-            clipTopPx: {{ $clipTopPx }},
-            clipHeightPx: {{ $clipHeightPx }},
-        }"
-         :style="$store.agendaFull.on ? '' : `height: ${clipHeightPx}px; overflow: hidden;`">
-    <div :style="$store.agendaFull.on ? '' : `margin-top: -${clipTopPx}px;`">
+    <div :style="$store.agendaFull.on ? '' : 'height: {{ $clipHeightPx }}px; overflow: hidden;'">
+    <div :style="$store.agendaFull.on ? '' : 'margin-top: -{{ $clipTopPx }}px;'">
     <div class="flex">
 
         {{-- Hour labels column --}}
@@ -268,7 +264,7 @@
                     @if($task->status === 'done')
                         <div class="absolute top-1 right-1 w-3.5 h-3.5 rounded-full bg-green-400 z-20 flex-shrink-0" title="Completed"></div>
                     @else
-                        <form x-data="agendaQuickComplete()" @submit.prevent="submit()"
+                        <form x-data="agendaQuickComplete" @submit.prevent="submit()"
                               method="POST" action="{{ route('tasks.update', $task) }}"
                               class="absolute top-1 right-1 z-20">
                             @csrf

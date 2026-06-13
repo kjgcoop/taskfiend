@@ -18,7 +18,11 @@
     <div class="py-12">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-6">
             <!-- Search Form -->
-            <div class="bg-[#202020] border border-gray-700 overflow-hidden shadow-sm sm:rounded-lg p-6" x-data="searchFilter(@js($projects), @js($tags), {{ $hasSearchParams ? 'false' : 'true' }})">
+            <div class="bg-[#202020] border border-gray-700 overflow-hidden shadow-sm sm:rounded-lg p-6"
+                 x-data="searchFilter"
+                 data-projects="{{ json_encode($projects) }}"
+                 data-tags="{{ json_encode($tags) }}"
+                 data-show-filters="{{ $hasSearchParams ? 'false' : 'true' }}">
                 <form method="GET" action="{{ route('search') }}" @submit="prepareSubmit">
                     <!-- Main Search Input -->
                     <div class="mb-4 relative">
@@ -307,7 +311,12 @@
                     // Base URL for load-more AJAX calls — all current search params minus export/page/status
                     $moreBaseUrl = route('search.more') . '?' . http_build_query(request()->except(['export', 'page', 'status']));
                 @endphp
-                <div class="bg-[#202020] border border-gray-700 shadow-sm sm:rounded-lg p-6" x-data="taskFilter(@js($projects), @js($tags), @js($users), @js($locations))">
+                <div class="bg-[#202020] border border-gray-700 shadow-sm sm:rounded-lg p-6"
+                     x-data="taskFilter"
+                     data-projects="{{ json_encode($projects) }}"
+                     data-tags="{{ json_encode($tags) }}"
+                     data-users="{{ json_encode($users) }}"
+                     data-locations="{{ json_encode($locations) }}">
                     @if($tasksTotal > 0 || $completedTasksTotal > 0 || $archivedTasksTotal > 0)
                     <div class="flex justify-end items-center gap-3 mb-4">
                         <a href="{{ request()->fullUrlWithQuery(['export' => 'markdown']) }}" class="px-3 py-1.5 bg-gray-700 border border-gray-600 text-xs text-gray-100 rounded hover:bg-gray-600">
@@ -316,7 +325,7 @@
                         <div class="flex items-center gap-2">
                             <label for="sort-results" class="text-sm text-gray-400">Sort:</label>
                             <select id="sort-results"
-                                    onchange="(function(v){const p=new URLSearchParams(window.location.search);p.set('sort',v);window.location.href=window.location.pathname+'?'+p.toString()})(this.value)"
+                                    @change="sortBy($event.target.value, false)"
                                     class="rounded-md bg-gray-700 border-gray-600 text-gray-100 text-sm shadow-sm focus:border-blue-500 focus:ring-blue-500">
                                 <option value="date"     {{ request('sort', 'date') === 'date'     ? 'selected' : '' }}>Date & Time</option>
                                 <option value="created"  {{ request('sort') === 'created'          ? 'selected' : '' }}>Date Added</option>
@@ -324,7 +333,7 @@
                                 <option value="duration" {{ request('sort') === 'duration'         ? 'selected' : '' }}>Duration</option>
                                 <option value="location" {{ request('sort') === 'location'         ? 'selected' : '' }}>Location</option>
                             </select>
-                            <button onclick="toggleSortReversed()"
+                            <button @click="toggleSortReversed()"
                                     title="{{ request()->boolean('reversed') ? 'Reversed — click to restore' : 'Reverse sort order' }}"
                                     class="p-1 rounded transition-colors {{ request()->boolean('reversed') ? 'text-blue-400 hover:text-blue-300' : 'text-gray-500 hover:text-gray-300' }}">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
@@ -337,7 +346,9 @@
                     <x-task-input-bar />
                     <div x-ref="taskContainer">
                         @if($tasksTotal > 0)
-                            <div x-data="searchSectionLoader({{ $tasksHasMore ? 'true' : 'false' }}, {{ json_encode($moreBaseUrl . '&status=incomplete') }})">
+                            <div x-data="searchSectionLoader"
+                                 data-has-more="{{ $tasksHasMore ? 'true' : 'false' }}"
+                                 data-ajax-url="{{ $moreBaseUrl }}&status=incomplete">
                                 @if($multipleStatuses)
                                     <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
                                         Incomplete
@@ -359,7 +370,9 @@
 
                         @if($completedTasksTotal > 0)
                             <div class="{{ $tasksTotal > 0 ? 'mt-6 border-t border-gray-700 pt-4' : '' }}"
-                                 x-data="searchSectionLoader({{ $completedTasksHasMore ? 'true' : 'false' }}, {{ json_encode($moreBaseUrl . '&status=done') }})">
+                                 x-data="searchSectionLoader"
+                 data-has-more="{{ $completedTasksHasMore ? 'true' : 'false' }}"
+                 data-ajax-url="{{ $moreBaseUrl }}&status=done">
                                 @if($multipleStatuses)
                                     <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
                                         Done
@@ -381,7 +394,9 @@
 
                         @if($archivedTasksTotal > 0)
                             <div class="{{ ($tasksTotal > 0 || $completedTasksTotal > 0) ? 'mt-6 border-t border-gray-700 pt-4' : '' }}"
-                                 x-data="searchSectionLoader({{ $archivedTasksHasMore ? 'true' : 'false' }}, {{ json_encode($moreBaseUrl . '&status=archived') }})">
+                                 x-data="searchSectionLoader"
+                 data-has-more="{{ $archivedTasksHasMore ? 'true' : 'false' }}"
+                 data-ajax-url="{{ $moreBaseUrl }}&status=archived">
                                 @if($multipleStatuses)
                                     <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
                                         Archived
@@ -417,36 +432,44 @@
 
     @push('scripts')
     <script nonce="{{ csp_nonce() }}">
-        function searchSectionLoader(initialHasMore, ajaxUrl) {
-            return {
-                hasMore: initialHasMore,
-                nextPage: 2,
-                loading: false,
-                async loadMore() {
-                    if (this.loading || !this.hasMore) return;
-                    this.loading = true;
-                    try {
-                        const res  = await fetch(ajaxUrl + '&page=' + this.nextPage, {
-                            headers: { 'X-Requested-With': 'XMLHttpRequest' }
-                        });
-                        const data = await res.json();
-                        this.$refs.list.insertAdjacentHTML('beforeend', data.html);
-                        this.hasMore  = data.hasMore;
-                        this.nextPage = data.nextPage;
-                    } catch (e) {
-                        console.error('Failed to load more search results:', e);
-                    } finally {
-                        this.loading = false;
-                    }
-                },
-            };
-        }
+        document.addEventListener('alpine:init', () => {
+            Alpine.data('searchSectionLoader', function() {
+                return {
+                    hasMore: false,
+                    nextPage: 2,
+                    loading: false,
+                    _ajaxUrl: null,
+                    init() {
+                        this.hasMore = this.$el.dataset.hasMore === 'true';
+                        this._ajaxUrl = this.$el.dataset.ajaxUrl || null;
+                    },
+                    async loadMore() {
+                        if (this.loading || !this.hasMore) return;
+                        this.loading = true;
+                        try {
+                            const res  = await fetch(this._ajaxUrl + '&page=' + this.nextPage, {
+                                headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                            });
+                            const data = await res.json();
+                            this.$refs.list.insertAdjacentHTML('beforeend', data.html);
+                            this.hasMore  = data.hasMore;
+                            this.nextPage = data.nextPage;
+                        } catch (e) {
+                            console.error('Failed to load more search results:', e);
+                        } finally {
+                            this.loading = false;
+                        }
+                    },
+                };
+            });
+        });
 
-        function searchFilter(projects, tags, initialExpanded) {
-            return {
-                projects: projects,
-                tags: tags,
-                expanded: initialExpanded,
+        document.addEventListener('alpine:init', () => {
+            Alpine.data('searchFilter', function() {
+                return {
+                projects: [],
+                tags: [],
+                expanded: true,
                 searchInput: @js(request('q', '')),
                 queryText: @js(request('q', '')),
                 selectedProjectId: @js(request('project_id', 'none')),
@@ -459,6 +482,10 @@
                 autocompleteQuery: '',
 
                 init() {
+                    const el = this.$el;
+                    this.projects = JSON.parse(el.dataset.projects || '[]');
+                    this.tags = JSON.parse(el.dataset.tags || '[]');
+                    this.expanded = el.dataset.showFilters !== 'false';
                     // Initialize search input from URL parameters
                     this.rebuildSearchInput();
                 },
@@ -680,8 +707,9 @@
                     // Make sure hidden fields are up to date before submitting
                     this.parseSearchInput();
                 }
-            };
-        }
+                };
+            });
+        });
     </script>
     @endpush
 </x-app-layout>

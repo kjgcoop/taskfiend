@@ -1,6 +1,6 @@
 <x-app-layout>
     <x-slot name="header">
-        <div class="flex items-center gap-2 w-full" x-data="{ showSaveTemplate: false, showMenu: false, showStatus: false, statusTab: 'post' }">
+        <div class="flex items-center gap-2 w-full" x-data="projectHeaderControls">
             {{-- Star / default toggle --}}
             @if($project->is_default)
                 <span title="Default project" class="text-yellow-400 shrink-0">
@@ -21,7 +21,10 @@
 
             {{-- Inline-editable project name + count badge --}}
             @php $isInactive = in_array($project->status, ['done', 'archived']); @endphp
-            <div x-data="projectHeaderEditor({{ $project->id }}, @js($project->name))" class="flex items-center gap-2 min-w-0">
+            <div x-data="projectHeaderEditor"
+                 data-project-id="{{ $project->id }}"
+                 data-project-name="{{ $project->name }}"
+                 class="flex items-center gap-2 min-w-0">
                 <h2 x-show="!editing"
                     @click="{{ !$isInactive && $project->user_id === Auth::id() ? 'startEdit()' : '' }}"
                     class="font-semibold text-xl text-gray-100 leading-tight truncate {{ !$isInactive && $project->user_id === Auth::id() ? 'cursor-pointer hover:text-gray-300' : '' }}">
@@ -41,8 +44,8 @@
 
             {{-- ID + copy link --}}
             <span class="text-sm text-gray-500 shrink-0">#{{ $project->id }}</span>
-            <span x-data="{ copied: false }" class="shrink-0">
-                <button @click="navigator.clipboard.writeText('{{ route('projects.show', $project) }}').then(() => { copied = true; setTimeout(() => copied = false, 2000) })"
+            <span x-data="copyButton" class="shrink-0">
+                <button @click="copy('{{ route('projects.show', $project) }}')"
                         title="Copy link"
                         class="text-gray-500 hover:text-gray-300 transition-colors">
                     <span x-show="!copied">
@@ -83,7 +86,7 @@
                 <div x-show="showMenu" x-cloak
                      class="absolute right-0 mt-1 w-48 bg-gray-800 border border-gray-600 rounded shadow-lg z-10">
                     @if($project->user_id === Auth::id())
-                        <button @click="showMenu = false; $dispatch('open-project-details')"
+                        <button @click="openDetails()"
                                 class="w-full text-left px-4 py-2 text-gray-200 hover:bg-gray-700">
                             Details
                         </button>
@@ -243,7 +246,7 @@
     </x-slot>
 
     @php $isInactive = in_array($project->status, ['done', 'archived']); @endphp
-    <div class="py-12 relative" @if($project->user_id === Auth::id()) x-data="projectEditor({{ $project->id }})" @endif
+    <div class="py-12 relative" @if($project->user_id === Auth::id()) x-data="projectEditor" data-project-id="{{ $project->id }}" @endif
          @if($project->user_id === Auth::id()) @open-project-details.window="showDetails = true" @endif>
         @if($project->background_image)
             <div class="absolute inset-0" style="background-image: url('{{ route('projects.background', $project) }}'); background-attachment: fixed; background-position: center; background-size: cover; background-repeat: no-repeat;"></div>
@@ -462,7 +465,7 @@
 
                     {{-- Background Image --}}
                     @if(!$isInactive)
-                    <div class="mb-4" x-data="{ showUpload: false }">
+                    <div class="mb-4" x-data="uploadToggle">
                         <label class="block text-sm font-medium text-gray-400 mb-1">Background Image</label>
                         @if($project->background_image)
                             <img src="{{ route('projects.background', $project) }}"
@@ -525,7 +528,7 @@
                         @if(!$isInactive)
                         <form method="POST" action="{{ route('projects.reminders.store', $project) }}"
                               class="space-y-2"
-                              x-data="reminderDateInput('{{ old('date', $activeReminder?->date?->format('Y-m-d')) }}')">
+                              x-data="reminderDateInput" data-initial-date="{{ old('date', $activeReminder?->date?->format('Y-m-d')) }}">
                             @csrf
                             {{-- Natural language date input --}}
                             <div>
@@ -763,7 +766,7 @@
 
                             <!-- Background Image (only editable when project is active) -->
                             @if(!$isInactive)
-                            <div x-data="{ showUpload: false }">
+                            <div x-data="uploadToggle">
                                 <span class="text-sm font-medium text-gray-500">Background Image</span>
                                 @if($project->background_image)
                                     <div class="mt-1">
@@ -870,7 +873,12 @@
             @endif {{-- end removed details card --}}
 
             <!-- Project Tasks -->
-            <div class="bg-[#202020] border border-gray-700 shadow-sm sm:rounded-lg p-6" x-data="taskFilter(@js($projects), @js($tags), @js($users), @js($locations))">
+            <div class="bg-[#202020] border border-gray-700 shadow-sm sm:rounded-lg p-6"
+                 x-data="taskFilter"
+                 data-projects="{{ json_encode($projects) }}"
+                 data-tags="{{ json_encode($tags) }}"
+                 data-users="{{ json_encode($users) }}"
+                 data-locations="{{ json_encode($locations) }}">
                 <div class="flex items-center justify-between mb-4">
                     <button type="button"
                             @click="showIncomplete = !showIncomplete"
@@ -885,7 +893,7 @@
                     </button>
                     <div class="flex items-center gap-3">
                         <label for="sort-results" class="text-sm text-gray-400">Sort:</label>
-                        <select id="sort-select" onchange="(function(v){const p=new URLSearchParams(window.location.search);p.set('sort',v);localStorage.setItem('task_sort_'+window.location.pathname,v);window.location.href=window.location.pathname+'?'+p.toString()})(this.value)"
+                        <select id="sort-select" @change="sortBy($event.target.value)"
                                 class="text-sm bg-gray-700 border border-gray-600 rounded px-2 py-1 text-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500">
                             <option value="date" {{ $sort === 'date' ? 'selected' : '' }}>Date & Time</option>
                             <option value="created" {{ $sort === 'created' ? 'selected' : '' }}>Date Added</option>
@@ -895,7 +903,7 @@
                             <option value="custom" {{ $sort === 'custom' ? 'selected' : '' }}>Custom Sort</option>
                         </select>
                         @if($sort !== 'custom')
-                        <button onclick="toggleSortReversed()"
+                        <button @click="toggleSortReversed()"
                                 title="{{ request()->boolean('reversed') ? 'Reversed — click to restore' : 'Reverse sort order' }}"
                                 class="p-1 rounded transition-colors {{ request()->boolean('reversed') ? 'text-blue-400 hover:text-blue-300' : 'text-gray-500 hover:text-gray-300' }}">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
@@ -951,193 +959,211 @@
     @if($project->user_id === Auth::id())
     @push('scripts')
     <script nonce="{{ csp_nonce() }}">
-        function projectHeaderEditor(projectId, initialName) {
-            return {
-                projectId: projectId,
-                name: initialName,
-                original: initialName,
-                editing: false,
+        document.addEventListener('alpine:init', () => {
+            Alpine.data('projectHeaderControls', () => ({
+                showSaveTemplate: false,
+                showMenu: false,
+                showStatus: false,
+                statusTab: 'post',
+                openDetails() { this.showMenu = false; this.$dispatch('open-project-details'); },
+            }));
 
-                startEdit() {
-                    this.original = this.name;
-                    this.editing = true;
-                    this.$nextTick(() => {
-                        if (this.$refs.nameInput) {
-                            this.$refs.nameInput.focus();
-                            this.$refs.nameInput.select();
-                        }
-                    });
-                },
+            Alpine.data('projectHeaderEditor', function () {
+                return {
+                    projectId: 0,
+                    name: '',
+                    original: '',
+                    editing: false,
 
-                cancel() {
-                    this.name = this.original;
-                    this.editing = false;
-                },
+                    init() {
+                        this.projectId = parseInt(this.$el.dataset.projectId);
+                        this.name = this.$el.dataset.projectName || '';
+                        this.original = this.name;
+                    },
 
-                async save() {
-                    if (this.name.trim() === this.original.trim()) {
-                        this.editing = false;
-                        return;
-                    }
-                    const formData = new FormData();
-                    formData.append('_token', document.querySelector('meta[name="csrf-token"]').content);
-                    formData.append('field', 'name');
-                    formData.append('value', this.name.trim());
-                    try {
-                        const resp = await fetch(`/projects/${this.projectId}/update-field`, {
-                            method: 'POST',
-                            body: formData,
+                    startEdit() {
+                        this.original = this.name;
+                        this.editing = true;
+                        this.$nextTick(() => {
+                            if (this.$refs.nameInput) {
+                                this.$refs.nameInput.focus();
+                                this.$refs.nameInput.select();
+                            }
                         });
-                        const data = await resp.json();
-                        if (data.success) {
-                            this.original = this.name.trim();
+                    },
+
+                    cancel() {
+                        this.name = this.original;
+                        this.editing = false;
+                    },
+
+                    async save() {
+                        if (this.name.trim() === this.original.trim()) {
                             this.editing = false;
-                        } else {
-                            alert(data.message || 'Failed to save');
+                            return;
+                        }
+                        const formData = new FormData();
+                        formData.append('_token', document.querySelector('meta[name="csrf-token"]').content);
+                        formData.append('field', 'name');
+                        formData.append('value', this.name.trim());
+                        try {
+                            const resp = await fetch(`/projects/${this.projectId}/update-field`, {
+                                method: 'POST',
+                                body: formData,
+                            });
+                            const data = await resp.json();
+                            if (data.success) {
+                                this.original = this.name.trim();
+                                this.editing = false;
+                            } else {
+                                alert(data.message || 'Failed to save');
+                                this.name = this.original;
+                                this.editing = false;
+                            }
+                        } catch (e) {
+                            alert('An error occurred while saving');
                             this.name = this.original;
                             this.editing = false;
                         }
-                    } catch (e) {
-                        alert('An error occurred while saving');
-                        this.name = this.original;
-                        this.editing = false;
-                    }
-                },
-            };
-        }
+                    },
+                };
+            });
 
-        function projectEditor(projectId) {
-            return {
-                projectId: projectId,
-                showDetails: false,
-                editing: {},
-                fieldError: null,
-                fields: {
-                    name: @js($project->name),
-                    description: @js($project->description ?? ''),
-                    status: @js($project->status),
-                    end_date: @js($project->end_date ? $project->end_date->format('Y-m-d') : ''),
-                    assignee_ids: @js($project->assignees->pluck('id')->toArray()),
-                },
-                original: {},
+            Alpine.data('projectEditor', function () {
+                return {
+                    projectId: 0,
+                    showDetails: false,
+                    editing: {},
+                    fieldError: null,
+                    fields: {
+                        name: @js($project->name),
+                        description: @js($project->description ?? ''),
+                        status: @js($project->status),
+                        end_date: @js($project->end_date ? $project->end_date->format('Y-m-d') : ''),
+                        assignee_ids: @js($project->assignees->pluck('id')->toArray()),
+                    },
+                    original: {},
 
-                init() {
-                    this.original = JSON.parse(JSON.stringify(this.fields));
-                },
+                    init() {
+                        this.projectId = parseInt(this.$el.dataset.projectId) || 0;
+                        this.original = JSON.parse(JSON.stringify(this.fields));
+                    },
 
-                startEdit(field) {
-                    this.editing[field] = true;
-                    if (field === 'name') {
-                        this.$nextTick(() => {
-                            const input = this.$el.querySelector('input[x-model="fields.name"]');
-                            if (input) { input.focus(); input.select(); }
-                        });
-                    }
-                    if (field === 'description') {
-                        this.$nextTick(() => {
-                            const ta = this.$el.querySelector('textarea[x-model="fields.description"]');
-                            if (ta) ta.focus();
-                        });
-                    }
-                },
-
-                cancelEdit(field) {
-                    this.editing[field] = false;
-                    this.fields[field] = JSON.parse(JSON.stringify(this.original[field]));
-                },
-
-                async saveField(field) {
-                    this.fieldError = null;
-                    try {
-                        const formData = new FormData();
-                        formData.append('_token', document.querySelector('meta[name="csrf-token"]').content);
-                        formData.append('field', field);
-
-                        if (Array.isArray(this.fields[field])) {
-                            this.fields[field].forEach(value => {
-                                formData.append(field + '[]', value);
+                    startEdit(field) {
+                        this.editing[field] = true;
+                        if (field === 'name') {
+                            this.$nextTick(() => {
+                                const input = this.$el.querySelector('input[x-model="fields.name"]');
+                                if (input) { input.focus(); input.select(); }
                             });
-                        } else {
-                            formData.append('value', this.fields[field]);
                         }
-
-                        const response = await fetch(`/projects/${this.projectId}/update-field`, {
-                            method: 'POST',
-                            body: formData,
-                        });
-
-                        const data = await response.json();
-
-                        if (data.success) {
-                            this.original[field] = JSON.parse(JSON.stringify(this.fields[field]));
-                            this.editing[field] = false;
-                            window.location.reload();
-                        } else {
-                            this.fieldError = data.message || 'Failed to update';
+                        if (field === 'description') {
+                            this.$nextTick(() => {
+                                const ta = this.$el.querySelector('textarea[x-model="fields.description"]');
+                                if (ta) ta.focus();
+                            });
                         }
-                    } catch (error) {
-                        console.error('Error:', error);
-                        this.fieldError = 'An error occurred while saving. Check the server logs.';
-                    }
-                },
-            };
-        }
+                    },
 
-        function reminderDateInput(initial) {
-            return {
-                dateText: '',
-                resolvedDate: initial || '',
-                datePreview: '',
-                dateError: '',
+                    cancelEdit(field) {
+                        this.editing[field] = false;
+                        this.fields[field] = JSON.parse(JSON.stringify(this.original[field]));
+                    },
 
-                init() {
-                    if (this.resolvedDate && /^\d{4}-\d{2}-\d{2}$/.test(this.resolvedDate)) {
-                        const d = new Date(this.resolvedDate + 'T12:00:00');
+                    async saveField(field) {
+                        this.fieldError = null;
+                        try {
+                            const formData = new FormData();
+                            formData.append('_token', document.querySelector('meta[name="csrf-token"]').content);
+                            formData.append('field', field);
+
+                            if (Array.isArray(this.fields[field])) {
+                                this.fields[field].forEach(value => {
+                                    formData.append(field + '[]', value);
+                                });
+                            } else {
+                                formData.append('value', this.fields[field]);
+                            }
+
+                            const response = await fetch(`/projects/${this.projectId}/update-field`, {
+                                method: 'POST',
+                                body: formData,
+                            });
+
+                            const data = await response.json();
+
+                            if (data.success) {
+                                this.original[field] = JSON.parse(JSON.stringify(this.fields[field]));
+                                this.editing[field] = false;
+                                window.location.reload();
+                            } else {
+                                this.fieldError = data.message || 'Failed to update';
+                            }
+                        } catch (error) {
+                            console.error('Error:', error);
+                            this.fieldError = 'An error occurred while saving. Check the server logs.';
+                        }
+                    },
+                };
+            });
+
+            Alpine.data('reminderDateInput', function () {
+                return {
+                    dateText: '',
+                    resolvedDate: '',
+                    datePreview: '',
+                    dateError: '',
+
+                    init() {
+                        this.resolvedDate = this.$el.dataset.initialDate || '';
+                        if (this.resolvedDate && /^\d{4}-\d{2}-\d{2}$/.test(this.resolvedDate)) {
+                            const d = new Date(this.resolvedDate + 'T12:00:00');
+                            this.dateText = d.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+                            this.previewDate();
+                        }
+                    },
+
+                    pickDate(value) {
+                        if (!value) return;
+                        this.resolvedDate = value;
+                        const d = new Date(value + 'T12:00:00');
                         this.dateText = d.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-                        this.previewDate();
-                    }
-                },
+                        this.datePreview = this.dateText;
+                        this.dateError = '';
+                    },
 
-                pickDate(value) {
-                    if (!value) return;
-                    this.resolvedDate = value;
-                    const d = new Date(value + 'T12:00:00');
-                    this.dateText = d.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-                    this.datePreview = this.dateText;
-                    this.dateError = '';
-                },
-
-                async previewDate() {
-                    const input = this.dateText.trim();
-                    if (!input) { this.datePreview = ''; this.dateError = ''; this.resolvedDate = ''; return; }
-                    try {
-                        const resp = await fetch('{{ route('tasks.parseDate') }}', {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json',
-                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
-                                'Accept': 'application/json',
-                            },
-                            body: JSON.stringify({ input }),
-                        });
-                        const data = await resp.json();
-                        if (data.success) {
-                            this.resolvedDate = data.date;
-                            this.datePreview = data.formatted;
-                            this.dateError = '';
-                        } else {
+                    async previewDate() {
+                        const input = this.dateText.trim();
+                        if (!input) { this.datePreview = ''; this.dateError = ''; this.resolvedDate = ''; return; }
+                        try {
+                            const resp = await fetch('{{ route('tasks.parseDate') }}', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                                    'Accept': 'application/json',
+                                },
+                                body: JSON.stringify({ input }),
+                            });
+                            const data = await resp.json();
+                            if (data.success) {
+                                this.resolvedDate = data.date;
+                                this.datePreview = data.formatted;
+                                this.dateError = '';
+                            } else {
+                                this.resolvedDate = '';
+                                this.datePreview = '';
+                                this.dateError = 'Could not parse this date';
+                            }
+                        } catch (e) {
                             this.resolvedDate = '';
                             this.datePreview = '';
-                            this.dateError = 'Could not parse this date';
+                            this.dateError = '';
                         }
-                    } catch (e) {
-                        this.resolvedDate = '';
-                        this.datePreview = '';
-                        this.dateError = '';
-                    }
-                },
-            };
-        }
+                    },
+                };
+            });
+        });
     </script>
     @endpush
     @endif

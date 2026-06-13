@@ -14,7 +14,11 @@
 
 @if($displayCount > 0)
 <div class="mt-4 border-t border-gray-700 pt-4"
-     x-data="completedTasksLoader({{ $hasMore ? 'true' : 'false' }}, {{ $nextPage }}, {{ json_encode($ajaxUrl) }}, {{ $displayCount }})">
+     x-data="completedTasksLoader"
+     data-has-more="{{ $hasMore ? 'true' : 'false' }}"
+     data-next-page="{{ $nextPage }}"
+     data-ajax-url="{{ $ajaxUrl }}"
+     data-total-count="{{ $displayCount }}">
     <button type="button"
             @click="showCompleted = !showCompleted"
             class="inline-flex items-center gap-1.5 text-sm text-gray-400 hover:text-gray-200 transition-colors select-none">
@@ -48,16 +52,23 @@
 @once
 @push('scripts')
 <script nonce="{{ csp_nonce() }}">
-function completedTasksLoader(initialHasMore, initialNextPage, ajaxUrl, totalCount) {
-    return {
+document.addEventListener('alpine:init', () => {
+    Alpine.data('completedTasksLoader', function () {
+        return {
         showCompleted: false,
-        hasMore:  initialHasMore,
-        nextPage: initialNextPage,
+        hasMore:  false,
+        nextPage: 2,
         loading:  false,
-        totalCount: totalCount,
+        totalCount: 0,
         visibleCount: null,
+        _ajaxUrl: null,
 
         init() {
+            const el = this.$el;
+            this.hasMore = el.dataset.hasMore === 'true';
+            this.nextPage = parseInt(el.dataset.nextPage) || 2;
+            this.totalCount = parseInt(el.dataset.totalCount) || 0;
+            this._ajaxUrl = el.dataset.ajaxUrl || null;
             window.addEventListener('filter-updated', () => this.updateCount());
         },
 
@@ -69,10 +80,10 @@ function completedTasksLoader(initialHasMore, initialNextPage, ajaxUrl, totalCou
         },
 
         async loadMore() {
-            if (this.loading || !this.hasMore || !ajaxUrl) return;
+            if (this.loading || !this.hasMore || !this._ajaxUrl) return;
             this.loading = true;
             try {
-                const res  = await fetch(ajaxUrl + '?page=' + this.nextPage, {
+                const res  = await fetch(this._ajaxUrl + '?page=' + this.nextPage, {
                     headers: { 'X-Requested-With': 'XMLHttpRequest' }
                 });
                 const data = await res.json();
@@ -86,8 +97,9 @@ function completedTasksLoader(initialHasMore, initialNextPage, ajaxUrl, totalCou
                 this.loading = false;
             }
         },
-    };
-}
+        };
+    });
+});
 </script>
 @endpush
 @endonce
