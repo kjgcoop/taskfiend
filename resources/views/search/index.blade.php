@@ -433,16 +433,21 @@
     @push('scripts')
     <script nonce="{{ csp_nonce() }}">
         document.addEventListener('alpine:init', () => {
-            Alpine.data('searchSectionLoader', function(initialHasMore, ajaxUrl) {
+            Alpine.data('searchSectionLoader', function() {
                 return {
-                    hasMore: initialHasMore,
+                    hasMore: false,
                     nextPage: 2,
                     loading: false,
+                    _ajaxUrl: null,
+                    init() {
+                        this.hasMore = this.$el.dataset.hasMore === 'true';
+                        this._ajaxUrl = this.$el.dataset.ajaxUrl || null;
+                    },
                     async loadMore() {
                         if (this.loading || !this.hasMore) return;
                         this.loading = true;
                         try {
-                            const res  = await fetch(ajaxUrl + '&page=' + this.nextPage, {
+                            const res  = await fetch(this._ajaxUrl + '&page=' + this.nextPage, {
                                 headers: { 'X-Requested-With': 'XMLHttpRequest' }
                             });
                             const data = await res.json();
