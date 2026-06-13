@@ -5,6 +5,12 @@
     window.taskPreviewUrl = '{{ route('tasks.previewQuickAdd') }}';
 
     document.addEventListener('alpine:init', () => {
+        Alpine.data('taskSortableList', () => ({
+            init() { initTaskSortable(this.$el); },
+        }));
+    });
+
+    document.addEventListener('alpine:init', () => {
         Alpine.store('taskCount', {
             total: 0,
             visible: 0,
@@ -844,8 +850,7 @@
 
 @if($sortable && !$readOnly && $depth === 0)
 <div class="space-y-2"
-     x-data
-     x-init="initTaskSortable($el)"
+     x-data="taskSortableList"
      @if($reorderUrl) data-reorder-url="{{ $reorderUrl }}" @endif
      @if($viewDate) data-view-date="{{ $viewDate }}" @endif>
 @else

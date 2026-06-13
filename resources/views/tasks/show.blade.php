@@ -66,7 +66,7 @@
     </div>
     @endif
 
-    <div class="py-12" x-data="taskEditor({{ $task->id }})" x-init="console.log('Alpine initialized', editing, fields)">
+    <div class="py-12" x-data="taskEditor({{ $task->id }})"
         <div class="max-w-4xl mx-auto sm:px-6 lg:px-8 space-y-6">
             <!-- Task Details -->
             <div class="bg-[#202020] border border-gray-700 overflow-hidden shadow-sm sm:rounded-lg p-6">

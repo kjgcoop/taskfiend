@@ -14,7 +14,7 @@
 
 @if($displayCount > 0)
 <div class="mt-4 border-t border-gray-700 pt-4"
-     x-data="completedTasksLoader({{ $hasMore ? 'true' : 'false' }}, {{ $nextPage }}, {{ json_encode($ajaxUrl) }}, {{ $displayCount }})">
+     x-data="completedTasksLoader({{ $hasMore ? 'true' : 'false' }}, {{ $nextPage }}, @js($ajaxUrl), {{ $displayCount }})">
     <button type="button"
             @click="showCompleted = !showCompleted"
             class="inline-flex items-center gap-1.5 text-sm text-gray-400 hover:text-gray-200 transition-colors select-none">
@@ -48,8 +48,9 @@
 @once
 @push('scripts')
 <script nonce="{{ csp_nonce() }}">
-function completedTasksLoader(initialHasMore, initialNextPage, ajaxUrl, totalCount) {
-    return {
+document.addEventListener('alpine:init', () => {
+    Alpine.data('completedTasksLoader', function (initialHasMore, initialNextPage, ajaxUrl, totalCount) {
+        return {
         showCompleted: false,
         hasMore:  initialHasMore,
         nextPage: initialNextPage,
@@ -86,8 +87,9 @@ function completedTasksLoader(initialHasMore, initialNextPage, ajaxUrl, totalCou
                 this.loading = false;
             }
         },
-    };
-}
+        };
+    });
+});
 </script>
 @endpush
 @endonce
