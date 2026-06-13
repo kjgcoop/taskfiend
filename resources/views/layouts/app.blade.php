@@ -305,6 +305,9 @@
 
         <script nonce="{{ csp_nonce() }}">
             document.addEventListener('alpine:init', () => {
+                Alpine.data('clickableCard', () => ({
+                    go() { const h = this.$el.dataset.href; if (h) location.href = h; },
+                }));
                 Alpine.data('copyButton', () => ({
                     copied: false,
                     copy(text) { navigator.clipboard.writeText(text); this.copied = true; setTimeout(() => { this.copied = false; }, 1500); },
