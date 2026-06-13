@@ -6,7 +6,7 @@
                  data-task-name="{{ $task->name }}"
                  data-task-id="{{ $task->id }}">
                 <div x-show="!editing">
-                    <h2 @if(!$isInactive) @click="editing = true; $nextTick(() => $refs.nameInput.focus())" @endif
+                    <h2 @if(!$isInactive) @click="startEditName()" @endif
                         class="font-semibold text-xl text-gray-100 leading-tight task-title {{ !$isInactive ? 'cursor-pointer hover:text-gray-300' : '' }}">
                         {!! render_title($task->name) !!}
                     </h2>
@@ -198,7 +198,7 @@
                                 <span x-text="datePreview"></span>
                                 <span x-show="projects && projects.length > 0" class="flex flex-wrap items-baseline gap-x-1">
                                     <span class="text-gray-500">&mdash;</span>
-                                    <span x-text="(projects||[]).reduce((s,p)=>s+p.count,0) + ((projects||[]).reduce((s,p)=>s+p.count,0)===1?' task':' tasks')"></span>
+                                    <span x-text="projectTaskCount + (projectTaskCount === 1 ? ' task' : ' tasks')"></span>
                                     <template x-for="proj in (projects || [])" :key="proj.name">
                                         <span class="relative group inline-flex items-baseline gap-x-0.5">
                                             <span class="text-gray-500">·</span>
@@ -838,7 +838,13 @@
                         if (data.success) { window.location.reload(); }
                         else { alert('Error saving: ' + (data.message || 'Failed')); this.name = this.original; this.editing = false; }
                     },
-                    cancel() { this.name = this.original; this.editing = false; }
+                    cancel() { this.name = this.original; this.editing = false; },
+                    startEditName() {
+                        this.editing = true;
+                        this.$nextTick(() => {
+                            if (this.$refs.nameInput) this.$refs.nameInput.focus();
+                        });
+                    }
                 };
             });
         });
@@ -871,6 +877,11 @@
                 dateError: '',
                 datePast: false,
                 projects: null,
+                get projectTaskCount() {
+                    let n = 0;
+                    if (this.projects) { for (const p of this.projects) n += p.count; }
+                    return n;
+                },
                 _datePreviewTimeout: null,
                 parentSearch: @js($task->parent ? $task->parent->name : ''),
                 parentOpen: false,

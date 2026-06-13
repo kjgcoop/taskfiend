@@ -45,7 +45,7 @@
                             <label for="show_map" class="text-sm text-gray-300">Show location as map link</label>
                         </div>
 
-                        <div class="mb-4 grid grid-cols-2 gap-4" x-data="dateInput('{{ old('date', $task->getAttributes()['date'] ?? '') }}')">
+                        <div class="mb-4 grid grid-cols-2 gap-4" x-data="dateInput" data-initial-date="{{ old('date', $task->getAttributes()['date'] ?? '') }}">
                             <div>
                                 <label for="date" class="block text-sm font-medium text-gray-300 mb-2">Date</label>
                                 <div class="flex gap-2 items-start">
@@ -79,7 +79,7 @@
                                     <span x-text="datePreview"></span>
                                     <span x-show="projects && projects.length > 0" class="flex flex-wrap items-baseline gap-x-1">
                                         <span class="text-gray-500">&mdash;</span>
-                                        <span x-text="(projects||[]).reduce((s,p)=>s+p.count,0) + ((projects||[]).reduce((s,p)=>s+p.count,0)===1?' task':' tasks')"></span>
+                                        <span x-text="projectTaskCount + (projectTaskCount === 1 ? ' task' : ' tasks')"></span>
                                         <template x-for="proj in (projects || [])" :key="proj.name">
                                             <span class="relative group inline-flex items-baseline gap-x-0.5">
                                                 <span class="text-gray-500">·</span>
@@ -269,16 +269,25 @@
 
     @push('scripts')
     <script nonce="{{ csp_nonce() }}">
-        function dateInput(initialDate) {
+        document.addEventListener('alpine:init', () => {
+        Alpine.data('dateInput', function() {
             return {
                 dateText: '',
-                resolvedDate: initialDate || '',
+                resolvedDate: '',
                 datePreview: '',
                 dateError: '',
                 datePast: false,
                 projects: null,
 
+                get projectTaskCount() {
+                    let n = 0;
+                    if (this.projects) { for (const p of this.projects) n += p.count; }
+                    return n;
+                },
+
                 init() {
+                    const initialDate = this.$el.dataset.initialDate || '';
+                    this.resolvedDate = initialDate;
                     if (this.resolvedDate && /^\d{4}-\d{2}-\d{2}$/.test(this.resolvedDate)) {
                         const d = new Date(this.resolvedDate + 'T12:00:00');
                         const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
@@ -377,7 +386,8 @@
                     this.projects = null;
                 },
             };
-        }
+        });
+        });
     </script>
     <script nonce="{{ csp_nonce() }}">
     document.addEventListener('alpine:init', () => {

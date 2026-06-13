@@ -141,7 +141,7 @@
                             @error('location')<p class="mt-1 text-sm text-red-600">{{ $message }}</p>@enderror
                         </div>
 
-                        <div class="mb-4 grid grid-cols-2 gap-4" x-data="dateInput('{{ old('date', $preselectedDate) }}')">
+                        <div class="mb-4 grid grid-cols-2 gap-4" x-data="dateInput" data-initial-date="{{ old('date', $preselectedDate) }}">
                             <div>
                                 <label for="date" class="block text-sm font-medium text-gray-300 mb-2">Date (Optional)</label>
                                 <div class="flex gap-2 items-start">
@@ -174,7 +174,7 @@
                                     <span x-text="datePreview"></span>
                                     <span x-show="projects && projects.length > 0" class="flex flex-wrap items-baseline gap-x-1">
                                         <span class="text-gray-500">&mdash;</span>
-                                        <span x-text="(projects||[]).reduce((s,p)=>s+p.count,0) + ((projects||[]).reduce((s,p)=>s+p.count,0)===1?' task':' tasks')"></span>
+                                        <span x-text="projectTaskCount + (projectTaskCount === 1 ? ' task' : ' tasks')"></span>
                                         <template x-for="proj in (projects || [])" :key="proj.name">
                                             <span class="relative group inline-flex items-baseline gap-x-0.5">
                                                 <span class="text-gray-500">·</span>
@@ -377,16 +377,25 @@
 
     @push('scripts')
     <script nonce="{{ csp_nonce() }}">
-        function dateInput(initialDate) {
+        document.addEventListener('alpine:init', () => {
+        Alpine.data('dateInput', function() {
             return {
                 dateText: '',
-                resolvedDate: initialDate || '',
+                resolvedDate: '',
                 datePreview: '',
                 dateError: '',
                 datePast: false,
                 projects: null,
 
+                get projectTaskCount() {
+                    let n = 0;
+                    if (this.projects) { for (const p of this.projects) n += p.count; }
+                    return n;
+                },
+
                 init() {
+                    const initialDate = this.$el.dataset.initialDate || '';
+                    this.resolvedDate = initialDate;
                     // Convert Y-m-d initial value to human-readable text
                     if (this.resolvedDate && /^\d{4}-\d{2}-\d{2}$/.test(this.resolvedDate)) {
                         const d = new Date(this.resolvedDate + 'T12:00:00');
@@ -495,7 +504,8 @@
                     this.projects = null;
                 },
             };
-        }
+        });
+        });
 
         function taskCreator() {
             return {
