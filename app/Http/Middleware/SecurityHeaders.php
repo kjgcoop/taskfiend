@@ -19,11 +19,11 @@ class SecurityHeaders
 
         $response = $next($request);
 
-        // Livewire's bundled Alpine (regular build) requires 'unsafe-eval'.
-        // Alpine.data() components in nonce scripts are still used for clean separation.
+        // Using @alpinejs/csp build — 'unsafe-eval' not required.
+        // All component definitions are pre-registered via Alpine.data() in nonce scripts.
         $csp = implode('; ', [
             "default-src 'self'",
-            "script-src 'self' 'nonce-{$nonce}' 'unsafe-eval'",
+            "script-src 'self' 'nonce-{$nonce}'",
             "style-src 'self' 'unsafe-inline'",
             "img-src 'self' data:",
             "font-src 'self'",

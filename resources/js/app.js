@@ -1,5 +1,5 @@
 import './bootstrap';
-import { Alpine, Livewire } from '../../vendor/livewire/livewire/dist/livewire.esm';
+import Alpine from '@alpinejs/csp';
 
 window.Alpine = Alpine;
 
@@ -46,4 +46,4 @@ Alpine.data('reviewTaskRow', () => ({
     },
 }));
 
-Livewire.start();
+Alpine.start();
