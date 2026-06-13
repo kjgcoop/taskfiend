@@ -14,7 +14,7 @@
     </x-slot>
 
     <div class="py-12">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8" x-data="taskFilter()">
+        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8" x-data="taskFilter([], [], [], [])">
             <div class="mb-4 flex gap-2 items-center">
                 <input type="text"
                        x-model="query"

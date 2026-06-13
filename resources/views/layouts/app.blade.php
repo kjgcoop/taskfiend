@@ -82,7 +82,6 @@
                 .drag-handle { opacity: 0.4 !important; }
             }
         </style>
-    @livewireStyles
     </head>
     <body class="font-sans antialiased bg-black text-gray-100">
         <div class="min-h-screen bg-black">
@@ -1031,6 +1030,5 @@
                 }, seconds * 1000);
             })();
         </script>
-    @livewireScripts
     </body>
 </html>
