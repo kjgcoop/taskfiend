@@ -1055,7 +1055,7 @@
                      :class="$store.bulkEdit.active ? 'cursor-pointer' : 'cursor-pointer'"
                      @click="$store.bulkEdit.active
                          ? $store.bulkEdit.toggleTask({{ $task->id }})
-                         : ((event.ctrlKey || event.metaKey) ? window.open('{{ route('tasks.show', $task) }}', '_blank') : openTaskPanel({{ $task->id }}))"
+                         : (($event.ctrlKey || $event.metaKey) ? window.open('{{ route('tasks.show', $task) }}', '_blank') : openTaskPanel({{ $task->id }}))"
                      title="Click to peek · Ctrl+click or middle-click to open full page">
                     <!-- Show parent context if exists -->
                     @if($task->parent)
