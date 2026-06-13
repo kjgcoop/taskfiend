@@ -18,7 +18,11 @@
     <div class="py-12">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-6">
             <!-- Search Form -->
-            <div class="bg-[#202020] border border-gray-700 overflow-hidden shadow-sm sm:rounded-lg p-6" x-data="searchFilter(@js($projects), @js($tags), {{ $hasSearchParams ? 'false' : 'true' }})">
+            <div class="bg-[#202020] border border-gray-700 overflow-hidden shadow-sm sm:rounded-lg p-6"
+                 x-data="searchFilter"
+                 data-projects="@json($projects)"
+                 data-tags="@json($tags)"
+                 data-show-filters="{{ $hasSearchParams ? 'false' : 'true' }}">
                 <form method="GET" action="{{ route('search') }}" @submit="prepareSubmit">
                     <!-- Main Search Input -->
                     <div class="mb-4 relative">
@@ -307,7 +311,12 @@
                     // Base URL for load-more AJAX calls — all current search params minus export/page/status
                     $moreBaseUrl = route('search.more') . '?' . http_build_query(request()->except(['export', 'page', 'status']));
                 @endphp
-                <div class="bg-[#202020] border border-gray-700 shadow-sm sm:rounded-lg p-6" x-data="taskFilter(@js($projects), @js($tags), @js($users), @js($locations))">
+                <div class="bg-[#202020] border border-gray-700 shadow-sm sm:rounded-lg p-6"
+                     x-data="taskFilter"
+                     data-projects="@json($projects)"
+                     data-tags="@json($tags)"
+                     data-users="@json($users)"
+                     data-locations="@json($locations)">
                     @if($tasksTotal > 0 || $completedTasksTotal > 0 || $archivedTasksTotal > 0)
                     <div class="flex justify-end items-center gap-3 mb-4">
                         <a href="{{ request()->fullUrlWithQuery(['export' => 'markdown']) }}" class="px-3 py-1.5 bg-gray-700 border border-gray-600 text-xs text-gray-100 rounded hover:bg-gray-600">
@@ -337,7 +346,9 @@
                     <x-task-input-bar />
                     <div x-ref="taskContainer">
                         @if($tasksTotal > 0)
-                            <div x-data="searchSectionLoader({{ $tasksHasMore ? 'true' : 'false' }}, {{ json_encode($moreBaseUrl . '&status=incomplete') }})">
+                            <div x-data="searchSectionLoader"
+                                 data-has-more="{{ $tasksHasMore ? 'true' : 'false' }}"
+                                 data-ajax-url="{{ $moreBaseUrl }}&status=incomplete">
                                 @if($multipleStatuses)
                                     <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
                                         Incomplete
@@ -359,7 +370,9 @@
 
                         @if($completedTasksTotal > 0)
                             <div class="{{ $tasksTotal > 0 ? 'mt-6 border-t border-gray-700 pt-4' : '' }}"
-                                 x-data="searchSectionLoader({{ $completedTasksHasMore ? 'true' : 'false' }}, {{ json_encode($moreBaseUrl . '&status=done') }})">
+                                 x-data="searchSectionLoader"
+                 data-has-more="{{ $completedTasksHasMore ? 'true' : 'false' }}"
+                 data-ajax-url="{{ $moreBaseUrl }}&status=done">
                                 @if($multipleStatuses)
                                     <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
                                         Done
@@ -381,7 +394,9 @@
 
                         @if($archivedTasksTotal > 0)
                             <div class="{{ ($tasksTotal > 0 || $completedTasksTotal > 0) ? 'mt-6 border-t border-gray-700 pt-4' : '' }}"
-                                 x-data="searchSectionLoader({{ $archivedTasksHasMore ? 'true' : 'false' }}, {{ json_encode($moreBaseUrl . '&status=archived') }})">
+                                 x-data="searchSectionLoader"
+                 data-has-more="{{ $archivedTasksHasMore ? 'true' : 'false' }}"
+                 data-ajax-url="{{ $moreBaseUrl }}&status=archived">
                                 @if($multipleStatuses)
                                     <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
                                         Archived
@@ -445,11 +460,11 @@
         });
 
         document.addEventListener('alpine:init', () => {
-            Alpine.data('searchFilter', function(projects, tags, initialExpanded) {
+            Alpine.data('searchFilter', function() {
                 return {
-                projects: projects,
-                tags: tags,
-                expanded: initialExpanded,
+                projects: [],
+                tags: [],
+                expanded: true,
                 searchInput: @js(request('q', '')),
                 queryText: @js(request('q', '')),
                 selectedProjectId: @js(request('project_id', 'none')),
@@ -462,6 +477,10 @@
                 autocompleteQuery: '',
 
                 init() {
+                    const el = this.$el;
+                    this.projects = JSON.parse(el.dataset.projects || '[]');
+                    this.tags = JSON.parse(el.dataset.tags || '[]');
+                    this.expanded = el.dataset.showFilters !== 'false';
                     // Initialize search input from URL parameters
                     this.rebuildSearchInput();
                 },

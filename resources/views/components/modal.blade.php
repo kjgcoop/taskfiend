@@ -18,6 +18,18 @@ $maxWidth = [
 document.addEventListener('alpine:init', () => {
     Alpine.data('modal', () => ({
         show: false,
+        init() {
+            this.show = this.$el.dataset.showInit === 'true';
+            const focusable = this.$el.dataset.focusable === 'true';
+            this.$watch('show', value => {
+                if (value) {
+                    document.body.classList.add('overflow-y-hidden');
+                    if (focusable) setTimeout(() => { const f = this.firstFocusable(); if (f) f.focus(); }, 100);
+                } else {
+                    document.body.classList.remove('overflow-y-hidden');
+                }
+            });
+        },
         focusables() {
             let selector = 'a, button, input:not([type=\'hidden\']), textarea, select, details, [tabindex]:not([tabindex=\'-1\'])';
             return [...this.$el.querySelectorAll(selector)].filter(el => !el.hasAttribute('disabled'));
@@ -33,14 +45,8 @@ document.addEventListener('alpine:init', () => {
 </script>
 <div
     x-data="modal"
-    x-init="show = @js($show); $watch('show', value => {
-        if (value) {
-            document.body.classList.add('overflow-y-hidden');
-            {{ $attributes->has('focusable') ? 'setTimeout(() => firstFocusable().focus(), 100)' : '' }}
-        } else {
-            document.body.classList.remove('overflow-y-hidden');
-        }
-    })"
+    data-show-init="{{ $show ? 'true' : 'false' }}"
+    data-focusable="{{ $attributes->has('focusable') ? 'true' : 'false' }}"
     x-on:open-modal.window="$event.detail == '{{ $name }}' ? show = true : null"
     x-on:close-modal.window="$event.detail == '{{ $name }}' ? show = false : null"
     x-on:close.stop="show = false"

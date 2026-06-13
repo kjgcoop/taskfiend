@@ -8,7 +8,10 @@
     <div class="py-12">
         <div class="max-w-3xl mx-auto sm:px-6 lg:px-8">
             <div class="bg-[#202020] overflow-hidden shadow-sm sm:rounded-lg border border-gray-700">
-                <div class="p-6" x-data="taskCreator(@js($projects), @js($tags))">
+                <div class="p-6"
+                     x-data="taskCreator"
+                     data-projects="@json($projects)"
+                     data-tags="@json($tags)">
                     {{-- Bulk-creation result banner (shown after partial success redirect) --}}
                     @if(session('bulk_errors'))
                     <div class="mb-6 p-4 bg-red-900/30 border border-red-700 rounded-md">
@@ -494,10 +497,10 @@
             };
         }
 
-        function taskCreator(projects, tags) {
+        function taskCreator() {
             return {
-                projects: projects,
-                tags: tags,
+                projects: [],
+                tags: [],
                 taskName: @js(old('name', '')),
                 selectedProjectId: @js(old('project_id', $preselectedProjectId ?? '')),
                 selectedTagIds: @js(old('tag_ids', [])),
@@ -538,12 +541,15 @@
                 },
 
                 init() {
+                    const el = this.$el;
+                    this.projects = JSON.parse(el.dataset.projects || '[]');
+                    this.tags = JSON.parse(el.dataset.tags || '[]');
                     // Auto-resize the textarea when the page loads with a pre-filled value
                     this.$nextTick(() => {
-                        const el = this.$refs.nameInput;
-                        if (el && el.value) {
-                            el.style.height = 'auto';
-                            el.style.height = Math.min(el.scrollHeight, 240) + 'px';
+                        const input = this.$refs.nameInput;
+                        if (input && input.value) {
+                            input.style.height = 'auto';
+                            input.style.height = Math.min(input.scrollHeight, 240) + 'px';
                         }
                     });
                 },

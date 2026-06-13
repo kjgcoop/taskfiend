@@ -3,7 +3,8 @@
         <div class="flex justify-between items-center">
             <div class="flex-1 min-w-0 mr-4"
                  x-data="taskShowNameEditor"
-                 x-init="name = @js($task->name); original = @js($task->name); taskId = {{ $task->id }}">
+                 data-task-name="{{ $task->name }}"
+                 data-task-id="{{ $task->id }}">
                 <div x-show="!editing">
                     <h2 @if(!$isInactive) @click="editing = true; $nextTick(() => $refs.nameInput.focus())" @endif
                         class="font-semibold text-xl text-gray-100 leading-tight task-title {{ !$isInactive ? 'cursor-pointer hover:text-gray-300' : '' }}">
@@ -66,7 +67,7 @@
     </div>
     @endif
 
-    <div class="py-12" x-data="taskEditor({{ $task->id }})"
+    <div class="py-12" x-data="taskEditor({{ $task->id }})">
         <div class="max-w-4xl mx-auto sm:px-6 lg:px-8 space-y-6">
             <!-- Task Details -->
             <div class="bg-[#202020] border border-gray-700 overflow-hidden shadow-sm sm:rounded-lg p-6">
@@ -822,6 +823,11 @@
                     name: '',
                     original: '',
                     taskId: null,
+                    init() {
+                        this.name = this.$el.dataset.taskName || '';
+                        this.original = this.name;
+                        this.taskId = parseInt(this.$el.dataset.taskId) || null;
+                    },
                     async save() {
                         const fd = new FormData();
                         fd.append('_token', document.querySelector('meta[name=\'csrf-token\']').content);
