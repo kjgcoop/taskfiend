@@ -7,7 +7,7 @@
 <!-- Panel Header -->
 <div class="sticky top-0 z-10 flex items-center justify-between px-4 py-3 bg-gray-900 border-b border-gray-700">
     <div class="flex items-center gap-2 min-w-0">
-        <button @click="closeTaskPanel()"
+        <button @click="$dispatch('close-task-panel')"
                 class="flex-shrink-0 p-1.5 text-gray-400 hover:text-gray-100 rounded hover:bg-gray-700 transition"
                 title="Close panel">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
