@@ -52,7 +52,7 @@
                 </button>
                 <div x-show="open" x-cloak
                      class="absolute right-0 mt-1 w-40 bg-gray-800 border border-gray-600 rounded shadow-lg z-10">
-                    <button @click="open = false; $dispatch('open-tag-details')"
+                    <button @click="openDetails('open-tag-details')"
                             class="w-full text-left px-4 py-2 text-gray-200 hover:bg-gray-700">
                         Details
                     </button>

@@ -305,6 +305,10 @@
 
         <script nonce="{{ csp_nonce() }}">
             document.addEventListener('alpine:init', () => {
+                Alpine.data('dropdown', () => ({
+                    open: false,
+                    openDetails(eventName) { this.open = false; this.$dispatch(eventName); },
+                }));
                 Alpine.data('clickableCard', () => ({
                     go() { const h = this.$el.dataset.href; if (h) location.href = h; },
                 }));

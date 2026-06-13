@@ -86,7 +86,7 @@
                 <div x-show="showMenu" x-cloak
                      class="absolute right-0 mt-1 w-48 bg-gray-800 border border-gray-600 rounded shadow-lg z-10">
                     @if($project->user_id === Auth::id())
-                        <button @click="showMenu = false; $dispatch('open-project-details')"
+                        <button @click="openDetails()"
                                 class="w-full text-left px-4 py-2 text-gray-200 hover:bg-gray-700">
                             Details
                         </button>
@@ -964,7 +964,8 @@
                 showSaveTemplate: false,
                 showMenu: false,
                 showStatus: false,
-                statusTab: 'post'
+                statusTab: 'post',
+                openDetails() { this.showMenu = false; this.$dispatch('open-project-details'); },
             }));
 
             Alpine.data('projectHeaderEditor', function () {
