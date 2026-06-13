@@ -71,7 +71,7 @@
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
 
             {{-- Stale-page banner: shown when this day page is past its date --}}
-            <div x-data="staleBanner('{{ $carbonDate->format('Y-m-d') }}', '{{ route('day') }}')"
+            <div x-data="staleBanner" data-date="{{ $carbonDate->format('Y-m-d') }}" data-reload-url="{{ route('day') }}"
                  x-show="stale"
                  x-cloak
                  x-transition:enter="transition ease-out duration-200"
@@ -228,15 +228,17 @@
     <script nonce="{{ csp_nonce() }}">
         // ── Stale-page banner ────────────────────────────────────────────────────
         document.addEventListener('alpine:init', () => {
-            Alpine.data('staleBanner', (pageDate, dayRoute) => ({
-                pageDate,
-                dayRoute,
+            Alpine.data('staleBanner', function () { return {
+                pageDate: '',
+                dayRoute: '',
                 stale: false,
                 pageDateLabel: '',
                 todayLabel: '',
                 todayUrl: '',
 
                 init() {
+                    this.pageDate = this.$el.dataset.date || '';
+                    this.dayRoute = this.$el.dataset.reloadUrl || '';
                     this._check();
                     document.addEventListener('visibilitychange', () => {
                         if (!document.hidden) this._check();
@@ -258,7 +260,7 @@
                             .toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
                     }
                 },
-            }));
+            }; });
         });
 
         // ── Post-create toast (shown after reload when a stale-page task was added) ──

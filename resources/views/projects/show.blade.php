@@ -246,7 +246,7 @@
     </x-slot>
 
     @php $isInactive = in_array($project->status, ['done', 'archived']); @endphp
-    <div class="py-12 relative" @if($project->user_id === Auth::id()) x-data="projectEditor({{ $project->id }})" @endif
+    <div class="py-12 relative" @if($project->user_id === Auth::id()) x-data="projectEditor" data-project-id="{{ $project->id }}" @endif
          @if($project->user_id === Auth::id()) @open-project-details.window="showDetails = true" @endif>
         @if($project->background_image)
             <div class="absolute inset-0" style="background-image: url('{{ route('projects.background', $project) }}'); background-attachment: fixed; background-position: center; background-size: cover; background-repeat: no-repeat;"></div>
@@ -528,7 +528,7 @@
                         @if(!$isInactive)
                         <form method="POST" action="{{ route('projects.reminders.store', $project) }}"
                               class="space-y-2"
-                              x-data="reminderDateInput('{{ old('date', $activeReminder?->date?->format('Y-m-d')) }}')">
+                              x-data="reminderDateInput" data-initial-date="{{ old('date', $activeReminder?->date?->format('Y-m-d')) }}">
                             @csrf
                             {{-- Natural language date input --}}
                             <div>
@@ -1028,9 +1028,9 @@
                 };
             });
 
-            Alpine.data('projectEditor', function (projectId) {
+            Alpine.data('projectEditor', function () {
                 return {
-                    projectId: projectId,
+                    projectId: 0,
                     showDetails: false,
                     editing: {},
                     fieldError: null,
@@ -1044,6 +1044,7 @@
                     original: {},
 
                     init() {
+                        this.projectId = parseInt(this.$el.dataset.projectId) || 0;
                         this.original = JSON.parse(JSON.stringify(this.fields));
                     },
 
@@ -1105,14 +1106,15 @@
                 };
             });
 
-            Alpine.data('reminderDateInput', function (initial) {
+            Alpine.data('reminderDateInput', function () {
                 return {
                     dateText: '',
-                    resolvedDate: initial || '',
+                    resolvedDate: '',
                     datePreview: '',
                     dateError: '',
 
                     init() {
+                        this.resolvedDate = this.$el.dataset.initialDate || '';
                         if (this.resolvedDate && /^\d{4}-\d{2}-\d{2}$/.test(this.resolvedDate)) {
                             const d = new Date(this.resolvedDate + 'T12:00:00');
                             this.dateText = d.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });

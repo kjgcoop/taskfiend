@@ -61,7 +61,7 @@
         </div>
     </x-slot>
 
-    <div class="py-12" x-data="tagEditor({{ $tag->id }})"
+    <div class="py-12" x-data="tagEditor" data-tag-id="{{ $tag->id }}"
          @open-tag-details.window="showDetails = true">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-6">
 
@@ -278,9 +278,9 @@
         });
 
         document.addEventListener('alpine:init', () => {
-            Alpine.data('tagEditor', function(tagId) {
+            Alpine.data('tagEditor', function() {
                 return {
-                tagId: tagId,
+                tagId: 0,
                 showDetails: false,
                 editing: {},
                 fields: {
@@ -290,6 +290,7 @@
                 original: {},
 
                 init() {
+                    this.tagId = parseInt(this.$el.dataset.tagId) || 0;
                     this.original = JSON.parse(JSON.stringify(this.fields));
                 },
 
