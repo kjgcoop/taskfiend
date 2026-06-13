@@ -67,7 +67,7 @@
     </div>
     @endif
 
-    <div class="py-12" x-data="taskEditor({{ $task->id }})">
+    <div class="py-12" x-data="taskEditor" data-task-id="{{ $task->id }}">
         <div class="max-w-4xl mx-auto sm:px-6 lg:px-8 space-y-6">
             <!-- Task Details -->
             <div class="bg-[#202020] border border-gray-700 overflow-hidden shadow-sm sm:rounded-lg p-6">
@@ -850,9 +850,9 @@
         });
 
         document.addEventListener('alpine:init', () => {
-        Alpine.data('taskEditor', function(taskId) {
+        Alpine.data('taskEditor', function() {
             return {
-                taskId: taskId,
+                taskId: 0,
                 editing: {},
                 renderedDescription: @js(render_body($task->description ?? '')),
                 fields: {
@@ -903,6 +903,7 @@
                 },
 
                 init() {
+                    this.taskId = parseInt(this.$el.dataset.taskId) || 0;
                     this.original = JSON.parse(JSON.stringify(this.fields));
                     this.$nextTick(() => { if (this.$refs.descHtml) this.$refs.descHtml.innerHTML = this.renderedDescription; });
                 },

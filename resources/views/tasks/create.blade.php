@@ -507,7 +507,8 @@
         });
         });
 
-        function taskCreator() {
+        document.addEventListener('alpine:init', () => {
+        Alpine.data('taskCreator', function() {
             return {
                 projects: [],
                 tags: [],
@@ -798,7 +799,8 @@
                     }
                 }
             };
-        }
+        });
+        });
     </script>
     <script nonce="{{ csp_nonce() }}">
     document.addEventListener('alpine:init', () => {
