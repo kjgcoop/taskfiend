@@ -305,6 +305,14 @@
 
         <script nonce="{{ csp_nonce() }}">
             document.addEventListener('alpine:init', () => {
+                Alpine.data('copyButton', () => ({
+                    copied: false,
+                    copy(text) { navigator.clipboard.writeText(text); this.copied = true; setTimeout(() => { this.copied = false; }, 1500); },
+                }));
+                Alpine.data('flashMessage', () => ({
+                    show: true,
+                    init() { setTimeout(() => { this.show = false; }, 2000); },
+                }));
                 Alpine.store('taskCount', {
                     total: 0,
                     visible: 0,
@@ -499,6 +507,7 @@
                 dateError: '',
                 datePast: false,
                 projects: null,
+                get projectTaskCount() { let n = 0; if (this.projects) { for (const p of this.projects) n += p.count; } return n; },
                 nameAC: { show: false, type: null, query: '', results: [], activeIndex: -1 },
                 allTags: [],
                 allProjects: [],

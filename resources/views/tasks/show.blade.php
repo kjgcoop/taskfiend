@@ -24,7 +24,7 @@
                 <div class="flex items-center gap-1.5 mt-0.5">
                     <span class="text-sm text-gray-600">#{{ $task->id }}</span>
                     <button x-data="copyButton"
-                            @click="navigator.clipboard.writeText('{{ route('tasks.show', $task) }}'); copied = true; setTimeout(() => copied = false, 1500)"
+                            @click="copy('{{ route('tasks.show', $task) }}')"
                             title="Copy link"
                             class="p-0.5 text-gray-600 hover:text-gray-300 rounded transition">
                         <svg x-show="!copied" class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

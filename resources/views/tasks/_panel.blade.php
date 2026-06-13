@@ -16,7 +16,7 @@
         </button>
         <span class="text-xs text-gray-500 uppercase tracking-wide font-medium flex-shrink-0">Task #{{ $task->id }}</span>
         <button x-data="copyButton"
-                @click.prevent="navigator.clipboard.writeText('{{ route('tasks.show', $task) }}'); copied = true; setTimeout(() => copied = false, 1500)"
+                @click.prevent="copy('{{ route('tasks.show', $task) }}')"
                 @click.stop
                 title="Copy link"
                 class="flex-shrink-0 p-1 text-gray-600 hover:text-gray-300 rounded transition">
@@ -124,10 +124,10 @@ $_panelTaskJson = json_encode([
                        class="w-full rounded-md bg-gray-700 border-gray-600 text-gray-100 placeholder-gray-500 shadow-sm focus:border-blue-500 focus:ring-blue-500">
                 <div x-show="nameAC.show" x-cloak
                      class="absolute z-50 left-0 right-0 top-full mt-0.5 bg-gray-800 border border-gray-600 rounded-md shadow-lg overflow-hidden">
-                    <template x-for="(item, idx) in nameAC.results" :key="item.id">
+                    <template x-for="item in nameAC.results" :key="item.id">
                         <button type="button"
                                 @mousedown.prevent="selectNameAutocomplete(item)"
-                                :class="idx === nameAC.activeIndex ? 'bg-gray-700' : 'hover:bg-gray-700'"
+                                :class="nameAC.results.indexOf(item) === nameAC.activeIndex ? 'bg-gray-700' : 'hover:bg-gray-700'"
                                 class="w-full text-left flex items-center gap-2 px-3 py-1.5 text-sm text-gray-200">
                             <span x-show="nameAC.type === 'tag'"
                                   class="inline-block w-2 h-2 rounded-full flex-shrink-0"
@@ -225,13 +225,13 @@ $_panelTaskJson = json_encode([
                     <span x-text="datePreview"></span>
                     <span x-show="projects && projects.length > 0" class="flex flex-wrap items-baseline gap-x-1">
                         <span class="text-gray-500">&mdash;</span>
-                        <span x-text="(projects||[]).reduce((s,p)=>s+p.count,0) + ((projects||[]).reduce((s,p)=>s+p.count,0)===1?' task':' tasks')"></span>
+                        <span x-text="projectTaskCount + (projectTaskCount === 1 ? ' task' : ' tasks')"></span>
                         <template x-for="proj in (projects || [])" :key="proj.name">
                             <span class="relative group inline-flex items-baseline gap-x-0.5">
                                 <span class="text-gray-500">·</span>
                                 <span class="underline decoration-dotted cursor-help" x-text="proj.name + ' \u00d7' + proj.count"></span>
                                 <div class="absolute hidden group-hover:block bottom-full left-0 mb-1 bg-gray-900 border border-gray-600 rounded p-2 text-gray-200 z-50 shadow-lg min-w-max max-w-xs">
-                                    <template x-for="(task, idx) in proj.tasks" :key="idx">
+                                    <template x-for="task in proj.tasks" :key="task">
                                         <div class="flex gap-1.5 py-0.5">
                                             <span class="flex-shrink-0 text-gray-500">·</span>
                                             <span x-text="task"></span>

@@ -100,7 +100,7 @@
                                 </div>
                                 <span x-data="copyButton" class="shrink-0 flex items-center gap-1 mt-0.5">
                                     <span class="text-xs {{ $hasBg ? 'text-gray-300' : 'text-gray-500' }}">#{{ $project->id }}</span>
-                                    <button @click.stop="navigator.clipboard.writeText('{{ route('projects.show', $project) }}').then(() => { copied = true; setTimeout(() => copied = false, 2000) })"
+                                    <button @click.stop="copy('{{ route('projects.show', $project) }}')"
                                             title="Copy link"
                                             class="{{ $hasBg ? 'text-gray-300 hover:text-white' : 'text-gray-500 hover:text-gray-300' }} transition-colors">
                                         <span x-show="!copied">
@@ -171,7 +171,7 @@
                                     <div class="shrink-0 flex items-center gap-2">
                                         <span x-data="copyButton" class="flex items-center gap-1">
                                             <span class="text-xs text-gray-600">#{{ $project->id }}</span>
-                                            <button @click.stop="navigator.clipboard.writeText('{{ route('projects.show', $project) }}').then(() => { copied = true; setTimeout(() => copied = false, 2000) })"
+                                            <button @click.stop="copy('{{ route('projects.show', $project) }}')"
                                                     title="Copy link"
                                                     class="text-gray-600 hover:text-gray-400 transition-colors">
                                                 <span x-show="!copied">

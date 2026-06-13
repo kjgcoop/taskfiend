@@ -29,7 +29,7 @@
             {{-- ID + copy link --}}
             <span class="text-sm text-gray-500 shrink-0">#{{ $tag->id }}</span>
             <span x-data="copyButton" class="shrink-0">
-                <button @click="navigator.clipboard.writeText('[tag:{{ $tag->id }}]').then(() => { copied = true; setTimeout(() => copied = false, 2000) })"
+                <button @click="copy('[tag:{{ $tag->id }}]')"
                         title="Copy tag reference [tag:{{ $tag->id }}]"
                         class="text-gray-500 hover:text-gray-300 transition-colors">
                     <span x-show="!copied">

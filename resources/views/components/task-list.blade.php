@@ -1041,7 +1041,7 @@
                 </form>
                 @endif
                     <button x-data="copyButton"
-                            @click.prevent.stop="navigator.clipboard.writeText('{{ route('tasks.show', $task) }}'); copied = true; setTimeout(() => copied = false, 1500)"
+                            @click.prevent.stop="copy('{{ route('tasks.show', $task) }}')"
                             title="Copy link to this task"
                             class="text-[10px] leading-none mt-1 transition-colors cursor-pointer"
                             :class="copied ? 'text-green-500' : 'text-gray-600 hover:text-gray-400'">
