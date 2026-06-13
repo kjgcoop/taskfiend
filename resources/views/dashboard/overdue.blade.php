@@ -14,7 +14,12 @@
     </x-slot>
 
     <div class="py-12">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8" x-data="taskFilter(@js($projects), @js($tags), @js($users), @js($locations))">
+        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8"
+             x-data="taskFilter"
+             data-projects="@json($projects)"
+             data-tags="@json($tags)"
+             data-users="@json($users)"
+             data-locations="@json($locations)">
             <div class="flex justify-end items-center gap-2 mb-2">
                 <label class="text-gray-400 text-sm mr-2 self-center">Sort: </label>
                 <select id="sort-select" @change="sortBy($event.target.value)"

@@ -2,7 +2,11 @@
     <x-slot name="header">
         <div class="flex items-center gap-2 w-full" x-data="dropdown">
             {{-- Inline-editable tag name + count badge --}}
-            <div x-data="tagHeaderEditor({{ $tag->id }}, @js($tag->tag_name), @js($tag->color))" class="flex items-center gap-2 min-w-0">
+            <div x-data="tagHeaderEditor"
+                 data-tag-id="{{ $tag->id }}"
+                 data-tag-name="{{ $tag->tag_name }}"
+                 data-tag-color="{{ $tag->color }}"
+                 class="flex items-center gap-2 min-w-0">
                 <h2 x-show="!editing"
                     @click="startEdit()"
                     class="font-semibold text-xl leading-tight truncate cursor-pointer hover:opacity-80 transition-opacity"
@@ -137,7 +141,12 @@
             </div>
 
             <!-- Tagged Tasks -->
-            <div class="bg-[#202020] border border-gray-700 shadow-sm sm:rounded-lg p-6" x-data="taskFilter(@js($projects), @js($allTags), @js($users), @js($locations))">
+            <div class="bg-[#202020] border border-gray-700 shadow-sm sm:rounded-lg p-6"
+                 x-data="taskFilter"
+                 data-projects="@json($projects)"
+                 data-tags="@json($allTags)"
+                 data-users="@json($users)"
+                 data-locations="@json($locations)">
                 <div class="flex items-center justify-between mb-4">
                     <button type="button"
                             @click="showIncomplete = !showIncomplete"
@@ -204,13 +213,20 @@
     @push('scripts')
     <script nonce="{{ csp_nonce() }}">
         document.addEventListener('alpine:init', () => {
-            Alpine.data('tagHeaderEditor', function(tagId, initialName, initialColor) {
+            Alpine.data('tagHeaderEditor', function() {
                 return {
-                tagId: tagId,
-                name: initialName,
-                color: initialColor,
-                original: initialName,
+                tagId: 0,
+                name: '',
+                color: '',
+                original: '',
                 editing: false,
+
+                init() {
+                    this.tagId = parseInt(this.$el.dataset.tagId);
+                    this.name = this.$el.dataset.tagName || '';
+                    this.color = this.$el.dataset.tagColor || '';
+                    this.original = this.name;
+                },
 
                 startEdit() {
                     this.original = this.name;

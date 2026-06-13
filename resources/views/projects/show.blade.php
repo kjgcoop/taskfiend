@@ -21,7 +21,10 @@
 
             {{-- Inline-editable project name + count badge --}}
             @php $isInactive = in_array($project->status, ['done', 'archived']); @endphp
-            <div x-data="projectHeaderEditor({{ $project->id }}, @js($project->name))" class="flex items-center gap-2 min-w-0">
+            <div x-data="projectHeaderEditor"
+                 data-project-id="{{ $project->id }}"
+                 data-project-name="{{ $project->name }}"
+                 class="flex items-center gap-2 min-w-0">
                 <h2 x-show="!editing"
                     @click="{{ !$isInactive && $project->user_id === Auth::id() ? 'startEdit()' : '' }}"
                     class="font-semibold text-xl text-gray-100 leading-tight truncate {{ !$isInactive && $project->user_id === Auth::id() ? 'cursor-pointer hover:text-gray-300' : '' }}">
@@ -870,7 +873,12 @@
             @endif {{-- end removed details card --}}
 
             <!-- Project Tasks -->
-            <div class="bg-[#202020] border border-gray-700 shadow-sm sm:rounded-lg p-6" x-data="taskFilter(@js($projects), @js($tags), @js($users), @js($locations))">
+            <div class="bg-[#202020] border border-gray-700 shadow-sm sm:rounded-lg p-6"
+                 x-data="taskFilter"
+                 data-projects="@json($projects)"
+                 data-tags="@json($tags)"
+                 data-users="@json($users)"
+                 data-locations="@json($locations)">
                 <div class="flex items-center justify-between mb-4">
                     <button type="button"
                             @click="showIncomplete = !showIncomplete"
@@ -959,12 +967,18 @@
                 statusTab: 'post'
             }));
 
-            Alpine.data('projectHeaderEditor', function (projectId, initialName) {
+            Alpine.data('projectHeaderEditor', function () {
                 return {
-                    projectId: projectId,
-                    name: initialName,
-                    original: initialName,
+                    projectId: 0,
+                    name: '',
+                    original: '',
                     editing: false,
+
+                    init() {
+                        this.projectId = parseInt(this.$el.dataset.projectId);
+                        this.name = this.$el.dataset.projectName || '';
+                        this.original = this.name;
+                    },
 
                     startEdit() {
                         this.original = this.name;

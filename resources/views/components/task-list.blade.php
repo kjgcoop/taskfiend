@@ -100,7 +100,7 @@
     });
 
     document.addEventListener('alpine:init', () => {
-    Alpine.data('taskFilter', function (projects, tags, users, locations) {
+    Alpine.data('taskFilter', function () {
         return {
             query: '',
             noResults: false,
@@ -111,10 +111,10 @@
             submitting: false,
 
             // Autocomplete state
-            projects: projects || [],
-            tags: tags || [],
-            users: users || [],
-            locations: locations || [],
+            projects: [],
+            tags: [],
+            users: [],
+            locations: [],
             showAutocomplete: false,
             autocompleteType: null,
             autocompleteQuery: '',
@@ -599,6 +599,11 @@
             },
 
             init() {
+                const el = this.$el;
+                if (el.dataset.projects) this.projects = JSON.parse(el.dataset.projects);
+                if (el.dataset.tags) this.tags = JSON.parse(el.dataset.tags);
+                if (el.dataset.users) this.users = JSON.parse(el.dataset.users);
+                if (el.dataset.locations) this.locations = JSON.parse(el.dataset.locations);
                 this.$nextTick(() => {
                     // Display any error message carried over from a partial bulk quick-add
                     const bulkErr = sessionStorage.getItem('quickAddBulkError');

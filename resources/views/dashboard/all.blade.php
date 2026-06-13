@@ -14,7 +14,12 @@
     </x-slot>
 
     <div class="py-12">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8" x-data="taskFilter(@js($projects), @js($tags), @js($users), @js($locations))">
+        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8"
+             x-data="taskFilter"
+             data-projects="@json($projects)"
+             data-tags="@json($tags)"
+             data-users="@json($users)"
+             data-locations="@json($locations)">
             <div class="mb-4 text-sm text-gray-600">
                 All tasks you have access to, excluding archived and done.
             </div>

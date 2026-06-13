@@ -155,7 +155,12 @@
             </div>
 
             {{-- List view --}}
-            <div x-cloak x-show="$store.dayView.current === 'list'" x-data="taskFilter(@js($projects), @js($tags), @js($users), @js($locations))">
+            <div x-cloak x-show="$store.dayView.current === 'list'"
+                 x-data="taskFilter"
+                 data-projects="@json($projects)"
+                 data-tags="@json($tags)"
+                 data-users="@json($users)"
+                 data-locations="@json($locations)">
                 {{-- Fold chevron + sort row --}}
                 <div class="flex items-center justify-between mb-2">
                     <button type="button"
