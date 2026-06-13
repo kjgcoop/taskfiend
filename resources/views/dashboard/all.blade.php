@@ -16,10 +16,10 @@
     <div class="py-12">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8"
              x-data="taskFilter"
-             data-projects="@json($projects)"
-             data-tags="@json($tags)"
-             data-users="@json($users)"
-             data-locations="@json($locations)">
+             data-projects="{{ json_encode($projects) }}"
+             data-tags="{{ json_encode($tags) }}"
+             data-users="{{ json_encode($users) }}"
+             data-locations="{{ json_encode($locations) }}">
             <div class="mb-4 text-sm text-gray-600">
                 All tasks you have access to, excluding archived and done.
             </div>

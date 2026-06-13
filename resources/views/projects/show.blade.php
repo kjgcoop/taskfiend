@@ -875,10 +875,10 @@
             <!-- Project Tasks -->
             <div class="bg-[#202020] border border-gray-700 shadow-sm sm:rounded-lg p-6"
                  x-data="taskFilter"
-                 data-projects="@json($projects)"
-                 data-tags="@json($tags)"
-                 data-users="@json($users)"
-                 data-locations="@json($locations)">
+                 data-projects="{{ json_encode($projects) }}"
+                 data-tags="{{ json_encode($tags) }}"
+                 data-users="{{ json_encode($users) }}"
+                 data-locations="{{ json_encode($locations) }}">
                 <div class="flex items-center justify-between mb-4">
                     <button type="button"
                             @click="showIncomplete = !showIncomplete"

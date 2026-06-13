@@ -10,8 +10,8 @@
             <div class="bg-[#202020] overflow-hidden shadow-sm sm:rounded-lg border border-gray-700">
                 <div class="p-6"
                      x-data="taskCreator"
-                     data-projects="@json($projects)"
-                     data-tags="@json($tags)">
+                     data-projects="{{ json_encode($projects) }}"
+                     data-tags="{{ json_encode($tags) }}">
                     {{-- Bulk-creation result banner (shown after partial success redirect) --}}
                     @if(session('bulk_errors'))
                     <div class="mb-6 p-4 bg-red-900/30 border border-red-700 rounded-md">

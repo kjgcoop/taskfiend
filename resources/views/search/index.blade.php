@@ -20,8 +20,8 @@
             <!-- Search Form -->
             <div class="bg-[#202020] border border-gray-700 overflow-hidden shadow-sm sm:rounded-lg p-6"
                  x-data="searchFilter"
-                 data-projects="@json($projects)"
-                 data-tags="@json($tags)"
+                 data-projects="{{ json_encode($projects) }}"
+                 data-tags="{{ json_encode($tags) }}"
                  data-show-filters="{{ $hasSearchParams ? 'false' : 'true' }}">
                 <form method="GET" action="{{ route('search') }}" @submit="prepareSubmit">
                     <!-- Main Search Input -->
@@ -313,10 +313,10 @@
                 @endphp
                 <div class="bg-[#202020] border border-gray-700 shadow-sm sm:rounded-lg p-6"
                      x-data="taskFilter"
-                     data-projects="@json($projects)"
-                     data-tags="@json($tags)"
-                     data-users="@json($users)"
-                     data-locations="@json($locations)">
+                     data-projects="{{ json_encode($projects) }}"
+                     data-tags="{{ json_encode($tags) }}"
+                     data-users="{{ json_encode($users) }}"
+                     data-locations="{{ json_encode($locations) }}">
                     @if($tasksTotal > 0 || $completedTasksTotal > 0 || $archivedTasksTotal > 0)
                     <div class="flex justify-end items-center gap-3 mb-4">
                         <a href="{{ request()->fullUrlWithQuery(['export' => 'markdown']) }}" class="px-3 py-1.5 bg-gray-700 border border-gray-600 text-xs text-gray-100 rounded hover:bg-gray-600">
