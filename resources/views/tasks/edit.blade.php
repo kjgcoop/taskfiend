@@ -177,31 +177,7 @@
                             ])->values()->all();
                         @endphp
                         <div class="mb-4"
-                             x-data="{
-                                 search: @js($_editParentName),
-                                 selectedId: @js((string) ($_editParentId ?? '')),
-                                 open: false,
-                                 tasks: @js($_parentsForCombo),
-                                 get filtered() {
-                                     const q = this.search.toLowerCase().trim();
-                                     if (!q) return this.tasks.slice(0, 10);
-                                     return this.tasks.filter(t => t.rawName.toLowerCase().includes(q)).slice(0, 10);
-                                 },
-                                 select(task) {
-                                     this.selectedId = task.id;
-                                     this.search = task.rawName;
-                                     this.open = false;
-                                 },
-                                 clear() {
-                                     this.selectedId = '';
-                                     this.search = '';
-                                     this.open = false;
-                                 },
-                                 onInput() {
-                                     this.selectedId = '';
-                                     this.open = true;
-                                 }
-                             }" @click.outside="open = false">
+                             x-data="parentTaskCombo" @click.outside="open = false">
                             <label class="block text-sm font-medium text-gray-300 mb-2">
                                 Parent Task <span class="font-normal text-gray-500">(Optional – type to search)</span>
                             </label>
@@ -402,6 +378,24 @@
                 },
             };
         }
+    </script>
+    <script nonce="{{ csp_nonce() }}">
+    document.addEventListener('alpine:init', () => {
+        Alpine.data('parentTaskCombo', () => ({
+            search: @js($_editParentName),
+            selectedId: @js((string) ($_editParentId ?? '')),
+            open: false,
+            tasks: @js($_parentsForCombo),
+            get filtered() {
+                const q = this.search.toLowerCase().trim();
+                if (!q) return this.tasks.slice(0, 10);
+                return this.tasks.filter(t => t.rawName.toLowerCase().includes(q)).slice(0, 10);
+            },
+            select(task) { this.selectedId = task.id; this.search = task.rawName; this.open = false; },
+            clear() { this.selectedId = ''; this.search = ''; this.open = false; },
+            onInput() { this.selectedId = ''; this.open = true; },
+        }));
+    });
     </script>
     @endpush
 </x-app-layout>

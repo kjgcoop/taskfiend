@@ -38,7 +38,7 @@
 
 <div class="space-y-2">
     @foreach($tasks as $task)
-        <div data-task-group x-data="{ subtasksOpen: true }">
+        <div data-task-group x-data="subtaskGroup">
         <div class="bg-gray-700 border border-gray-600 p-3 rounded-lg hover:bg-gray-650 transition">
             <div class="flex items-start gap-3">
                 <!-- Status Indicator -->

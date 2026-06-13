@@ -32,7 +32,7 @@
                     <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                         @foreach($myTemplates as $template)
                             <div class="bg-[#202020] border border-gray-700 rounded-lg p-5 flex flex-col gap-3"
-                                 x-data="{ showUse: false, showDelete: false }">
+                                 x-data="templateItem">
 
                                 <div class="flex items-start justify-between gap-2">
                                     <div class="flex-1 min-w-0">
@@ -142,7 +142,7 @@
                     <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                         @foreach($publicTemplates as $template)
                             <div class="bg-[#202020] border border-gray-700 rounded-lg p-5 flex flex-col gap-3"
-                                 x-data="{ showUse: false }">
+                                 x-data="templateItem">
 
                                 <div>
                                     <span class="text-gray-100 font-medium">{{ $template->name }}</span>

@@ -1,4 +1,4 @@
-<nav x-data="{ open: false }" class="bg-[#202020] border-b border-gray-700">
+<nav x-data="dropdown" class="bg-[#202020] border-b border-gray-700">
     <!-- Primary Navigation Menu -->
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex justify-between h-16">
@@ -18,7 +18,7 @@
                     <!-- <x-nav-link :href="route('inbox')" :active="request()->routeIs('inbox')">
                         {{ __('Inbox') }}
                     </x-nav-link>-->
-                    <div class="relative flex items-center" x-data="{ open: false }" @click.outside="open = false" @close.stop="open = false">
+                    <div class="relative flex items-center" x-data="dropdown" @click.outside="open = false" @close.stop="open = false">
                         @php
                             $byDateActive = request()->routeIs('calendar') || request()->routeIs('overdue') || request()->routeIs('undated');
                         @endphp
@@ -56,7 +56,7 @@
                     <x-nav-link :href="route('search')" :active="request()->routeIs('search')">
                         {{ __('Search') }}
                     </x-nav-link>
-                    <div class="relative flex items-center" x-data="{ open: false }" @click.outside="open = false" @close.stop="open = false">
+                    <div class="relative flex items-center" x-data="dropdown" @click.outside="open = false" @close.stop="open = false">
                         <a href="{{ route('projects.index') }}" class="inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium leading-5 focus:outline-none transition duration-150 ease-in-out {{ request()->routeIs('projects.*') ? 'border-indigo-400 text-gray-100' : 'border-transparent text-gray-400 hover:text-gray-100 hover:border-gray-500' }}">
                             {{ __('Projects') }}
                         </a>
@@ -105,7 +105,7 @@
                             </div>
                         </div>
                     </div>
-                    <div class="relative flex items-center" x-data="{ open: false }" @click.outside="open = false" @close.stop="open = false">
+                    <div class="relative flex items-center" x-data="dropdown" @click.outside="open = false" @close.stop="open = false">
                         <a href="{{ route('tags.index') }}" class="inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium leading-5 focus:outline-none transition duration-150 ease-in-out {{ request()->routeIs('tags.*') ? 'border-indigo-400 text-gray-100' : 'border-transparent text-gray-400 hover:text-gray-100 hover:border-gray-500' }}">
                             {{ __('Tags') }}
                         </a>
@@ -143,7 +143,7 @@
                         </div>
                     </div>
                     <!-- More Dropdown (Templates + Activity + Other Links) -->
-                    <div class="relative flex items-center" x-data="{ open: false }" @click.outside="open = false" @close.stop="open = false">
+                    <div class="relative flex items-center" x-data="dropdown" @click.outside="open = false" @close.stop="open = false">
                         <button @click="open = !open" class="inline-flex items-center px-1 pt-1 border-b-2 border-transparent text-sm font-medium leading-5 text-gray-400 hover:text-gray-100 hover:border-gray-500 focus:outline-none transition duration-150 ease-in-out {{ request()->routeIs('templates.*') || request()->routeIs('changelogs.*') || request()->routeIs('other.links.*') ? 'border-indigo-400 text-gray-100' : '' }}">
                             {{ __('More') }}
                             <svg class="ms-1 fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">

@@ -36,7 +36,7 @@
 
             @if (session('status') === 'password-updated')
                 <p
-                    x-data="{ show: true }"
+                    x-data="flashMessage"
                     x-show="show"
                     x-transition
                     x-init="setTimeout(() => show = false, 2000)"

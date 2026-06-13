@@ -12,34 +12,7 @@
 
     {{-- Status dot / quick-complete button --}}
     @if($completable && $task->status !== 'done')
-        <form x-data="{
-                done: false,
-                loading: false,
-                async submit() {
-                    this.loading = true;
-                    try {
-                        const res = await fetch(this.$el.action, {
-                            method: 'POST',
-                            headers: { 'X-Requested-With': 'XMLHttpRequest' },
-                            body: new FormData(this.$el),
-                        });
-                        const data = await res.json().catch(() => ({}));
-                        if (res.ok && data.ok !== false) {
-                            this.done = true;
-                            await new Promise(r => setTimeout(r, 400));
-                            const row = this.$el.closest('[data-review-row]');
-                            if (row) {
-                                row.style.transition = 'opacity 0.3s';
-                                row.style.opacity = '0';
-                                setTimeout(() => row.style.display = 'none', 300);
-                            }
-                        } else {
-                            alert('Could not complete task: ' + (data.message || 'Please try again.'));
-                        }
-                    } catch { this.$el.submit(); }
-                    finally { this.loading = false; }
-                }
-              }"
+        <form x-data="reviewTaskRow"
               @submit.prevent="submit()"
               method="POST" action="{{ route('tasks.update', $task) }}"
               class="flex-shrink-0 mt-0.5">

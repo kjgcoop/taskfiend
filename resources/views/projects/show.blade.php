@@ -462,7 +462,7 @@
 
                     {{-- Background Image --}}
                     @if(!$isInactive)
-                    <div class="mb-4" x-data="{ showUpload: false }">
+                    <div class="mb-4" x-data="uploadToggle">
                         <label class="block text-sm font-medium text-gray-400 mb-1">Background Image</label>
                         @if($project->background_image)
                             <img src="{{ route('projects.background', $project) }}"
@@ -763,7 +763,7 @@
 
                             <!-- Background Image (only editable when project is active) -->
                             @if(!$isInactive)
-                            <div x-data="{ showUpload: false }">
+                            <div x-data="uploadToggle">
                                 <span class="text-sm font-medium text-gray-500">Background Image</span>
                                 @if($project->background_image)
                                     <div class="mt-1">

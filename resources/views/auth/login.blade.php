@@ -13,7 +13,7 @@
         </div>
 
         <!-- Password -->
-        <div class="mt-4" x-data="{ showPassword: false }">
+        <div class="mt-4" x-data="passwordToggle">
             <x-input-label for="password" :value="__('Password')" />
 
             <div class="relative mt-1">

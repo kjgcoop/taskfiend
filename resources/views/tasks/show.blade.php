@@ -699,7 +699,7 @@
                             <textarea name="comment" rows="3" required
                                       class="w-full rounded-md bg-gray-700 border-gray-600 text-gray-100 placeholder-gray-500 shadow-sm focus:border-blue-500 focus:ring-blue-500 mb-2"
                                       placeholder="Add a comment..."></textarea>
-                            <div class="flex items-center gap-4" x-data="{ fileName: '' }">
+                            <div class="flex items-center gap-4" x-data="fileInput">
                                 <label class="flex items-center gap-2 cursor-pointer">
                                     <span class="px-3 py-1.5 bg-gray-700 border border-gray-600 text-gray-300 text-sm rounded hover:bg-gray-600">Choose file</span>
                                     <span class="text-sm text-gray-400" x-text="fileName || 'No file chosen'"></span>
@@ -785,7 +785,7 @@
                         @if(!$isInactive)
                         <form method="POST" action="{{ route('attachments.store', $task) }}" enctype="multipart/form-data">
                             @csrf
-                            <div class="flex items-center gap-2" x-data="{ fileName: '' }">
+                            <div class="flex items-center gap-2" x-data="fileInput">
                                 <label class="flex items-center gap-2 cursor-pointer">
                                     <span class="px-3 py-1.5 bg-gray-700 border border-gray-600 text-gray-300 text-sm rounded hover:bg-gray-600">Choose file</span>
                                     <span class="text-sm text-gray-400" x-text="fileName || 'No file chosen'"></span>

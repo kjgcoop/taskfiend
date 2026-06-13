@@ -931,7 +931,7 @@
                     </div>
                     <div class="h-0.5 bg-gray-700">
                         <div class="h-full bg-green-500 toast-countdown-bar"
-                             :style="`animation-duration: ${toast.duration}ms`"></div>
+                             :style="'animation-duration: ' + toast.duration + 'ms'"></div>
                     </div>
                 </div>
             </template>

@@ -7,7 +7,7 @@
         </div>
     </x-slot>
 
-    <div class="py-12" x-data="{ showImportForm: false, templateFile: null, projectName: '', favoritesOnly: false }">
+    <div class="py-12" x-data="projectsIndex">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-6">
             <!-- Action Buttons -->
             <div class="flex justify-between items-center gap-2">
@@ -27,13 +27,13 @@
             <!-- Import Template Form -->
             <div x-show="showImportForm" x-cloak class="bg-[#202020] border border-gray-700 p-6 rounded-lg shadow">
                 <h3 class="text-lg font-semibold text-gray-100 mb-4">Import Project Template</h3>
-                <form action="{{ route('projects.import-template') }}" method="POST" enctype="multipart/form-data" @submit="if(!projectName) { alert('Please enter a project name'); return false; }">
+                <form action="{{ route('projects.import-template') }}" method="POST" enctype="multipart/form-data" @submit.prevent="submitImport($event)">
                     @csrf
                     <div class="space-y-4">
                         <div>
                             <label class="block text-sm font-medium text-gray-300 mb-2">Template File</label>
                             <input type="file" name="template_file" accept=".zip" required
-                                   @change="templateFile = $event.target.files[0]; if(!projectName && templateFile) { projectName = templateFile.name.replace(/\.zip$/, '').replace(/^taskfiend_template_/, '').replace(/_\d{4}-\d{2}-\d{2}$/, ''); }"
+                                   @change="handleFileChange($event)"
                                    class="block w-full text-sm text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-gray-700 file:text-gray-100 hover:file:bg-gray-600 bg-[#101010] border border-gray-600 rounded-md">
                         </div>
                         <div>
@@ -98,7 +98,7 @@
                                     <h3 class="font-semibold text-lg truncate {{ $hasBg ? 'text-white' : 'text-gray-100' }}"
                                         title="{{ $project->description ? Str::limit($project->description, 200) : '' }}">{{ $project->name }}</h3>
                                 </div>
-                                <span x-data="{ copied: false }" class="shrink-0 flex items-center gap-1 mt-0.5">
+                                <span x-data="copyButton" class="shrink-0 flex items-center gap-1 mt-0.5">
                                     <span class="text-xs {{ $hasBg ? 'text-gray-300' : 'text-gray-500' }}">#{{ $project->id }}</span>
                                     <button @click.stop="navigator.clipboard.writeText('{{ route('projects.show', $project) }}').then(() => { copied = true; setTimeout(() => copied = false, 2000) })"
                                             title="Copy link"
@@ -169,7 +169,7 @@
                                 <div class="flex items-start justify-between gap-2">
                                     <h3 class="font-semibold text-lg text-gray-400 line-through">{{ $project->name }}</h3>
                                     <div class="shrink-0 flex items-center gap-2">
-                                        <span x-data="{ copied: false }" class="flex items-center gap-1">
+                                        <span x-data="copyButton" class="flex items-center gap-1">
                                             <span class="text-xs text-gray-600">#{{ $project->id }}</span>
                                             <button @click.stop="navigator.clipboard.writeText('{{ route('projects.show', $project) }}').then(() => { copied = true; setTimeout(() => copied = false, 2000) })"
                                                     title="Copy link"
@@ -252,5 +252,29 @@ function setDefaultProject(projectId, btn) {
         }
     });
 }
+</script>
+
+<script nonce="{{ csp_nonce() }}">
+document.addEventListener('alpine:init', () => {
+    Alpine.data('projectsIndex', () => ({
+        showImportForm: false,
+        templateFile: null,
+        projectName: '',
+        favoritesOnly: false,
+        handleFileChange(event) {
+            this.templateFile = event.target.files[0];
+            if (!this.projectName && this.templateFile) {
+                this.projectName = this.templateFile.name
+                    .replace(/\.zip$/, '')
+                    .replace(/^taskfiend_template_/, '')
+                    .replace(/_\d{4}-\d{2}-\d{2}$/, '');
+            }
+        },
+        submitImport(event) {
+            if (!this.projectName) { alert('Please enter a project name'); return; }
+            event.target.submit();
+        },
+    }));
+});
 </script>
 </x-app-layout>

@@ -184,12 +184,8 @@
     @endif
 
     {{-- Time grid — clips to auto range unless full-day mode is on --}}
-    <div x-data="{
-            clipTopPx: {{ $clipTopPx }},
-            clipHeightPx: {{ $clipHeightPx }},
-        }"
-         :style="$store.agendaFull.on ? '' : `height: ${clipHeightPx}px; overflow: hidden;`">
-    <div :style="$store.agendaFull.on ? '' : `margin-top: -${clipTopPx}px;`">
+    <div :style="$store.agendaFull.on ? '' : 'height: {{ $clipHeightPx }}px; overflow: hidden;'">
+    <div :style="$store.agendaFull.on ? '' : 'margin-top: -{{ $clipTopPx }}px;'">
     <div class="flex">
 
         {{-- Hour labels column --}}

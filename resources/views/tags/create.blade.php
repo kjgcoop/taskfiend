@@ -20,7 +20,7 @@
                             @error('tag_name')<p class="mt-1 text-sm text-red-600">{{ $message }}</p>@enderror
                         </div>
 
-                        <div class="mb-6" x-data="{ selected: '{{ old('color', '#3B82F6') }}' }">
+                        <div class="mb-6" x-data="colorPicker" data-color="{{ old('color', '#3B82F6') }}">
                             <label class="block text-sm font-medium text-gray-300 mb-2">Color</label>
                             <input type="hidden" name="color" :value="selected">
                             <div class="flex flex-wrap gap-2">

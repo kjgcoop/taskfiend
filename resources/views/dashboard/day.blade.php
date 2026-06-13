@@ -10,7 +10,9 @@
                     </a>
                 @endif
                 <div x-data="dayDateEditor"
-                     x-init="currentDate = '{{ $carbonDate->format('Y-m-d') }}'; parseRoute = '{{ route('day') }}'; parseDateUrl = '{{ route('tasks.parseDate') }}'"
+                     data-current-date="{{ $carbonDate->format('Y-m-d') }}"
+                     data-parse-route="{{ route('day') }}"
+                     data-parse-date-url="{{ route('tasks.parseDate') }}"
                      @click.outside="cancel()">
                     <h2 x-show="!editing"
                         @click="activate()"
@@ -301,6 +303,11 @@
                     currentDate: '',
                     parseRoute: '',
                     parseDateUrl: '',
+                    init() {
+                        this.currentDate = this.$el.dataset.currentDate || '';
+                        this.parseRoute = this.$el.dataset.parseRoute || '';
+                        this.parseDateUrl = this.$el.dataset.parseDateUrl || '';
+                    },
                     activate() {
                         this.input = this.currentDate;
                         this.error = false;
