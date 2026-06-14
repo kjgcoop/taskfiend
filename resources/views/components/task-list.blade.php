@@ -106,6 +106,7 @@
             noResults: false,
             showIncomplete: true,
             toggleIncomplete() { this.showIncomplete = !this.showIncomplete; },
+            autoResizeInput() { this.$nextTick(() => { const el = this.$refs.createInput; if (el) { el.style.height = 'auto'; el.style.height = Math.min(el.scrollHeight, 200) + 'px'; } }); },
             mode: 'create',
             nameError: '',
             serverError: '',

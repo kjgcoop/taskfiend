@@ -46,7 +46,7 @@
                             <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
                                 Import
                             </button>
-                            <button type="button" @click="showImportForm = false; templateFile = null; projectName = ''" class="px-4 py-2 bg-gray-700 border border-gray-600 text-gray-100 rounded hover:bg-gray-600">
+                            <button type="button" @click="cancelImport()" class="px-4 py-2 bg-gray-700 border border-gray-600 text-gray-100 rounded hover:bg-gray-600">
                                 Cancel
                             </button>
                         </div>
@@ -271,6 +271,7 @@ document.addEventListener('alpine:init', () => {
                     .replace(/_\d{4}-\d{2}-\d{2}$/, '');
             }
         },
+        cancelImport() { this.showImportForm = false; this.templateFile = null; this.projectName = ''; },
         submitImport(event) {
             if (!this.projectName) { alert('Please enter a project name'); return; }
             event.target.submit();

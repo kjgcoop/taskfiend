@@ -184,7 +184,7 @@
                             <div class="flex items-center justify-between mb-2">
                                 <label for="date_to" class="block text-sm font-medium text-gray-300">Date to</label>
                                 <button type="button"
-                                        @click="$refs.dateFrom.value = ''; $refs.dateTo.value = ''"
+                                        @click="clearDateRange()"
                                         class="text-xs text-gray-500 hover:text-gray-300 transition-colors">
                                     Clear dates
                                 </button>
@@ -716,6 +716,11 @@
                     });
 
                     this.searchInput = parts.join(' ');
+                },
+
+                clearDateRange() {
+                    if (this.$refs.dateFrom) this.$refs.dateFrom.value = '';
+                    if (this.$refs.dateTo) this.$refs.dateTo.value = '';
                 },
 
                 clearSearchInput() {

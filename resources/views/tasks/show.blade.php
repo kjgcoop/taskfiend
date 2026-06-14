@@ -264,7 +264,7 @@
                                     Cancel
                                 </button>
                                 @if($task->time)
-                                <button @click="fields.time = ''; saveField('time')"
+                                <button @click="clearAndSave('time')"
                                         class="px-3 py-1 bg-gray-700 text-red-400 text-sm rounded hover:bg-gray-600">
                                     Clear
                                 </button>
@@ -302,7 +302,7 @@
                                     Cancel
                                 </button>
                                 @if($task->duration_minutes)
-                                <button @click="fields.duration_minutes = ''; saveField('duration_minutes')"
+                                <button @click="clearAndSave('duration_minutes')"
                                         class="px-3 py-1 bg-gray-700 text-red-400 text-sm rounded hover:bg-gray-600">
                                     Clear
                                 </button>
@@ -352,7 +352,7 @@
                                     Cancel
                                 </button>
                                 @if($task->location)
-                                <button @click="fields.location = ''; saveField('location')"
+                                <button @click="clearAndSave('location')"
                                         class="px-3 py-1 bg-gray-700 text-red-400 text-sm rounded hover:bg-gray-600">
                                     Clear
                                 </button>
@@ -937,6 +937,8 @@
                 startEdit(field) {
                     this.editing[field] = true;
                 },
+
+                clearAndSave(field) { this.fields[field] = ''; this.saveField(field); },
 
                 startEditDate() {
                     this.editing.date = true;

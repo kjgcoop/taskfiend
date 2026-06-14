@@ -178,7 +178,7 @@
                            @change="checkDate()"
                            :class="dateError ? 'border-red-500' : 'border-gray-600'"
                            class="text-sm bg-gray-700 border rounded px-2 py-1.5 text-gray-100 focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:opacity-40 disabled:cursor-not-allowed">
-                    <button @click="date = ''; dateError = ''" x-show="date && !clearDate" title="Clear date input"
+                    <button @click="clearDateInput()" x-show="date && !clearDate" title="Clear date input"
                             class="text-gray-500 hover:text-gray-300 text-xs w-5 h-5 flex items-center justify-center" style="display:none">
                         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
@@ -391,6 +391,7 @@
                     confirmMessage: '',
 
                     clearDateFields() { this.date = ''; this.naturalDate = ''; this.naturalDateError = ''; },
+                    clearDateInput() { this.date = ''; this.dateError = ''; },
 
                     checkDate() {
                         if (!this.date) { this.clearDate = true; return; }
@@ -542,6 +543,9 @@
                     this.editing[field] = true;
                     this.$nextTick(() => this.$refs[field + 'Input']?.focus());
                 },
+
+                clearAndSave(field) { this.fields[field] = ''; this.saveField(field); },
+                saveRecurrence() { this.saveField('recurrence_pattern'); this.saveField('recurrence_floating'); },
 
                 startEditDate() {
                     this.editing.date = true;

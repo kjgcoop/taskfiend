@@ -465,7 +465,7 @@
 
                     {{-- Background Image --}}
                     @if(!$isInactive)
-                    <div class="mb-4" x-data="uploadToggle">
+                    <div class="mb-4" x-data="{ showUpload: false }">
                         <label class="block text-sm font-medium text-gray-400 mb-1">Background Image</label>
                         @if($project->background_image)
                             <img src="{{ route('projects.background', $project) }}"
@@ -473,7 +473,7 @@
                                  class="rounded-md border border-gray-600 mb-2"
                                  style="height: 80px; width: auto;">
                             <div class="flex items-center gap-3">
-                                <button @click="toggle()"
+                                <button @click="showUpload = !showUpload"
                                         class="text-sm text-gray-400 hover:text-gray-200 underline">
                                     Replace
                                 </button>
@@ -486,7 +486,7 @@
                                 </form>
                             </div>
                         @else
-                            <button @click="toggle()"
+                            <button @click="showUpload = !showUpload"
                                     class="text-sm text-gray-400 hover:text-gray-200 underline">
                                 Add background image
                             </button>
@@ -766,7 +766,7 @@
 
                             <!-- Background Image (only editable when project is active) -->
                             @if(!$isInactive)
-                            <div x-data="uploadToggle">
+                            <div x-data="{ showUpload: false }">
                                 <span class="text-sm font-medium text-gray-500">Background Image</span>
                                 @if($project->background_image)
                                     <div class="mt-1">
@@ -777,7 +777,7 @@
                                                  style="height: 100px; width: auto;">
                                         </div>
                                         <div class="flex items-center gap-3">
-                                            <button @click="toggle()"
+                                            <button @click="showUpload = !showUpload"
                                                     class="text-sm text-gray-400 hover:text-gray-200 underline">
                                                 Replace
                                             </button>
@@ -792,7 +792,7 @@
                                     </div>
                                 @else
                                     <div class="mt-1">
-                                        <button @click="toggle()"
+                                        <button @click="showUpload = !showUpload"
                                                 class="text-sm text-gray-400 hover:text-gray-200 underline">
                                             Add background image
                                         </button>
@@ -809,7 +809,7 @@
                                                 class="px-3 py-1.5 bg-blue-600 text-white text-xs rounded hover:bg-blue-700 whitespace-nowrap">
                                             Upload
                                         </button>
-                                        <button type="button" @click="hide()"
+                                        <button type="button" @click="showUpload = false"
                                                 class="px-3 py-1.5 bg-gray-700 text-gray-300 text-xs rounded hover:bg-gray-600">
                                             Cancel
                                         </button>

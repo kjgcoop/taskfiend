@@ -278,7 +278,7 @@ $_panelTaskJson = json_encode([
                     <button @click="saveField('time')" class="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700">Save</button>
                     <button @click="cancelEdit('time')" class="px-3 py-1 bg-gray-700 text-gray-300 text-sm rounded hover:bg-gray-600">Cancel</button>
                     @if($task->time)
-                    <button @click="fields.time = ''; saveField('time')" class="px-3 py-1 bg-gray-700 text-red-400 text-sm rounded hover:bg-gray-600">Clear</button>
+                    <button @click="clearAndSave('time')" class="px-3 py-1 bg-gray-700 text-red-400 text-sm rounded hover:bg-gray-600">Clear</button>
                     @endif
                 </div>
             </div>
@@ -309,7 +309,7 @@ $_panelTaskJson = json_encode([
                     <button @click="saveField('duration_minutes')" class="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700">Save</button>
                     <button @click="cancelEdit('duration_minutes')" class="px-3 py-1 bg-gray-700 text-gray-300 text-sm rounded hover:bg-gray-600">Cancel</button>
                     @if($task->duration_minutes)
-                    <button @click="fields.duration_minutes = ''; saveField('duration_minutes')"
+                    <button @click="clearAndSave('duration_minutes')"
                             class="px-3 py-1 bg-gray-700 text-red-400 text-sm rounded hover:bg-gray-600">Clear</button>
                     @endif
                 </div>
@@ -356,7 +356,7 @@ $_panelTaskJson = json_encode([
                     <button @click="saveField('location')" class="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700">Save</button>
                     <button @click="cancelEdit('location')" class="px-3 py-1 bg-gray-700 text-gray-300 text-sm rounded hover:bg-gray-600">Cancel</button>
                     @if($task->location)
-                    <button @click="fields.location = ''; saveField('location')"
+                    <button @click="clearAndSave('location')"
                             class="px-3 py-1 bg-gray-700 text-red-400 text-sm rounded hover:bg-gray-600">Clear</button>
                     @endif
                 </div>
@@ -446,7 +446,7 @@ $_panelTaskJson = json_encode([
                 Floating (next date relative to completion)
             </label>
             <div class="flex gap-2 mt-2">
-                <button @click="saveField('recurrence_pattern'); saveField('recurrence_floating')"
+                <button @click="saveRecurrence()"
                         class="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700">Save</button>
                 <button @click="cancelEdit('recurrence_pattern')"
                         class="px-3 py-1 bg-gray-700 text-gray-300 text-sm rounded hover:bg-gray-600">Cancel</button>

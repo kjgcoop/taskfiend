@@ -30,7 +30,7 @@
                               x-on:input="handleInput($event)"
                               x-on:keydown="handleKeydown($event)"
                               x-on:click="schedulePreview($event.target.value, $event.target.selectionStart)"
-                              x-on:paste="$nextTick(() => { const el = $refs.createInput; el.style.height = 'auto'; el.style.height = Math.min(el.scrollHeight, 200) + 'px'; })"
+                              x-on:paste="autoResizeInput()"
                               :class="nameError ? 'border-red-500 focus:ring-red-500' : 'border-gray-600 focus:ring-blue-500'"
                               style="resize: none; overflow: hidden;"
                               class="w-full pl-9 pr-8 py-2 bg-gray-700 border rounded-md text-gray-100 placeholder-gray-500 focus:outline-none focus:ring-2 focus:border-transparent">{{ old('name') }}</textarea>
