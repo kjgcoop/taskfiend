@@ -206,13 +206,25 @@
                              x-transition:leave-start="opacity-100 scale-100"
                              x-transition:leave-end="opacity-0 scale-95"
                              style="display:none;">
-                            <input x-ref="searchInput"
-                                   x-model="query"
-                                   type="text"
-                                   placeholder="Search…"
-                                   class="w-56 bg-gray-700 text-gray-100 placeholder-gray-400 text-sm rounded-md px-3 py-1.5 border border-gray-600 focus:outline-none focus:border-indigo-500"
-                                   @keydown.enter="submit()"
-                                   @keydown.escape="close()">
+                            <div class="relative">
+                                <input x-ref="searchInput"
+                                       x-model="query"
+                                       type="text"
+                                       placeholder="Search…"
+                                       class="w-56 bg-gray-700 text-gray-100 placeholder-gray-400 text-sm rounded-md px-3 py-1.5 border border-gray-600 focus:outline-none focus:border-indigo-500"
+                                       :class="query ? 'pr-7' : ''"
+                                       @keydown.enter="submit()"
+                                       @keydown.escape="close()">
+                                <button x-show="query"
+                                        @click="query = ''; $refs.searchInput.focus()"
+                                        type="button"
+                                        class="absolute inset-y-0 right-0 flex items-center pr-2 text-gray-400 hover:text-gray-100"
+                                        tabindex="-1">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                                    </svg>
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -319,13 +331,25 @@
                              x-transition:leave-start="opacity-100 scale-100"
                              x-transition:leave-end="opacity-0 scale-95"
                              style="display:none;">
-                            <input x-ref="searchInput"
-                                   x-model="query"
-                                   type="text"
-                                   placeholder="Search…"
-                                   class="w-40 bg-gray-700 text-gray-100 placeholder-gray-400 text-sm rounded-md px-3 py-1.5 border border-gray-600 focus:outline-none focus:border-indigo-500"
-                                   @keydown.enter="submit()"
-                                   @keydown.escape="close()">
+                            <div class="relative">
+                                <input x-ref="searchInput"
+                                       x-model="query"
+                                       type="text"
+                                       placeholder="Search…"
+                                       class="w-40 bg-gray-700 text-gray-100 placeholder-gray-400 text-sm rounded-md px-3 py-1.5 border border-gray-600 focus:outline-none focus:border-indigo-500"
+                                       :class="query ? 'pr-7' : ''"
+                                       @keydown.enter="submit()"
+                                       @keydown.escape="close()">
+                                <button x-show="query"
+                                        @click="query = ''; $refs.searchInput.focus()"
+                                        type="button"
+                                        class="absolute inset-y-0 right-0 flex items-center pr-2 text-gray-400 hover:text-gray-100"
+                                        tabindex="-1">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                                    </svg>
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
