@@ -9,7 +9,11 @@ Alpine.data('copyButton', () => ({ copied: false }));
 Alpine.data('flashMessage', () => ({ show: true }));
 Alpine.data('subtaskGroup', () => ({ subtasksOpen: true }));
 Alpine.data('tabSwitcher', () => ({ tab: 'comments' }));
-Alpine.data('uploadToggle', () => ({ showUpload: false }));
+Alpine.data('uploadToggle', () => ({
+    showUpload: false,
+    toggle() { this.showUpload = !this.showUpload; },
+    hide() { this.showUpload = false; },
+}));
 Alpine.data('passwordToggle', () => ({ showPassword: false }));
 Alpine.data('fileInput', () => ({ fileName: '' }));
 Alpine.data('templateItem', () => ({ showUse: false, showDelete: false }));
