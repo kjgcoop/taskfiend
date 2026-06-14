@@ -190,7 +190,7 @@
                                     </button>
                                     <input type="date" x-ref="datePicker"
                                            @change="pickDate($event.target.value)"
-                                           :min="new Date().toLocaleDateString('en-CA')"
+                                           :min="todayDate"
                                            class="absolute inset-0 opacity-0 w-full h-full cursor-pointer">
                                 </div>
                             </div>
@@ -518,7 +518,7 @@
                                    class="rounded-md bg-gray-700 border-gray-600 text-gray-100 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm">
                         </div>
                         <div class="flex gap-2 mt-2">
-                            <button @click="saveField('recurrence_pattern'); saveField('recurrence_floating'); saveField('recurrence_end_date')"
+                            <button @click="saveRecurrence()"
                                     class="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700">
                                 Save
                             </button>
@@ -911,10 +911,19 @@
                     this.parentOpen = false;
                 },
 
+                todayDate: '',
+
                 init() {
                     this.taskId = parseInt(this.$el.dataset.taskId) || 0;
                     this.original = JSON.parse(JSON.stringify(this.fields));
+                    this.todayDate = new Date().toLocaleDateString('en-CA');
                     this.$nextTick(() => { if (this.$refs.descHtml) this.$refs.descHtml.innerHTML = this.renderedDescription; });
+                },
+
+                saveRecurrence() {
+                    this.saveField('recurrence_pattern');
+                    this.saveField('recurrence_floating');
+                    this.saveField('recurrence_end_date');
                 },
 
                 startEdit(field) {
