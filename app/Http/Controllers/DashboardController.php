@@ -223,6 +223,35 @@ class DashboardController extends Controller
         return view('dashboard.calendar', compact('tasks', 'month', 'year', 'startDate', 'overdueCount', 'undatedCount'));
     }
 
+    public function exportOverdueMarkdown(Request $request)
+    {
+        $userConstraint = function ($q) {
+            $q->where('creator_id', Auth::id())
+              ->orWhereHas('assignees', function ($query) {
+                  $query->where('users.id', Auth::id());
+              });
+        };
+
+        $tasks = Task::query()->where($userConstraint)
+            ->where('status', '!=', 'archived')
+            ->where('status', '!=', 'done')
+            ->whereNotNull('date')
+            ->where('date', '<', today()->format('Y-m-d'))
+            ->whereHas('project', fn($pq) => $pq->whereNotIn('status', ['archived', 'done']))
+            ->orderByRaw('date ASC, time IS NULL, time ASC')
+            ->get();
+
+        $lines = ['# Overdue Tasks'];
+        foreach ($tasks as $task) {
+            $lines[] = '* ' . $task->name;
+        }
+
+        return response(implode("\n", $lines) . "\n", 200, [
+            'Content-Type'        => 'text/markdown; charset=UTF-8',
+            'Content-Disposition' => 'attachment; filename="overdue_' . today()->format('Y-m-d') . '.md"',
+        ]);
+    }
+
     public function exportDayMarkdown(Request $request)
     {
         $date = $request->input('date', today()->format('Y-m-d'));

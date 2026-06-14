@@ -23,6 +23,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/', [DashboardController::class, 'day'])->name('dashboard');
     Route::get('/today', [DashboardController::class, 'day'])->name('today');
     Route::get('/overdue', [DashboardController::class, 'overdue'])->name('overdue');
+    Route::get('/overdue/export-markdown', [DashboardController::class, 'exportOverdueMarkdown'])->name('overdue.export-markdown');
     Route::get('/inbox', [DashboardController::class, 'inbox'])->name('inbox'); // kept for bookmarks
     Route::get('/all-tasks', [DashboardController::class, 'all'])->name('all-tasks');
     Route::get('/undated', [DashboardController::class, 'undated'])->name('undated');
@@ -62,6 +63,7 @@ Route::middleware('auth')->group(function () {
     Route::post('/tags/{tag}/reorder-tasks', [TagController::class, 'reorderTasks'])->name('tags.reorderTasks');
     Route::get('/tags/{tag}/completed-tasks', [TagController::class, 'completedTasks'])->name('tags.completedTasks');
     Route::get('/tags/{tag}/archived-tasks', [TagController::class, 'archivedTasks'])->name('tags.archivedTasks');
+    Route::get('/tags/{tag}/export-markdown', [TagController::class, 'exportMarkdown'])->name('tags.export-markdown');
     Route::post('/tags/quick-create', [TagController::class, 'quickStore'])->name('tags.quickStore');
 
     Route::post('/tasks/{task}/comments', [CommentController::class, 'store'])->name('comments.store');

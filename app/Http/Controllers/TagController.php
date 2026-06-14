@@ -242,6 +242,39 @@ class TagController extends Controller
         ]);
     }
 
+    public function exportMarkdown(Request $request, Tag $tag)
+    {
+        $userConstraint = function ($q) {
+            $q->where('creator_id', Auth::id())
+              ->orWhereHas('assignees', function ($query) {
+                  $query->where('users.id', Auth::id());
+              });
+        };
+
+        $incomplete = $tag->tasks()->where($userConstraint)->where('status', 'incomplete')->orderByRaw('tasks.date IS NULL, tasks.date ASC, tasks.time IS NULL, tasks.time ASC')->get();
+        $done       = $tag->tasks()->where($userConstraint)->where('status', 'done')->orderByRaw('tasks.date IS NULL, tasks.date ASC')->get();
+        $archived   = $tag->tasks()->where($userConstraint)->where('status', 'archived')->orderByRaw('tasks.date IS NULL, tasks.date ASC')->get();
+
+        $lines = ['# ' . $tag->tag_name];
+
+        foreach ([['## Incomplete', $incomplete], ['## Done', $done], ['## Archived', $archived]] as [$heading, $group]) {
+            if ($group->isNotEmpty()) {
+                $lines[] = '';
+                $lines[] = $heading;
+                foreach ($group as $task) {
+                    $lines[] = '* ' . $task->name;
+                }
+            }
+        }
+
+        $filename = 'tag_' . preg_replace('/[^a-z0-9]+/', '_', strtolower($tag->tag_name)) . '_' . now()->format('Y-m-d') . '.md';
+
+        return response(implode("\n", $lines) . "\n", 200, [
+            'Content-Type'        => 'text/markdown; charset=UTF-8',
+            'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+        ]);
+    }
+
     public function updateField(Request $request, Tag $tag)
     {
         $field = $request->input('field');

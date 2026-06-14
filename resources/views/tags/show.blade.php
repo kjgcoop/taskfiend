@@ -56,6 +56,10 @@
                             class="w-full text-left px-4 py-2 text-gray-200 hover:bg-gray-700">
                         Details
                     </button>
+                    <a href="{{ route('tags.export-markdown', $tag) }}"
+                       class="block px-4 py-2 text-gray-200 hover:bg-gray-700">
+                        Export .md
+                    </a>
                 </div>
             </div>
         </div>
