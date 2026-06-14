@@ -300,7 +300,36 @@
             </div>
 
             <!-- Hamburger -->
-            <div class="-me-2 flex items-center sm:hidden">
+            <div class="-me-2 flex items-center gap-1 sm:hidden">
+                @auth
+                <div x-data="navSearch" @click.outside="close()">
+                    <div class="flex items-center gap-1">
+                        <button @click="toggle()"
+                                class="inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-gray-100 hover:bg-gray-700 focus:outline-none transition duration-150 ease-in-out"
+                                title="Search">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z" />
+                            </svg>
+                        </button>
+                        <div x-show="open"
+                             x-transition:enter="transition ease-out duration-150"
+                             x-transition:enter-start="opacity-0 scale-95"
+                             x-transition:enter-end="opacity-100 scale-100"
+                             x-transition:leave="transition ease-in duration-100"
+                             x-transition:leave-start="opacity-100 scale-100"
+                             x-transition:leave-end="opacity-0 scale-95"
+                             style="display:none;">
+                            <input x-ref="searchInput"
+                                   x-model="query"
+                                   type="text"
+                                   placeholder="Search…"
+                                   class="w-40 bg-gray-700 text-gray-100 placeholder-gray-400 text-sm rounded-md px-3 py-1.5 border border-gray-600 focus:outline-none focus:border-indigo-500"
+                                   @keydown.enter="submit()"
+                                   @keydown.escape="close()">
+                        </div>
+                    </div>
+                </div>
+                @endauth
                 <button @click="open = ! open" class="inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-gray-100 hover:bg-gray-700 focus:outline-none focus:bg-gray-700 focus:text-gray-100 transition duration-150 ease-in-out">
                     <svg class="h-6 w-6" stroke="currentColor" fill="none" viewBox="0 0 24 24">
                         <path :class="{'hidden': open, 'inline-flex': ! open }" class="inline-flex" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
