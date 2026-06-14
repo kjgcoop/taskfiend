@@ -188,6 +188,35 @@
             <!-- Settings Dropdown -->
             <div class="hidden sm:flex sm:items-center sm:gap-3 sm:ms-6">
                 @auth
+                <!-- Quick Search -->
+                <div class="relative flex items-center" x-data="navSearch" @click.outside="close()">
+                    <div class="flex items-center gap-2">
+                        <button @click="toggle()"
+                                class="inline-flex items-center justify-center w-9 h-9 text-gray-400 hover:text-gray-100 rounded-md hover:bg-gray-700 transition-colors"
+                                title="Search">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z" />
+                            </svg>
+                        </button>
+                        <div x-show="open"
+                             x-transition:enter="transition ease-out duration-150"
+                             x-transition:enter-start="opacity-0 scale-95"
+                             x-transition:enter-end="opacity-100 scale-100"
+                             x-transition:leave="transition ease-in duration-100"
+                             x-transition:leave-start="opacity-100 scale-100"
+                             x-transition:leave-end="opacity-0 scale-95"
+                             style="display:none;">
+                            <input x-ref="searchInput"
+                                   x-model="query"
+                                   type="text"
+                                   placeholder="Search…"
+                                   class="w-56 bg-gray-700 text-gray-100 placeholder-gray-400 text-sm rounded-md px-3 py-1.5 border border-gray-600 focus:outline-none focus:border-indigo-500"
+                                   @keydown.enter="submit()"
+                                   @keydown.escape="close()">
+                        </div>
+                    </div>
+                </div>
+
                 <a href="{{ route('tasks.create') }}" title="New Task"
                    class="inline-flex items-center justify-center w-9 h-9 bg-blue-600 hover:bg-blue-700 text-white rounded-md transition-colors">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
@@ -460,6 +489,27 @@
     </div>
 <script nonce="{{ csp_nonce() }}">
 document.addEventListener('alpine:init', () => {
+    Alpine.data('navSearch', () => ({
+        open: false,
+        query: '',
+        toggle() {
+            this.open = !this.open;
+            if (this.open) {
+                this.$nextTick(() => this.$refs.searchInput.focus());
+            }
+        },
+        close() {
+            this.open = false;
+            this.query = '';
+        },
+        submit() {
+            const q = this.query.trim();
+            if (q) {
+                window.location.href = '{{ route('search') }}?q=' + encodeURIComponent(q);
+            }
+        }
+    }));
+
     Alpine.data('notificationsMenu', () => ({
         open: false,
         loaded: false,
