@@ -83,7 +83,7 @@
                                         <template x-for="proj in (projects || [])" :key="proj.name">
                                             <span class="relative group inline-flex items-baseline gap-x-0.5">
                                                 <span class="text-gray-500">·</span>
-                                                <span class="underline decoration-dotted cursor-help" x-text="proj.name + ' \u00d7' + proj.count"></span>
+                                                <span class="underline decoration-dotted cursor-help" x-text="proj.name + ' &dash; ' + proj.count"></span>
                                                 <div class="absolute hidden group-hover:block bottom-full left-0 mb-1 bg-gray-900 border border-gray-600 rounded p-2 text-gray-200 z-50 shadow-lg min-w-max max-w-xs">
                                                     <template x-for="(task, idx) in proj.tasks" :key="idx">
                                                         <div class="flex gap-1.5 py-0.5">
