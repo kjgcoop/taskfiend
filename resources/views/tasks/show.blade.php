@@ -487,6 +487,9 @@
                                     <span class="text-xs text-gray-500 font-normal ml-1">(fixed schedule)</span>
                                 @endif
                             </p>
+                            @if($task->recurrence_end_date)
+                            <p class="text-xs text-gray-400 mt-1">Ends after: {{ \Carbon\Carbon::parse($task->recurrence_end_date)->format('l, F j, Y') }}</p>
+                            @endif
                             @if($nextDueDate && $task->status !== 'done')
                             <p class="text-xs text-gray-300 mt-1">Due date after the current: {{ $nextDueDate }}</p>
                             @endif
@@ -509,8 +512,13 @@
                                    class="rounded bg-gray-700 border-gray-600 text-purple-500 focus:ring-purple-500 mr-2">
                             Floating (next date relative to when completed, not the original due date)
                         </label>
+                        <div class="mt-2">
+                            <label class="block text-xs text-gray-400 mb-1">End date (optional — stops recurring after this date)</label>
+                            <input type="date" x-model="fields.recurrence_end_date"
+                                   class="rounded-md bg-gray-700 border-gray-600 text-gray-100 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm">
+                        </div>
                         <div class="flex gap-2 mt-2">
-                            <button @click="saveField('recurrence_pattern'); saveField('recurrence_floating')"
+                            <button @click="saveField('recurrence_pattern'); saveField('recurrence_floating'); saveField('recurrence_end_date')"
                                     class="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700">
                                 Save
                             </button>
@@ -867,6 +875,7 @@
                     parent_id: @js($task->parent_id ?? ''),
                     recurrence_pattern: @js($task->recurrence_pattern ?? ''),
                     recurrence_floating: @js((bool) $task->recurrence_floating),
+                    recurrence_end_date: @js($task->recurrence_end_date ?? ''),
                     show_map: @js((bool) $task->show_map),
                     tag_ids: @js($task->tags->pluck('id')->toArray()),
                     assignee_ids: @js($task->assignees->pluck('id')->toArray()),

@@ -28,6 +28,7 @@ class Task extends Model
         'project_sort_order',
         'recurrence_pattern',
         'recurrence_floating',
+        'recurrence_end_date',
     ];
 
     protected function casts(): array

@@ -118,6 +118,7 @@ class TaskController extends Controller
             'parent_id' => 'nullable|exists:tasks,id',
             'recurrence_pattern' => 'nullable|string|max:100',
             'recurrence_floating' => 'nullable|boolean',
+            'recurrence_end_date' => 'nullable|date',
             'tag_ids' => 'nullable|array',
             'tag_ids.*' => 'exists:tags,id',
             'assignee_ids' => 'nullable|array',
@@ -375,6 +376,7 @@ class TaskController extends Controller
             'parent_id' => $validated['parent_id'] ?? null,
             'recurrence_pattern' => $recurrencePattern,
             'recurrence_floating' => $recurrenceFloating,
+            'recurrence_end_date' => $validated['recurrence_end_date'] ?? null,
             'creator_id' => Auth::id(),
             'status' => 'incomplete',
         ]);
@@ -531,6 +533,7 @@ class TaskController extends Controller
             'parent_id' => 'nullable|exists:tasks,id',
             'recurrence_pattern' => 'nullable|string|max:100',
             'recurrence_floating' => 'nullable|boolean',
+            'recurrence_end_date' => 'nullable|date',
             'status' => 'in:incomplete,done,archived',
             'tag_ids' => 'nullable|array',
             'tag_ids.*' => 'exists:tags,id',
@@ -753,7 +756,7 @@ class TaskController extends Controller
         $this->assertProjectActive($task, asJson: true);
 
         $field = $request->input('field');
-        $allowedFields = ['name', 'description', 'location', 'show_map', 'status', 'date', 'time', 'duration_minutes', 'project_id', 'parent_id', 'recurrence_pattern', 'recurrence_floating', 'tag_ids', 'assignee_ids'];
+        $allowedFields = ['name', 'description', 'location', 'show_map', 'status', 'date', 'time', 'duration_minutes', 'project_id', 'parent_id', 'recurrence_pattern', 'recurrence_floating', 'recurrence_end_date', 'tag_ids', 'assignee_ids'];
 
         if (!in_array($field, $allowedFields)) {
             return response()->json(['success' => false, 'message' => 'Invalid field'], 400);
@@ -835,6 +838,17 @@ class TaskController extends Controller
                     // Reject dates in the past (today is always valid)
                     if (Carbon::parse($value)->startOfDay()->lt(Carbon::today())) {
                         return response()->json(['success' => false, 'message' => 'Task date cannot be in the past.'], 422);
+                    }
+                }
+
+                // Validate and normalize recurrence_end_date
+                if ($field === 'recurrence_end_date') {
+                    if ($value === null || $value === '') {
+                        $value = null;
+                    } elseif (!strtotime($value)) {
+                        return response()->json(['success' => false, 'message' => 'Invalid end date format.'], 422);
+                    } else {
+                        $value = Carbon::parse($value)->format('Y-m-d');
                     }
                 }
 
@@ -1504,6 +1518,11 @@ class TaskController extends Controller
 
         $nextDate = $nextOccurrence->format('Y-m-d');
 
+        // Stop the series if the next occurrence falls after the end date
+        if ($originalTask->recurrence_end_date && $nextDate > $originalTask->recurrence_end_date) {
+            return;
+        }
+
         $existingTask = Task::where('creator_id', $originalTask->creator_id)
             ->where('name', $originalTask->name)
             ->where('recurrence_pattern', $originalTask->recurrence_pattern)
@@ -1527,6 +1546,7 @@ class TaskController extends Controller
             'parent_id' => null, // Recurring tasks are always root-level
             'recurrence_pattern' => $originalTask->recurrence_pattern,
             'recurrence_floating' => $originalTask->recurrence_floating,
+            'recurrence_end_date' => $originalTask->recurrence_end_date,
             'creator_id' => $originalTask->creator_id,
             'status' => 'incomplete',
         ]);

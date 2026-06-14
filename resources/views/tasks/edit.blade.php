@@ -136,6 +136,13 @@
                                        class="rounded bg-gray-700 border-gray-600 text-purple-500 focus:ring-purple-500 mr-2">
                                 Floating (next date relative to when completed, not the original due date)
                             </label>
+                            <div class="mt-2">
+                                <label for="recurrence_end_date" class="block text-xs text-gray-400 mb-1">End date (optional — stops recurring after this date)</label>
+                                <input type="date" name="recurrence_end_date" id="recurrence_end_date"
+                                       class="rounded-md bg-gray-700 border-gray-600 text-gray-100 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm"
+                                       value="{{ old('recurrence_end_date', $task->recurrence_end_date) }}">
+                                @error('recurrence_end_date')<p class="mt-1 text-sm text-red-600">{{ $message }}</p>@enderror
+                            </div>
                         </div>
 
                         <div class="mb-4">
