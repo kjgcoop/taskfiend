@@ -17,7 +17,7 @@ cd "${CLAUDE_PROJECT_DIR:-/home/user/taskfiend}"
 if [ ! -f vendor/laravel/framework/src/Illuminate/Foundation/Application.php ]; then
   echo "Installing PHP dependencies from vendor-cache branch..."
   if git fetch origin vendor-cache 2>/dev/null; then
-    git checkout origin/vendor-cache -- vendor.tar.gz 2>/dev/null && \
+    git show origin/vendor-cache:vendor.tar.gz > vendor.tar.gz 2>/dev/null && \
       tar -xzf vendor.tar.gz && rm vendor.tar.gz && \
       echo "✅ vendor extracted from vendor-cache branch" || \
       echo "⚠️  vendor.tar.gz not found on vendor-cache branch"
@@ -88,7 +88,7 @@ php artisan user:create user3@test.com "User Three" password123 --env=testing 2>
 # ── 8. Frontend assets ────────────────────────────────────────────────────────
 if [ ! -f public/build/manifest.json ]; then
   echo "Restoring frontend build from vendor-cache branch..."
-  git checkout origin/vendor-cache -- public-build.tar.gz 2>/dev/null && \
+  git show origin/vendor-cache:public-build.tar.gz > public-build.tar.gz 2>/dev/null && \
     tar -xzf public-build.tar.gz && rm public-build.tar.gz && \
     echo "✅ public/build extracted from vendor-cache branch" || \
     echo "⚠️  public-build.tar.gz not found on vendor-cache branch"
