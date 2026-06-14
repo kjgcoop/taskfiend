@@ -3,28 +3,6 @@
 ## Project Overview
 Laravel + SQLite + Alpine.js task management app. See `spec.md` for full requirements.
 
-## Known Security Issues
-
-### `'unsafe-eval'` in Content Security Policy
-**File:** `app/Http/Middleware/SecurityHeaders.php`
-
-The CSP `script-src` directive includes `'unsafe-eval'`, which permits `eval()` and
-`new Function()` from any script running on the page. This is required by **Alpine.js v3**,
-which compiles `x-data`/`x-show`/`@click` expressions using `new Function()` internally.
-
-**Risk:** If an XSS vulnerability were exploited, `'unsafe-eval'` makes it easier for an
-attacker to execute arbitrary code since eval-based execution is not blocked.
-
-**Mitigating factor:** All user-supplied content is HTML-escaped before rendering
-(`render_title()` escapes before applying patterns; `render_body()` uses
-`Str::markdown()` with `html_input: 'escape'`), limiting the XSS surface.
-
-**Proper fix:** Migrate to the Alpine.js CSP build (`@alpinejs/csp`), which replaces
-`new Function()` with pre-registered component definitions in external JS files.
-This eliminates the need for `'unsafe-eval'` but requires moving all inline Alpine
-component logic (every `x-data="{ ... }"` with methods) into nonce-approved `.js` files —
-a substantial refactor given the current inline-expression style throughout the views.
-
 ## Completed
 
 ### Database (✓)
