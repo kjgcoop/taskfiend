@@ -67,8 +67,10 @@ if (! function_exists('render_body')) {
         preg_match_all('~(?<!\]\()https?://[^\s\])"\'<>#]+/tasks/(\d+)~i',    $text, $utm);
         preg_match_all('~(?<!\]\()https?://[^\s\])"\'<>#]+/projects/(\d+)~i', $text, $upm);
         preg_match_all('~(?<!\]\()https?://[^\s\])"\'<>#]+/tags/(\d+)~i',     $text, $ugm);
+        // Sidebar-style URLs: task ID in ?task=N or &task=N query param
+        preg_match_all('~(?<!\]\()https?://[^\s\])"\'<>#]*[?&]task=(\d+)~i',  $text, $qtm);
 
-        $taskIds    = array_unique(array_merge($tm[1],  $utm[1]));
+        $taskIds    = array_unique(array_merge($tm[1],  $utm[1], $qtm[1]));
         $projectIds = array_unique(array_merge($pm[1],  $upm[1]));
         $tagIds     = array_unique(array_merge($gm[1],  $ugm[1]));
 
@@ -99,7 +101,7 @@ if (! function_exists('render_body')) {
                 if (! $isCreator && ! $isAssignee) return $m[0];
             }
 
-            $name = $mdText($task->name);
+            $name = $mdText($task->id . ' - ' . $task->name);
             $url  = route('tasks.show', $task);
 
             if ($task->status === 'archived') {
@@ -121,7 +123,7 @@ if (! function_exists('render_body')) {
                 if (! $isCreator && ! $isAssignee) return $m[0];
             }
 
-            $name = $mdText($project->name);
+            $name = $mdText($project->id . ' - ' . $project->name);
             $url  = route('projects.show', $project);
 
             if ($project->status === 'archived') {
@@ -137,7 +139,7 @@ if (! function_exists('render_body')) {
             $tag = $tags->get((int) $m[1]);
             if (! $tag) return $m[0];
 
-            $name = $mdText($tag->tag_name);
+            $name = $mdText($tag->id . ' - ' . $tag->tag_name);
             $url  = route('tags.show', $tag);
             return "[{$name}]({$url})";
         }, $text);
@@ -156,7 +158,33 @@ if (! function_exists('render_body')) {
                     if (! $isCreator && ! $isAssignee) return $m[0];
                 }
 
-                $name = $mdText($task->name);
+                $name = $mdText($task->id . ' - ' . $task->name);
+                $url  = $m[0];
+
+                if ($task->status === 'archived') {
+                    return "~~[{$name}]({$url})~~";
+                }
+                $suffix = $task->status === 'done' ? ' ✓' : '';
+                return "[{$name}{$suffix}]({$url})";
+            },
+            $text
+        );
+
+        // ── Sidebar URLs: ?task=N or &task=N (e.g. /day?date=…&task=N) ──────
+        $text = preg_replace_callback(
+            '~(?<!\]\()https?://[^\s\])"\'<>#]*[?&]task=(\d+)[^\s\])"\'<>#]*~i',
+            function ($m) use ($tasks, $userId, $mdText, $isAppUrl) {
+                if (! $isAppUrl($m[0])) return $m[0];
+                $task = $tasks->get((int) $m[1]);
+                if (! $task) return $m[0];
+
+                if ($userId) {
+                    $isCreator  = $task->creator_id === $userId;
+                    $isAssignee = $task->assignees->contains('id', $userId);
+                    if (! $isCreator && ! $isAssignee) return $m[0];
+                }
+
+                $name = $mdText($task->id . ' - ' . $task->name);
                 $url  = $m[0];
 
                 if ($task->status === 'archived') {
@@ -182,7 +210,7 @@ if (! function_exists('render_body')) {
                     if (! $isCreator && ! $isAssignee) return $m[0];
                 }
 
-                $name = $mdText($project->name);
+                $name = $mdText($project->id . ' - ' . $project->name);
                 $url  = $m[0];
 
                 if ($project->status === 'archived') {
@@ -202,7 +230,7 @@ if (! function_exists('render_body')) {
                 $tag = $tags->get((int) $m[1]);
                 if (! $tag) return $m[0];
 
-                $name = $mdText($tag->tag_name);
+                $name = $mdText($tag->id . ' - ' . $tag->tag_name);
                 $url  = $m[0];
                 return "[{$name}]({$url})";
             },
