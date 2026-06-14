@@ -505,7 +505,7 @@ document.addEventListener('alpine:init', () => {
         submit() {
             const q = this.query.trim();
             if (q) {
-                window.location.href = '{{ route('search') }}?q=' + encodeURIComponent(q);
+                window.location.href = '{{ route('search') }}?q=' + encodeURIComponent(q) + '&show_incomplete=1';
             }
         }
     }));
