@@ -126,6 +126,7 @@
             // Quick-add parse preview
             preview: null,
             previewTimer: null,
+            createHasContent: false,
 
             get filteredProjects() {
                 if (!this.autocompleteQuery) return this.projects;
@@ -248,6 +249,7 @@
                 const el = event.target;
                 this.autocompleteNot = false;
                 const input = el.value;
+                this.createHasContent = input.trim().length > 0;
                 if (this.serverError) this.serverError = '';
 
                 // Per-line length validation (each task name ≤ 255)
@@ -648,6 +650,24 @@
                     this.filterTasks();
                 }
                 this.$nextTick(() => this.$refs.createInput && this.$refs.createInput.focus());
+            },
+            clearCreateInput() {
+                const el = this.$refs.createInput;
+                if (!el) return;
+                el.value = '';
+                el.style.height = 'auto';
+                this.createHasContent = false;
+                this.nameError = '';
+                this.serverError = '';
+                this.showAutocomplete = false;
+                clearTimeout(this.previewTimer);
+                this.preview = null;
+                this.$nextTick(() => el.focus());
+            },
+            clearFilterInput() {
+                this.clearFilter();
+                this.showAutocomplete = false;
+                this.$nextTick(() => this.$refs.filterInput && this.$refs.filterInput.focus());
             },
             clearFilter() {
                 if (this.query) {

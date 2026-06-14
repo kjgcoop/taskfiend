@@ -45,10 +45,10 @@
                         <button type="button"
                                 x-show="searchInput.length > 0"
                                 x-cloak
-                                @click="searchInput = ''; queryText = ''; selectedProjectId = 'none'; selectedTagIds = []; showAutocomplete = false; $refs.searchInput.focus()"
+                                @click="clearSearchInput()"
                                 title="Clear"
                                 tabindex="-1"
-                                class="absolute right-2 top-2 text-gray-500 hover:text-gray-300 p-0.5 rounded transition-colors">
+                                class="absolute right-2 top-1/2 -translate-y-1/2 z-10 text-gray-500 hover:text-gray-300 p-0.5 rounded transition-colors">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
                             </svg>
@@ -716,6 +716,15 @@
                     });
 
                     this.searchInput = parts.join(' ');
+                },
+
+                clearSearchInput() {
+                    this.searchInput = '';
+                    this.queryText = '';
+                    this.selectedProjectId = 'none';
+                    this.selectedTagIds = [];
+                    this.showAutocomplete = false;
+                    this.$nextTick(() => this.$refs.searchInput && this.$refs.searchInput.focus());
                 },
 
                 prepareSubmit(e) {
