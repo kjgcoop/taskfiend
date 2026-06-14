@@ -25,11 +25,12 @@
                  data-show-filters="{{ $hasSearchParams ? 'false' : 'true' }}">
                 <form method="GET" action="{{ route('search') }}" @submit="prepareSubmit">
                     <!-- Main Search Input -->
-                    <div class="mb-4 relative">
+                    <div class="mb-4">
                         <label for="search" class="block text-sm font-medium text-gray-300 mb-2">
                             Search
                             <span class="text-xs text-gray-500 font-normal">(use #project or @tag to filter)</span>
                         </label>
+                        <div class="relative">
                         <input type="text"
                                x-model="searchInput"
                                @input="handleInput"
@@ -37,8 +38,21 @@
                                @blur="hideAutocomplete"
                                id="search"
                                x-ref="searchInput"
-                               class="w-full rounded-md bg-gray-700 border-gray-600 text-gray-100 placeholder-gray-500 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                               class="w-full pr-8 rounded-md bg-gray-700 border-gray-600 text-gray-100 placeholder-gray-500 shadow-sm focus:border-blue-500 focus:ring-blue-500"
                                placeholder="e.g., meeting #work @urgent">
+
+                        <!-- Clear button -->
+                        <button type="button"
+                                x-show="searchInput.length > 0"
+                                x-cloak
+                                @click="searchInput = ''; queryText = ''; selectedProjectId = 'none'; selectedTagIds = []; showAutocomplete = false; $refs.searchInput.focus()"
+                                title="Clear"
+                                tabindex="-1"
+                                class="absolute right-2 top-2 text-gray-500 hover:text-gray-300 p-0.5 rounded transition-colors">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                        </button>
 
                         <!-- Autocomplete Dropdown -->
                         <div x-show="showAutocomplete"
@@ -76,6 +90,7 @@
                                 </div>
                             </template>
                         </div>
+                        </div>{{-- end relative wrapper --}}
 
                         <p class="mt-1 text-xs text-gray-500">
                             Type <code class="bg-gray-700 px-1 rounded">#{'}#{'}</code> for projects
