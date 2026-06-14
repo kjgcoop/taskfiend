@@ -216,7 +216,7 @@
                                        @keydown.enter="submit()"
                                        @keydown.escape="close()">
                                 <button x-show="query"
-                                        @click="query = ''; $refs.searchInput.focus()"
+                                        @click="clearQuery()"
                                         type="button"
                                         class="absolute inset-y-0 right-0 flex items-center pr-2 text-gray-400 hover:text-gray-100"
                                         tabindex="-1">
@@ -341,7 +341,7 @@
                                        @keydown.enter="submit()"
                                        @keydown.escape="close()">
                                 <button x-show="query"
-                                        @click="query = ''; $refs.searchInput.focus()"
+                                        @click="clearQuery()"
                                         type="button"
                                         class="absolute inset-y-0 right-0 flex items-center pr-2 text-gray-400 hover:text-gray-100"
                                         tabindex="-1">
@@ -560,6 +560,10 @@ document.addEventListener('alpine:init', () => {
             if (q) {
                 window.location.href = '{{ route('search') }}?q=' + encodeURIComponent(q) + '&show_incomplete=1';
             }
+        },
+        clearQuery() {
+            this.query = '';
+            this.$refs.searchInput.focus();
         }
     }));
 
