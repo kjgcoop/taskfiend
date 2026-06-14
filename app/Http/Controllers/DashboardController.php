@@ -371,7 +371,7 @@ class DashboardController extends Controller
 
         $projectReminders = ProjectReminder::where('user_id', Auth::id())
             ->where('dismissed', false)
-            ->whereDate('date', $dateStr)
+            ->where('date', '<=', $dateStr)
             ->with('project')
             ->orderBy('date')
             ->get();
