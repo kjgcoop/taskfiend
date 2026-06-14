@@ -920,10 +920,18 @@
                     this.$nextTick(() => { if (this.$refs.descHtml) this.$refs.descHtml.innerHTML = this.renderedDescription; });
                 },
 
-                saveRecurrence() {
-                    this.saveField('recurrence_pattern');
-                    this.saveField('recurrence_floating');
-                    this.saveField('recurrence_end_date');
+                async saveRecurrence() {
+                    try {
+                        const ok1 = await this._saveFieldRequest('recurrence_pattern');
+                        const ok2 = await this._saveFieldRequest('recurrence_floating');
+                        const ok3 = await this._saveFieldRequest('recurrence_end_date');
+                        if (ok1 && ok2 && ok3) {
+                            window.location.reload();
+                        }
+                    } catch (error) {
+                        console.error('Error:', error);
+                        alert('An error occurred while saving');
+                    }
                 },
 
                 startEdit(field) {
