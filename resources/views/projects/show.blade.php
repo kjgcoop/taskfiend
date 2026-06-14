@@ -63,7 +63,7 @@
                     ? Str::limit(strip_tags($project->statusLogs->first()->body), 100)
                     : 'Status log';
             @endphp
-            <button @click="showStatus = true; statusTab = 'post'"
+            <button @click="openStatusModal()"
                     title="{{ $statusTooltip }}"
                     class="relative shrink-0 p-2 text-gray-400 hover:text-gray-100 hover:bg-gray-700 rounded transition-colors">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
@@ -75,8 +75,8 @@
             </button>
 
             {{-- Three-dot menu --}}
-            <div class="relative shrink-0" @click.outside="showMenu = false">
-                <button @click="showMenu = !showMenu"
+            <div class="relative shrink-0" @click.outside="closeMenu()">
+                <button @click="toggleMenu()"
                         class="p-2 text-gray-400 hover:text-gray-100 hover:bg-gray-700 rounded transition-colors"
                         title="More options">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
@@ -100,7 +100,7 @@
                         Download Template
                     </a>
                     @if($project->user_id === Auth::id())
-                        <button @click="showMenu = false; showSaveTemplate = true"
+                        <button @click="openSaveTemplate()"
                                 class="w-full text-left px-4 py-2 text-gray-200 hover:bg-gray-700">
                             Save as Template
                         </button>
@@ -111,7 +111,7 @@
             {{-- Save as Template Modal --}}
             <div x-show="showSaveTemplate" x-cloak
                  class="fixed inset-0 z-50 flex items-center justify-center bg-black/60"
-                 @keydown.escape.window="showSaveTemplate = false">
+                 @keydown.escape.window="closeSaveTemplate()">
                 <div class="bg-gray-800 border border-gray-600 rounded-lg p-6 w-full max-w-md shadow-xl"
                      @click.stop>
                     <h4 class="text-gray-100 font-semibold mb-4">Save as Template</h4>
@@ -137,7 +137,7 @@
                         </div>
                         <p class="text-xs text-gray-500 mb-4">Only incomplete tasks are included in the template.</p>
                         <div class="flex justify-end gap-2">
-                            <button type="button" @click="showSaveTemplate = false"
+                            <button type="button" @click="closeSaveTemplate()"
                                     class="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-gray-300 rounded text-sm">
                                 Cancel
                             </button>
@@ -152,19 +152,19 @@
             {{-- Status Log Modal --}}
             <div x-show="showStatus" x-cloak
                  class="fixed inset-0 z-50 flex items-center justify-center bg-black/60"
-                 @keydown.escape.window="showStatus = false">
+                 @keydown.escape.window="closeStatusModal()">
                 <div class="bg-gray-800 border border-gray-600 rounded-lg w-full max-w-lg shadow-xl flex flex-col h-[520px]"
                      @click.stop>
                     <div class="flex items-center justify-between px-6 pt-2 pb-2 border-b border-gray-700 shrink-0">
                         <div class="flex gap-1">
                             @if(!$isInactive)
-                            <button @click="statusTab = 'post'"
+                            <button @click="setStatusTabPost()"
                                     :class="statusTab === 'post' ? 'bg-gray-700 text-gray-100' : 'text-gray-400 hover:text-gray-200'"
                                     class="px-3 py-1.5 rounded text-sm font-medium transition-colors">
                                 Post Update
                             </button>
                             @endif
-                            <button @click="statusTab = 'history'"
+                            <button @click="setStatusTabHistory()"
                                     :class="statusTab === 'history' ? 'bg-gray-700 text-gray-100' : 'text-gray-400 hover:text-gray-200'"
                                     class="px-3 py-1.5 rounded text-sm font-medium transition-colors">
                                 History
@@ -173,7 +173,7 @@
                                 @endif
                             </button>
                         </div>
-                        <button @click="showStatus = false" class="text-gray-400 hover:text-gray-100">
+                        <button @click="closeStatusModal()" class="text-gray-400 hover:text-gray-100">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
                             </svg>
@@ -201,7 +201,7 @@
                                       placeholder="What's the current status?"
                                       class="w-full rounded-md bg-gray-700 border-gray-600 text-gray-100 placeholder-gray-500 shadow-sm focus:border-blue-500 focus:ring-blue-500 px-3 py-2 text-sm resize-none"></textarea>
                             <div class="flex justify-end mt-3 gap-2">
-                                <button type="button" @click="showStatus = false"
+                                <button type="button" @click="closeStatusModal()"
                                         class="px-3 py-1.5 bg-gray-700 hover:bg-gray-600 text-gray-300 rounded text-sm">
                                     Cancel
                                 </button>
@@ -247,7 +247,7 @@
 
     @php $isInactive = in_array($project->status, ['done', 'archived']); @endphp
     <div class="py-12 relative" @if($project->user_id === Auth::id()) x-data="projectEditor" data-project-id="{{ $project->id }}" @endif
-         @if($project->user_id === Auth::id()) @open-project-details.window="showDetails = true" @endif>
+         @if($project->user_id === Auth::id()) @open-project-details.window="openDetails()" @endif>
         @if($project->background_image)
             <div class="absolute inset-0" style="background-image: url('{{ route('projects.background', $project) }}'); background-attachment: fixed; background-position: center; background-size: cover; background-repeat: no-repeat;"></div>
             <div class="absolute inset-0 bg-black/65"></div>
@@ -328,12 +328,12 @@
             @if($project->user_id === Auth::id())
             <div x-show="showDetails" x-cloak
                  class="fixed inset-0 z-50 flex items-center justify-center bg-black/60"
-                 @keydown.escape.window="showDetails = false">
+                 @keydown.escape.window="closeDetails()">
                 <div class="bg-gray-800 border border-gray-600 rounded-lg p-6 w-full max-w-lg shadow-xl overflow-y-auto max-h-[90vh]"
                      @click.stop>
                     <div class="flex justify-between items-center mb-5">
                         <h4 class="text-gray-100 font-semibold text-lg">Project Details</h4>
-                        <button @click="showDetails = false" class="text-gray-400 hover:text-gray-100">
+                        <button @click="closeDetails()" class="text-gray-400 hover:text-gray-100">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
                             </svg>
@@ -473,7 +473,7 @@
                                  class="rounded-md border border-gray-600 mb-2"
                                  style="height: 80px; width: auto;">
                             <div class="flex items-center gap-3">
-                                <button @click="showUpload = !showUpload"
+                                <button @click="toggle()"
                                         class="text-sm text-gray-400 hover:text-gray-200 underline">
                                     Replace
                                 </button>
@@ -486,7 +486,7 @@
                                 </form>
                             </div>
                         @else
-                            <button @click="showUpload = !showUpload"
+                            <button @click="toggle()"
                                     class="text-sm text-gray-400 hover:text-gray-200 underline">
                                 Add background image
                             </button>
@@ -581,7 +581,7 @@
                     <div x-show="fieldError" x-cloak class="mb-4 p-3 bg-red-900/50 border border-red-700 rounded text-sm text-red-300" x-text="fieldError"></div>
 
                     <div class="flex justify-end">
-                        <button @click="showDetails = false"
+                        <button @click="closeDetails()"
                                 class="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-gray-300 rounded text-sm">
                             Close
                         </button>
@@ -777,7 +777,7 @@
                                                  style="height: 100px; width: auto;">
                                         </div>
                                         <div class="flex items-center gap-3">
-                                            <button @click="showUpload = !showUpload"
+                                            <button @click="toggle()"
                                                     class="text-sm text-gray-400 hover:text-gray-200 underline">
                                                 Replace
                                             </button>
@@ -792,7 +792,7 @@
                                     </div>
                                 @else
                                     <div class="mt-1">
-                                        <button @click="showUpload = !showUpload"
+                                        <button @click="toggle()"
                                                 class="text-sm text-gray-400 hover:text-gray-200 underline">
                                             Add background image
                                         </button>
@@ -809,7 +809,7 @@
                                                 class="px-3 py-1.5 bg-blue-600 text-white text-xs rounded hover:bg-blue-700 whitespace-nowrap">
                                             Upload
                                         </button>
-                                        <button type="button" @click="showUpload = false"
+                                        <button type="button" @click="hide()"
                                                 class="px-3 py-1.5 bg-gray-700 text-gray-300 text-xs rounded hover:bg-gray-600">
                                             Cancel
                                         </button>
@@ -881,7 +881,7 @@
                  data-locations="{{ json_encode($locations) }}">
                 <div class="flex items-center justify-between mb-4">
                     <button type="button"
-                            @click="showIncomplete = !showIncomplete"
+                            @click="toggleIncomplete()"
                             title="Toggle task list"
                             class="text-gray-500 hover:text-gray-300 transition-colors flex-shrink-0">
                         <svg xmlns="http://www.w3.org/2000/svg"
@@ -966,6 +966,14 @@
                 showStatus: false,
                 statusTab: 'post',
                 openDetails() { this.showMenu = false; this.$dispatch('open-project-details'); },
+                openStatusModal() { this.showStatus = true; this.statusTab = 'post'; },
+                closeStatusModal() { this.showStatus = false; },
+                setStatusTabPost() { this.statusTab = 'post'; },
+                setStatusTabHistory() { this.statusTab = 'history'; },
+                toggleMenu() { this.showMenu = !this.showMenu; },
+                closeMenu() { this.showMenu = false; },
+                openSaveTemplate() { this.showMenu = false; this.showSaveTemplate = true; },
+                closeSaveTemplate() { this.showSaveTemplate = false; },
             }));
 
             Alpine.data('projectHeaderEditor', function () {
@@ -1035,6 +1043,8 @@
                     showDetails: false,
                     editing: {},
                     fieldError: null,
+                    openDetails() { this.showDetails = true; },
+                    closeDetails() { this.showDetails = false; },
                     fields: {
                         name: @js($project->name),
                         description: @js($project->description ?? ''),

@@ -105,6 +105,7 @@
             query: '',
             noResults: false,
             showIncomplete: true,
+            toggleIncomplete() { this.showIncomplete = !this.showIncomplete; },
             mode: 'create',
             nameError: '',
             serverError: '',
