@@ -462,9 +462,13 @@ class TaskController extends Controller
             ->where(function ($q) use ($id) {
                 $q->where('description', 'like', '%[task:' . $id . ']%')
                   ->orWhere('description', 'like', '%/tasks/' . $id . '%')
+                  ->orWhere('description', 'like', '%?task=' . $id . '%')
+                  ->orWhere('description', 'like', '%&task=' . $id . '%')
                   ->orWhereHas('comments', function ($cq) use ($id) {
                       $cq->where('comment', 'like', '%[task:' . $id . ']%')
-                         ->orWhere('comment', 'like', '%/tasks/' . $id . '%');
+                         ->orWhere('comment', 'like', '%/tasks/' . $id . '%')
+                         ->orWhere('comment', 'like', '%?task=' . $id . '%')
+                         ->orWhere('comment', 'like', '%&task=' . $id . '%');
                   });
             })
             ->where(function ($q) use ($userId) {
