@@ -183,6 +183,7 @@ test.describe('Tag Visibility & Global Access', () => {
     await page.getByTitle('More options').click();
     await page.locator('button:has-text("Details")').click();
     await page.waitForSelector('button:has-text("Delete Tag")', { state: 'visible' });
+    await page.evaluate(() => { window.confirm = () => true; });
     await Promise.all([
       page.waitForURL(/\/tags$/),
       page.locator('button:has-text("Delete Tag")').click(),
