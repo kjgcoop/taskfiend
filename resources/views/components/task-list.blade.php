@@ -78,10 +78,11 @@
                         }
                         window.dispatchEvent(new CustomEvent('task-completed', {
                             detail: {
-                                taskId:    form.dataset.taskId,
-                                taskName:  form.dataset.taskName,
-                                undoUrl:   form.dataset.undoUrl,
-                                recurring: form.dataset.recurring === 'true',
+                                taskId:     form.dataset.taskId,
+                                taskName:   form.dataset.taskName,
+                                undoUrl:    form.dataset.undoUrl,
+                                recurring:  form.dataset.recurring === 'true',
+                                nextTaskId: data.next_task_id ?? null,
                                 group,
                                 form,
                             }

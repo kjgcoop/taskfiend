@@ -890,12 +890,17 @@ class TaskController extends Controller
                         $this->completeTaskAndDescendants($task);
                         $this->logChange($task, 'marked done with all subtasks', 'completed');
 
+                        $nextTask = null;
                         if ($task->recurrence_pattern) {
-                            $this->createRecurringTask($task);
+                            $nextTask = $this->createRecurringTask($task);
                         }
 
                         $task->load(['project', 'tags']);
-                        return response()->json(['success' => true, 'reload' => true, 'taskData' => $this->buildTaskData($task, $field)]);
+                        $resp = ['success' => true, 'reload' => true, 'taskData' => $this->buildTaskData($task, $field)];
+                        if ($nextTask) {
+                            $resp['next_task_id'] = $nextTask->id;
+                        }
+                        return response()->json($resp);
                     }
 
                     // Handle archiving with descendants
@@ -954,8 +959,9 @@ class TaskController extends Controller
                     }
                 }
 
+                $nextRecurringTask = null;
                 if ($field === 'status' && in_array($value, ['done', 'archived']) && $task->recurrence_pattern) {
-                    $this->createRecurringTask($task);
+                    $nextRecurringTask = $this->createRecurringTask($task);
                 }
 
                 if ($field === 'status' && $value === 'incomplete' && $task->recurrence_pattern
@@ -968,6 +974,9 @@ class TaskController extends Controller
             $response = ['success' => true, 'taskData' => $this->buildTaskData($task, $field)];
             if ($field === 'description') {
                 $response['rendered_description'] = render_body($task->description ?? '');
+            }
+            if (!empty($nextRecurringTask)) {
+                $response['next_task_id'] = $nextRecurringTask->id;
             }
             return response()->json($response);
         } catch (\Exception $e) {
@@ -1468,10 +1477,10 @@ class TaskController extends Controller
         }
     }
 
-    protected function createRecurringTask(Task $originalTask)
+    protected function createRecurringTask(Task $originalTask): ?Task
     {
         if (!$originalTask->recurrence_pattern) {
-            return;
+            return null;
         }
 
         $dateParser = new DateParser();
@@ -1486,7 +1495,7 @@ class TaskController extends Controller
         );
 
         if (!$nextOccurrence) {
-            return;
+            return null;
         }
 
         // Advance past-due occurrences forward through the pattern until we reach today
@@ -1520,7 +1529,7 @@ class TaskController extends Controller
 
         // Stop the series if the next occurrence falls after the end date
         if ($originalTask->recurrence_end_date && $nextDate > $originalTask->recurrence_end_date) {
-            return;
+            return null;
         }
 
         $existingTask = Task::where('creator_id', $originalTask->creator_id)
@@ -1531,7 +1540,7 @@ class TaskController extends Controller
             ->first();
 
         if ($existingTask) {
-            return;
+            return $existingTask;
         }
 
         $newTask = Task::create([
@@ -1580,6 +1589,8 @@ class TaskController extends Controller
             'entity_id' => $newTask->id,
             'description' => 'created recurring task',
         ]);
+
+        return $newTask;
     }
 
     protected function archiveNextOccurrence(Task $originalTask): void
