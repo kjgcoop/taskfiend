@@ -1380,6 +1380,10 @@
                     toasts: [],
 
                     init() {
+                        window.addEventListener('pageshow', (e) => {
+                            if (e.persisted) this.toasts = [];
+                        });
+
                         const raw = sessionStorage.getItem('quickAddCreated');
                         if (!raw) return;
                         sessionStorage.removeItem('quickAddCreated');
