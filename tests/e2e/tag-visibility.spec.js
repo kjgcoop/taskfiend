@@ -177,14 +177,21 @@ test.describe('Tag Visibility & Global Access', () => {
     await expect(page.locator('main').locator(`text=${deletableTag}`)).toBeVisible();
     await logout(page);
 
-    // User 3 deletes the tag via the edit page. The show page's Details modal
-    // form.submit() doesn't reliably trigger Playwright navigation detection,
-    // but the edit page's delete button is a plain form outside any modal.
+    // User 3 deletes the tag via the Details modal on the show page.
+    // confirmSubmit calls form.submit() synchronously inside the click handler,
+    // so the navigation can start before a sequential waitForURL call registers
+    // its listener. Running them in parallel ensures the listener is in place
+    // before the click is dispatched.
     await login(page, testUsers.user3.email);
-    await page.goto(`/tags/${tagId}/edit`);
+    await page.goto(`/tags/${tagId}`);
+    await page.getByTitle('More options').click();
+    await page.locator('button:has-text("Details")').click();
+    await page.waitForSelector('button:has-text("Delete Tag")', { state: 'visible' });
     await page.evaluate(() => { window.confirm = () => true; });
-    await page.locator('button:has-text("Delete Tag")').click();
-    await page.waitForURL(/\/tags$/);
+    await Promise.all([
+      page.waitForURL(/\/tags$/),
+      page.locator('button:has-text("Delete Tag")').click(),
+    ]);
     await page.waitForLoadState('networkidle');
 
     // User 2 should no longer see the tag
