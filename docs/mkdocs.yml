@@ -14,6 +14,7 @@ nav:
     - Admin Functions: features/admin-functionality.md
     - Differences from Todoist: features/todoist-differences.md
     - Intentionally Missing Features: features/intentionally-missing-features.md
+    - Features that Sound Nice But that May Never Be Implemented: features/maybe-someday.md
   - Self-Hosting:
     - Docker: self-hosting/docker.md
     - Security: self-hosting/security.md
@@ -40,7 +41,7 @@ extra:
     actions:
       - reject
 copyright: >
-  Copyright &copy; 2026 KJ Coop –
+  Copyright &copy; 2026 <a href="mailto:taskfiend@kjcoop.com">KJ Coop</a> –
   <a href="#__consent">Change cookie settings</a>
 markdown_extensions:
   - attr_list
