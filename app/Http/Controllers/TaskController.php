@@ -403,7 +403,7 @@ class TaskController extends Controller
 
         if ($request->boolean('quick_add')) {
             if ($request->wantsJson()) {
-                $task->load(['project:id,name', 'tags:id,name,color']);
+                $task->load(['project:id,name', 'tags:id,tag_name,color']);
                 return response()->json(['ok' => true, 'tasks' => [$this->taskToastData($task)]]);
             }
             return redirect()->back()->with('success', 'Task created.');
@@ -1457,7 +1457,7 @@ class TaskController extends Controller
                 ? \Carbon\Carbon::parse($task->datetime)->format('D, M j')
                 : null,
             'project'  => $task->project?->name,
-            'tags'     => $task->tags->map(fn($t) => ['name' => $t->name, 'color' => $t->color])->all(),
+            'tags'     => $task->tags->map(fn($t) => ['name' => $t->tag_name, 'color' => $t->color])->all(),
         ];
     }
 
@@ -1837,7 +1837,7 @@ class TaskController extends Controller
             try {
                 $task = $this->createSingleTaskFromLine($line, $validated, $globalDate, $globalRecurrence, $isQuickAdd);
                 $successes[] = $task;
-                $task->load(['project:id,name', 'tags:id,name,color']);
+                $task->load(['project:id,name', 'tags:id,tag_name,color']);
                 $createdTasks[] = $this->taskToastData($task);
             } catch (\Exception $e) {
                 $errors[] = [
