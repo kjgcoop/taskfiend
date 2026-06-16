@@ -12,6 +12,7 @@ nav:
     - Dates & Recurrence: features/dates.md
     - Recurring Tasks: features/recurring-tasks.md
     - Admin Functions: features/admin-functionality.md
+    - Differences from Todoist: features/todoist-differences.md
   - Self-Hosting:
     - Docker: self-hosting/docker.md
     - Security: self-hosting/security.md
@@ -20,7 +21,7 @@ nav:
     - API Reference: developers/api.md
     - Testing: developers/testing.md
   - Privacy Policy: privacy.md
-theme: 
+theme:
   name: material
   favicon: img/favicon.ico
   logo: img/favicon.svg
@@ -33,12 +34,12 @@ extra_css:
 extra:
   consent:
     title: Cookie consent
-    description: >- 
+    description: >-
       We use only essential cookies to recognize your repeated visits and preferences, but sometimes it feels good to hit the reject button.
     actions:
       - reject
 copyright: >
-  Copyright &copy; 2026 KJ Coop – 
+  Copyright &copy; 2026 KJ Coop –
   <a href="#__consent">Change cookie settings</a>
 markdown_extensions:
   - attr_list
