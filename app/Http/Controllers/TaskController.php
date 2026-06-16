@@ -455,7 +455,19 @@ class TaskController extends Controller
         $isInactive = in_array($task->status, ['done', 'archived'])
             || ($task->project && in_array($task->project->status, ['done', 'archived']));
 
-        return view('tasks.show', compact('task', 'projects', 'tags', 'users', 'nextDueDate', 'availableParents', 'defaultProjectId', 'isInactive'));
+        // Find tasks that reference this task in their description or comments.
+        $userId = Auth::id();
+        $referencingTasks = Task::where('id', '!=', $task->id)
+            ->referencingTask($task->id)
+            ->where(function ($q) use ($userId) {
+                $q->where('creator_id', $userId)
+                  ->orWhereHas('assignees', fn ($aq) => $aq->where('users.id', $userId));
+            })
+            ->with(['creator', 'project', 'tags'])
+            ->orderByRaw('LOWER(name)')
+            ->get();
+
+        return view('tasks.show', compact('task', 'projects', 'tags', 'users', 'nextDueDate', 'availableParents', 'defaultProjectId', 'isInactive', 'referencingTasks'));
     }
 
     public function panel(Task $task)
@@ -484,7 +496,18 @@ class TaskController extends Controller
         $isInactive = in_array($task->status, ['done', 'archived'])
             || ($task->project && in_array($task->project->status, ['done', 'archived']));
 
-        return view('tasks._panel', compact('task', 'projects', 'tags', 'users', 'nextDueDate', 'defaultProjectId', 'isInactive'));
+        $userId = Auth::id();
+        $referencingTasks = Task::where('id', '!=', $task->id)
+            ->referencingTask($task->id)
+            ->where(function ($q) use ($userId) {
+                $q->where('creator_id', $userId)
+                  ->orWhereHas('assignees', fn ($aq) => $aq->where('users.id', $userId));
+            })
+            ->with(['creator', 'project', 'tags'])
+            ->orderByRaw('LOWER(name)')
+            ->get();
+
+        return view('tasks._panel', compact('task', 'projects', 'tags', 'users', 'nextDueDate', 'defaultProjectId', 'isInactive', 'referencingTasks'));
     }
 
     public function edit(Task $task)

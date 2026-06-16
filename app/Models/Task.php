@@ -208,6 +208,26 @@ class Task extends Model
     }
 
     /**
+     * Scope: tasks whose description or comments contain a reference to $taskId.
+     * Covers [task:N], /tasks/N URLs, and ?task=N / &task=N sidebar URLs.
+     */
+    public function scopeReferencingTask($query, int $taskId)
+    {
+        return $query->where(function ($q) use ($taskId) {
+            $q->where('description', 'like', '%[task:' . $taskId . ']%')
+              ->orWhere('description', 'like', '%/tasks/' . $taskId . '%')
+              ->orWhere('description', 'like', '%?task=' . $taskId . '%')
+              ->orWhere('description', 'like', '%&task=' . $taskId . '%')
+              ->orWhereHas('comments', function ($cq) use ($taskId) {
+                  $cq->where('comment', 'like', '%[task:' . $taskId . ']%')
+                     ->orWhere('comment', 'like', '%/tasks/' . $taskId . '%')
+                     ->orWhere('comment', 'like', '%?task=' . $taskId . '%')
+                     ->orWhere('comment', 'like', '%&task=' . $taskId . '%');
+              });
+        });
+    }
+
+    /**
      * Scope to get only root-level tasks (no parent)
      */
     public function scopeRootLevel($query)
