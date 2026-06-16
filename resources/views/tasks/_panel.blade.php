@@ -749,7 +749,7 @@ $_panelTaskJson = json_encode([
                     <div class="space-y-2">
                         @foreach($referencingTasks as $ref)
                             <a href="{{ route('tasks.show', $ref) }}"
-                               class="flex items-center gap-3 p-2.5 rounded-lg bg-gray-800 border border-gray-700 hover:bg-gray-700 transition group">
+                               class="flex items-center gap-3 p-3 rounded-lg bg-gray-800 border border-gray-700 hover:bg-gray-700 transition group">
                                 <span class="flex-1 min-w-0">
                                     <span class="block text-sm font-medium text-gray-100 group-hover:text-white truncate">{!! render_title($ref->name) !!}</span>
                                     <span class="flex items-center gap-2 mt-0.5">
