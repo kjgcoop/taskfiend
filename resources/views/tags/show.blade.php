@@ -298,6 +298,10 @@
                     this.original = JSON.parse(JSON.stringify(this.fields));
                 },
 
+                confirmSubmit(el, msg) {
+                    if (confirm(msg)) el.closest('form').submit();
+                },
+
                 cancelEdit(field) {
                     this.editing[field] = false;
                     this.fields[field] = JSON.parse(JSON.stringify(this.original[field]));

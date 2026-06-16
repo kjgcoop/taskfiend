@@ -177,10 +177,7 @@ test.describe('Tag Visibility & Global Access', () => {
     await expect(page.locator('main').locator(`text=${deletableTag}`)).toBeVisible();
     await logout(page);
 
-    // User 3 deletes the tag. Open the Details modal to confirm it renders,
-    // then submit the delete form directly via evaluate — confirmSubmit's
-    // el.closest('form') appears to return null in the fixed-modal context,
-    // silently aborting the submission.
+    // User 3 deletes the tag via the Details modal on the show page.
     await login(page, testUsers.user3.email);
     await page.goto(`/tags/${tagId}`);
     await page.getByTitle('More options').click();
@@ -188,9 +185,7 @@ test.describe('Tag Visibility & Global Access', () => {
     await page.waitForSelector('button:has-text("Delete Tag")', { state: 'visible' });
     await Promise.all([
       page.waitForURL(/\/tags$/),
-      page.evaluate((id) => {
-        document.querySelector(`form[action$="/tags/${id}"]`).submit();
-      }, tagId),
+      page.locator('button:has-text("Delete Tag")').click(),
     ]);
     await page.waitForLoadState('networkidle');
 
