@@ -645,13 +645,18 @@ class TaskController extends Controller
             $this->logChange($task, 'marked done with all subtasks', 'completed');
 
             // Handle recurring task AFTER completion
+            $nextRecurringTask = null;
             if ($task->recurrence_pattern) {
-                $this->createRecurringTask($task);
+                $nextRecurringTask = $this->createRecurringTask($task);
             }
 
             if ($request->has('quick_complete')) {
                 if ($request->ajax()) {
-                    return response()->json(['ok' => true]);
+                    $resp = ['ok' => true];
+                    if ($nextRecurringTask) {
+                        $resp['next_task_id'] = $nextRecurringTask->id;
+                    }
+                    return response()->json($resp);
                 }
                 return redirect()->back()
                     ->with('success', 'Task and all subtasks marked as done.');
@@ -733,14 +738,19 @@ class TaskController extends Controller
             $this->logChange($task, "changed {$field} from {$change['old']} to {$change['new']}", $verb, $field, $change['old'], $change['new']);
         }
 
+        $nextRecurringTask = null;
         if (($statusChangedToDone || $statusChangedToArchived) && $task->recurrence_pattern) {
-            $this->createRecurringTask($task);
+            $nextRecurringTask = $this->createRecurringTask($task);
         }
 
         // Handle quick complete from task list
         if ($request->has('quick_complete')) {
             if ($request->ajax()) {
-                return response()->json(['ok' => true]);
+                $resp = ['ok' => true];
+                if ($nextRecurringTask) {
+                    $resp['next_task_id'] = $nextRecurringTask->id;
+                }
+                return response()->json($resp);
             }
             return redirect()->back()
                 ->with('success', 'Task marked as done.');
