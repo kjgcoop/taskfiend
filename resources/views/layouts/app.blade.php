@@ -1295,9 +1295,9 @@
             });
         </script>
 
-        <!-- Quick-add creation toast stack (bottom-left) -->
+        <!-- Quick-add creation toast stack (bottom-right) -->
         <div x-data="creationToastManager"
-             class="fixed bottom-4 left-4 z-50 flex flex-col-reverse gap-2 items-start pointer-events-none"
+             class="fixed bottom-4 right-4 z-50 flex flex-col-reverse gap-2 items-end pointer-events-none"
              aria-live="polite">
             <template x-for="toast in toasts" :key="toast.id">
                 <div class="pointer-events-auto w-72 bg-gray-800 border border-gray-700 rounded-lg shadow-2xl overflow-hidden"
