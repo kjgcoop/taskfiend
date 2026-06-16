@@ -454,7 +454,28 @@ class TaskController extends Controller
         $isInactive = in_array($task->status, ['done', 'archived'])
             || ($task->project && in_array($task->project->status, ['done', 'archived']));
 
-        return view('tasks.show', compact('task', 'projects', 'tags', 'users', 'nextDueDate', 'availableParents', 'defaultProjectId', 'isInactive'));
+        // Find tasks that reference this task in their description or comments.
+        // Looks for [task:{id}] bracket syntax and /tasks/{id} URL patterns.
+        $userId = Auth::id();
+        $id = $task->id;
+        $referencingTasks = Task::where('id', '!=', $id)
+            ->where(function ($q) use ($id) {
+                $q->where('description', 'like', '%[task:' . $id . ']%')
+                  ->orWhere('description', 'like', '%/tasks/' . $id . '%')
+                  ->orWhereHas('comments', function ($cq) use ($id) {
+                      $cq->where('comment', 'like', '%[task:' . $id . ']%')
+                         ->orWhere('comment', 'like', '%/tasks/' . $id . '%');
+                  });
+            })
+            ->where(function ($q) use ($userId) {
+                $q->where('creator_id', $userId)
+                  ->orWhereHas('assignees', fn ($aq) => $aq->where('users.id', $userId));
+            })
+            ->with(['creator', 'project', 'tags'])
+            ->orderByRaw('LOWER(name)')
+            ->get();
+
+        return view('tasks.show', compact('task', 'projects', 'tags', 'users', 'nextDueDate', 'availableParents', 'defaultProjectId', 'isInactive', 'referencingTasks'));
     }
 
     public function panel(Task $task)
