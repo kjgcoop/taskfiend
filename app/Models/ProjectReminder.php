@@ -27,7 +27,7 @@ class ProjectReminder extends Model
     {
         return Attribute::make(
             get: fn ($value) => $value ? Carbon::parse($value)->format(config('app.human_date_format')) : null,
-            set: fn ($value) => $value instanceof Carbon ? $value->format(config('app.human_date_format')) : (string) $value,
+            set: fn ($value) => $value instanceof Carbon ? $value->format('Y-m-d') : (string) $value,
         );
     }
 

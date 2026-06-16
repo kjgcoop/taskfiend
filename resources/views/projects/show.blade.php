@@ -297,7 +297,7 @@
             {{-- Reminder banner --}}
             @if($activeReminder)
                 @php
-                    $reminderDays = (int) now()->startOfDay()->diffInDays($activeReminder->date, false);
+                    $reminderDays = (int) now()->startOfDay()->diffInDays(\Carbon\Carbon::parse($activeReminder->getRawOriginal('date')), false);
                 @endphp
                 <div class="bg-blue-950/30 border border-blue-700/50 rounded-lg p-4 flex items-center justify-between gap-3">
                     <div class="flex items-center gap-3">
@@ -306,11 +306,11 @@
                         </svg>
                         <p class="text-sm text-blue-300">
                             @if($reminderDays < 0)
-                                Reminder was set for {{ $activeReminder->date->format('M j') }}
+                                Reminder was set for {{ \Carbon\Carbon::parse($activeReminder->getRawOriginal('date'))->format('M j') }}
                             @elseif($reminderDays === 0)
                                 Reminder for today
                             @else
-                                Reminder in {{ $reminderDays }} {{ Str::plural('day', $reminderDays) }} &mdash; {{ $activeReminder->date->format('M j') }}
+                                Reminder in {{ $reminderDays }} {{ Str::plural('day', $reminderDays) }} &mdash; {{ \Carbon\Carbon::parse($activeReminder->getRawOriginal('date'))->format('M j') }}
                             @endif
                             @if($activeReminder->recurrence_pattern)
                                 <span class="text-blue-400/60 text-xs ml-1">({{ $activeReminder->recurrence_pattern }})</span>
@@ -514,7 +514,7 @@
                         @if($activeReminder)
                             <div class="flex items-center justify-between mb-2 p-2 bg-blue-950/40 border border-blue-700/50 rounded text-sm">
                                 <span class="text-blue-300">
-                                    {{ $activeReminder->date->format('M j, Y') }}
+                                    {{ \Carbon\Carbon::parse($activeReminder->getRawOriginal('date'))->format('M j, Y') }}
                                     @if($activeReminder->recurrence_pattern)
                                         &middot; <span class="text-blue-400/70">{{ $activeReminder->recurrence_pattern }}</span>
                                     @endif
@@ -528,7 +528,7 @@
                         @if(!$isInactive)
                         <form method="POST" action="{{ route('projects.reminders.store', $project) }}"
                               class="space-y-2"
-                              x-data="reminderDateInput" data-initial-date="{{ old('date', $activeReminder?->date?->format('Y-m-d')) }}">
+                              x-data="reminderDateInput" data-initial-date="{{ old('date', $activeReminder?->getRawOriginal('date')) }}">
                             @csrf
                             {{-- Natural language date input --}}
                             <div>
