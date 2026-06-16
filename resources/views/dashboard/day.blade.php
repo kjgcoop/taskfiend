@@ -98,7 +98,7 @@
                                 </svg>
                                 <a href="{{ route('projects.show', $reminder->project) }}"
                                    class="text-sm text-blue-300 hover:text-blue-100 font-medium truncate transition-colors">
-                                    {{ $reminder->project->name }}
+                                    {{ $reminder->project->name }} - {{ $reminder->date }}
                                 </a>
                                 @if($reminder->recurrence_pattern)
                                     <span class="text-xs text-blue-500 shrink-0">{{ $reminder->recurrence_pattern }}</span>

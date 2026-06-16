@@ -128,4 +128,6 @@ return [
 
     'reschedule_badge_threshold' => env('RESCHEDULE_BADGE_THRESHOLD', 5),
 
+    'human_date_format' => env('HUMAN_DATE_FORMAT'),
+
 ];

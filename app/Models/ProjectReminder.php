@@ -26,8 +26,8 @@ class ProjectReminder extends Model
     protected function date(): Attribute
     {
         return Attribute::make(
-            get: fn ($value) => $value ? Carbon::parse($value) : null,
-            set: fn ($value) => $value instanceof Carbon ? $value->format('Y-m-d') : (string) $value,
+            get: fn ($value) => $value ? Carbon::parse($value)->format(config('app.human_date_format')) : null,
+            set: fn ($value) => $value instanceof Carbon ? $value->format(config('app.human_date_format')) : (string) $value,
         );
     }
 
