@@ -455,22 +455,9 @@ class TaskController extends Controller
             || ($task->project && in_array($task->project->status, ['done', 'archived']));
 
         // Find tasks that reference this task in their description or comments.
-        // Looks for [task:{id}] bracket syntax and /tasks/{id} URL patterns.
         $userId = Auth::id();
-        $id = $task->id;
-        $referencingTasks = Task::where('id', '!=', $id)
-            ->where(function ($q) use ($id) {
-                $q->where('description', 'like', '%[task:' . $id . ']%')
-                  ->orWhere('description', 'like', '%/tasks/' . $id . '%')
-                  ->orWhere('description', 'like', '%?task=' . $id . '%')
-                  ->orWhere('description', 'like', '%&task=' . $id . '%')
-                  ->orWhereHas('comments', function ($cq) use ($id) {
-                      $cq->where('comment', 'like', '%[task:' . $id . ']%')
-                         ->orWhere('comment', 'like', '%/tasks/' . $id . '%')
-                         ->orWhere('comment', 'like', '%?task=' . $id . '%')
-                         ->orWhere('comment', 'like', '%&task=' . $id . '%');
-                  });
-            })
+        $referencingTasks = Task::where('id', '!=', $task->id)
+            ->referencingTask($task->id)
             ->where(function ($q) use ($userId) {
                 $q->where('creator_id', $userId)
                   ->orWhereHas('assignees', fn ($aq) => $aq->where('users.id', $userId));
@@ -508,7 +495,18 @@ class TaskController extends Controller
         $isInactive = in_array($task->status, ['done', 'archived'])
             || ($task->project && in_array($task->project->status, ['done', 'archived']));
 
-        return view('tasks._panel', compact('task', 'projects', 'tags', 'users', 'nextDueDate', 'defaultProjectId', 'isInactive'));
+        $userId = Auth::id();
+        $referencingTasks = Task::where('id', '!=', $task->id)
+            ->referencingTask($task->id)
+            ->where(function ($q) use ($userId) {
+                $q->where('creator_id', $userId)
+                  ->orWhereHas('assignees', fn ($aq) => $aq->where('users.id', $userId));
+            })
+            ->with(['creator', 'project', 'tags'])
+            ->orderByRaw('LOWER(name)')
+            ->get();
+
+        return view('tasks._panel', compact('task', 'projects', 'tags', 'users', 'nextDueDate', 'defaultProjectId', 'isInactive', 'referencingTasks'));
     }
 
     public function edit(Task $task)
