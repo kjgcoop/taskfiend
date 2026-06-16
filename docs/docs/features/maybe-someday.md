@@ -23,9 +23,9 @@ This list is by no means exhaustive. It's sorted by absolutely nothing.
 - The quick filter (to filter down a list of tasks to only those matching a search term) supports "not:" to find everything not matching that term. It recognizes project (#project) and tag (@tag) shorthand. Maybe one day I'll add these to the full search page input and/or the nav bar search.
 - In lists of tasks (projects, days), show a each task's duration
 - When tasks are altered in a list, the list isn't necessarily update. There are a few ways this plays out, but off the top of my head:
-  - When tasks are completed, they disappear off a list, as they should. They don't reappear under the list of completed tasks. If you want an updated list of completed tasks, you have to refresh the page.
-  - Counts are not updated when tasks are marked complete.
-  - If you change a task's project, the new project will appear on the list, but if the list in question is a project, it won't disappear from that list.
+     - When tasks are completed, they disappear off a list, as they should. They don't reappear under the list of completed tasks. If you want an updated list of completed tasks, you have to refresh the page.
+     - Counts are not updated when tasks are marked complete.
+     - If you change a task's project, the new project will appear on the list, but if the list in question is a project, it won't disappear from that list.
 - In /day, if you're viewing tasks as a list, and you click one, a panel comes over from the right side to show the details. This doesn't happen if you're looking at the agenda view, but it probably should.
 - Import ics files (calendar events)
 - Dropdown in agenda view to choose how often lines appear on the page? Currently the calendar is broken down into units of half-an hour. Add options for 10m? Hour? Others? Custom?
@@ -40,7 +40,7 @@ This list is by no means exhaustive. It's sorted by absolutely nothing.
 - Tag users in comments - as of v9, there's now an alert for lists of changes that other users made to shared tasks, so it's not really necessary.
 - There's syntax to link to a project or tag (for project 5 and tag five, these would be [project:5] and [tag:5], respectively). Now that URLs are replaced by the task/tag/project name, I doubt I'll ever use this syntax. That said, if I do, it might be nice to have a dropdown from which to select your project/tag/whatever.
 - More sophisticated search? I wouldn't use any of these frequently enough to justify the dev time, but they sound cool.
-  - Saved searches? 
-  - Specify whether the search is and/or. Right now all search terms refine the list - you can't search for Tag A or Tag B. 
-  - Search in multiple projects
+    - Saved searches? 
+    - Specify whether the search is and/or. Right now all search terms refine the list - you can't search for Tag A or Tag B. 
+    - Search in multiple projects
 
