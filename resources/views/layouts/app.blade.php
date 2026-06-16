@@ -1201,7 +1201,6 @@
                         </div>
                         <div class="flex-1 min-w-0">
                             <p class="text-sm text-gray-300 truncate" x-text="toast.taskName"></p>
-                            <p x-show="toast.recurring && !toast.nextTaskId" class="text-xs text-purple-400 mt-0.5">Next instance created</p>
                             <a x-show="toast.recurring && toast.nextTaskId"
                                :href="'/tasks/' + toast.nextTaskId"
                                class="text-xs text-purple-400 hover:text-purple-300 underline mt-0.5 inline-block">
