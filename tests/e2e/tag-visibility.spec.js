@@ -186,12 +186,12 @@ test.describe('Tag Visibility & Global Access', () => {
     await page.locator('button:has-text("Details")').click();
     await page.waitForSelector('button:has-text("Delete Tag")', { state: 'visible' });
 
-    // Handle the confirmation dialog
-    page.once('dialog', dialog => dialog.accept());
+    // confirmSubmit() calls window.confirm() synchronously inside Alpine's
+    // click handler. page.once('dialog') can race with that synchronous call,
+    // so override confirm to always return true instead of relying on the
+    // Playwright dialog event.
+    await page.evaluate(() => { window.confirm = () => true; });
     await page.locator('button:has-text("Delete Tag")').click();
-    // waitForURL fires when the URL changes (at redirect time), before the new
-    // page DOM has replaced the old one. Wait for networkidle too so the
-    // Details modal from the old page is gone before logout() tries to click.
     await page.waitForURL(/\/tags$/);
     await page.waitForLoadState('networkidle');
 
