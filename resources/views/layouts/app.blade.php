@@ -1329,7 +1329,7 @@
                             <!-- Date · Project -->
                             <template x-if="toast.datetime || toast.project">
                                 <p class="text-xs text-blue-400 mt-0.5 truncate"
-                                   x-text="[toast.datetime, toast.project].filter(Boolean).join(' · ')"></p>
+                                   x-text="[toast.datetime, toast.project].filter(v => !!v).join(' · ')"></p>
                             </template>
                             <!-- Tags -->
                             <template x-if="toast.tags && toast.tags.length > 0">
