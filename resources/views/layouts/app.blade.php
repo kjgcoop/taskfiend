@@ -1326,18 +1326,32 @@
                             <template x-if="!toast.taskId">
                                 <p class="text-sm font-medium text-gray-100 leading-snug" x-text="toast.label"></p>
                             </template>
-                            <!-- Date · Project -->
-                            <template x-if="toast.datetime || toast.project">
-                                <p class="text-xs text-blue-400 mt-0.5 truncate"
-                                   x-text="[toast.datetime, toast.project].filter(v => !!v).join(' · ')"></p>
+                            <!-- Date + Time (pre-computed in JS) -->
+                            <template x-if="toast.dateline">
+                                <p class="text-xs text-gray-400 mt-0.5 truncate" x-text="toast.dateline"></p>
                             </template>
-                            <!-- Tags -->
-                            <template x-if="toast.tags && toast.tags.length > 0">
+                            <!-- Duration + Location (pre-computed in JS) -->
+                            <template x-if="toast.metaline">
+                                <p class="text-xs text-gray-400 mt-0.5 truncate" x-text="toast.metaline"></p>
+                            </template>
+                            <!-- Project link -->
+                            <template x-if="toast.project">
+                                <a :href="'/projects/' + toast.project.id"
+                                   class="text-xs text-blue-400 hover:text-blue-300 mt-0.5 block truncate"
+                                   x-text="toast.project.name"></a>
+                            </template>
+                            <!-- Assignees (pre-computed in JS as comma string) -->
+                            <template x-if="toast.assignees">
+                                <p class="text-xs text-gray-400 mt-0.5 truncate" x-text="toast.assignees"></p>
+                            </template>
+                            <!-- Tags as links -->
+                            <template x-if="toast.tags.length">
                                 <div class="flex flex-wrap gap-1 mt-1.5">
-                                    <template x-for="tag in toast.tags" :key="tag.name">
-                                        <span class="inline-block px-1.5 py-0.5 text-xs rounded"
-                                              :style="'background-color: ' + tag.color + '22; color: ' + tag.color"
-                                              x-text="tag.name"></span>
+                                    <template x-for="tag in toast.tags" :key="tag.id">
+                                        <a :href="'/tags/' + tag.id"
+                                           class="inline-block px-1.5 py-0.5 text-xs rounded hover:opacity-80"
+                                           :style="'background-color: ' + tag.color + '22; color: ' + tag.color"
+                                           x-text="tag.name"></a>
                                     </template>
                                 </div>
                             </template>
@@ -1384,19 +1398,26 @@
                     },
 
                     _addTask(task) {
-                        const duration = {{ config('app.undo_toast_duration') }};
+                        const autoDismiss = {{ config('app.undo_toast_duration') }};
+                        // Pre-compute display strings here (in <script>) to avoid
+                        // arrow functions in Alpine template expressions (CSP parser limitation)
+                        const dateParts = [task.datetime, task.time].filter(s => s);
+                        const metaParts = [task.duration, task.location].filter(s => s);
+                        const assigneeNames = (task.assignees || []).map(a => a.name).join(', ');
                         const toast = {
                             id: Date.now() + Math.random(),
                             label: task.name,
                             taskId: task.id,
-                            datetime: task.datetime || null,
+                            dateline: dateParts.join(' at '),
+                            metaline: metaParts.join(' · '),
                             project: task.project || null,
+                            assignees: assigneeNames,
                             tags: task.tags || [],
-                            duration,
+                            duration: autoDismiss,
                             visible: true,
                             timer: null,
                         };
-                        toast.timer = setTimeout(() => this.dismiss(toast), duration);
+                        toast.timer = setTimeout(() => this.dismiss(toast), autoDismiss);
                         this.toasts.push(toast);
                     },
 
@@ -1406,8 +1427,10 @@
                             id: Date.now() + Math.random(),
                             label: count + ' tasks created',
                             taskId: null,
-                            datetime: null,
+                            dateline: '',
+                            metaline: '',
                             project: null,
+                            assignees: '',
                             tags: [],
                             duration,
                             visible: true,

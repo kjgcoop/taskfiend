@@ -403,7 +403,7 @@ class TaskController extends Controller
 
         if ($request->boolean('quick_add')) {
             if ($request->wantsJson()) {
-                $task->load(['project:id,name', 'tags:id,tag_name,color']);
+                $task->load(['project:id,name', 'tags:id,tag_name,color', 'assignees:id,name']);
                 return response()->json(['ok' => true, 'tasks' => [$this->taskToastData($task)]]);
             }
             return redirect()->back()->with('success', 'Task created.');
@@ -1451,13 +1451,23 @@ class TaskController extends Controller
     private function taskToastData(Task $task): array
     {
         return [
-            'id'       => $task->id,
-            'name'     => $task->name,
-            'datetime' => $task->datetime
+            'id'        => $task->id,
+            'name'      => $task->name,
+            'datetime'  => $task->datetime
                 ? \Carbon\Carbon::parse($task->datetime)->format('D, M j')
                 : null,
-            'project'  => $task->project?->name,
-            'tags'     => $task->tags->map(fn($t) => ['name' => $t->tag_name, 'color' => $t->color])->all(),
+            'time'      => $task->time
+                ? \Carbon\Carbon::parse($task->time)->format('g:i A')
+                : null,
+            'duration'  => $task->duration_minutes
+                ? Task::formatDuration($task->duration_minutes)
+                : null,
+            'location'  => $task->location ?: null,
+            'project'   => $task->project
+                ? ['id' => $task->project->id, 'name' => $task->project->name]
+                : null,
+            'tags'      => $task->tags->map(fn($t) => ['id' => $t->id, 'name' => $t->tag_name, 'color' => $t->color])->all(),
+            'assignees' => $task->assignees->map(fn($a) => ['name' => $a->name])->all(),
         ];
     }
 
@@ -1837,7 +1847,7 @@ class TaskController extends Controller
             try {
                 $task = $this->createSingleTaskFromLine($line, $validated, $globalDate, $globalRecurrence, $isQuickAdd);
                 $successes[] = $task;
-                $task->load(['project:id,name', 'tags:id,tag_name,color']);
+                $task->load(['project:id,name', 'tags:id,tag_name,color', 'assignees:id,name']);
                 $createdTasks[] = $this->taskToastData($task);
             } catch (\Exception $e) {
                 $errors[] = [
