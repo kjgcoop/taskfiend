@@ -129,7 +129,7 @@
 
                     <div class="flex justify-between items-center pt-4 border-t border-gray-700">
                         <form method="POST" action="{{ route('tags.destroy', $tag) }}"
-                              onsubmit="return confirm('Are you sure you want to delete this tag?')">
+                              @submit.prevent="confirmSubmit($el, 'Are you sure you want to delete this tag?')">
                             @csrf
                             @method('DELETE')
                             <button type="submit" class="text-sm text-red-500 hover:text-red-400 hover:underline">
