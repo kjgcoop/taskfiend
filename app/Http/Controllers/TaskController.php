@@ -403,7 +403,8 @@ class TaskController extends Controller
 
         if ($request->boolean('quick_add')) {
             if ($request->wantsJson()) {
-                return response()->json(['ok' => true, 'tasks' => [['id' => $task->id, 'name' => $task->name]]]);
+                $task->load(['project:id,name', 'tags:id,name,color']);
+                return response()->json(['ok' => true, 'tasks' => [$this->taskToastData($task)]]);
             }
             return redirect()->back()->with('success', 'Task created.');
         }
@@ -1447,6 +1448,19 @@ class TaskController extends Controller
         }
     }
 
+    private function taskToastData(Task $task): array
+    {
+        return [
+            'id'       => $task->id,
+            'name'     => $task->name,
+            'datetime' => $task->datetime
+                ? \Carbon\Carbon::parse($task->datetime)->format('D, M j')
+                : null,
+            'project'  => $task->project?->name,
+            'tags'     => $task->tags->map(fn($t) => ['name' => $t->name, 'color' => $t->color])->all(),
+        ];
+    }
+
     protected function logChange(Task $task, string $description, string $verb = 'edited', ?string $field = null, mixed $oldValue = null, mixed $newValue = null)
     {
         $task->changeLogs()->create([
@@ -1823,7 +1837,8 @@ class TaskController extends Controller
             try {
                 $task = $this->createSingleTaskFromLine($line, $validated, $globalDate, $globalRecurrence, $isQuickAdd);
                 $successes[] = $task;
-                $createdTasks[] = ['id' => $task->id, 'name' => $task->name];
+                $task->load(['project:id,name', 'tags:id,name,color']);
+                $createdTasks[] = $this->taskToastData($task);
             } catch (\Exception $e) {
                 $errors[] = [
                     'line'  => $i + 1,

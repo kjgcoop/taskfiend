@@ -1300,7 +1300,7 @@
              class="fixed bottom-4 right-4 z-50 flex flex-col-reverse gap-2 items-end pointer-events-none"
              aria-live="polite">
             <template x-for="toast in toasts" :key="toast.id">
-                <div class="pointer-events-auto w-72 bg-gray-800 border border-gray-700 rounded-lg shadow-2xl overflow-hidden"
+                <div class="pointer-events-auto w-80 bg-gray-800 border border-gray-700 rounded-lg shadow-2xl overflow-hidden"
                      x-show="toast.visible"
                      x-transition:enter="transition ease-out duration-200"
                      x-transition:enter-start="opacity-0 translate-y-1"
@@ -1308,24 +1308,43 @@
                      x-transition:leave="transition ease-in duration-150"
                      x-transition:leave-start="opacity-100"
                      x-transition:leave-end="opacity-0">
-                    <div class="flex items-center gap-3 px-3 py-2.5">
-                        <div class="w-5 h-5 rounded-full bg-blue-600 flex-shrink-0 flex items-center justify-center">
+                    <div class="flex items-start gap-3 px-3 py-2.5">
+                        <!-- Icon -->
+                        <div class="w-5 h-5 rounded-full bg-blue-600 flex-shrink-0 flex items-center justify-center mt-0.5">
                             <svg class="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
                                 <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd"/>
                             </svg>
                         </div>
+                        <!-- Body -->
                         <div class="flex-1 min-w-0">
+                            <!-- Task name / summary label -->
                             <template x-if="toast.taskId">
                                 <a :href="'/tasks/' + toast.taskId"
-                                   class="text-sm text-gray-300 hover:text-white truncate block underline decoration-gray-600 hover:decoration-gray-400"
+                                   class="text-sm font-medium text-gray-100 hover:text-white block leading-snug"
                                    x-text="toast.label"></a>
                             </template>
                             <template x-if="!toast.taskId">
-                                <p class="text-sm text-gray-300 truncate" x-text="toast.label"></p>
+                                <p class="text-sm font-medium text-gray-100 leading-snug" x-text="toast.label"></p>
+                            </template>
+                            <!-- Date · Project -->
+                            <template x-if="toast.datetime || toast.project">
+                                <p class="text-xs text-blue-400 mt-0.5 truncate"
+                                   x-text="[toast.datetime, toast.project].filter(Boolean).join(' · ')"></p>
+                            </template>
+                            <!-- Tags -->
+                            <template x-if="toast.tags && toast.tags.length > 0">
+                                <div class="flex flex-wrap gap-1 mt-1.5">
+                                    <template x-for="tag in toast.tags" :key="tag.name">
+                                        <span class="inline-block px-1.5 py-0.5 text-xs rounded"
+                                              :style="'background-color: ' + tag.color + '22; color: ' + tag.color"
+                                              x-text="tag.name"></span>
+                                    </template>
+                                </div>
                             </template>
                         </div>
+                        <!-- Close -->
                         <button @click="dismiss(toast)"
-                                class="flex-shrink-0 w-5 h-5 flex items-center justify-center text-gray-500 hover:text-gray-300 transition-colors"
+                                class="flex-shrink-0 w-5 h-5 flex items-center justify-center text-gray-500 hover:text-gray-300 transition-colors mt-0.5"
                                 aria-label="Dismiss">
                             <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
                                 <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"/>
@@ -1356,22 +1375,40 @@
 
                         const threshold = {{ config('app.quick_add_toast_threshold') }};
                         if (tasks.length <= threshold) {
-                            // One toast per task, staggered slightly
                             tasks.forEach((task, i) => {
-                                setTimeout(() => this._add(task.name, task.id), i * 80);
+                                setTimeout(() => this._addTask(task), i * 80);
                             });
                         } else {
-                            // Single summary toast
-                            this._add(tasks.length + ' tasks created', null);
+                            this._addSummary(tasks.length);
                         }
                     },
 
-                    _add(label, taskId) {
+                    _addTask(task) {
                         const duration = {{ config('app.undo_toast_duration') }};
                         const toast = {
                             id: Date.now() + Math.random(),
-                            label,
-                            taskId,
+                            label: task.name,
+                            taskId: task.id,
+                            datetime: task.datetime || null,
+                            project: task.project || null,
+                            tags: task.tags || [],
+                            duration,
+                            visible: true,
+                            timer: null,
+                        };
+                        toast.timer = setTimeout(() => this.dismiss(toast), duration);
+                        this.toasts.push(toast);
+                    },
+
+                    _addSummary(count) {
+                        const duration = {{ config('app.undo_toast_duration') }};
+                        const toast = {
+                            id: Date.now() + Math.random(),
+                            label: count + ' tasks created',
+                            taskId: null,
+                            datetime: null,
+                            project: null,
+                            tags: [],
                             duration,
                             visible: true,
                             timer: null,
