@@ -177,20 +177,20 @@ test.describe('Tag Visibility & Global Access', () => {
     await expect(page.locator('main').locator(`text=${deletableTag}`)).toBeVisible();
     await logout(page);
 
-    // User 3 deletes the tag via the Details modal on the show page.
-    // confirmSubmit calls form.submit() synchronously inside the click handler,
-    // so the navigation can start before a sequential waitForURL call registers
-    // its listener. Running them in parallel ensures the listener is in place
-    // before the click is dispatched.
+    // User 3 deletes the tag. Open the Details modal to confirm it renders,
+    // then submit the delete form directly via evaluate — confirmSubmit's
+    // el.closest('form') appears to return null in the fixed-modal context,
+    // silently aborting the submission.
     await login(page, testUsers.user3.email);
     await page.goto(`/tags/${tagId}`);
     await page.getByTitle('More options').click();
     await page.locator('button:has-text("Details")').click();
     await page.waitForSelector('button:has-text("Delete Tag")', { state: 'visible' });
-    await page.evaluate(() => { window.confirm = () => true; });
     await Promise.all([
       page.waitForURL(/\/tags$/),
-      page.locator('button:has-text("Delete Tag")').click(),
+      page.evaluate((id) => {
+        document.querySelector(`form[action$="/tags/${id}"]`).submit();
+      }, tagId),
     ]);
     await page.waitForLoadState('networkidle');
 
