@@ -177,19 +177,11 @@ test.describe('Tag Visibility & Global Access', () => {
     await expect(page.locator('main').locator(`text=${deletableTag}`)).toBeVisible();
     await logout(page);
 
-    // User 3 opens the Details modal and deletes the tag (if deletion is allowed)
+    // User 3 deletes the tag via the edit page. The show page's Details modal
+    // form.submit() doesn't reliably trigger Playwright navigation detection,
+    // but the edit page's delete button is a plain form outside any modal.
     await login(page, testUsers.user3.email);
-    await page.goto(`/tags/${tagId}`);
-
-    // Open Details modal via three-dot menu
-    await page.getByTitle('More options').click();
-    await page.locator('button:has-text("Details")').click();
-    await page.waitForSelector('button:has-text("Delete Tag")', { state: 'visible' });
-
-    // confirmSubmit() calls window.confirm() synchronously inside Alpine's
-    // click handler. page.once('dialog') can race with that synchronous call,
-    // so override confirm to always return true instead of relying on the
-    // Playwright dialog event.
+    await page.goto(`/tags/${tagId}/edit`);
     await page.evaluate(() => { window.confirm = () => true; });
     await page.locator('button:has-text("Delete Tag")').click();
     await page.waitForURL(/\/tags$/);
