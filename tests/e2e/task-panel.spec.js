@@ -26,6 +26,12 @@ test.describe('Task Side Panel', () => {
   });
 
   test.afterEach(async ({ page }) => {
+    // The panel overlay intercepts pointer events when open, blocking the
+    // user-menu button that logout() needs to click. Dismiss it first.
+    if (await page.locator('#task-panel-overlay').isVisible()) {
+      await page.keyboard.press('Escape');
+      await page.waitForSelector('#task-panel-overlay', { state: 'hidden' });
+    }
     await logout(page);
   });
 
@@ -62,8 +68,9 @@ test.describe('Task Side Panel', () => {
     await page.waitForSelector('#task-panel-overlay', { state: 'visible' });
     await page.waitForLoadState('networkidle');
 
-    // Click the semi-transparent backdrop (top-left corner, outside the drawer)
-    await page.locator('#task-panel-overlay > div.absolute').click();
+    // The panel drawer is 90vw wide and right-aligned, leaving a ~10% strip
+    // on the left where the backdrop is not obscured. Click there.
+    await page.locator('#task-panel-overlay > div.absolute').click({ position: { x: 10, y: 300 } });
 
     await expect(page.locator('#task-panel-overlay')).not.toBeVisible();
   });
@@ -102,7 +109,7 @@ test.describe('Task Side Panel', () => {
     await page.click('text=Open full page');
     await page.waitForURL(/\/tasks\/\d+/);
 
-    // Full task page should also show the task name
-    await expect(page.locator('main')).toContainText(taskName);
+    // The task name lives in the page header <h2>, not inside <main>
+    await expect(page.locator('h2.task-title')).toContainText(taskName);
   });
 });
