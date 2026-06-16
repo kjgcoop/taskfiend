@@ -189,7 +189,9 @@ test.describe('Tag Visibility & Global Access', () => {
     // Handle the confirmation dialog
     page.once('dialog', dialog => dialog.accept());
     await page.locator('button:has-text("Delete Tag")').click();
-    await page.waitForURL(/\/tags/);
+    // /\/tags/ would match the current /tags/{id} URL immediately; wait for
+    // the list page specifically so the redirect fully completes first.
+    await page.waitForURL(/\/tags$/);
 
     // User 2 should no longer see the tag
     await logout(page);
