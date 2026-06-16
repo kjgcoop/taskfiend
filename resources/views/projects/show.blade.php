@@ -1129,7 +1129,7 @@
                         if (this.resolvedDate && /^\d{4}-\d{2}-\d{2}$/.test(this.resolvedDate)) {
                             const d = new Date(this.resolvedDate + 'T12:00:00');
                             this.dateText = d.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-                            this.previewDate();
+                            this.datePreview = this.dateText;
                         }
                     },
 
