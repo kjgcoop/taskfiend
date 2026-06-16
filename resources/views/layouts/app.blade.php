@@ -1295,6 +1295,103 @@
             });
         </script>
 
+        <!-- Quick-add creation toast stack (bottom-left) -->
+        <div x-data="creationToastManager"
+             class="fixed bottom-4 left-4 z-50 flex flex-col-reverse gap-2 items-start pointer-events-none"
+             aria-live="polite">
+            <template x-for="toast in toasts" :key="toast.id">
+                <div class="pointer-events-auto w-72 bg-gray-800 border border-gray-700 rounded-lg shadow-2xl overflow-hidden"
+                     x-show="toast.visible"
+                     x-transition:enter="transition ease-out duration-200"
+                     x-transition:enter-start="opacity-0 translate-y-1"
+                     x-transition:enter-end="opacity-100 translate-y-0"
+                     x-transition:leave="transition ease-in duration-150"
+                     x-transition:leave-start="opacity-100"
+                     x-transition:leave-end="opacity-0">
+                    <div class="flex items-center gap-3 px-3 py-2.5">
+                        <div class="w-5 h-5 rounded-full bg-blue-600 flex-shrink-0 flex items-center justify-center">
+                            <svg class="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
+                                <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd"/>
+                            </svg>
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <template x-if="toast.taskId">
+                                <a :href="'/tasks/' + toast.taskId"
+                                   class="text-sm text-gray-300 hover:text-white truncate block underline decoration-gray-600 hover:decoration-gray-400"
+                                   x-text="toast.label"></a>
+                            </template>
+                            <template x-if="!toast.taskId">
+                                <p class="text-sm text-gray-300 truncate" x-text="toast.label"></p>
+                            </template>
+                        </div>
+                        <button @click="dismiss(toast)"
+                                class="flex-shrink-0 w-5 h-5 flex items-center justify-center text-gray-500 hover:text-gray-300 transition-colors"
+                                aria-label="Dismiss">
+                            <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
+                                <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"/>
+                            </svg>
+                        </button>
+                    </div>
+                    <div class="h-0.5 bg-gray-700">
+                        <div class="h-full bg-blue-500 toast-countdown-bar"
+                             :style="'animation-duration: ' + toast.duration + 'ms'"></div>
+                    </div>
+                </div>
+            </template>
+        </div>
+
+        <script nonce="{{ csp_nonce() }}">
+            document.addEventListener('alpine:init', () => {
+                Alpine.data('creationToastManager', function () {
+                    return {
+                    toasts: [],
+
+                    init() {
+                        const raw = sessionStorage.getItem('quickAddCreated');
+                        if (!raw) return;
+                        sessionStorage.removeItem('quickAddCreated');
+                        let tasks;
+                        try { tasks = JSON.parse(raw); } catch { return; }
+                        if (!Array.isArray(tasks) || tasks.length === 0) return;
+
+                        const threshold = {{ config('app.quick_add_toast_threshold') }};
+                        if (tasks.length <= threshold) {
+                            // One toast per task, staggered slightly
+                            tasks.forEach((task, i) => {
+                                setTimeout(() => this._add(task.name, task.id), i * 80);
+                            });
+                        } else {
+                            // Single summary toast
+                            this._add(tasks.length + ' tasks created', null);
+                        }
+                    },
+
+                    _add(label, taskId) {
+                        const duration = {{ config('app.undo_toast_duration') }};
+                        const toast = {
+                            id: Date.now() + Math.random(),
+                            label,
+                            taskId,
+                            duration,
+                            visible: true,
+                            timer: null,
+                        };
+                        toast.timer = setTimeout(() => this.dismiss(toast), duration);
+                        this.toasts.push(toast);
+                    },
+
+                    dismiss(toast) {
+                        toast.visible = false;
+                        clearTimeout(toast.timer);
+                        setTimeout(() => {
+                            this.toasts = this.toasts.filter(t => t.id !== toast.id);
+                        }, 200);
+                    },
+                    };
+                });
+            });
+        </script>
+
         <script nonce="{{ csp_nonce() }}">
             (function () {
                 const seconds = parseInt(

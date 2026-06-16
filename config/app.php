@@ -87,6 +87,9 @@ return [
     // Milliseconds the undo toast stays on screen before auto-dismissing
     'undo_toast_duration' => (int) env('TOAST_UNDO_DURATION_MS', 2000),
 
+    // Max number of individual toasts to show after quick-add; above this a summary toast is shown
+    'quick_add_toast_threshold' => (int) env('QUICK_ADD_TOAST_THRESHOLD', 5),
+
     /*
     |--------------------------------------------------------------------------
     | Encryption Key

@@ -403,7 +403,7 @@ class TaskController extends Controller
 
         if ($request->boolean('quick_add')) {
             if ($request->wantsJson()) {
-                return response()->json(['ok' => true]);
+                return response()->json(['ok' => true, 'tasks' => [['id' => $task->id, 'name' => $task->name]]]);
             }
             return redirect()->back()->with('success', 'Task created.');
         }
@@ -1818,10 +1818,12 @@ class TaskController extends Controller
         $successes = [];
         $errors    = [];
 
+        $createdTasks = [];
         foreach ($lines as $i => $line) {
             try {
                 $task = $this->createSingleTaskFromLine($line, $validated, $globalDate, $globalRecurrence, $isQuickAdd);
                 $successes[] = $task;
+                $createdTasks[] = ['id' => $task->id, 'name' => $task->name];
             } catch (\Exception $e) {
                 $errors[] = [
                     'line'  => $i + 1,
@@ -1839,7 +1841,7 @@ class TaskController extends Controller
         if ($isQuickAdd) {
             if (!$hasErrors) {
                 if ($request->wantsJson()) {
-                    return response()->json(['ok' => true, 'count' => $successCount]);
+                    return response()->json(['ok' => true, 'count' => $successCount, 'tasks' => $createdTasks]);
                 }
                 return redirect()->back()->with('success', "{$successCount} tasks created.");
             }
@@ -1856,6 +1858,7 @@ class TaskController extends Controller
                     'ok'      => $successCount > 0,
                     'partial' => $successCount > 0,
                     'count'   => $successCount,
+                    'tasks'   => $createdTasks,
                     'errors'  => $errors,
                     'message' => $errorMsg,
                 ], $successCount > 0 ? 200 : 422);

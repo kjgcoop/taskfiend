@@ -230,6 +230,11 @@
                         if (data.partial && data.message) {
                             sessionStorage.setItem('quickAddBulkError', data.message);
                         }
+                        // Store created tasks for toast notifications after reload
+                        const tasks = data.tasks || [];
+                        if (tasks.length > 0) {
+                            sessionStorage.setItem('quickAddCreated', JSON.stringify(tasks));
+                        }
                         window.location.reload();
                         return;
                     }
