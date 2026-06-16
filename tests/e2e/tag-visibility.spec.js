@@ -189,9 +189,11 @@ test.describe('Tag Visibility & Global Access', () => {
     // Handle the confirmation dialog
     page.once('dialog', dialog => dialog.accept());
     await page.locator('button:has-text("Delete Tag")').click();
-    // /\/tags/ would match the current /tags/{id} URL immediately; wait for
-    // the list page specifically so the redirect fully completes first.
+    // waitForURL fires when the URL changes (at redirect time), before the new
+    // page DOM has replaced the old one. Wait for networkidle too so the
+    // Details modal from the old page is gone before logout() tries to click.
     await page.waitForURL(/\/tags$/);
+    await page.waitForLoadState('networkidle');
 
     // User 2 should no longer see the tag
     await logout(page);
