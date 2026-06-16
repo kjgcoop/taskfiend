@@ -662,6 +662,14 @@
                             <span class="px-1.5 py-0.5 text-xs rounded-full bg-gray-700 text-gray-300">{{ $task->changeLogs->count() }}</span>
                         @endif
                     </button>
+                    <button @click="tab = 'referenced-by'"
+                            :class="tab === 'referenced-by' ? 'border-b-2 border-blue-500 text-gray-100' : 'text-gray-400 hover:text-gray-200'"
+                            class="flex-shrink-0 flex items-center gap-1.5 px-5 py-3 text-sm font-medium transition-colors whitespace-nowrap">
+                        Referenced By
+                        @if($referencingTasks->count() > 0)
+                            <span class="px-1.5 py-0.5 text-xs rounded-full bg-gray-700 text-gray-300">{{ $referencingTasks->count() }}</span>
+                        @endif
+                    </button>
                 </div>
 
                 <!-- Tab content -->
@@ -815,6 +823,39 @@
                         <div class="space-y-4">
                             <x-change :changes="$task->changeLogs" />
                         </div>
+                    </div>
+
+                    <!-- Referenced By tab -->
+                    <div x-show="tab === 'referenced-by'">
+                        @if($referencingTasks->count() > 0)
+                            <div class="space-y-2">
+                                @foreach($referencingTasks as $ref)
+                                    <a href="{{ route('tasks.show', $ref) }}"
+                                       class="flex items-center gap-3 p-3 rounded-lg bg-gray-700 border border-gray-600 hover:bg-gray-600 transition group">
+                                        <span class="flex-1 min-w-0">
+                                            <span class="block text-sm font-medium text-gray-100 group-hover:text-white truncate">{!! render_title($ref->name) !!}</span>
+                                            <span class="flex items-center gap-2 mt-0.5">
+                                                <span class="text-xs text-gray-500">#{{ $ref->id }}</span>
+                                                <span class="inline-block px-1.5 py-0.5 text-xs rounded
+                                                    @if($ref->status === 'done') bg-green-900 text-green-300
+                                                    @elseif($ref->status === 'archived') bg-gray-600 text-gray-400
+                                                    @else bg-blue-900 text-blue-300 @endif">
+                                                    {{ ucfirst($ref->status) }}
+                                                </span>
+                                                @if($ref->project)
+                                                    <span class="text-xs text-gray-500">{{ $ref->project->name }}</span>
+                                                @endif
+                                            </span>
+                                        </span>
+                                        <svg class="w-4 h-4 text-gray-500 group-hover:text-gray-300 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                                        </svg>
+                                    </a>
+                                @endforeach
+                            </div>
+                        @else
+                            <p class="text-sm text-gray-500">No other tasks reference this task.</p>
+                        @endif
                     </div>
 
                 </div>
