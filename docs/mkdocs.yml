@@ -13,6 +13,7 @@ nav:
     - Recurring Tasks: features/recurring-tasks.md
     - Admin Functions: features/admin-functionality.md
     - Differences from Todoist: features/todoist-differences.md
+    - Intentionally Missing Features: features/intentionally-missing-features.md
   - Self-Hosting:
     - Docker: self-hosting/docker.md
     - Security: self-hosting/security.md
