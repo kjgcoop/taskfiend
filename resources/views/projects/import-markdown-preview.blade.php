@@ -98,7 +98,7 @@
                 {{-- Actions --}}
                 <form method="POST" action="{{ route('projects.import-markdown.apply', $project) }}">
                     @csrf
-                    <input type="hidden" name="payload" value="{{ e($payload) }}">
+                    <input type="hidden" name="payload" value="{{ $payload }}">
                     <div class="flex items-center gap-3">
                         <button type="submit"
                                 class="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded transition-colors">
