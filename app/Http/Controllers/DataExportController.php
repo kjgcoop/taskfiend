@@ -938,6 +938,185 @@ class DataExportController extends Controller
         ]);
     }
 
+    public function importMarkdownForm(Request $request, Project $project)
+    {
+        if ($project->user_id !== $request->user()->id) {
+            abort(403);
+        }
+
+        return view('projects.import-markdown', compact('project'));
+    }
+
+    public function importMarkdownPreview(Request $request, Project $project)
+    {
+        if ($project->user_id !== $request->user()->id) {
+            abort(403);
+        }
+
+        $request->validate(['markdown_file' => 'required|file|mimes:md,txt|max:512']);
+
+        $content = file_get_contents($request->file('markdown_file')->path());
+        $lines   = preg_split('/\r?\n/', $content);
+
+        $validSections = ['incomplete', 'done', 'archived'];
+        $parsed        = [];   // ['section' => ..., 'name' => ...]
+        $errors        = [];
+        $currentSection = null;
+        $firstHeadingDone = false;
+
+        foreach ($lines as $lineNum => $raw) {
+            $line = trim($raw);
+
+            if ($line === '') {
+                continue;
+            }
+
+            if (str_starts_with($line, '#')) {
+                $heading = trim(ltrim($line, '#'));
+                $slug    = strtolower($heading);
+
+                if (in_array($slug, $validSections)) {
+                    $currentSection   = $slug;
+                    $firstHeadingDone = true;
+                } elseif (!$firstHeadingDone) {
+                    // First heading treated as project name — silently skip
+                    $firstHeadingDone = true;
+                } else {
+                    $errors[] = "Line " . ($lineNum + 1) . ": unrecognized heading \"" . e($heading) . "\". Expected Incomplete, Done, or Archived.";
+                }
+                continue;
+            }
+
+            // Indented items (subtasks) — skip silently
+            if (str_starts_with($raw, '    ') || str_starts_with($raw, "\t")) {
+                continue;
+            }
+
+            if (preg_match('/^[-*]\s+(.+)$/', $line, $m)) {
+                if ($currentSection !== null) {
+                    $parsed[] = ['section' => $currentSection, 'name' => trim($m[1])];
+                }
+            }
+        }
+
+        if (!empty($errors)) {
+            return view('projects.import-markdown', compact('project', 'errors'));
+        }
+
+        // Build diff against existing tasks in this project
+        $existing = Task::where('project_id', $project->id)
+            ->whereNull('parent_id')
+            ->get()
+            ->keyBy('name');
+
+        $toCreate       = [];
+        $toChangeStatus = [];
+        $incompleteCount = 0;
+
+        foreach ($parsed as $item) {
+            $name    = $item['name'];
+            $section = $item['section'];
+
+            if ($section === 'incomplete') {
+                $incompleteCount++;
+            }
+
+            if (isset($existing[$name])) {
+                $task = $existing[$name];
+                if ($task->status !== $section) {
+                    $toChangeStatus[] = [
+                        'id'     => $task->id,
+                        'name'   => $name,
+                        'from'   => $task->status,
+                        'to'     => $section,
+                    ];
+                }
+            } else {
+                $toCreate[] = ['name' => $name, 'section' => $section];
+            }
+        }
+
+        $payload = json_encode([
+            'parsed'          => $parsed,
+            'to_create'       => $toCreate,
+            'to_change_status'=> $toChangeStatus,
+            'incomplete_count'=> $incompleteCount,
+        ]);
+
+        return view('projects.import-markdown-preview', compact(
+            'project', 'toCreate', 'toChangeStatus', 'incompleteCount', 'payload'
+        ));
+    }
+
+    public function importMarkdownApply(Request $request, Project $project)
+    {
+        if ($project->user_id !== $request->user()->id) {
+            abort(403);
+        }
+
+        $request->validate(['payload' => 'required|string']);
+
+        $data = json_decode($request->input('payload'), true);
+        if (!$data) {
+            return redirect()->route('projects.show', $project)->with('error', 'Invalid import data.');
+        }
+
+        $user   = $request->user();
+        $parsed = $data['parsed'] ?? [];
+
+        // Zero out project_sort_order for all incomplete tasks in this project
+        Task::where('project_id', $project->id)
+            ->where('status', 'incomplete')
+            ->whereNull('parent_id')
+            ->update(['project_sort_order' => null]);
+
+        // Apply status changes
+        foreach ($data['to_change_status'] ?? [] as $change) {
+            Task::where('id', $change['id'])
+                ->where('project_id', $project->id)
+                ->update(['status' => $change['to']]);
+        }
+
+        // Create new tasks
+        $existingNames = Task::where('project_id', $project->id)
+            ->whereNull('parent_id')
+            ->pluck('name')
+            ->flip();
+
+        foreach ($data['to_create'] ?? [] as $item) {
+            if (isset($existingNames[$item['name']])) {
+                continue; // safety: already exists (double-submit guard)
+            }
+            $task = Task::create([
+                'name'       => $item['name'],
+                'status'     => $item['section'],
+                'project_id' => $project->id,
+                'creator_id' => $user->id,
+            ]);
+            \App\Models\Assignment::create([
+                'task_id'     => $task->id,
+                'assignee_id' => $user->id,
+            ]);
+            $existingNames[$item['name']] = true;
+        }
+
+        // Assign project_sort_order to incomplete tasks in file order
+        $sortPosition = 1;
+        foreach ($parsed as $item) {
+            if ($item['section'] !== 'incomplete') {
+                continue;
+            }
+            Task::where('project_id', $project->id)
+                ->where('name', $item['name'])
+                ->where('status', 'incomplete')
+                ->whereNull('parent_id')
+                ->update(['project_sort_order' => $sortPosition++]);
+        }
+
+        return redirect()->route('projects.show', $project)
+            ->with('success', 'Markdown import applied successfully.');
+    }
+
     /**
      * Helper function to recursively delete a directory.
      */
