@@ -72,8 +72,8 @@
         $topPx    = ($sh * 60 + $sm) / 60 * $hourHeightPx;
 
         foreach ($group as $colIndex => $task) {
-            $displayDuration = max($task->duration_minutes ?? 15, 15);
-            $heightPx = max(20, ($displayDuration / 60) * $hourHeightPx);
+            $displayDuration = $task->duration_minutes ?: 30;
+            $heightPx = max(7, ($displayDuration / 60) * $hourHeightPx);
 
             $taskLayout[$task->id] = [
                 'topPx'    => $topPx,
