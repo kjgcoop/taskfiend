@@ -98,7 +98,7 @@
                     @if($project->user_id === Auth::id())
                         <a href="{{ route('projects.import-markdown', $project) }}"
                            class="block px-4 py-2 text-gray-200 hover:bg-gray-700">
-                            Import from .md
+                            Import Updates from .md
                         </a>
                     @endif
                     <a href="{{ route('projects.export-template', $project) }}"
