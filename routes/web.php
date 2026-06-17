@@ -105,6 +105,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/projects/{project}/export-template', [DataExportController::class, 'exportProjectTemplate'])->name('projects.export-template');
     Route::get('/projects/{project}/export-markdown', [DataExportController::class, 'exportMarkdown'])->name('projects.export-markdown');
     Route::post('/projects/import-template', [DataExportController::class, 'importProjectTemplate'])->name('projects.import-template');
+    Route::post('/projects/create-from-markdown', [DataExportController::class, 'createFromMarkdown'])->name('projects.create-from-markdown');
     Route::get('/projects/{project}/import-markdown', [DataExportController::class, 'importMarkdownForm'])->name('projects.import-markdown');
     Route::post('/projects/{project}/import-markdown', [DataExportController::class, 'importMarkdownPreview'])->name('projects.import-markdown.preview');
     Route::post('/projects/{project}/import-markdown/apply', [DataExportController::class, 'importMarkdownApply'])->name('projects.import-markdown.apply');

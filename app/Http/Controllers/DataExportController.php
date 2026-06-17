@@ -938,6 +938,81 @@ class DataExportController extends Controller
         ]);
     }
 
+    public function createFromMarkdown(Request $request)
+    {
+        $request->validate([
+            'project_name'  => 'required|string|max:255',
+            'markdown_file' => 'required|file|mimes:md,txt|max:512',
+        ]);
+
+        $user    = $request->user();
+        $content = file_get_contents($request->file('markdown_file')->path());
+        $lines   = preg_split('/\r?\n/', $content);
+
+        $validSections    = ['incomplete', 'done', 'archived'];
+        $parsed           = [];
+        $parseErrors      = [];
+        $currentSection   = null;
+        $firstHeadingDone = false;
+
+        foreach ($lines as $lineNum => $raw) {
+            $line = trim($raw);
+            if ($line === '') continue;
+
+            if (str_starts_with($line, '#')) {
+                $heading = trim(ltrim($line, '#'));
+                $slug    = strtolower($heading);
+
+                if (in_array($slug, $validSections)) {
+                    $currentSection   = $slug;
+                    $firstHeadingDone = true;
+                } elseif (!$firstHeadingDone) {
+                    $firstHeadingDone = true; // project name heading — skip silently
+                } else {
+                    $parseErrors[] = "Line " . ($lineNum + 1) . ": unrecognized heading \"" . e($heading) . "\". Expected Incomplete, Done, or Archived.";
+                }
+                continue;
+            }
+
+            if (str_starts_with($raw, '    ') || str_starts_with($raw, "\t")) continue;
+
+            if (preg_match('/^[-*]\s+(.+)$/', $line, $m) && $currentSection !== null) {
+                $parsed[] = ['section' => $currentSection, 'name' => trim($m[1])];
+            }
+        }
+
+        if (!empty($parseErrors)) {
+            return back()
+                ->withInput()
+                ->with('markdown_errors', $parseErrors)
+                ->with('show_markdown_form', true);
+        }
+
+        $project = Project::create([
+            'name'    => $request->project_name,
+            'user_id' => $user->id,
+        ]);
+
+        $sortPosition = 1;
+        foreach ($parsed as $item) {
+            $task = Task::create([
+                'name'               => $item['name'],
+                'status'             => $item['section'],
+                'project_id'         => $project->id,
+                'creator_id'         => $user->id,
+                'project_sort_order' => $item['section'] === 'incomplete' ? $sortPosition++ : null,
+            ]);
+            \App\Models\Assignment::create([
+                'task_id'        => $task->id,
+                'assignee_id'    => $user->id,
+                'assigned_by_id' => $user->id,
+            ]);
+        }
+
+        return redirect()->route('projects.show', $project)
+            ->with('success', 'Project created from markdown.');
+    }
+
     public function importMarkdownForm(Request $request, Project $project)
     {
         if ($project->user_id !== $request->user()->id) {

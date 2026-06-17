@@ -16,14 +16,61 @@
                     Favorites only
                 </label>
                 <div class="flex gap-2">
-                <button @click="showImportForm = !showImportForm" class="inline-flex items-center px-4 py-2 bg-gray-700 border border-gray-600 rounded-md font-semibold text-xs text-gray-100 uppercase tracking-widest hover:bg-gray-600">
+                <a href="{{ route('templates.index') }}" class="inline-flex items-center px-4 py-2 bg-gray-700 border border-gray-600 rounded-md font-semibold text-xs text-gray-100 uppercase tracking-widest hover:bg-gray-600">
+                    From Template
+                </a>
+                <button @click="toggleImportTemplate()" class="inline-flex items-center px-4 py-2 bg-gray-700 border border-gray-600 rounded-md font-semibold text-xs text-gray-100 uppercase tracking-widest hover:bg-gray-600">
                     Import Template
+                </button>
+                <button @click="toggleMarkdownImport()" class="inline-flex items-center px-4 py-2 bg-gray-700 border border-gray-600 rounded-md font-semibold text-xs text-gray-100 uppercase tracking-widest hover:bg-gray-600">
+                    Import from Markdown
                 </button>
                 <a href="{{ route('projects.create') }}" class="inline-flex items-center px-4 py-2 bg-blue-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-blue-700">
                     New Project
                 </a>
                 </div>
             </div>
+            <!-- Import from Markdown Form -->
+            <div x-show="showMarkdownImportForm" x-cloak class="bg-[#202020] border border-gray-700 p-6 rounded-lg shadow">
+                <h3 class="text-lg font-semibold text-gray-100 mb-4">Create Project from Markdown</h3>
+                @if(session('markdown_errors'))
+                    <div class="mb-4 bg-red-900/40 border border-red-700 rounded-lg p-4">
+                        <p class="text-sm font-semibold text-red-300 mb-2">The file contains unrecognized headings. Please fix the following and re-upload:</p>
+                        <ul class="list-disc list-inside space-y-1">
+                            @foreach(session('markdown_errors') as $err)
+                                <li class="text-sm text-red-400">{{ $err }}</li>
+                            @endforeach
+                        </ul>
+                    </div>
+                @endif
+                <form action="{{ route('projects.create-from-markdown') }}" method="POST" enctype="multipart/form-data">
+                    @csrf
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-300 mb-2">Project Name</label>
+                            <input type="text" name="project_name" required maxlength="255"
+                                   value="{{ old('project_name') }}"
+                                   class="w-full bg-gray-700 border border-gray-600 text-gray-100 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-gray-500"
+                                   placeholder="Enter project name">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-300 mb-2">Markdown File</label>
+                            <input type="file" name="markdown_file" accept=".md,.txt" required
+                                   class="block w-full text-sm text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-gray-700 file:text-gray-100 hover:file:bg-gray-600 bg-[#101010] border border-gray-600 rounded-md">
+                            <p class="mt-1 text-xs text-gray-500">Use <code class="bg-gray-700 px-1 rounded"># Incomplete</code>, <code class="bg-gray-700 px-1 rounded"># Done</code>, <code class="bg-gray-700 px-1 rounded"># Archived</code> headings with <code class="bg-gray-700 px-1 rounded">- Task name</code> items.</p>
+                        </div>
+                        <div class="flex gap-2">
+                            <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
+                                Create Project
+                            </button>
+                            <button type="button" @click="showMarkdownImportForm = false" class="px-4 py-2 bg-gray-700 border border-gray-600 text-gray-100 rounded hover:bg-gray-600">
+                                Cancel
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+
             <!-- Import Template Form -->
             <div x-show="showImportForm" x-cloak class="bg-[#202020] border border-gray-700 p-6 rounded-lg shadow">
                 <h3 class="text-lg font-semibold text-gray-100 mb-4">Import Project Template</h3>
@@ -259,6 +306,7 @@ function setDefaultProject(projectId, btn) {
 document.addEventListener('alpine:init', () => {
     Alpine.data('projectsIndex', () => ({
         showImportForm: false,
+        showMarkdownImportForm: {{ session('show_markdown_form') ? 'true' : 'false' }},
         templateFile: null,
         projectName: '',
         favoritesOnly: false,
@@ -271,6 +319,8 @@ document.addEventListener('alpine:init', () => {
                     .replace(/_\d{4}-\d{2}-\d{2}$/, '');
             }
         },
+        toggleImportTemplate() { this.showImportForm = !this.showImportForm; this.showMarkdownImportForm = false; },
+        toggleMarkdownImport() { this.showMarkdownImportForm = !this.showMarkdownImportForm; this.showImportForm = false; },
         cancelImport() { this.showImportForm = false; this.templateFile = null; this.projectName = ''; },
         submitImport(event) {
             if (!this.projectName) { alert('Please enter a project name'); return; }
