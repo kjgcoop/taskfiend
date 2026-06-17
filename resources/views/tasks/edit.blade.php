@@ -156,16 +156,47 @@
                             @error('status')<p class="mt-1 text-sm text-red-600">{{ $message }}</p>@enderror
                         </div>
 
-                        <div class="mb-4">
-                            <label for="project_id" class="block text-sm font-medium text-gray-300 mb-2">Project</label>
-                            <select name="project_id" id="project_id"
-                                    class="w-full rounded-md bg-gray-700 border-gray-600 text-gray-100 placeholder-gray-500 shadow-sm focus:border-blue-500 focus:ring-blue-500">
-                                @foreach($projects as $project)
-                                    <option value="{{ $project->id }}" {{ old('project_id', $task->project_id ?? $defaultProjectId) == $project->id ? 'selected' : '' }}>
-                                        {{ $project->name }}
-                                    </option>
-                                @endforeach
-                            </select>
+                        @php
+                            $_editProjectId = old('project_id', $task->project_id ?? $defaultProjectId);
+                            $_editProjectName = $projects->firstWhere('id', $_editProjectId)?->name ?? '';
+                        @endphp
+                        <div class="mb-4"
+                             x-data="projectCombo({ projects: @js($projects->map(fn($p) => ['id' => $p->id, 'name' => $p->name])->values()), selectedId: @js($_editProjectId), selectedName: @js($_editProjectName) })">
+                            <label for="project_combo_edit" class="block text-sm font-medium text-gray-300 mb-2">Project</label>
+                            <div class="relative">
+                                <input type="text"
+                                       id="project_combo_edit"
+                                       x-model="search"
+                                       @focus="open = true"
+                                       @blur="handleBlur()"
+                                       @keydown.arrow-down.prevent="moveDown()"
+                                       @keydown.arrow-up.prevent="moveUp()"
+                                       @keydown.enter.prevent="selectCurrent()"
+                                       @keydown.escape="open = false"
+                                       @input="open = true; activeIndex = -1"
+                                       autocomplete="off"
+                                       placeholder="Search projects..."
+                                       class="w-full rounded-md bg-gray-700 border-gray-600 text-gray-100 placeholder-gray-500 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                                <div x-show="open"
+                                     x-transition
+                                     class="absolute z-10 mt-1 w-full bg-gray-700 border border-gray-600 rounded-md shadow-lg max-h-60 overflow-auto">
+                                    <template x-if="filtered.length > 0">
+                                        <div>
+                                            <template x-for="(project, index) in filtered" :key="project.id">
+                                                <div @mousedown.prevent="select(project)"
+                                                     :class="{ 'bg-gray-600': activeIndex === index }"
+                                                     class="px-3 py-2 text-sm text-gray-300 hover:bg-gray-600 cursor-pointer"
+                                                     x-text="project.name">
+                                                </div>
+                                            </template>
+                                        </div>
+                                    </template>
+                                    <template x-if="filtered.length === 0">
+                                        <div class="px-3 py-2 text-sm text-gray-500 italic">No matching projects</div>
+                                    </template>
+                                </div>
+                            </div>
+                            <input type="hidden" name="project_id" :value="selectedId">
                             @error('project_id')<p class="mt-1 text-sm text-red-600">{{ $message }}</p>@enderror
                         </div>
 

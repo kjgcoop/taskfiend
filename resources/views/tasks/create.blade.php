@@ -242,15 +242,41 @@
                         </div>
 
                         <div class="mb-4">
-                            <label for="project_id" class="block text-sm font-medium text-gray-300 mb-2">Project</label>
-                            <select x-model="selectedProjectId"
-                                    name="project_id"
-                                    id="project_id"
-                                    class="w-full rounded-md bg-gray-700 border-gray-600 text-gray-100 shadow-sm focus:border-blue-500 focus:ring-blue-500">
-                                @foreach($projects as $project)
-                                    <option value="{{ $project->id }}">{{ $project->name }}</option>
-                                @endforeach
-                            </select>
+                            <label for="project_combo" class="block text-sm font-medium text-gray-300 mb-2">Project</label>
+                            <div class="relative">
+                                <input type="text"
+                                       id="project_combo"
+                                       x-model="projectSearch"
+                                       @focus="projectComboOpen = true"
+                                       @blur="handleProjectComboBlur()"
+                                       @keydown.arrow-down.prevent="moveComboDown()"
+                                       @keydown.arrow-up.prevent="moveComboUp()"
+                                       @keydown.enter.prevent="selectCurrentComboProject()"
+                                       @keydown.escape="projectComboOpen = false"
+                                       @input="projectComboOpen = true; projectComboActiveIndex = -1"
+                                       autocomplete="off"
+                                       placeholder="Search projects..."
+                                       class="w-full rounded-md bg-gray-700 border-gray-600 text-gray-100 placeholder-gray-500 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                                <div x-show="projectComboOpen"
+                                     x-transition
+                                     class="absolute z-10 mt-1 w-full bg-gray-700 border border-gray-600 rounded-md shadow-lg max-h-60 overflow-auto">
+                                    <template x-if="filteredComboProjects.length > 0">
+                                        <div>
+                                            <template x-for="(project, index) in filteredComboProjects" :key="project.id">
+                                                <div @mousedown.prevent="selectComboProject(project)"
+                                                     :class="{ 'bg-gray-600': projectComboActiveIndex === index }"
+                                                     class="px-3 py-2 text-sm text-gray-300 hover:bg-gray-600 cursor-pointer"
+                                                     x-text="project.name">
+                                                </div>
+                                            </template>
+                                        </div>
+                                    </template>
+                                    <template x-if="filteredComboProjects.length === 0">
+                                        <div class="px-3 py-2 text-sm text-gray-500 italic">No matching projects</div>
+                                    </template>
+                                </div>
+                            </div>
+                            <input type="hidden" name="project_id" :value="selectedProjectId">
                             @error('project_id')<p class="mt-1 text-sm text-red-600">{{ $message }}</p>@enderror
                         </div>
 
@@ -533,6 +559,11 @@
                 confirmedTagSlugs: [],
                 confirmedProjectSlugs: [],
 
+                // Project combo box state
+                projectSearch: '',
+                projectComboOpen: false,
+                projectComboActiveIndex: -1,
+
                 // Number of non-empty lines — drives multi-task UI
                 get lineCount() {
                     return this.taskName.split('\n').filter(l => l.trim().length > 0).length;
@@ -558,10 +589,51 @@
                     return this.cleanedTaskName;
                 },
 
+                get filteredComboProjects() {
+                    if (!this.projectSearch) return this.projects;
+                    const q = this.projectSearch.toLowerCase();
+                    return this.projects.filter(p => p.name.toLowerCase().includes(q));
+                },
+
+                selectComboProject(project) {
+                    this.selectedProjectId = project.id;
+                    this.projectSearch = project.name;
+                    this.projectComboOpen = false;
+                    this.projectComboActiveIndex = -1;
+                },
+
+                handleProjectComboBlur() {
+                    setTimeout(() => {
+                        this.projectComboOpen = false;
+                        const sel = this.projects.find(p => p.id == this.selectedProjectId);
+                        this.projectSearch = sel ? sel.name : '';
+                    }, 150);
+                },
+
+                moveComboDown() {
+                    const len = this.filteredComboProjects.length;
+                    if (!len) return;
+                    this.projectComboActiveIndex = (this.projectComboActiveIndex + 1) % len;
+                },
+
+                moveComboUp() {
+                    const len = this.filteredComboProjects.length;
+                    if (!len) return;
+                    this.projectComboActiveIndex = (this.projectComboActiveIndex - 1 + len) % len;
+                },
+
+                selectCurrentComboProject() {
+                    if (this.projectComboActiveIndex >= 0 && this.filteredComboProjects[this.projectComboActiveIndex]) {
+                        this.selectComboProject(this.filteredComboProjects[this.projectComboActiveIndex]);
+                    }
+                },
+
                 init() {
                     const el = this.$el;
                     this.projects = JSON.parse(el.dataset.projects || '[]');
                     this.tags = JSON.parse(el.dataset.tags || '[]');
+                    const preselected = this.projects.find(p => p.id == this.selectedProjectId);
+                    this.projectSearch = preselected ? preselected.name : '';
                     // Auto-resize the textarea when the page loads with a pre-filled value
                     this.$nextTick(() => {
                         const input = this.$refs.nameInput;
@@ -701,6 +773,7 @@
                             );
                             if (project) {
                                 this.selectedProjectId = project.id;
+                                this.projectSearch = project.name;
                             }
                         }
                     } else {

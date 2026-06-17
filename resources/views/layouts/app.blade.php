@@ -372,6 +372,55 @@
                         }
                     };
                 });
+
+                Alpine.data('projectCombo', function(config) {
+                    return {
+                        projects: config.projects || [],
+                        selectedId: config.selectedId || '',
+                        search: config.selectedName || '',
+                        open: false,
+                        activeIndex: -1,
+
+                        get filtered() {
+                            if (!this.search) return this.projects;
+                            const q = this.search.toLowerCase();
+                            return this.projects.filter(p => p.name.toLowerCase().includes(q));
+                        },
+
+                        select(project) {
+                            this.selectedId = project.id;
+                            this.search = project.name;
+                            this.open = false;
+                            this.activeIndex = -1;
+                        },
+
+                        handleBlur() {
+                            setTimeout(() => {
+                                this.open = false;
+                                const sel = this.projects.find(p => p.id == this.selectedId);
+                                this.search = sel ? sel.name : '';
+                            }, 150);
+                        },
+
+                        moveDown() {
+                            const len = this.filtered.length;
+                            if (!len) return;
+                            this.activeIndex = (this.activeIndex + 1) % len;
+                        },
+
+                        moveUp() {
+                            const len = this.filtered.length;
+                            if (!len) return;
+                            this.activeIndex = (this.activeIndex - 1 + len) % len;
+                        },
+
+                        selectCurrent() {
+                            if (this.activeIndex >= 0 && this.filtered[this.activeIndex]) {
+                                this.select(this.filtered[this.activeIndex]);
+                            }
+                        },
+                    };
+                });
             });
 
             document.addEventListener('alpine:init', () => {
