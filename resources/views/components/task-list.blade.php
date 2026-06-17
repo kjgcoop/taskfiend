@@ -1176,6 +1176,9 @@
                         @if($task->recurrence_pattern)
                             <span class="text-purple-400" data-task-recurrence-display>{{ $task->recurrence_pattern }}{{ $task->recurrence_floating ? '*' : '' }}</span>
                         @endif
+                        @if($task->duration_minutes)
+                            <span class="text-purple-900" data-duration-display>{{ \App\Models\Task::formatDuration($task->duration_minutes) }}</span>
+                        @endif
                         @if($task->location)
                             @php
                                 $truncLen = config('taskfiend.location_truncate_length', 30);
