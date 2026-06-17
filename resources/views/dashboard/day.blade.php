@@ -119,7 +119,7 @@
                 <div class="flex items-center gap-2">
                     {{-- Agenda-only controls: interval dropdown + 24h toggle --}}
                     <div x-show="$store.dayView.current === 'agenda'" x-cloak class="flex items-center gap-2">
-                        <select @change="$store.agendaInterval.set(parseInt($event.target.value))"
+                        <select @change="$store.agendaInterval.set($event.target.value)"
                                 class="text-sm bg-gray-800 border border-gray-600 rounded px-2 py-1.5 text-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500">
                             <option value="5"  :selected="$store.agendaInterval.value === 5">5 min</option>
                             <option value="15" :selected="$store.agendaInterval.value === 15">15 min</option>
@@ -380,8 +380,8 @@
             Alpine.store('agendaInterval', {
                 value: parseInt(localStorage.getItem('agenda_interval') || '30'),
                 set(v) {
-                    this.value = v;
-                    localStorage.setItem('agenda_interval', String(v));
+                    this.value = parseInt(v, 10);
+                    localStorage.setItem('agenda_interval', String(this.value));
                 },
             });
         });
