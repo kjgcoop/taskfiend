@@ -618,6 +618,13 @@
                     }
                 },
 
+                initProjectCombo() {
+                    const p = this.allProjects.find(p => p.id == this.fields.project_id);
+                    this.projectSearch = p ? p.name : '';
+                    this.projectComboOpen = true;
+                    this.projectComboActiveIndex = -1;
+                },
+
                 init() {
                     const el = this.$el;
                     const taskData = JSON.parse(el.dataset.taskJson || '{}');

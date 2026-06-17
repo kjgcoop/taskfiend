@@ -374,7 +374,7 @@ $_panelTaskJson = json_encode([
             </div>
             @if(!$isInactive)
             <div x-show="editing.project_id" class="mt-1"
-                 x-effect="if (editing.project_id) { const p = allProjects.find(p => p.id == fields.project_id); projectSearch = p ? p.name : ''; projectComboOpen = true; projectComboActiveIndex = -1; }">
+                 x-effect="editing.project_id && initProjectCombo()">
                 <div class="relative">
                     <input type="text"
                            x-ref="project_idInput"
