@@ -1094,8 +1094,9 @@ class DataExportController extends Controller
                 'creator_id' => $user->id,
             ]);
             \App\Models\Assignment::create([
-                'task_id'     => $task->id,
-                'assignee_id' => $user->id,
+                'task_id'        => $task->id,
+                'assignee_id'    => $user->id,
+                'assigned_by_id' => $user->id,
             ]);
             $existingNames[$item['name']] = true;
         }
