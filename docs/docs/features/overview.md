@@ -10,6 +10,7 @@
 - **Task count breakdown** — click the task count on any list view to see a breakdown by project
 - **Sorting** — sort task lists by date, duration, or other fields; a reverse-sort button flips the current order. Tasks without a date or time are sorted by creation date (newest last), so the bottom of an undated list stays stable.
 - **Manual task reordering** — drag tasks to reorder them, with auto-scroll when dragging to the edge of the page. Scoot arrows (↑ ↓ ⤒ ⤓) let you nudge a task up, down, to the top, or to the bottom one tap at a time; the page follows the arrows so you don't have to hunt for them after each move.
+- **Import updates from a markdown file** — export a project as `.md`, rearrange tasks in any text editor, and re-upload to sync changes back; new tasks are created, statuses updated, and incomplete task order reset to match the file (see [Import Updates from .md](import-from-md.md))
 - **Multi-select** — activate with the clipboard icon next to the quick-add bar to select multiple tasks and perform bulk operations. Only tasks on the current page are affected; if the list is paginated, navigate to each page to act on those tasks.
 - **Search** — find tasks by title, description, tags, projects, assignees, duration, and date presence; title and description can be targeted independently
 - **Changelogs** — every create/edit is logged and browsable by task, project, tag, or user
