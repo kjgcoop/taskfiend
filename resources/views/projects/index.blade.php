@@ -19,10 +19,10 @@
                 <a href="{{ route('templates.index') }}" class="inline-flex items-center px-4 py-2 bg-gray-700 border border-gray-600 rounded-md font-semibold text-xs text-gray-100 uppercase tracking-widest hover:bg-gray-600">
                     From Template
                 </a>
-                <button @click="showImportForm = !showImportForm; showMarkdownImportForm = false" class="inline-flex items-center px-4 py-2 bg-gray-700 border border-gray-600 rounded-md font-semibold text-xs text-gray-100 uppercase tracking-widest hover:bg-gray-600">
+                <button @click="toggleImportTemplate()" class="inline-flex items-center px-4 py-2 bg-gray-700 border border-gray-600 rounded-md font-semibold text-xs text-gray-100 uppercase tracking-widest hover:bg-gray-600">
                     Import Template
                 </button>
-                <button @click="showMarkdownImportForm = !showMarkdownImportForm; showImportForm = false" class="inline-flex items-center px-4 py-2 bg-gray-700 border border-gray-600 rounded-md font-semibold text-xs text-gray-100 uppercase tracking-widest hover:bg-gray-600">
+                <button @click="toggleMarkdownImport()" class="inline-flex items-center px-4 py-2 bg-gray-700 border border-gray-600 rounded-md font-semibold text-xs text-gray-100 uppercase tracking-widest hover:bg-gray-600">
                     Import from Markdown
                 </button>
                 <a href="{{ route('projects.create') }}" class="inline-flex items-center px-4 py-2 bg-blue-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-blue-700">
@@ -319,6 +319,8 @@ document.addEventListener('alpine:init', () => {
                     .replace(/_\d{4}-\d{2}-\d{2}$/, '');
             }
         },
+        toggleImportTemplate() { this.showImportForm = !this.showImportForm; this.showMarkdownImportForm = false; },
+        toggleMarkdownImport() { this.showMarkdownImportForm = !this.showMarkdownImportForm; this.showImportForm = false; },
         cancelImport() { this.showImportForm = false; this.templateFile = null; this.projectName = ''; },
         submitImport(event) {
             if (!this.projectName) { alert('Please enter a project name'); return; }
