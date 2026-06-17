@@ -384,6 +384,63 @@
                     localStorage.setItem('agenda_interval', String(this.value));
                 },
             });
+
+            // Each interval slot is always 20px tall; hour height scales accordingly.
+            // 60-min → 20px/hr | 30-min → 40px/hr | 15-min → 80px/hr | 5-min → 240px/hr
+            Alpine.data('agendaGrid', () => ({
+                autoStart: 8,
+                autoEnd:   20,
+
+                init() {
+                    this.autoStart = parseInt(this.$el.dataset.autoStart || '8');
+                    this.autoEnd   = parseInt(this.$el.dataset.autoEnd   || '20');
+                    this.$watch('$store.agendaInterval.value', () => this._reposition());
+                    this._reposition();
+                },
+
+                _hourPx() {
+                    return (60 / this.$store.agendaInterval.value) * 20;
+                },
+
+                clipOuter() {
+                    if (this.$store.agendaFull.on) return '';
+                    return `height: ${(this.autoEnd - this.autoStart) * this._hourPx()}px; overflow: hidden;`;
+                },
+
+                clipInner() {
+                    if (this.$store.agendaFull.on) return '';
+                    return `margin-top: -${this.autoStart * this._hourPx()}px;`;
+                },
+
+                _reposition() {
+                    const hourPx  = this._hourPx();
+                    const totalPx = 24 * hourPx;
+
+                    this.$el.querySelectorAll('[data-hour-labels], [data-grid-container]').forEach(el => {
+                        el.style.height = totalPx + 'px';
+                    });
+
+                    this.$el.querySelectorAll('[data-line-hour]').forEach(el => {
+                        el.style.top = (parseInt(el.dataset.lineHour) * hourPx - 8) + 'px';
+                    });
+
+                    this.$el.querySelectorAll('[data-line-min]').forEach(el => {
+                        el.style.top = (parseInt(el.dataset.lineMin) / 60 * hourPx) + 'px';
+                    });
+
+                    this.$el.querySelectorAll('[data-task-start-min]').forEach(el => {
+                        const startMin    = parseInt(el.dataset.taskStartMin);
+                        const durationMin = parseInt(el.dataset.taskDurationMin);
+                        el.style.top    = (startMin / 60 * hourPx) + 'px';
+                        el.style.height = Math.max(20, durationMin / 60 * hourPx) + 'px';
+                    });
+
+                    const nowEl = this.$el.querySelector('[data-now-min]');
+                    if (nowEl) {
+                        nowEl.style.top = (parseInt(nowEl.dataset.nowMin) / 60 * hourPx) + 'px';
+                    }
+                },
+            }));
         });
     </script>
     @endpush
