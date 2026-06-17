@@ -8,27 +8,22 @@ This list is by no means exhaustive. It's sorted by absolutely nothing.
 
 ### Projects
 - Making projects shareable read-only as a link. If this ever gets implemented, this page will go away.
-- When you go to change a project a task is in, it's a dropdown. A combo box would probably be an improvement.
 - Projects can have background images; add the option to have a background color instead of image.
 - Each task that is linked to in another task has a list of which tasks link to it. It might be nice to have a similar lists within projects - list the tasks that reference it. I don't know where in the UI this would go.
 - Recurring projects? Say I put together a newsletter every month. A recurring project would automatially be created from a given template at whatever interval is specified.
 - Springing projects? I have projects for each release of a given software I'm working on. Every time I complete a release, I create a new project. It might be fun if this happened automatically.
 - Right now, if you want to alter a template, you need to create an instance of the project, edit it, save it as a new template, then chuck the starting template. This is awkward. It would be nice if you could just alter the template inline.
-- Ability to toggle project favoriteness (it's a word) on the individual project's page; currently only on the list page
 - Duplicate projects 
 - Currently able to archive a project on a given date but not mark done on a given date.
 
 
 ### Tasks
 - The quick filter (to filter down a list of tasks to only those matching a search term) supports "not:" to find everything not matching that term. It recognizes project (#project) and tag (@tag) shorthand. Maybe one day I'll add these to the full search page input and/or the nav bar search.
-- In lists of tasks (projects, days), show a each task's duration
 - When tasks are altered in a list, the list isn't necessarily update. There are a few ways this plays out, but off the top of my head:
      - When tasks are completed, they disappear off a list, as they should. They don't reappear under the list of completed tasks. If you want an updated list of completed tasks, you have to refresh the page.
      - Counts are not updated when tasks are marked complete.
      - If you change a task's project, the new project will appear on the list, but if the list in question is a project, it won't disappear from that list.
-- In /day, if you're viewing tasks as a list, and you click one, a panel comes over from the right side to show the details. This doesn't happen if you're looking at the agenda view, but it probably should.
 - Import ics files (calendar events)
-- Dropdown in agenda view to choose how often lines appear on the page? Currently the calendar is broken down into units of half-an hour. Add options for 10m? Hour? Others? Custom?
 
 ### Some Combination of Projects/Tags/Tasks
 - Tags applied to a whole project? Still working out how I'd like it to behave.
