@@ -383,7 +383,7 @@
                                        @keydown.arrow-up.prevent="moveComboUp()"
                                        @keydown.enter.prevent="selectCurrentComboProject()"
                                        @keydown.escape="cancelEdit('project_id')"
-                                       @input="projectComboOpen = true; projectComboActiveIndex = -1"
+                                       @input="openProjectCombo()"
                                        autocomplete="off"
                                        placeholder="Search projects..."
                                        class="w-full rounded-md bg-gray-700 border-gray-600 text-gray-100 placeholder-gray-500 shadow-sm focus:border-blue-500 focus:ring-blue-500">
@@ -1028,6 +1028,11 @@
                     if (this.projectComboActiveIndex >= 0 && this.filteredComboProjects[this.projectComboActiveIndex]) {
                         this.selectComboProject(this.filteredComboProjects[this.projectComboActiveIndex]);
                     }
+                },
+
+                openProjectCombo() {
+                    this.projectComboOpen = true;
+                    this.projectComboActiveIndex = -1;
                 },
 
                 todayDate: '',

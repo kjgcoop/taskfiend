@@ -384,7 +384,7 @@ $_panelTaskJson = json_encode([
                            @keydown.arrow-up.prevent="moveComboUp()"
                            @keydown.enter.prevent="selectCurrentComboProject()"
                            @keydown.escape.stop="cancelEdit('project_id')"
-                           @input="projectComboOpen = true; projectComboActiveIndex = -1"
+                           @input="openProjectCombo()"
                            autocomplete="off"
                            placeholder="Search projects..."
                            class="w-full rounded-md bg-gray-700 border-gray-600 text-gray-100 placeholder-gray-500 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm">

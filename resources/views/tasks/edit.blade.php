@@ -173,7 +173,7 @@
                                        @keydown.arrow-up.prevent="moveUp()"
                                        @keydown.enter.prevent="selectCurrent()"
                                        @keydown.escape="open = false"
-                                       @input="open = true; activeIndex = -1"
+                                       @input="openCombo()"
                                        autocomplete="off"
                                        placeholder="Search projects..."
                                        class="w-full rounded-md bg-gray-700 border-gray-600 text-gray-100 placeholder-gray-500 shadow-sm focus:border-blue-500 focus:ring-blue-500">

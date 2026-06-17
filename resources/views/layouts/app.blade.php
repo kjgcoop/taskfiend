@@ -419,6 +419,11 @@
                                 this.select(this.filtered[this.activeIndex]);
                             }
                         },
+
+                        openCombo() {
+                            this.open = true;
+                            this.activeIndex = -1;
+                        },
                     };
                 });
             });
@@ -616,6 +621,11 @@
                     if (this.projectComboActiveIndex >= 0 && this.filteredComboProjects[this.projectComboActiveIndex]) {
                         this.selectComboProject(this.filteredComboProjects[this.projectComboActiveIndex]);
                     }
+                },
+
+                openProjectCombo() {
+                    this.projectComboOpen = true;
+                    this.projectComboActiveIndex = -1;
                 },
 
                 initProjectCombo() {
