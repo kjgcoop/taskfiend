@@ -960,7 +960,7 @@ class DataExportController extends Controller
 
         $validSections = ['incomplete', 'done', 'archived'];
         $parsed        = [];   // ['section' => ..., 'name' => ...]
-        $errors        = [];
+        $parseErrors   = [];
         $currentSection = null;
         $firstHeadingDone = false;
 
@@ -982,7 +982,7 @@ class DataExportController extends Controller
                     // First heading treated as project name — silently skip
                     $firstHeadingDone = true;
                 } else {
-                    $errors[] = "Line " . ($lineNum + 1) . ": unrecognized heading \"" . e($heading) . "\". Expected Incomplete, Done, or Archived.";
+                    $parseErrors[] = "Line " . ($lineNum + 1) . ": unrecognized heading \"" . e($heading) . "\". Expected Incomplete, Done, or Archived.";
                 }
                 continue;
             }
@@ -999,8 +999,8 @@ class DataExportController extends Controller
             }
         }
 
-        if (!empty($errors)) {
-            return view('projects.import-markdown', compact('project', 'errors'));
+        if (!empty($parseErrors)) {
+            return view('projects.import-markdown', compact('project', 'parseErrors'));
         }
 
         // Build diff against existing tasks in this project

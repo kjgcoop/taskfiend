@@ -14,11 +14,11 @@
     <div class="py-8">
         <div class="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8">
 
-            @if(!empty($errors))
+            @if(!empty($parseErrors))
                 <div class="mb-6 bg-red-900/40 border border-red-700 rounded-lg p-4">
                     <p class="text-sm font-semibold text-red-300 mb-2">The file contains unrecognized headings. Please fix the following and re-upload:</p>
                     <ul class="list-disc list-inside space-y-1">
-                        @foreach($errors as $error)
+                        @foreach($parseErrors as $error)
                             <li class="text-sm text-red-400">{{ $error }}</li>
                         @endforeach
                     </ul>
