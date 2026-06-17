@@ -572,6 +572,52 @@
                 allProjects: [],
                 _nextOccurrenceAction: null,
 
+                // Project combo box state (inline editing)
+                projectSearch: '',
+                projectComboOpen: false,
+                projectComboActiveIndex: -1,
+
+                get filteredComboProjects() {
+                    if (!this.projectSearch) return this.allProjects;
+                    const q = this.projectSearch.toLowerCase();
+                    return this.allProjects.filter(p => p.name.toLowerCase().includes(q));
+                },
+
+                selectComboProject(project) {
+                    this.fields.project_id = project.id;
+                    this.projectSearch = project.name;
+                    this.projectComboOpen = false;
+                    this.projectComboActiveIndex = -1;
+                    this.cancelEdit('project_id');
+                    this.saveField('project_id');
+                },
+
+                handleProjectComboBlur() {
+                    setTimeout(() => {
+                        this.projectComboOpen = false;
+                        const sel = this.allProjects.find(p => p.id == this.fields.project_id);
+                        this.projectSearch = sel ? sel.name : '';
+                    }, 150);
+                },
+
+                moveComboDown() {
+                    const len = this.filteredComboProjects.length;
+                    if (!len) return;
+                    this.projectComboActiveIndex = (this.projectComboActiveIndex + 1) % len;
+                },
+
+                moveComboUp() {
+                    const len = this.filteredComboProjects.length;
+                    if (!len) return;
+                    this.projectComboActiveIndex = (this.projectComboActiveIndex - 1 + len) % len;
+                },
+
+                selectCurrentComboProject() {
+                    if (this.projectComboActiveIndex >= 0 && this.filteredComboProjects[this.projectComboActiveIndex]) {
+                        this.selectComboProject(this.filteredComboProjects[this.projectComboActiveIndex]);
+                    }
+                },
+
                 init() {
                     const el = this.$el;
                     const taskData = JSON.parse(el.dataset.taskJson || '{}');

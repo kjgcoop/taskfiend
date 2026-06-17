@@ -373,16 +373,40 @@ $_panelTaskJson = json_encode([
                 <p class="text-sm text-gray-300">{{ $task->project ? $task->project->name : 'Inbox' }}</p>
             </div>
             @if(!$isInactive)
-            <div x-show="editing.project_id" class="mt-1">
-                <select x-model="fields.project_id"
-                        x-ref="project_idInput"
-                        @change="saveField('project_id')"
-                        @keydown.escape.stop="cancelEdit('project_id')"
-                        class="w-full rounded-md bg-gray-700 border-gray-600 text-gray-100 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm">
-                    @foreach($projects as $project)
-                        <option value="{{ $project->id }}">{{ $project->name }}</option>
-                    @endforeach
-                </select>
+            <div x-show="editing.project_id" class="mt-1"
+                 x-effect="if (editing.project_id) { const p = allProjects.find(p => p.id == fields.project_id); projectSearch = p ? p.name : ''; projectComboOpen = true; projectComboActiveIndex = -1; }">
+                <div class="relative">
+                    <input type="text"
+                           x-ref="project_idInput"
+                           x-model="projectSearch"
+                           @blur="handleProjectComboBlur()"
+                           @keydown.arrow-down.prevent="moveComboDown()"
+                           @keydown.arrow-up.prevent="moveComboUp()"
+                           @keydown.enter.prevent="selectCurrentComboProject()"
+                           @keydown.escape.stop="cancelEdit('project_id')"
+                           @input="projectComboOpen = true; projectComboActiveIndex = -1"
+                           autocomplete="off"
+                           placeholder="Search projects..."
+                           class="w-full rounded-md bg-gray-700 border-gray-600 text-gray-100 placeholder-gray-500 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm">
+                    <div x-show="projectComboOpen"
+                         x-transition
+                         class="absolute z-10 mt-1 w-full bg-gray-700 border border-gray-600 rounded-md shadow-lg max-h-60 overflow-auto">
+                        <template x-if="filteredComboProjects.length > 0">
+                            <div>
+                                <template x-for="(project, index) in filteredComboProjects" :key="project.id">
+                                    <div @mousedown.prevent="selectComboProject(project)"
+                                         :class="{ 'bg-gray-600': projectComboActiveIndex === index }"
+                                         class="px-3 py-2 text-sm text-gray-300 hover:bg-gray-600 cursor-pointer"
+                                         x-text="project.name">
+                                    </div>
+                                </template>
+                            </div>
+                        </template>
+                        <template x-if="filteredComboProjects.length === 0">
+                            <div class="px-3 py-2 text-sm text-gray-500 italic">No matching projects</div>
+                        </template>
+                    </div>
+                </div>
             </div>
             @endif
         </div>
