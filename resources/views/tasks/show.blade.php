@@ -369,7 +369,7 @@
                             <a href="{{ route('projects.show', $task->project) }}" class="ml-1 text-gray-600 hover:text-gray-300 text-xs" title="Go to project">↗</a>
                         @endif
                         <div @if(!$isInactive) @click="startEdit('project_id')" @endif x-show="!editing.project_id" class="mt-1 p-2 rounded {{ !$isInactive ? 'cursor-pointer hover:bg-gray-700' : '' }}">
-                            <p class="text-gray-300">{{ $task->project ? $task->project->name : 'Inbox' }}</p>
+                            <p class="text-gray-300" x-text="displayProjectName"></p>
                         </div>
                         @if(!$isInactive)
                         <div x-show="editing.project_id" class="mt-1"
@@ -978,6 +978,7 @@
                 },
 
                 allProjects: @js($projects->map(fn($p) => ['id' => $p->id, 'name' => $p->name])->values()),
+                displayProjectName: @js($task->project ? $task->project->name : 'Inbox'),
                 projectSearch: '',
                 projectComboOpen: false,
                 projectComboActiveIndex: -1,
@@ -999,6 +1000,7 @@
                 selectComboProject(project) {
                     this.fields.project_id = project.id;
                     this.projectSearch = project.name;
+                    this.displayProjectName = project.name;
                     this.projectComboOpen = false;
                     this.projectComboActiveIndex = -1;
                     this.saveField('project_id');

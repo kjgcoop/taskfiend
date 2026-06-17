@@ -575,6 +575,7 @@
                 nameAC: { show: false, type: null, query: '', results: [], activeIndex: -1 },
                 allTags: [],
                 allProjects: [],
+                displayProjectName: '',
                 _nextOccurrenceAction: null,
 
                 // Project combo box state (inline editing)
@@ -591,6 +592,7 @@
                 selectComboProject(project) {
                     this.fields.project_id = project.id;
                     this.projectSearch = project.name;
+                    this.displayProjectName = project.name;
                     this.projectComboOpen = false;
                     this.projectComboActiveIndex = -1;
                     this.saveField('project_id');
@@ -642,6 +644,8 @@
                     this.dateText = taskData.dateText || '';
                     this.allTags = taskData.allTags || [];
                     this.allProjects = taskData.allProjects || [];
+                    const currentProject = this.allProjects.find(p => p.id == this.fields.project_id);
+                    this.displayProjectName = currentProject ? currentProject.name : 'Inbox';
                     this.original = JSON.parse(JSON.stringify(Object.assign({}, this.fields, { dateText: this.dateText })));
                     const descEl = el.querySelector('[data-rendered-description]');
                     if (descEl) {

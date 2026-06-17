@@ -370,7 +370,7 @@ $_panelTaskJson = json_encode([
             <div @if(!$isInactive) @click="startEdit('project_id')" @endif
                  x-show="!editing.project_id"
                  class="mt-1 p-2 rounded {{ !$isInactive ? 'cursor-pointer hover:bg-gray-700' : '' }}">
-                <p class="text-sm text-gray-300">{{ $task->project ? $task->project->name : 'Inbox' }}</p>
+                <p class="text-sm text-gray-300" x-text="displayProjectName"></p>
             </div>
             @if(!$isInactive)
             <div x-show="editing.project_id" class="mt-1"
