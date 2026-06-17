@@ -2,7 +2,11 @@ site_name: Task Fiend Documentation
 site_url: https://taskfiend.kjcoop.com/
 nav:
   - Home: index.md
-  - About: about.md
+  - About:
+    - About: about/about.md
+    - Differences from Todoist: about/todoist-differences.md
+    - Intentionally Missing Features: about/intentionally-missing-features.md
+    - Features that Sound Nice But that May Never Be Implemented: about/maybe-someday.md
   - Getting Started:
     - Installation: getting-started/installation.md
     - Migrating from Todoist: getting-started/todoist-import.md
@@ -12,9 +16,7 @@ nav:
     - Dates & Recurrence: features/dates.md
     - Recurring Tasks: features/recurring-tasks.md
     - Admin Functions: features/admin-functionality.md
-    - Differences from Todoist: features/todoist-differences.md
-    - Intentionally Missing Features: features/intentionally-missing-features.md
-    - Features that Sound Nice But that May Never Be Implemented: features/maybe-someday.md
+    - Importing from Markdown: features/import-from-md.md
   - Self-Hosting:
     - Docker: self-hosting/docker.md
     - Security: self-hosting/security.md
