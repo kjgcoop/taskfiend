@@ -993,6 +993,7 @@
                     this.projectSearch = p ? p.name : '';
                     this.projectComboOpen = true;
                     this.projectComboActiveIndex = -1;
+                    this.$nextTick(() => this.$refs.project_idInput?.focus());
                 },
 
                 selectComboProject(project) {
@@ -1000,7 +1001,6 @@
                     this.projectSearch = project.name;
                     this.projectComboOpen = false;
                     this.projectComboActiveIndex = -1;
-                    this.cancelEdit('project_id');
                     this.saveField('project_id');
                 },
 
