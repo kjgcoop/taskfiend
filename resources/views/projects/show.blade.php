@@ -19,6 +19,19 @@
                 </button>
             @endif
 
+            {{-- Heart / favorite toggle --}}
+            @if($project->user_id === Auth::id())
+                <button id="heart-btn"
+                        @click="toggleHeart({{ $project->id }})"
+                        title="{{ $project->is_hearted ? 'Remove from active projects' : 'Mark as active project' }}"
+                        data-hearted="{{ $project->is_hearted ? 'true' : 'false' }}"
+                        class="shrink-0 transition-colors {{ $project->is_hearted ? 'text-pink-500' : 'text-gray-600 hover:text-pink-500' }}">
+                    <svg id="heart-svg" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="{{ $project->is_hearted ? 'currentColor' : 'none' }}" stroke="currentColor" stroke-width="{{ $project->is_hearted ? '0' : '1.5' }}">
+                        <path fill-rule="evenodd" d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" clip-rule="evenodd" />
+                    </svg>
+                </button>
+            @endif
+
             {{-- Inline-editable project name + count badge --}}
             @php $isInactive = in_array($project->status, ['done', 'archived']); @endphp
             <div x-data="projectHeaderEditor"
@@ -980,6 +993,23 @@
                 closeMenu() { this.showMenu = false; },
                 openSaveTemplate() { this.showMenu = false; this.showSaveTemplate = true; },
                 closeSaveTemplate() { this.showSaveTemplate = false; },
+                toggleHeart(projectId) {
+                    fetch(`/projects/${projectId}/toggle-heart`, {
+                        method: 'POST',
+                        headers: { 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content },
+                    })
+                    .then(r => r.json())
+                    .then(data => {
+                        const hearted = data.is_hearted;
+                        const btn = document.getElementById('heart-btn');
+                        const svg = document.getElementById('heart-svg');
+                        btn.dataset.hearted = hearted ? 'true' : 'false';
+                        btn.title = hearted ? 'Remove from active projects' : 'Mark as active project';
+                        btn.className = `shrink-0 transition-colors ${hearted ? 'text-pink-500' : 'text-gray-600 hover:text-pink-500'}`;
+                        svg.setAttribute('fill', hearted ? 'currentColor' : 'none');
+                        svg.setAttribute('stroke-width', hearted ? '0' : '1.5');
+                    });
+                },
             }));
 
             Alpine.data('projectHeaderEditor', function () {
