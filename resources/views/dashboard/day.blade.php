@@ -117,8 +117,15 @@
             <div class="flex justify-end items-center mb-2" x-data>
 
                 <div class="flex items-center gap-2">
-                    {{-- Full-day toggle (agenda only) --}}
-                    <div x-show="$store.dayView.current === 'agenda'" x-cloak>
+                    {{-- Agenda-only controls: interval dropdown + 24h toggle --}}
+                    <div x-show="$store.dayView.current === 'agenda'" x-cloak class="flex items-center gap-2">
+                        <select @change="$store.agendaInterval.set(parseInt($event.target.value))"
+                                class="text-sm bg-gray-800 border border-gray-600 rounded px-2 py-1.5 text-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <option value="5"  :selected="$store.agendaInterval.value === 5">5 min</option>
+                            <option value="15" :selected="$store.agendaInterval.value === 15">15 min</option>
+                            <option value="30" :selected="$store.agendaInterval.value === 30">30 min</option>
+                            <option value="60" :selected="$store.agendaInterval.value === 60">1 hr</option>
+                        </select>
                         <button @click="$store.agendaFull.toggle()"
                                 :class="$store.agendaFull.on ? 'bg-gray-600 text-gray-100' : 'bg-gray-800 text-gray-400 hover:bg-gray-700 hover:text-gray-200'"
                                 class="px-3 py-2 rounded-md border border-gray-600 text-xs font-medium transition-colors"
@@ -367,6 +374,14 @@
                 toggle() {
                     this.on = !this.on;
                     localStorage.setItem('agenda_full', this.on ? '1' : '0');
+                },
+            });
+
+            Alpine.store('agendaInterval', {
+                value: parseInt(localStorage.getItem('agenda_interval') || '30'),
+                set(v) {
+                    this.value = v;
+                    localStorage.setItem('agenda_interval', String(v));
                 },
             });
         });

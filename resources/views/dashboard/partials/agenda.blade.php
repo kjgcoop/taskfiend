@@ -41,9 +41,9 @@
         ? ((Carbon::now()->hour * 60 + Carbon::now()->minute) / 60 * $hourHeightPx)
         : null;
 
-    // Helper: snap minutes to nearest 15; returns [snappedH, snappedM]
+    // Helper: snap minutes to nearest 5; returns [snappedH, snappedM]
     $snapTime = function (int $h, int $m) {
-        $snappedM = (int) (round($m / 15) * 15);
+        $snappedM = (int) (round($m / 5) * 5);
         if ($snappedM === 60) { $h++; $snappedM = 0; }
         return [$h, $snappedM];
     };
@@ -176,7 +176,8 @@
                         </form>
                     @endif
                     <a href="{{ route('tasks.show', $task) }}"
-                       class="text-xs font-medium text-gray-200 truncate task-title">{!! render_title($task->name) !!}</a>
+                       @click.prevent="($event.ctrlKey || $event.metaKey) ? window.open('{{ route('tasks.show', $task) }}', '_blank') : $dispatch('open-task-panel', { taskId: {{ $task->id }} })"
+                       class="text-xs font-medium text-gray-200 truncate task-title cursor-pointer">{!! render_title($task->name) !!}</a>
                 </span>
             @endforeach
         </div>
@@ -203,17 +204,29 @@
         {{-- Grid lines + task blocks --}}
         <div class="relative flex-1 border-l border-gray-700" style="height: {{ $gridHeightPx }}px">
 
-            {{-- Hour and quarter-hour grid lines --}}
+            {{-- Hour and sub-hour grid lines --}}
             @for($h = $gridStart; $h <= $gridEnd; $h++)
                 <div class="absolute w-full border-t border-gray-700"
                      style="top: {{ ($h - $gridStart) * $hourHeightPx }}px"></div>
                 @if($h < $gridEnd)
-                <div class="absolute w-full border-t border-gray-800 opacity-60"
-                     style="top: {{ ($h - $gridStart) * $hourHeightPx + ($hourHeightPx / 4) }}px"></div>
-                <div class="absolute w-full border-t border-gray-800"
-                     style="top: {{ ($h - $gridStart) * $hourHeightPx + ($hourHeightPx / 2) }}px"></div>
-                <div class="absolute w-full border-t border-gray-800 opacity-60"
-                     style="top: {{ ($h - $gridStart) * $hourHeightPx + ($hourHeightPx * 3 / 4) }}px"></div>
+                    @for($m = 5; $m < 60; $m += 5)
+                        @php
+                            $subTopPx = ($h - $gridStart) * $hourHeightPx + ($m / 60) * $hourHeightPx;
+                            if ($m === 30) {
+                                $subCls  = 'border-gray-800';
+                                $subCond = '$store.agendaInterval.value <= 30';
+                            } elseif ($m % 15 === 0) {
+                                $subCls  = 'border-gray-800 opacity-60';
+                                $subCond = '$store.agendaInterval.value <= 15';
+                            } else {
+                                $subCls  = 'border-gray-800 opacity-30';
+                                $subCond = '$store.agendaInterval.value <= 5';
+                            }
+                        @endphp
+                        <div x-show="{{ $subCond }}"
+                             class="absolute w-full border-t {{ $subCls }}"
+                             style="top: {{ $subTopPx }}px"></div>
+                    @endfor
                 @endif
             @endfor
 
@@ -294,7 +307,8 @@
                     @endif
                     {{-- Clickable link area --}}
                     <a href="{{ route('tasks.show', $task) }}"
-                       class="block h-full px-2 py-1 pr-6"
+                       @click.prevent="($event.ctrlKey || $event.metaKey) ? window.open('{{ route('tasks.show', $task) }}', '_blank') : $dispatch('open-task-panel', { taskId: {{ $task->id }} })"
+                       class="block h-full px-2 py-1 pr-6 cursor-pointer"
                        title="{{ $task->name }} ({{ $timeLabel }})">
                         <div class="flex flex-col justify-start overflow-hidden h-full">
                             <div class="text-xs font-semibold leading-tight truncate task-title">{!! render_title($task->name) !!}</div>
