@@ -256,53 +256,6 @@
         </div>
     </div>
 <script nonce="{{ csp_nonce() }}">
-function toggleHeartProject(projectId, btn) {
-    fetch(`/projects/${projectId}/toggle-heart`, {
-        method: 'POST',
-        headers: {
-            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
-            'Accept': 'application/json',
-        },
-    }).then(r => r.json()).then(data => {
-        if (data.success) {
-            const hearted = data.is_hearted;
-            const hasBg = btn.dataset.hasBg === 'true';
-            btn.dataset.hearted = hearted ? 'true' : 'false';
-            btn.title = hearted ? 'Remove from active projects' : 'Mark as active project';
-            const svg = btn.querySelector('svg');
-            svg.setAttribute('fill', hearted ? 'currentColor' : 'none');
-            svg.setAttribute('stroke-width', hearted ? '0' : '1.5');
-            if (hearted) {
-                btn.className = btn.className.replace(/text-gray-\d+ hover:text-pink-\d+/, hasBg ? 'text-pink-400' : 'text-pink-500');
-            } else {
-                const activeClass = hasBg ? 'text-pink-400' : 'text-pink-500';
-                const inactiveClass = hasBg ? 'text-gray-400 hover:text-pink-400' : 'text-gray-600 hover:text-pink-500';
-                btn.className = btn.className.replace(activeClass, inactiveClass);
-            }
-        } else {
-            alert(data.message || 'Could not update project.');
-        }
-    });
-}
-
-function setDefaultProject(projectId, btn) {
-    fetch(`/projects/${projectId}/set-default`, {
-        method: 'POST',
-        headers: {
-            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
-            'Accept': 'application/json',
-        },
-    }).then(r => r.json()).then(data => {
-        if (data.success) {
-            window.location.reload();
-        } else {
-            alert(data.message || 'Could not set default project.');
-        }
-    });
-}
-</script>
-
-<script nonce="{{ csp_nonce() }}">
 document.addEventListener('alpine:init', () => {
     Alpine.data('projectsIndex', () => ({
         showImportForm: false,
@@ -325,6 +278,49 @@ document.addEventListener('alpine:init', () => {
         submitImport(event) {
             if (!this.projectName) { alert('Please enter a project name'); return; }
             event.target.submit();
+        },
+        toggleHeartProject(projectId, btn) {
+            fetch(`/projects/${projectId}/toggle-heart`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                    'Accept': 'application/json',
+                },
+            }).then(r => r.json()).then(data => {
+                if (data.success) {
+                    const hearted = data.is_hearted;
+                    const hasBg = btn.dataset.hasBg === 'true';
+                    btn.dataset.hearted = hearted ? 'true' : 'false';
+                    btn.title = hearted ? 'Remove from active projects' : 'Mark as active project';
+                    const svg = btn.querySelector('svg');
+                    svg.setAttribute('fill', hearted ? 'currentColor' : 'none');
+                    svg.setAttribute('stroke-width', hearted ? '0' : '1.5');
+                    if (hearted) {
+                        btn.className = btn.className.replace(/text-gray-\d+ hover:text-pink-\d+/, hasBg ? 'text-pink-400' : 'text-pink-500');
+                    } else {
+                        const activeClass = hasBg ? 'text-pink-400' : 'text-pink-500';
+                        const inactiveClass = hasBg ? 'text-gray-400 hover:text-pink-400' : 'text-gray-600 hover:text-pink-500';
+                        btn.className = btn.className.replace(activeClass, inactiveClass);
+                    }
+                } else {
+                    alert(data.message || 'Could not update project.');
+                }
+            });
+        },
+        setDefaultProject(projectId, btn) {
+            fetch(`/projects/${projectId}/set-default`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                    'Accept': 'application/json',
+                },
+            }).then(r => r.json()).then(data => {
+                if (data.success) {
+                    location.reload();
+                } else {
+                    alert(data.message || 'Could not set default project.');
+                }
+            });
         },
     }));
 });
