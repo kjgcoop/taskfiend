@@ -117,8 +117,15 @@
             <div class="flex justify-end items-center mb-2" x-data>
 
                 <div class="flex items-center gap-2">
-                    {{-- Full-day toggle (agenda only) --}}
-                    <div x-show="$store.dayView.current === 'agenda'" x-cloak>
+                    {{-- Agenda-only controls: interval dropdown + 24h toggle --}}
+                    <div x-show="$store.dayView.current === 'agenda'" x-cloak class="flex items-center gap-2">
+                        <select @change="$store.agendaInterval.set($event.target.value)"
+                                class="text-sm bg-gray-800 border border-gray-600 rounded px-2 py-1.5 text-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <option value="5"  :selected="$store.agendaInterval.value === 5">5 min</option>
+                            <option value="15" :selected="$store.agendaInterval.value === 15">15 min</option>
+                            <option value="30" :selected="$store.agendaInterval.value === 30">30 min</option>
+                            <option value="60" :selected="$store.agendaInterval.value === 60">1 hr</option>
+                        </select>
                         <button @click="$store.agendaFull.toggle()"
                                 :class="$store.agendaFull.on ? 'bg-gray-600 text-gray-100' : 'bg-gray-800 text-gray-400 hover:bg-gray-700 hover:text-gray-200'"
                                 class="px-3 py-2 rounded-md border border-gray-600 text-xs font-medium transition-colors"
@@ -369,6 +376,71 @@
                     localStorage.setItem('agenda_full', this.on ? '1' : '0');
                 },
             });
+
+            Alpine.store('agendaInterval', {
+                value: parseInt(localStorage.getItem('agenda_interval') || '30'),
+                set(v) {
+                    this.value = parseInt(v, 10);
+                    localStorage.setItem('agenda_interval', String(this.value));
+                },
+            });
+
+            // Each interval slot is always 20px tall; hour height scales accordingly.
+            // 60-min → 20px/hr | 30-min → 40px/hr | 15-min → 80px/hr | 5-min → 240px/hr
+            Alpine.data('agendaGrid', () => ({
+                autoStart: 8,
+                autoEnd:   20,
+
+                init() {
+                    this.autoStart = parseInt(this.$el.dataset.autoStart || '8');
+                    this.autoEnd   = parseInt(this.$el.dataset.autoEnd   || '20');
+                    this.$watch('$store.agendaInterval.value', () => this._reposition());
+                    this._reposition();
+                },
+
+                _hourPx() {
+                    return (60 / this.$store.agendaInterval.value) * 20;
+                },
+
+                clipOuter() {
+                    if (this.$store.agendaFull.on) return '';
+                    return `height: ${(this.autoEnd - this.autoStart) * this._hourPx()}px; overflow: hidden;`;
+                },
+
+                clipInner() {
+                    if (this.$store.agendaFull.on) return '';
+                    return `margin-top: -${this.autoStart * this._hourPx()}px;`;
+                },
+
+                _reposition() {
+                    const hourPx  = this._hourPx();
+                    const totalPx = 24 * hourPx;
+
+                    this.$el.querySelectorAll('[data-hour-labels], [data-grid-container]').forEach(el => {
+                        el.style.height = totalPx + 'px';
+                    });
+
+                    this.$el.querySelectorAll('[data-line-hour]').forEach(el => {
+                        el.style.top = (parseInt(el.dataset.lineHour) * hourPx - 8) + 'px';
+                    });
+
+                    this.$el.querySelectorAll('[data-line-min]').forEach(el => {
+                        el.style.top = (parseInt(el.dataset.lineMin) / 60 * hourPx) + 'px';
+                    });
+
+                    this.$el.querySelectorAll('[data-task-start-min]').forEach(el => {
+                        const startMin    = parseInt(el.dataset.taskStartMin);
+                        const durationMin = parseInt(el.dataset.taskDurationMin);
+                        el.style.top    = (startMin / 60 * hourPx) + 'px';
+                        el.style.height = Math.max(20, durationMin / 60 * hourPx) + 'px';
+                    });
+
+                    const nowEl = this.$el.querySelector('[data-now-min]');
+                    if (nowEl) {
+                        nowEl.style.top = (parseInt(nowEl.dataset.nowMin) / 60 * hourPx) + 'px';
+                    }
+                },
+            }));
         });
     </script>
     @endpush

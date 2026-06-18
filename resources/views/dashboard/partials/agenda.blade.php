@@ -1,7 +1,8 @@
 @php
     use Carbon\Carbon;
 
-    $hourHeightPx = 80; // px per hour; 20px per 15-min slot
+    // Initial SSR height; agendaGrid Alpine component overrides all px positions on init.
+    $hourHeightPx = 80;
 
     // Separate tasks into all-day (no time) and timed
     $allDayTasks  = $tasks->filter(fn($t) => !$t->time);
@@ -25,25 +26,17 @@
         $autoEnd   = min(24, max($endHours->max() + 1, $autoEnd));
     }
 
-    // Always render the full 24-hour grid so the toggle works client-side
     $gridStart    = 0;
     $gridEnd      = 24;
-    $totalHours   = 24;
-    $gridHeightPx = $totalHours * $hourHeightPx;
+    $gridHeightPx = 24 * $hourHeightPx;
 
-    // Clip values (px) for abbreviated view — passed to Alpine
-    $clipTopPx    = $autoStart * $hourHeightPx;
-    $clipHeightPx = ($autoEnd - $autoStart) * $hourHeightPx;
+    // Current time in minutes from midnight (for data attribute; Alpine sets top px)
+    $isToday = $carbonDate->isToday();
+    $nowMin  = $isToday ? (Carbon::now()->hour * 60 + Carbon::now()->minute) : null;
 
-    // Current time indicator — position from midnight
-    $isToday  = $carbonDate->isToday();
-    $nowTopPx = $isToday
-        ? ((Carbon::now()->hour * 60 + Carbon::now()->minute) / 60 * $hourHeightPx)
-        : null;
-
-    // Helper: snap minutes to nearest 15; returns [snappedH, snappedM]
+    // Helper: snap minutes to nearest 5; returns [snappedH, snappedM]
     $snapTime = function (int $h, int $m) {
-        $snappedM = (int) (round($m / 15) * 15);
+        $snappedM = (int) (round($m / 5) * 5);
         if ($snappedM === 60) { $h++; $snappedM = 0; }
         return [$h, $snappedM];
     };
@@ -56,8 +49,7 @@
     };
 
     // ── Collision layout ──────────────────────────────────────────────────────
-    // Task positions are always computed from midnight (hour 0).
-    $slotGroups = []; // "H:M" => [task, ...]
+    $slotGroups = [];
     foreach ($timedTasks as $task) {
         [$th, $tm] = array_map('intval', explode(':', $task->time));
         [$sh, $sm] = $snapTime($th, $tm);
@@ -65,21 +57,24 @@
         $slotGroups[$key][] = $task;
     }
 
-    $taskLayout = []; // taskId => [topPx, heightPx, colIndex, colCount]
+    $taskLayout = [];
     foreach ($slotGroups as $key => $group) {
         [$sh, $sm] = array_map('intval', explode(':', $key));
-        $colCount = count($group);
-        $topPx    = ($sh * 60 + $sm) / 60 * $hourHeightPx;
+        $colCount    = count($group);
+        $startMin    = $sh * 60 + $sm;
+        $topPx       = $startMin / 60 * $hourHeightPx;
 
         foreach ($group as $colIndex => $task) {
-            $displayDuration = max($task->duration_minutes ?? 15, 15);
-            $heightPx = max(20, ($displayDuration / 60) * $hourHeightPx);
+            $durationMin = $task->duration_minutes ?: 30;
+            $heightPx    = max(7, ($durationMin / 60) * $hourHeightPx);
 
             $taskLayout[$task->id] = [
-                'topPx'    => $topPx,
-                'heightPx' => $heightPx,
-                'colIndex' => $colIndex,
-                'colCount' => $colCount,
+                'topPx'       => $topPx,
+                'heightPx'    => $heightPx,
+                'colIndex'    => $colIndex,
+                'colCount'    => $colCount,
+                'startMin'    => $startMin,
+                'durationMin' => $durationMin,
             ];
         }
     }
@@ -112,7 +107,6 @@
                     const data = await res.json().catch(() => ({}));
                     if (res.ok && data.ok !== false) {
                         this.done = true;
-                        // Brief pause to show the filled dot, then fade out the block
                         await new Promise(r => setTimeout(r, 400));
                         const block = form.closest('[data-task-block]');
                         if (block) {
@@ -124,7 +118,7 @@
                         alert('Could not complete task: ' + (data.message || 'Please try again.'));
                     }
                 } catch {
-                    form.submit(); // network failure – fall back to full reload
+                    form.submit();
                 } finally {
                     this.loading = false;
                 }
@@ -134,7 +128,11 @@
 </script>
 @endPushOnce
 
-<div class="bg-[#181818] rounded-lg border border-gray-700 overflow-hidden">
+{{-- agendaGrid owns all pixel calculations; reposition() fires on interval change --}}
+<div class="bg-[#181818] rounded-lg border border-gray-700 overflow-hidden"
+     x-data="agendaGrid"
+     data-auto-start="{{ $autoStart }}"
+     data-auto-end="{{ $autoEnd }}">
 
     {{-- All-day strip --}}
     @if($allDayTasks->isNotEmpty())
@@ -176,7 +174,8 @@
                         </form>
                     @endif
                     <a href="{{ route('tasks.show', $task) }}"
-                       class="text-xs font-medium text-gray-200 truncate task-title">{!! render_title($task->name) !!}</a>
+                       @click.prevent="($event.ctrlKey || $event.metaKey) ? window.open('{{ route('tasks.show', $task) }}', '_blank') : $dispatch('open-task-panel', { taskId: {{ $task->id }} })"
+                       class="text-xs font-medium text-gray-200 truncate task-title cursor-pointer">{!! render_title($task->name) !!}</a>
                 </span>
             @endforeach
         </div>
@@ -184,16 +183,17 @@
     @endif
 
     {{-- Time grid — clips to auto range unless full-day mode is on --}}
-    <div :style="$store.agendaFull.on ? '' : 'height: {{ $clipHeightPx }}px; overflow: hidden;'">
-    <div :style="$store.agendaFull.on ? '' : 'margin-top: -{{ $clipTopPx }}px;'">
+    <div :style="clipOuter()">
+    <div :style="clipInner()">
     <div class="flex">
 
         {{-- Hour labels column --}}
-        <div class="w-16 flex-shrink-0 relative" style="height: {{ $gridHeightPx }}px">
+        <div class="w-16 flex-shrink-0 relative" data-hour-labels style="height: {{ $gridHeightPx }}px">
             @for($h = $gridStart; $h <= $gridEnd; $h++)
                 @if($h > $gridStart)
                 <div class="absolute right-2 text-xs text-gray-500 select-none"
-                     style="top: {{ ($h - $gridStart) * $hourHeightPx - 8 }}px">
+                     data-line-hour="{{ $h }}"
+                     style="top: {{ $h * $hourHeightPx - 8 }}px">
                     {{ $hourLabel($h) }}
                 </div>
                 @endif
@@ -201,26 +201,40 @@
         </div>
 
         {{-- Grid lines + task blocks --}}
-        <div class="relative flex-1 border-l border-gray-700" style="height: {{ $gridHeightPx }}px">
+        <div class="relative flex-1 border-l border-gray-700" data-grid-container style="height: {{ $gridHeightPx }}px">
 
-            {{-- Hour and quarter-hour grid lines --}}
+            {{-- Hour and sub-hour grid lines --}}
             @for($h = $gridStart; $h <= $gridEnd; $h++)
                 <div class="absolute w-full border-t border-gray-700"
-                     style="top: {{ ($h - $gridStart) * $hourHeightPx }}px"></div>
+                     data-line-min="{{ $h * 60 }}"
+                     style="top: {{ $h * $hourHeightPx }}px"></div>
                 @if($h < $gridEnd)
-                <div class="absolute w-full border-t border-gray-800 opacity-60"
-                     style="top: {{ ($h - $gridStart) * $hourHeightPx + ($hourHeightPx / 4) }}px"></div>
-                <div class="absolute w-full border-t border-gray-800"
-                     style="top: {{ ($h - $gridStart) * $hourHeightPx + ($hourHeightPx / 2) }}px"></div>
-                <div class="absolute w-full border-t border-gray-800 opacity-60"
-                     style="top: {{ ($h - $gridStart) * $hourHeightPx + ($hourHeightPx * 3 / 4) }}px"></div>
+                    @for($m = 5; $m < 60; $m += 5)
+                        @php
+                            if ($m === 30) {
+                                $subCls  = 'border-gray-800';
+                                $subCond = '$store.agendaInterval.value <= 30';
+                            } elseif ($m % 15 === 0) {
+                                $subCls  = 'border-gray-800 opacity-60';
+                                $subCond = '$store.agendaInterval.value <= 15';
+                            } else {
+                                $subCls  = 'border-gray-800 opacity-30';
+                                $subCond = '$store.agendaInterval.value <= 5';
+                            }
+                        @endphp
+                        <div x-show="{{ $subCond }}"
+                             data-line-min="{{ $h * 60 + $m }}"
+                             class="absolute w-full border-t {{ $subCls }}"
+                             style="top: {{ ($h + $m / 60) * $hourHeightPx }}px"></div>
+                    @endfor
                 @endif
             @endfor
 
             {{-- Current time indicator (today only) --}}
-            @if($isToday && $nowTopPx !== null && $nowTopPx >= 0 && $nowTopPx <= $gridHeightPx)
+            @if($isToday && $nowMin !== null)
             <div class="absolute w-full flex items-center pointer-events-none z-20"
-                 style="top: {{ $nowTopPx }}px">
+                 data-now-min="{{ $nowMin }}"
+                 style="top: {{ $nowMin / 60 * $hourHeightPx }}px">
                 <div class="w-2 h-2 rounded-full bg-red-500 -ml-1 flex-shrink-0"></div>
                 <div class="flex-1 border-t-2 border-red-500"></div>
             </div>
@@ -229,13 +243,14 @@
             {{-- Task blocks --}}
             @foreach($timedTasks as $task)
                 @php
-                    $layout   = $taskLayout[$task->id];
-                    $topPx    = $layout['topPx'];
-                    $heightPx = $layout['heightPx'];
-                    $colIndex = $layout['colIndex'];
-                    $colCount = $layout['colCount'];
+                    $layout      = $taskLayout[$task->id];
+                    $topPx       = $layout['topPx'];
+                    $heightPx    = $layout['heightPx'];
+                    $colIndex    = $layout['colIndex'];
+                    $colCount    = $layout['colCount'];
+                    $startMin    = $layout['startMin'];
+                    $durationMin = $layout['durationMin'];
 
-                    // Horizontal slice: each column gets equal share of width
                     $leftPct  = $colIndex / $colCount * 100;
                     $widthPct = 100 / $colCount;
 
@@ -258,7 +273,10 @@
                     $colorClass = $blockColors[$task->id % count($blockColors)];
                 @endphp
 
-                <div data-task-block class="absolute rounded border-l-2 text-white overflow-hidden z-10 {{ $colorClass }}"
+                <div data-task-block
+                     data-task-start-min="{{ $startMin }}"
+                     data-task-duration-min="{{ $durationMin }}"
+                     class="absolute rounded border-l-2 text-white overflow-hidden z-10 {{ $colorClass }}"
                      style="top: {{ $topPx }}px; height: {{ $heightPx }}px; left: calc({{ $leftPct }}% + 2px); width: calc({{ $widthPct }}% - 4px);">
                     {{-- Quick complete button --}}
                     @if($task->status === 'done')
@@ -292,16 +310,15 @@
                             <div x-show="done" class="w-3.5 h-3.5 rounded-full bg-green-400" style="display:none" title="Completed"></div>
                         </form>
                     @endif
-                    {{-- Clickable link area --}}
+                    {{-- Clickable area --}}
                     <a href="{{ route('tasks.show', $task) }}"
-                       class="block h-full px-2 py-1 pr-6"
+                       @click.prevent="($event.ctrlKey || $event.metaKey) ? window.open('{{ route('tasks.show', $task) }}', '_blank') : $dispatch('open-task-panel', { taskId: {{ $task->id }} })"
+                       class="block h-full px-2 py-1 pr-6 cursor-pointer"
                        title="{{ $task->name }} ({{ $timeLabel }})">
                         <div class="flex flex-col justify-start overflow-hidden h-full">
                             <div class="text-xs font-semibold leading-tight truncate task-title">{!! render_title($task->name) !!}</div>
-                            @if($heightPx >= 40)
                             <div class="text-xs opacity-75 leading-tight truncate mt-0.5">{{ $timeLabel }}</div>
-                            @endif
-                            @if($heightPx >= 60 && $task->description)
+                            @if($task->description)
                             <div class="text-xs opacity-60 leading-tight truncate mt-0.5">{{ $task->description }}</div>
                             @endif
                         </div>
