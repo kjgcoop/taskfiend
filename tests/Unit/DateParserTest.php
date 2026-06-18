@@ -749,6 +749,7 @@ class DateParserTest extends TestCase
     public static function validPatternsProvider(): array
     {
         return [
+            // Canonical patterns (stored form)
             ['daily'],
             ['weekly'],
             ['monthly'],
@@ -769,11 +770,15 @@ class DateParserTest extends TestCase
             ['every 15'],
             ['every 15th'],
             ['every 3rd Sunday'],
-            // Patterns that were previously untested:
             ['every 2 years'],
             ['every January 3'],
             ['every other Friday'],
             ['tue,thu'],
+            // Aliases accepted by parseTaskInput — must also be valid in the panel
+            ['every day'],
+            ['every week'],
+            ['every month'],
+            ['every year'],
         ];
     }
 
@@ -1147,5 +1152,52 @@ class DateParserTest extends TestCase
     public function test_every_fourth_friday_is_valid(): void
     {
         $this->assertTrue($this->parser->isValidRecurrencePattern('every fourth Friday'));
+    }
+
+    // =========================================================================
+    // normalizeRecurrencePattern() — aliases normalised to canonical form
+    // =========================================================================
+
+    public function test_normalize_canonical_pattern_is_returned_unchanged(): void
+    {
+        $this->assertSame('daily', $this->parser->normalizeRecurrencePattern('daily'));
+        $this->assertSame('monthly', $this->parser->normalizeRecurrencePattern('monthly'));
+        $this->assertSame('weekly', $this->parser->normalizeRecurrencePattern('weekly'));
+        $this->assertSame('yearly', $this->parser->normalizeRecurrencePattern('yearly'));
+    }
+
+    public function test_normalize_every_day_becomes_daily(): void
+    {
+        $this->assertSame('daily', $this->parser->normalizeRecurrencePattern('every day'));
+    }
+
+    public function test_normalize_every_week_becomes_weekly(): void
+    {
+        $this->assertSame('weekly', $this->parser->normalizeRecurrencePattern('every week'));
+    }
+
+    public function test_normalize_every_month_becomes_monthly(): void
+    {
+        $this->assertSame('monthly', $this->parser->normalizeRecurrencePattern('every month'));
+    }
+
+    public function test_normalize_every_year_becomes_yearly(): void
+    {
+        $this->assertSame('yearly', $this->parser->normalizeRecurrencePattern('every year'));
+    }
+
+    public function test_normalize_unrecognized_pattern_returns_null(): void
+    {
+        $this->assertNull($this->parser->normalizeRecurrencePattern('every fortnight'));
+    }
+
+    public function test_normalize_empty_string_returns_null(): void
+    {
+        $this->assertNull($this->parser->normalizeRecurrencePattern(''));
+    }
+
+    public function test_normalize_arbitrary_text_returns_null(): void
+    {
+        $this->assertNull($this->parser->normalizeRecurrencePattern('buy groceries'));
     }
 }
