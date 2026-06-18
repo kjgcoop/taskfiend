@@ -263,6 +263,32 @@
                     </div>
                 </div>
 
+                <!-- Duration input -->
+                <div class="flex items-center gap-1.5">
+                    <label class="text-xs text-gray-400 whitespace-nowrap">Duration</label>
+                    <input type="text" x-model="duration" :disabled="clearDuration"
+                           placeholder="e.g. 1h 30m"
+                           class="text-sm bg-gray-700 border border-gray-600 rounded px-2 py-1.5 text-gray-100 w-24 focus:outline-none focus:ring-1 focus:ring-blue-500 placeholder-gray-500 disabled:opacity-40 disabled:cursor-not-allowed">
+                    <label class="flex items-center gap-1 text-xs text-gray-400 cursor-pointer whitespace-nowrap ml-0.5" title="Remove duration from all selected tasks">
+                        <input type="checkbox" x-model="clearDuration" @change="clearDuration ? duration = '' : null"
+                               class="rounded border-gray-500 bg-gray-600 text-blue-500 focus:ring-blue-500 focus:ring-offset-gray-900">
+                        <span>Clear</span>
+                    </label>
+                </div>
+
+                <!-- Location input -->
+                <div class="flex items-center gap-1.5">
+                    <label class="text-xs text-gray-400 whitespace-nowrap">Location</label>
+                    <input type="text" x-model="location" :disabled="clearLocation"
+                           placeholder="Location"
+                           class="text-sm bg-gray-700 border border-gray-600 rounded px-2 py-1.5 text-gray-100 w-32 focus:outline-none focus:ring-1 focus:ring-blue-500 placeholder-gray-500 disabled:opacity-40 disabled:cursor-not-allowed">
+                    <label class="flex items-center gap-1 text-xs text-gray-400 cursor-pointer whitespace-nowrap ml-0.5" title="Remove location from all selected tasks">
+                        <input type="checkbox" x-model="clearLocation" @change="clearLocation ? location = '' : null"
+                               class="rounded border-gray-500 bg-gray-600 text-blue-500 focus:ring-blue-500 focus:ring-offset-gray-900">
+                        <span>Clear</span>
+                    </label>
+                </div>
+
                 <!-- Apply button -->
                 <button @click="openConfirm()"
                         :disabled="!hasChanges"
@@ -440,6 +466,10 @@
                     projectId: '',
                     status: '',
                     tagIds: [],
+                    location: '',
+                    clearLocation: false,
+                    duration: '',
+                    clearDuration: false,
                     confirming: false,
                     submitting: false,
                     confirmMessage: '',
@@ -489,18 +519,22 @@
                     },
 
                     get hasChanges() {
-                        return this.date !== '' || this.clearDate || this.projectId !== '' || this.status !== '' || this.tagIds.length > 0;
+                        return this.date !== '' || this.clearDate || this.projectId !== '' || this.status !== '' || this.tagIds.length > 0 || this.location !== '' || this.clearLocation || this.duration !== '' || this.clearDuration;
                     },
 
                     openConfirm() {
                         if (!this.hasChanges) return;
                         const count = this.$store.bulkEdit.selected.length;
                         const fields = [];
-                        if (this.date)            fields.push('due date');
-                        if (this.clearDate)       fields.push('due date (cleared)');
-                        if (this.projectId)       fields.push('project');
-                        if (this.status)          fields.push('status');
+                        if (this.date)              fields.push('due date');
+                        if (this.clearDate)         fields.push('due date (cleared)');
+                        if (this.projectId)         fields.push('project');
+                        if (this.status)            fields.push('status');
                         if (this.tagIds.length > 0) fields.push('tags');
+                        if (this.location)          fields.push('location');
+                        if (this.clearLocation)     fields.push('location (cleared)');
+                        if (this.duration)          fields.push('duration');
+                        if (this.clearDuration)     fields.push('duration (cleared)');
 
                         const fieldStr = fields.length === 1
                             ? fields[0]
@@ -520,11 +554,15 @@
                                 formData.append('task_ids[]', id);
                             });
 
-                            if (this.clearDate)  formData.append('clear_date', '1');
-                            else if (this.date)  formData.append('date', this.date);
-                            if (this.projectId)  formData.append('project_id', this.projectId);
-                            if (this.status)     formData.append('status', this.status);
+                            if (this.clearDate)      formData.append('clear_date', '1');
+                            else if (this.date)      formData.append('date', this.date);
+                            if (this.projectId)      formData.append('project_id', this.projectId);
+                            if (this.status)         formData.append('status', this.status);
                             this.tagIds.forEach(id => formData.append('tag_ids[]', id));
+                            if (this.clearLocation)      formData.append('clear_location', '1');
+                            else if (this.location)      formData.append('location', this.location);
+                            if (this.clearDuration)      formData.append('clear_duration', '1');
+                            else if (this.duration)      formData.append('duration_minutes', this.duration);
 
                             const response = await fetch('/tasks/bulk-update', {
                                 method: 'POST',

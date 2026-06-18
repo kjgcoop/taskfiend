@@ -1365,23 +1365,31 @@ class TaskController extends Controller
     public function bulkUpdate(Request $request)
     {
         $request->validate([
-            'task_ids'   => 'required|array|min:1',
-            'task_ids.*' => 'integer',
-            'date'       => 'nullable|date_format:Y-m-d',
-            'clear_date' => 'nullable|boolean',
-            'project_id' => 'nullable|integer|exists:projects,id',
-            'status'     => 'nullable|in:incomplete,done,archived',
-            'tag_ids'    => 'nullable|array',
-            'tag_ids.*'  => 'integer|exists:tags,id',
+            'task_ids'        => 'required|array|min:1',
+            'task_ids.*'      => 'integer',
+            'date'            => 'nullable|date_format:Y-m-d',
+            'clear_date'      => 'nullable|boolean',
+            'project_id'      => 'nullable|integer|exists:projects,id',
+            'status'          => 'nullable|in:incomplete,done,archived',
+            'tag_ids'         => 'nullable|array',
+            'tag_ids.*'       => 'integer|exists:tags,id',
+            'location'        => 'nullable|string|max:255',
+            'clear_location'  => 'nullable|boolean',
+            'duration_minutes' => 'nullable|string|max:20',
+            'clear_duration'  => 'nullable|boolean',
         ]);
 
-        $date      = $request->input('date');
-        $clearDate = $request->boolean('clear_date');
-        $projectId = $request->input('project_id');
-        $status    = $request->input('status');
-        $tagIds    = $request->input('tag_ids', []);
+        $date          = $request->input('date');
+        $clearDate     = $request->boolean('clear_date');
+        $projectId     = $request->input('project_id');
+        $status        = $request->input('status');
+        $tagIds        = $request->input('tag_ids', []);
+        $location      = $request->input('location');
+        $clearLocation = $request->boolean('clear_location');
+        $duration      = $request->input('duration_minutes');
+        $clearDuration = $request->boolean('clear_duration');
 
-        if ($date === null && !$clearDate && $projectId === null && $status === null && empty($tagIds)) {
+        if ($date === null && !$clearDate && $projectId === null && $status === null && empty($tagIds) && $location === null && !$clearLocation && $duration === null && !$clearDuration) {
             return response()->json(['success' => false, 'message' => 'No changes specified.'], 422);
         }
 
@@ -1408,16 +1416,23 @@ class TaskController extends Controller
             ->get();
 
         $changes = [];
-        if ($clearDate)          $changes['date']       = null;
-        elseif ($date !== null)  $changes['date']       = $date;
+        if ($clearDate)          $changes['date']            = null;
+        elseif ($date !== null)  $changes['date']            = $date;
         if ($projectId !== null) {
             $changes['project_id'] = $projectId;
             $changes['project_sort_order'] = null;
         }
-        if ($status !== null)    $changes['status']     = $status;
+        if ($status !== null)    $changes['status']          = $status;
+        if ($clearLocation)      $changes['location']        = null;
+        elseif ($location !== null) $changes['location']     = $location;
+        if ($clearDuration)      $changes['duration_minutes'] = null;
+        elseif ($duration !== null) $changes['duration_minutes'] = $this->parseDurationInput($duration);
 
         $changeFields = array_keys($changes);
-        if ($clearDate) $changeFields = array_map(fn($f) => $f === 'date' ? 'date (cleared)' : $f, $changeFields);
+        if ($clearDate)     $changeFields = array_map(fn($f) => $f === 'date' ? 'date (cleared)' : $f, $changeFields);
+        if ($clearLocation) $changeFields = array_map(fn($f) => $f === 'location' ? 'location (cleared)' : $f, $changeFields);
+        if ($clearDuration) $changeFields = array_map(fn($f) => $f === 'duration_minutes' ? 'duration (cleared)' : $f, $changeFields);
+        $changeFields = array_map(fn($f) => $f === 'duration_minutes' ? 'duration' : $f, $changeFields);
         if (!empty($tagIds)) $changeFields[] = 'tags';
 
         $updatedCount = 0;
