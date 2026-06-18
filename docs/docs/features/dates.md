@@ -5,7 +5,7 @@ Assigned dates are always in the future.
 You can assign a date in any of the following formats:
 
 - `today`, `tomorrow`
-- Day of week such as `Sunday` or `Sun` — **also sets a weekly recurrence**; use `next Sunday` if you want a one-time date with no recurrence
+- Plural day of week such as `Sundays` sets a weekly recurrence
 - `next Sunday` (or any weekday) — one-time date for the next occurrence of that day, no recurrence set
 - `yyyy-mm-dd` such as `2026-01-24`
 - Month and day such as `January 24` or `1/24` — uses the next future occurrence of that date
