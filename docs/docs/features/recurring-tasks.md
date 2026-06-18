@@ -41,10 +41,16 @@ Change the status to Archived. The series stops immediately.
 **Option 3 — remove the pattern from the next instance:**
 Mark the current task done (creates one more instance), then open that new instance and clear its recurrence pattern.
 
+## End dates
+
+You can set an end date on a recurring task to stop the series automatically. Once the end date is reached, completing the task will not create a new instance.
+
+The end date field is available in both the full-page task editor and the task detail panel/sidebar. If an end date is set, hovering the recurrence indicator shows a tooltip with the end date.
+
 ## Visual indicators
 
 - **Purple banner** at the top of the task detail page
-- **🔄 icon** next to the status field
+- **🔄 icon** next to the status field — hover for a tooltip; if an end date is set, the tooltip shows it
 - **Purple quick-complete button** in task lists — hover to see a tooltip explaining what will happen
 - **Confirmation dialog** when marking done from the detail page
 

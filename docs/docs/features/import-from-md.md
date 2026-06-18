@@ -1,8 +1,17 @@
-# Import Updates from .md
+# Import from .md
+
+The markdown import feature lets you create a new project or update an existing one by uploading a `.md` file — useful when it's faster to work in a text editor than to click through the UI.
+
+## Creating a new project from a file
+
+1. From the Projects list, click **Import from .md**.
+2. Upload your file. The first `#` heading is used as the project name.
+3. You'll see a preview of the tasks that will be created.
+4. Click **Confirm import** to create the project.
+
+## Updating an existing project
 
 If you have a large, unwieldy project, you can export it as a markdown file, reorganize it in any text editor, and re-upload it to bring the app up to speed — without clicking through each task individually.
-
-## How to use it
 
 1. Open a project you own.
 2. Click the **⋮** (three-dot) menu in the top right of the project header.
