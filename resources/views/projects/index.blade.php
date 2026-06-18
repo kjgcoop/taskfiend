@@ -118,7 +118,7 @@
                             <div class="flex items-start justify-between gap-2">
                                 <div class="flex items-center gap-1.5 min-w-0">
                                     @if($project->user_id === Auth::id())
-                                        <button @click.stop="toggleHeartProject({{ $project->id }}, $el)"
+                                        <button @click.stop="window.toggleHeartProject({{ $project->id }}, $el)"
                                                 title="{{ $project->is_hearted ? 'Remove from active projects' : 'Mark as active project' }}"
                                                 data-hearted="{{ $project->is_hearted ? 'true' : 'false' }}"
                                                 data-has-bg="{{ $hasBg ? 'true' : 'false' }}"
@@ -135,7 +135,7 @@
                                             </svg>
                                         </span>
                                     @elseif($project->user_id === Auth::id())
-                                        <button @click.stop="setDefaultProject({{ $project->id }}, $el)"
+                                        <button @click.stop="window.setDefaultProject({{ $project->id }}, $el)"
                                                 title="Set as default project"
                                                 class="{{ $hasBg ? 'text-gray-400 hover:text-yellow-300' : 'text-gray-600 hover:text-yellow-400' }} shrink-0 transition-colors">
                                             <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 20 20" stroke="currentColor" stroke-width="1.5">
