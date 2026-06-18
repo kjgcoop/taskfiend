@@ -635,20 +635,33 @@ class DateParser
     }
 
     /**
+     * Normalize a recurrence pattern entered directly (e.g. in the panel field) to its
+     * canonical stored form, accepting all aliases that parseTaskInput accepts.
+     * Returns the canonical pattern string, or null if not recognized.
+     */
+    public function normalizeRecurrencePattern(string $pattern): ?string
+    {
+        if (empty($pattern)) {
+            return null;
+        }
+
+        // Already a canonical pattern recognized by getNextOccurrence — keep as-is.
+        if ($this->getNextOccurrence($pattern, Carbon::today()) !== null) {
+            return $pattern;
+        }
+
+        // Try normalizing via parseTaskInput (handles aliases like "every day" → "daily").
+        $parsed = $this->parseTaskInput($pattern);
+        return $parsed['recurrence_pattern'];
+    }
+
+    /**
      * Check if a recurrence pattern is valid/recognized.
      * Returns true if the pattern can be processed, false otherwise.
      */
     public function isValidRecurrencePattern(string $pattern): bool
     {
-        if (empty($pattern)) {
-            return false;
-        }
-
-        // Try to get next occurrence - if it returns a date, the pattern is valid
-        $testDate = Carbon::today();
-        $result = $this->getNextOccurrence($pattern, $testDate);
-
-        return $result !== null;
+        return $this->normalizeRecurrencePattern($pattern) !== null;
     }
 
     /**

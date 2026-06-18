@@ -36,12 +36,16 @@ class TaskApiController extends Controller
 
         $dateParser = new DateParser();
 
-        // Validate explicitly provided recurrence pattern
-        if ($recurrencePattern && !$dateParser->isValidRecurrencePattern($recurrencePattern)) {
-            return response()->json([
-                'success' => false,
-                'message' => "The recurrence pattern '{$recurrencePattern}' is not recognized. Supported patterns include: daily, every other day, weekdays, weekends, every Monday/Tuesday/etc., every other Monday/Tuesday/etc., every 2 weeks, every 1st (monthly), every first Monday (monthly), yearly."
-            ], 422);
+        // Validate and normalize explicitly provided recurrence pattern
+        if ($recurrencePattern) {
+            $normalized = $dateParser->normalizeRecurrencePattern($recurrencePattern);
+            if ($normalized === null) {
+                return response()->json([
+                    'success' => false,
+                    'message' => "The recurrence pattern '{$recurrencePattern}' is not recognized. Supported patterns include: daily, every other day, weekdays, weekends, every Monday/Tuesday/etc., every other Monday/Tuesday/etc., every 2 weeks, every 1st (monthly), every first Monday (monthly), yearly."
+                ], 422);
+            }
+            $recurrencePattern = $normalized;
         }
 
         if (!$recurrencePattern) {

@@ -643,8 +643,12 @@ class ProjectController extends Controller
 
         $pattern = $request->input('recurrence_pattern') ?: null;
 
-        if ($pattern && !(new DateParser)->isValidRecurrencePattern($pattern)) {
-            return back()->withErrors(['recurrence_pattern' => 'Unrecognized recurrence pattern.'])->withInput();
+        if ($pattern) {
+            $normalized = (new DateParser)->normalizeRecurrencePattern($pattern);
+            if ($normalized === null) {
+                return back()->withErrors(['recurrence_pattern' => 'Unrecognized recurrence pattern.'])->withInput();
+            }
+            $pattern = $normalized;
         }
 
         // Replace any existing undismissed reminder for this user on this project
