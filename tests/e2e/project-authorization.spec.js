@@ -9,6 +9,13 @@ import { login, logout, testUsers } from './helpers/auth.js';
  */
 
 test.describe('Project Authorization & Privacy', () => {
+  // The project field on the task create form is an Alpine combo-box backed by
+  // a hidden input, not a <select>.  Use this helper instead of selectOption().
+  async function selectProjectInCombo(page, projectName) {
+    await page.fill('#project_combo', projectName);
+    await page.locator('[x-text="project.name"]').filter({ hasText: projectName }).first().click();
+  }
+
   test.beforeEach(async ({ page }) => {
     // Ensure clean state for each test
     await page.goto('/login');
@@ -192,7 +199,7 @@ test.describe('Project Authorization & Privacy', () => {
     // Create a task in this project
     await page.goto('/tasks/create');
     await page.fill('#name', 'Task in Private Project');
-    await page.selectOption('select[name="project_id"]', projectId);
+    await selectProjectInCombo(page, 'Project with Tasks');
     await page.click('button[type="submit"]');
     await page.waitForURL(/\/tasks\/\d+/);
     await logout(page);
@@ -219,9 +226,11 @@ test.describe('Project Authorization & Privacy', () => {
     await login(page, testUsers.user2.email);
     await page.goto('/tasks/create');
 
-    // The project should not appear in the dropdown for User 2
-    const projectOptions = await page.locator(`select[name="project_id"] option`).allTextContents();
-    expect(projectOptions.join()).not.toContain('User 1 Exclusive Project');
+    // The project should not appear in the combo-box dropdown for User 2
+    await page.fill('#project_combo', 'User 1 Exclusive Project');
+    await expect(
+      page.locator('[x-text="project.name"]').filter({ hasText: 'User 1 Exclusive Project' })
+    ).not.toBeVisible();
   });
 
   test('user cannot see other users projects in search', async ({ page }) => {
@@ -265,14 +274,14 @@ test.describe('Project Authorization & Privacy', () => {
     // Create a task assigned only to User 1 (auto-assigned as creator)
     await page.goto('/tasks/create');
     await page.fill('#name', 'Owner-Only Task');
-    await page.selectOption('select[name="project_id"]', projectId);
+    await selectProjectInCombo(page, 'Project for Full Visibility Test');
     await page.click('button[type="submit"]');
     await page.waitForURL(/\/tasks\/\d+/);
 
     // Create a task explicitly assigned to User 2
     await page.goto('/tasks/create');
     await page.fill('#name', 'Explicitly Shared Task');
-    await page.selectOption('select[name="project_id"]', projectId);
+    await selectProjectInCombo(page, 'Project for Full Visibility Test');
     await page.check(`label:has-text("${testUsers.user2.name}") input[name="assignee_ids[]"]`);
     await page.click('button[type="submit"]');
     await page.waitForURL(/\/tasks\/\d+/);
@@ -297,7 +306,7 @@ test.describe('Project Authorization & Privacy', () => {
     // Create a task assigned to User 2 (gives them task-level access only)
     await page.goto('/tasks/create');
     await page.fill('#name', 'Task Assigned to User 2');
-    await page.selectOption('select[name="project_id"]', projectId);
+    await selectProjectInCombo(page, 'Project for Partial Visibility Test');
     await page.check(`label:has-text("${testUsers.user2.name}") input[name="assignee_ids[]"]`);
     await page.click('button[type="submit"]');
     await page.waitForURL(/\/tasks\/\d+/);
@@ -305,7 +314,7 @@ test.describe('Project Authorization & Privacy', () => {
     // Create a second task assigned only to User 1
     await page.goto('/tasks/create');
     await page.fill('#name', 'Private Task for Owner Only');
-    await page.selectOption('select[name="project_id"]', projectId);
+    await selectProjectInCombo(page, 'Project for Partial Visibility Test');
     await page.click('button[type="submit"]');
     await page.waitForURL(/\/tasks\/\d+/);
     await logout(page);
