@@ -562,7 +562,7 @@
                 fields: {
                     name: '', description: '', location: '', status: '',
                     date: '', time: '', duration_minutes: '', project_id: '',
-                    recurrence_pattern: '', recurrence_floating: false,
+                    recurrence_pattern: '', recurrence_floating: false, recurrence_end_date: '',
                     show_map: false, tag_ids: [], assignee_ids: [],
                 },
                 original: {},
@@ -660,7 +660,7 @@
                 },
 
                 clearAndSave(field) { this.fields[field] = ''; this.saveField(field); },
-                saveRecurrence() { this.saveField('recurrence_pattern'); this.saveField('recurrence_floating'); },
+                saveRecurrence() { this.saveField('recurrence_pattern'); this.saveField('recurrence_floating'); this.saveField('recurrence_end_date'); },
 
                 startEditDate() {
                     this.editing.date = true;

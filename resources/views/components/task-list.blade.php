@@ -1174,7 +1174,16 @@
                                data-task-project-display>{{ $task->project->name }}</a>
                         @endif
                         @if($task->recurrence_pattern)
-                            <span class="text-purple-400" data-task-recurrence-display>{{ $task->recurrence_pattern }}{{ $task->recurrence_floating ? '*' : '' }}</span>
+                            @if($task->recurrence_end_date)
+                                <span class="relative group inline-block">
+                                    <span class="text-purple-400 cursor-help underline decoration-dotted" data-task-recurrence-display>{{ $task->recurrence_pattern }}{{ $task->recurrence_floating ? '*' : '' }}</span>
+                                    <span class="absolute hidden group-hover:block bottom-full left-0 mb-1 bg-gray-900 border border-gray-600 rounded px-2 py-1 text-xs text-gray-200 whitespace-nowrap z-50 shadow-lg pointer-events-none">
+                                        Ends after: {{ \Carbon\Carbon::parse($task->recurrence_end_date)->format('l, F j, Y') }}
+                                    </span>
+                                </span>
+                            @else
+                                <span class="text-purple-400" data-task-recurrence-display>{{ $task->recurrence_pattern }}{{ $task->recurrence_floating ? '*' : '' }}</span>
+                            @endif
                         @endif
                         @if($task->duration_minutes)
                             <span class="text-purple-900" data-duration-display>{{ \App\Models\Task::formatDuration($task->duration_minutes) }}</span>

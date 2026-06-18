@@ -63,8 +63,9 @@ $_panelTaskJson = json_encode([
         'time'               => $task->time ?? '',
         'duration_minutes'   => \App\Models\Task::formatDuration($task->duration_minutes) ?? '',
         'project_id'         => $task->project_id ?? $defaultProjectId,
-        'recurrence_pattern' => $task->recurrence_pattern ?? '',
-        'recurrence_floating'=> (bool) $task->recurrence_floating,
+        'recurrence_pattern'   => $task->recurrence_pattern ?? '',
+        'recurrence_floating'  => (bool) $task->recurrence_floating,
+        'recurrence_end_date'  => $task->recurrence_end_date ?? '',
         'show_map'           => (bool) $task->show_map,
         'tag_ids'            => $task->tags->pluck('id')->toArray(),
         'assignee_ids'       => $task->assignees->pluck('id')->toArray(),
@@ -452,6 +453,9 @@ $_panelTaskJson = json_encode([
                 @if($nextDueDate)
                     <p class="text-xs text-gray-400 mt-0.5">Next after current: {{ $nextDueDate }}</p>
                 @endif
+                @if($task->recurrence_end_date)
+                    <p class="text-xs text-gray-400 mt-0.5">Ends after: {{ \Carbon\Carbon::parse($task->recurrence_end_date)->format('l, F j, Y') }}</p>
+                @endif
             @else
                 <p class="text-sm text-gray-400 italic">{{ $isInactive ? 'No recurrence' : 'Click to set recurrence' }}</p>
             @endif
@@ -469,6 +473,16 @@ $_panelTaskJson = json_encode([
                        class="rounded bg-gray-700 border-gray-600 text-purple-500 focus:ring-purple-500 mr-2">
                 Floating (next date relative to completion)
             </label>
+            <div class="mt-2">
+                <label class="block text-xs text-gray-400 mb-1">End date (optional — stops recurring after this date)</label>
+                <input type="date" x-model="fields.recurrence_end_date"
+                       class="rounded-md bg-gray-700 border-gray-600 text-gray-100 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm">
+                @if($task->recurrence_end_date)
+                <button @click="fields.recurrence_end_date = ''"
+                        type="button"
+                        class="ml-2 text-xs text-red-400 hover:text-red-300">Clear</button>
+                @endif
+            </div>
             <div class="flex gap-2 mt-2">
                 <button @click="saveRecurrence()"
                         class="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700">Save</button>
