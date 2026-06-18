@@ -155,6 +155,28 @@ class CommentController extends Controller
         );
     }
 
+    public function view(Task $task, Comment $comment)
+    {
+        if ($comment->task_id !== $task->id) {
+            abort(404);
+        }
+
+        $isCreator = $task->creator_id === Auth::id();
+        $isAssignee = $task->assignees->contains('id', Auth::id());
+
+        if (!$isCreator && !$isAssignee) {
+            abort(403, 'You do not have access to this comment attachment.');
+        }
+
+        if (!$comment->file_path || !Storage::disk('private')->exists($comment->file_path)) {
+            abort(404, 'Attachment not found.');
+        }
+
+        return response(Storage::disk('private')->get($comment->file_path), 200)
+            ->header('Content-Type', $comment->mime_type)
+            ->header('Content-Disposition', 'inline; filename="' . addslashes($comment->original_filename) . '"');
+    }
+
     // Store an uploaded file, scaling it down if it is an image whose largest
     // dimension exceeds SCALE_LARGEST_TO. Returns [path, fileSize, mimeType].
     private function storeScaled(\Illuminate\Http\UploadedFile $file, string $directory): array

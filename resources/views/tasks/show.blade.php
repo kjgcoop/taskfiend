@@ -722,12 +722,29 @@
                                     </div>
                                     <div class="markdown-body mt-1 text-sm">{!! render_body($comment->comment) !!}</div>
                                     @if($comment->file_path)
-                                        <p class="mt-1 text-xs">
-                                            <a href="{{ route('comments.download', [$task, $comment]) }}" class="text-blue-400 hover:text-blue-300 hover:underline">
-                                                📎 <span title="{{ $comment->original_filename }}">{{ strlen($comment->original_filename) > 15 ? substr($comment->original_filename, 0, 12) . '...' : $comment->original_filename }}</span>
-                                            </a>
-                                            <span class="text-gray-500 ml-2">({{ number_format($comment->file_size / 1024, 1) }} KB)</span>
-                                        </p>
+                                        @if(str_starts_with($comment->mime_type, 'image/'))
+                                            <div class="mt-2">
+                                                <a href="{{ route('comments.view', [$task, $comment]) }}" target="_blank" rel="noopener">
+                                                    <img src="{{ route('comments.view', [$task, $comment]) }}"
+                                                         alt="{{ $comment->original_filename }}"
+                                                         class="max-h-48 max-w-xs rounded border border-gray-600 cursor-pointer hover:opacity-90 transition-opacity">
+                                                </a>
+                                                <p class="mt-1 text-xs">
+                                                    <a href="{{ route('comments.download', [$task, $comment]) }}" class="text-blue-400 hover:text-blue-300 hover:underline">
+                                                        ⬇ Download
+                                                    </a>
+                                                    <span class="text-gray-500 ml-2" title="{{ $comment->original_filename }}">{{ strlen($comment->original_filename) > 25 ? substr($comment->original_filename, 0, 22) . '...' : $comment->original_filename }}</span>
+                                                    <span class="text-gray-500 ml-1">({{ number_format($comment->file_size / 1024, 1) }} KB)</span>
+                                                </p>
+                                            </div>
+                                        @else
+                                            <p class="mt-1 text-xs">
+                                                <a href="{{ route('comments.download', [$task, $comment]) }}" class="text-blue-400 hover:text-blue-300 hover:underline">
+                                                    📎 <span title="{{ $comment->original_filename }}">{{ strlen($comment->original_filename) > 15 ? substr($comment->original_filename, 0, 12) . '...' : $comment->original_filename }}</span>
+                                                </a>
+                                                <span class="text-gray-500 ml-2">({{ number_format($comment->file_size / 1024, 1) }} KB)</span>
+                                            </p>
+                                        @endif
                                     @endif
                                 </div>
                             @empty
