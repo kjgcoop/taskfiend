@@ -19,8 +19,7 @@
 
     {{-- Dynamic content: hidden by x-cloak until Alpine loads --}}
     <span x-cloak x-show="$store.taskCount.ready" class="inline">
-        <span x-show="$store.taskCount.filtered" class="inline">showing&nbsp;<span x-text="$store.taskCount.visible"></span>&nbsp;of&nbsp;</span>
-        <span class="relative group inline-block {{ !empty($breakdown) ? 'underline decoration-dotted cursor-default' : '' }}">
+        <span x-show="$store.taskCount.filtered" class="inline">showing&nbsp;<span x-text="$store.taskCount.visible"></span>&nbsp;of&nbsp;</span><span class="relative group inline-block {{ !empty($breakdown) ? 'underline decoration-dotted cursor-default' : '' }}">
             <span x-text="$store.taskCount.total"></span>
             @if(!empty($breakdown))
             <div class="absolute hidden group-hover:block bottom-full left-0 mb-1 bg-gray-900 border border-gray-600 rounded p-2 text-gray-200 z-50 shadow-lg min-w-max text-xs not-italic normal-case font-normal whitespace-nowrap">
