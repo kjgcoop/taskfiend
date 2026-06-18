@@ -103,6 +103,10 @@
                                 class="w-full text-left px-4 py-2 text-gray-200 hover:bg-gray-700">
                             Details
                         </button>
+                        <button @click="openReminder()"
+                                class="w-full text-left px-4 py-2 text-gray-200 hover:bg-gray-700">
+                            Set Reminder
+                        </button>
                     @endif
                     <a href="{{ route('projects.export-markdown', $project) }}"
                        class="block px-4 py-2 text-gray-200 hover:bg-gray-700">
@@ -168,6 +172,87 @@
                     </form>
                 </div>
             </div>
+            {{-- Reminder Modal --}}
+            @if($project->user_id === Auth::id() && !$isInactive)
+            <div x-show="showReminder" x-cloak
+                 class="fixed inset-0 z-50 flex items-center justify-center bg-black/60"
+                 @keydown.escape.window="closeReminder()">
+                <div class="bg-gray-800 border border-gray-600 rounded-lg p-6 w-full max-w-md shadow-xl"
+                     @click.stop>
+                    <div class="flex justify-between items-center mb-5">
+                        <h4 class="text-gray-100 font-semibold text-lg">Set Reminder</h4>
+                        <button @click="closeReminder()" class="text-gray-400 hover:text-gray-100">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                        </button>
+                    </div>
+
+                    @if($activeReminder)
+                        <div class="flex items-center justify-between mb-4 p-2 bg-blue-950/40 border border-blue-700/50 rounded text-sm">
+                            <span class="text-blue-300">
+                                {{ \Carbon\Carbon::parse($activeReminder->date)->format('M j, Y') }}
+                                @if($activeReminder->recurrence_pattern)
+                                    &middot; <span class="text-blue-400/70">{{ $activeReminder->recurrence_pattern }}</span>
+                                @endif
+                            </span>
+                            <form method="POST" action="{{ route('projects.reminders.destroy', [$project, $activeReminder]) }}">
+                                @csrf @method('DELETE')
+                                <button type="submit" class="text-xs text-gray-500 hover:text-red-400 transition-colors ml-3">Remove</button>
+                            </form>
+                        </div>
+                    @endif
+
+                    <form method="POST" action="{{ route('projects.reminders.store', $project) }}"
+                          class="space-y-3"
+                          x-data="reminderDateInput" data-initial-date="{{ old('date', $activeReminder?->date) }}">
+                        @csrf
+                        <div>
+                            <div class="flex gap-2 items-center">
+                                <input type="text" x-model="dateText"
+                                       @input.debounce.300ms="previewDate()"
+                                       placeholder="today, June 5, next Friday…"
+                                       class="flex-1 rounded-md bg-gray-700 border-gray-600 text-gray-100 placeholder-gray-500 shadow-sm focus:border-blue-500 focus:ring-blue-500 px-3 py-2 text-sm">
+                                <div class="relative shrink-0">
+                                    <button type="button" @click="$refs.calPicker.showPicker()"
+                                            class="p-2 bg-gray-700 border border-gray-600 rounded-md hover:bg-gray-600 text-gray-400 hover:text-gray-200"
+                                            title="Open calendar">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                                        </svg>
+                                    </button>
+                                    <input type="date" x-ref="calPicker" @change="pickDate($event.target.value)"
+                                           class="absolute inset-0 opacity-0 w-full h-full cursor-pointer">
+                                </div>
+                            </div>
+                            <input type="hidden" name="date" :value="resolvedDate">
+                            <p x-show="datePreview" x-text="datePreview" class="mt-1 text-xs text-green-400"></p>
+                            <p x-show="dateError" x-text="dateError" class="mt-1 text-xs text-red-400"></p>
+                        </div>
+                        <input type="text" name="recurrence_pattern" value="{{ old('recurrence_pattern', $activeReminder?->recurrence_pattern) }}"
+                               placeholder="Recurrence (e.g. weekly, every Thursday)"
+                               class="w-full rounded-md bg-gray-700 border-gray-600 text-gray-100 placeholder-gray-500 shadow-sm focus:border-blue-500 focus:ring-blue-500 px-3 py-2 text-sm">
+                        @error('recurrence_pattern')<p class="text-xs text-red-400">{{ $message }}</p>@enderror
+                        <label class="flex items-center gap-2 text-sm text-gray-400">
+                            <input type="checkbox" name="recurrence_floating" value="1"
+                                   {{ old('recurrence_floating', $activeReminder?->recurrence_floating) ? 'checked' : '' }}
+                                   class="rounded border-gray-600 bg-gray-700 text-blue-600 focus:ring-blue-500">
+                            Floating (recur from completion date)
+                        </label>
+                        <div class="flex justify-end gap-2 pt-1">
+                            <button type="button" @click="closeReminder()"
+                                    class="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-gray-300 rounded text-sm">
+                                Cancel
+                            </button>
+                            <button type="submit" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded">
+                                {{ $activeReminder ? 'Update Reminder' : 'Set Reminder' }}
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            @endif
+
             {{-- Status Log Modal --}}
             <div x-show="showStatus" x-cloak
                  class="fixed inset-0 z-50 flex items-center justify-center bg-black/60"
@@ -526,70 +611,6 @@
                         </div>
                     </div>
                     @endif
-
-                    {{-- Reminder --}}
-                    <div class="mb-5">
-                        <label class="block text-sm font-medium text-gray-400 mb-2">Reminder <span class="text-gray-500 font-normal">(optional)</span></label>
-                        @if($activeReminder)
-                            <div class="flex items-center justify-between mb-2 p-2 bg-blue-950/40 border border-blue-700/50 rounded text-sm">
-                                <span class="text-blue-300">
-                                    {{ \Carbon\Carbon::parse($activeReminder->date)->format('M j, Y') }}
-                                    @if($activeReminder->recurrence_pattern)
-                                        &middot; <span class="text-blue-400/70">{{ $activeReminder->recurrence_pattern }}</span>
-                                    @endif
-                                </span>
-                                <form method="POST" action="{{ route('projects.reminders.destroy', [$project, $activeReminder]) }}">
-                                    @csrf @method('DELETE')
-                                    <button type="submit" class="text-xs text-gray-500 hover:text-red-400 transition-colors ml-3">Remove</button>
-                                </form>
-                            </div>
-                        @endif
-                        @if(!$isInactive)
-                        <form method="POST" action="{{ route('projects.reminders.store', $project) }}"
-                              class="space-y-2"
-                              x-data="reminderDateInput" data-initial-date="{{ old('date', $activeReminder?->date) }}">
-                            @csrf
-                            {{-- Natural language date input --}}
-                            <div>
-                                <div class="flex gap-2 items-center">
-                                    <input type="text" x-model="dateText"
-                                           @input.debounce.300ms="previewDate()"
-                                           placeholder="today, June 5, next Friday…"
-                                           class="flex-1 rounded-md bg-gray-700 border-gray-600 text-gray-100 placeholder-gray-500 shadow-sm focus:border-blue-500 focus:ring-blue-500 px-3 py-2 text-sm">
-                                    <div class="relative shrink-0">
-                                        <button type="button" @click="$refs.calPicker.showPicker()"
-                                                class="p-2 bg-gray-700 border border-gray-600 rounded-md hover:bg-gray-600 text-gray-400 hover:text-gray-200"
-                                                title="Open calendar">
-                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
-                                            </svg>
-                                        </button>
-                                        <input type="date" x-ref="calPicker" @change="pickDate($event.target.value)"
-                                               class="absolute inset-0 opacity-0 w-full h-full cursor-pointer">
-                                    </div>
-                                </div>
-                                <input type="hidden" name="date" :value="resolvedDate">
-                                <p x-show="datePreview" x-text="datePreview" class="mt-1 text-xs text-green-400"></p>
-                                <p x-show="dateError" x-text="dateError" class="mt-1 text-xs text-red-400"></p>
-                            </div>
-                            <input type="text" name="recurrence_pattern" value="{{ old('recurrence_pattern', $activeReminder?->recurrence_pattern) }}"
-                                   placeholder="Recurrence (e.g. weekly, every Thursday)"
-                                   class="w-full rounded-md bg-gray-700 border-gray-600 text-gray-100 placeholder-gray-500 shadow-sm focus:border-blue-500 focus:ring-blue-500 px-3 py-2 text-sm">
-                            @error('recurrence_pattern')<p class="text-xs text-red-400">{{ $message }}</p>@enderror
-                            <label class="flex items-center gap-2 text-sm text-gray-400">
-                                <input type="checkbox" name="recurrence_floating" value="1"
-                                       {{ old('recurrence_floating', $activeReminder?->recurrence_floating) ? 'checked' : '' }}
-                                       class="rounded border-gray-600 bg-gray-700 text-blue-600 focus:ring-blue-500">
-                                Floating (recur from completion date)
-                            </label>
-                            <div class="flex justify-end">
-                                <button type="submit" class="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded">
-                                    {{ $activeReminder ? 'Update' : 'Set Reminder' }}
-                                </button>
-                            </div>
-                        </form>
-                        @endif
-                    </div>
 
                     {{-- Created By (read-only) --}}
                     <div class="mb-5">
@@ -983,6 +1004,7 @@
                 showSaveTemplate: false,
                 showMenu: false,
                 showStatus: false,
+                showReminder: false,
                 statusTab: 'post',
                 openDetails() { this.showMenu = false; this.$dispatch('open-project-details'); },
                 openStatusModal() { this.showStatus = true; this.statusTab = 'post'; },
@@ -993,6 +1015,8 @@
                 closeMenu() { this.showMenu = false; },
                 openSaveTemplate() { this.showMenu = false; this.showSaveTemplate = true; },
                 closeSaveTemplate() { this.showSaveTemplate = false; },
+                openReminder() { this.showMenu = false; this.showReminder = true; },
+                closeReminder() { this.showReminder = false; },
                 toggleHeart(projectId) {
                     fetch(`/projects/${projectId}/toggle-heart`, {
                         method: 'POST',
