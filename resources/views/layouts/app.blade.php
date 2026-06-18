@@ -203,16 +203,52 @@
                     </label>
                 </div>
 
-                <!-- Project dropdown -->
+                <!-- Project combo box -->
                 <div class="flex items-center gap-1.5">
                     <label class="text-xs text-gray-400 whitespace-nowrap">Project</label>
-                    <select x-model="projectId"
-                            class="text-sm bg-gray-700 border border-gray-600 rounded px-2 py-1.5 text-gray-100 focus:outline-none focus:ring-1 focus:ring-blue-500">
-                        <option value="">— no change —</option>
-                        <template x-for="project in $store.bulkEdit.projects" :key="project.id">
-                            <option :value="project.id" x-text="project.name"></option>
-                        </template>
-                    </select>
+                    <div class="relative flex items-center gap-1">
+                        <input type="text"
+                               x-model="projectSearch"
+                               @focus="projectComboOpen = true"
+                               @blur="handleProjectBlur()"
+                               @keydown.arrow-down.prevent="moveProjectDown()"
+                               @keydown.arrow-up.prevent="moveProjectUp()"
+                               @keydown.enter.prevent="selectCurrentProject()"
+                               @keydown.escape="projectComboOpen = false"
+                               @input="openProjectCombo()"
+                               autocomplete="off"
+                               placeholder="— no change —"
+                               class="text-sm bg-gray-700 border border-gray-600 rounded px-2 py-1.5 text-gray-100 placeholder-gray-500 w-36 focus:outline-none focus:ring-1 focus:ring-blue-500">
+                        <button x-show="projectId"
+                                @mousedown.prevent="clearProjectSelection()"
+                                type="button"
+                                title="Clear project selection"
+                                class="text-gray-500 hover:text-gray-300 flex-shrink-0"
+                                style="display:none">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+                            </svg>
+                        </button>
+                        <div x-show="projectComboOpen"
+                             x-transition
+                             class="absolute bottom-full mb-1 left-0 bg-gray-800 border border-gray-600 rounded-lg shadow-xl min-w-[180px] max-h-48 overflow-y-auto z-50"
+                             style="display:none">
+                            <template x-if="filteredProjects.length > 0">
+                                <div>
+                                    <template x-for="(project, index) in filteredProjects" :key="project.id">
+                                        <div @mousedown.prevent="selectProject(project)"
+                                             :class="{ 'bg-gray-600': projectComboActiveIndex === index }"
+                                             class="px-3 py-2 text-sm text-gray-300 hover:bg-gray-600 cursor-pointer"
+                                             x-text="project.name">
+                                        </div>
+                                    </template>
+                                </div>
+                            </template>
+                            <template x-if="filteredProjects.length === 0">
+                                <div class="px-3 py-2 text-sm text-gray-500 italic">No matching projects</div>
+                            </template>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- Status dropdown -->
@@ -464,6 +500,9 @@
                     naturalDateLoading: false,
                     naturalDateError: '',
                     projectId: '',
+                    projectSearch: '',
+                    projectComboOpen: false,
+                    projectComboActiveIndex: -1,
                     status: '',
                     tagIds: [],
                     location: '',
@@ -476,6 +515,51 @@
 
                     clearDateFields() { this.date = ''; this.naturalDate = ''; this.naturalDateError = ''; },
                     clearDateInput() { this.date = ''; this.dateError = ''; },
+
+                    get filteredProjects() {
+                        const projects = this.$store.bulkEdit.projects;
+                        if (!this.projectSearch) return projects;
+                        const q = this.projectSearch.toLowerCase();
+                        return projects.filter(p => p.name.toLowerCase().includes(q));
+                    },
+                    selectProject(project) {
+                        this.projectId = project.id;
+                        this.projectSearch = project.name;
+                        this.projectComboOpen = false;
+                        this.projectComboActiveIndex = -1;
+                    },
+                    clearProjectSelection() {
+                        this.projectId = '';
+                        this.projectSearch = '';
+                        this.projectComboOpen = false;
+                        this.projectComboActiveIndex = -1;
+                    },
+                    handleProjectBlur() {
+                        setTimeout(() => {
+                            this.projectComboOpen = false;
+                            const sel = this.$store.bulkEdit.projects.find(p => p.id == this.projectId);
+                            this.projectSearch = sel ? sel.name : '';
+                        }, 150);
+                    },
+                    moveProjectDown() {
+                        const len = this.filteredProjects.length;
+                        if (!len) return;
+                        this.projectComboActiveIndex = (this.projectComboActiveIndex + 1) % len;
+                    },
+                    moveProjectUp() {
+                        const len = this.filteredProjects.length;
+                        if (!len) return;
+                        this.projectComboActiveIndex = (this.projectComboActiveIndex - 1 + len) % len;
+                    },
+                    selectCurrentProject() {
+                        if (this.projectComboActiveIndex >= 0 && this.filteredProjects[this.projectComboActiveIndex]) {
+                            this.selectProject(this.filteredProjects[this.projectComboActiveIndex]);
+                        }
+                    },
+                    openProjectCombo() {
+                        this.projectComboOpen = true;
+                        this.projectComboActiveIndex = -1;
+                    },
 
                     checkDate() {
                         if (!this.date) { this.clearDate = true; return; }
