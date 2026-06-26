@@ -1,13 +1,23 @@
 <x-app-layout>
     <x-slot name="header">
         <div class="flex justify-between items-center">
-            <h2 class="font-semibold text-xl text-gray-100 leading-tight">
-                {{ __('Projects') }}
-            </h2>
+            <div class="flex items-center gap-4">
+                <h2 class="font-semibold text-xl text-gray-100 leading-tight">
+                    {{ __('Projects') }}
+                </h2>
+                @if($scheduledCount > 0)
+                    <a href="{{ route('scheduled-projects.index') }}"
+                       class="text-sm text-blue-400 hover:text-blue-300">
+                        {{ $scheduledCount }} scheduled &rarr;
+                    </a>
+                @endif
+            </div>
         </div>
     </x-slot>
 
-    <div class="py-12" x-data="projectsIndex">
+    <div class="py-12" x-data="projectsIndex"
+         @do-toggle-import-template.window="toggleImportTemplate()"
+         @do-toggle-markdown-import.window="toggleMarkdownImport()">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-6">
             <!-- Action Buttons -->
             <div class="flex justify-between items-center gap-2">
@@ -31,22 +41,14 @@
                                class="flex items-center gap-2 px-4 py-2 text-sm text-gray-300 hover:bg-gray-700 hover:text-gray-100">
                                 From Template
                             </a>
-                            <button @click="open = false; toggleImportTemplate()"
+                            <button @click="open = false; $dispatch('do-toggle-import-template')"
                                     class="w-full text-left flex items-center gap-2 px-4 py-2 text-sm text-gray-300 hover:bg-gray-700 hover:text-gray-100">
                                 Import Template File
                             </button>
-                            <button @click="open = false; toggleMarkdownImport()"
+                            <button @click="open = false; $dispatch('do-toggle-markdown-import')"
                                     class="w-full text-left flex items-center gap-2 px-4 py-2 text-sm text-gray-300 hover:bg-gray-700 hover:text-gray-100">
                                 Import from Markdown
                             </button>
-                            @if($scheduledCount > 0)
-                            <div class="border-t border-gray-700 my-1"></div>
-                            <a href="{{ route('scheduled-projects.index') }}"
-                               class="flex items-center gap-2 px-4 py-2 text-sm text-gray-300 hover:bg-gray-700 hover:text-gray-100">
-                                Scheduled
-                                <span class="ml-auto inline-flex items-center justify-center w-5 h-5 rounded-full bg-blue-600 text-white text-[10px] font-bold">{{ $scheduledCount }}</span>
-                            </a>
-                            @endif
                         </div>
                     </div>
                     <a href="{{ route('projects.create') }}" class="inline-flex items-center px-4 py-2 bg-blue-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-blue-700">
