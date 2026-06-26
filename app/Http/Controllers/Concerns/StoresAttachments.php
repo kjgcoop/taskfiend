@@ -21,12 +21,14 @@ trait StoresAttachments
             'application/vnd.oasis.opendocument.text,' .
             'application/vnd.oasis.opendocument.spreadsheet,' .
             'application/vnd.oasis.opendocument.presentation,' .
-            'text/csv,text/plain,text/markdown,application/json,text/json';
+            'text/csv,text/plain,text/markdown,text/xml,application/xml,text/yaml,application/yaml,' .
+            'application/json,text/json,' .
+            'application/zip,application/x-zip-compressed';
     }
 
     protected static function allowedMimetypesMessage(): string
     {
-        return 'File type not allowed. Accepted: images (JPG, PNG, WebP, GIF, HEIC), PDF, Word, Excel, PowerPoint, LibreOffice formats, CSV, TXT, JSON, Markdown.';
+        return 'File type not allowed. Accepted: images (JPG, PNG, WebP, GIF, HEIC), PDF, Word, Excel, PowerPoint, LibreOffice formats, CSV, TXT, JSON, Markdown, XML, YAML, ZIP.';
     }
 
     // Store an uploaded file, scaling it down if it is an image whose largest

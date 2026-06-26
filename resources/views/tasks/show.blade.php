@@ -761,7 +761,7 @@
                                     <span class="px-3 py-1.5 bg-gray-700 border border-gray-600 text-gray-300 text-sm rounded hover:bg-gray-600">Choose file</span>
                                     <span class="text-sm text-gray-400" x-text="fileName || 'No file chosen'"></span>
                                     <input type="file" name="attachment" class="hidden"
-                                           accept=".jpg,.jpeg,.png,.webp,.gif,.heic,.heif,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.odt,.ods,.odp,.csv,.txt,.md,.json"
+                                           accept=".jpg,.jpeg,.png,.webp,.gif,.heic,.heif,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.odt,.ods,.odp,.csv,.txt,.md,.xml,.yaml,.yml,.json,.zip"
                                            @change="fileName = $event.target.files[0] ? ($event.target.files[0].name.length > 20 ? $event.target.files[0].name.slice(0, 20) + '…' : $event.target.files[0].name) : ''">
                                 </label>
                                 <button type="submit" class="px-4 py-2 bg-blue-600 text-white text-sm rounded hover:bg-blue-700">
@@ -847,7 +847,7 @@
                                     <span class="px-3 py-1.5 bg-gray-700 border border-gray-600 text-gray-300 text-sm rounded hover:bg-gray-600">Choose files</span>
                                     <span class="text-sm text-gray-400" x-text="fileName || 'No files chosen'"></span>
                                     <input type="file" name="attachments[]" required multiple class="hidden"
-                                           accept=".jpg,.jpeg,.png,.webp,.gif,.heic,.heif,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.odt,.ods,.odp,.csv,.txt,.md,.json"
+                                           accept=".jpg,.jpeg,.png,.webp,.gif,.heic,.heif,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.odt,.ods,.odp,.csv,.txt,.md,.xml,.yaml,.yml,.json,.zip"
                                            @change="updateLabel($event.target.files)">
                                 </label>
                                 <button type="submit" class="px-4 py-2 bg-blue-600 text-white text-sm rounded hover:bg-blue-700">
