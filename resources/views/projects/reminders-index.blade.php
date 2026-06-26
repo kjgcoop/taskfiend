@@ -31,7 +31,7 @@
                                 @endif
                             </div>
                             <div class="text-sm text-gray-300 whitespace-nowrap">
-                                {{ $reminder->date->format('l, M j, Y') }}
+                                {{ \Carbon\Carbon::parse($reminder->date)->format('l, M j, Y') }}
                             </div>
                         </div>
                     @endforeach
