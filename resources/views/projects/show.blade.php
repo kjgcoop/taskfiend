@@ -497,6 +497,40 @@
                         @endif
                     </div>
 
+                    {{-- Status --}}
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-400 mb-1">Status</label>
+                        @if(!$isInactive)
+                            <div class="flex gap-2">
+                                <select x-model="fields.status"
+                                        class="flex-1 rounded-md bg-gray-700 border-gray-600 text-gray-100 shadow-sm focus:border-blue-500 focus:ring-blue-500 px-3 py-2 text-sm">
+                                    <option value="incomplete">Incomplete</option>
+                                    <option value="done">Done</option>
+                                    <option value="archived">Archived</option>
+                                </select>
+                                <button @click="saveField('status')"
+                                        class="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700">
+                                    Save
+                                </button>
+                            </div>
+                        @else
+                            <div class="flex gap-2">
+                                <select x-model="fields.status"
+                                        class="flex-1 rounded-md bg-gray-700 border-gray-600 text-gray-100 shadow-sm focus:border-blue-500 focus:ring-blue-500 px-3 py-2 text-sm">
+                                    <option value="incomplete">Incomplete</option>
+                                    <option value="done">Done</option>
+                                    <option value="archived">Archived</option>
+                                </select>
+                                <button @click="saveField('status')"
+                                        class="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700">
+                                    Save
+                                </button>
+                            </div>
+                        @endif
+                    </div>
+
+                    <hr class="p-1">
+
                     {{-- End Date --}}
                     <div class="mb-4">
                         <label class="block text-sm font-medium text-gray-400 mb-1">End Date <span class="text-gray-500 font-normal">(optional)</span></label>
@@ -534,37 +568,6 @@
                         @endif
                     </div>
 
-                    {{-- Status --}}
-                    <div class="mb-4">
-                        <label class="block text-sm font-medium text-gray-400 mb-1">Status</label>
-                        @if(!$isInactive)
-                            <div class="flex gap-2">
-                                <select x-model="fields.status"
-                                        class="flex-1 rounded-md bg-gray-700 border-gray-600 text-gray-100 shadow-sm focus:border-blue-500 focus:ring-blue-500 px-3 py-2 text-sm">
-                                    <option value="incomplete">Incomplete</option>
-                                    <option value="done">Done</option>
-                                    <option value="archived">Archived</option>
-                                </select>
-                                <button @click="saveField('status')"
-                                        class="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700">
-                                    Save
-                                </button>
-                            </div>
-                        @else
-                            <div class="flex gap-2">
-                                <select x-model="fields.status"
-                                        class="flex-1 rounded-md bg-gray-700 border-gray-600 text-gray-100 shadow-sm focus:border-blue-500 focus:ring-blue-500 px-3 py-2 text-sm">
-                                    <option value="incomplete">Incomplete</option>
-                                    <option value="done">Done</option>
-                                    <option value="archived">Archived</option>
-                                </select>
-                                <button @click="saveField('status')"
-                                        class="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700">
-                                    Save
-                                </button>
-                            </div>
-                        @endif
-                    </div>
 
                     {{-- Assignees --}}
                     <div class="mb-4">

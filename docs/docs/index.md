@@ -1,6 +1,6 @@
 # Task Fiend
 
-Task Fiend is a self-hosted to-do list for small groups of people who trust each other. It was built because no existing tool handled multi-user task assignment in quite the right way, and because watching an AI write software is genuinely fun.
+Task Fiend is a self-hosted to-do list for small groups of people who trust each other. It was built because no existing tool handled multi-user task assignment in quite the way I wanted, and because watching an AI write software is fun.
 
 It's not designed to scale to thousands of users. It assumes at least one person in the group is comfortable running a server and typing commands.
 
