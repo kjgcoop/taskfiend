@@ -69,6 +69,7 @@ class ProjectController extends Controller
             'name' => 'required|string|max:255',
             'description' => "nullable|string|max:{$longTextMax}",
             'end_date' => 'nullable|date',
+            'auto_close_action' => 'nullable|in:done,archived',
             'assignee_ids' => 'nullable|array',
             'assignee_ids.*' => 'exists:users,id',
         ]);
@@ -77,6 +78,7 @@ class ProjectController extends Controller
             'name' => $validated['name'],
             'description' => $validated['description'] ?? null,
             'end_date' => $validated['end_date'] ?? null,
+            'auto_close_action' => $validated['auto_close_action'] ?? 'archived',
             'user_id' => Auth::id(),
             'status' => 'incomplete',
         ]);
@@ -385,7 +387,7 @@ class ProjectController extends Controller
         }
 
         $field = $request->input('field');
-        $allowedFields = ['name', 'description', 'status', 'end_date', 'assignee_ids'];
+        $allowedFields = ['name', 'description', 'status', 'end_date', 'auto_close_action', 'assignee_ids'];
 
         if (!in_array($field, $allowedFields)) {
             return response()->json(['success' => false, 'message' => 'Invalid field'], 400);
@@ -429,6 +431,10 @@ class ProjectController extends Controller
 
                 if ($field === 'end_date') {
                     $value = $value ? \Carbon\Carbon::parse($value)->toDateString() : null;
+                }
+
+                if ($field === 'auto_close_action' && !in_array($value, ['done', 'archived'])) {
+                    return response()->json(['success' => false, 'message' => 'Invalid auto close action.'], 422);
                 }
 
                 $old = $project->$field;

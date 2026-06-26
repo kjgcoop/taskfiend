@@ -32,8 +32,17 @@
                             <input type="date" name="end_date" id="end_date"
                                    class="w-full rounded-md bg-gray-700 border-gray-600 text-gray-100 placeholder-gray-500 shadow-sm focus:border-blue-500 focus:ring-blue-500"
                                    value="{{ old('end_date') }}">
-                            <p class="mt-1 text-xs text-gray-500">The project will be automatically archived the morning after this date.</p>
                             @error('end_date')<p class="mt-1 text-sm text-red-600">{{ $message }}</p>@enderror
+                        </div>
+
+                        <div class="mb-4">
+                            <label for="auto_close_action" class="block text-sm font-medium text-gray-300 mb-2">When end date passes</label>
+                            <select name="auto_close_action" id="auto_close_action"
+                                    class="w-full rounded-md bg-gray-700 border-gray-600 text-gray-100 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                                <option value="archived" {{ old('auto_close_action', 'archived') === 'archived' ? 'selected' : '' }}>Archive the project</option>
+                                <option value="done" {{ old('auto_close_action') === 'done' ? 'selected' : '' }}>Mark the project as done</option>
+                            </select>
+                            @error('auto_close_action')<p class="mt-1 text-sm text-red-600">{{ $message }}</p>@enderror
                         </div>
 
                         <div class="mb-6">

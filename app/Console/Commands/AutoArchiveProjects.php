@@ -4,12 +4,11 @@ namespace App\Console\Commands;
 
 use App\Models\Project;
 use Illuminate\Console\Command;
-use Illuminate\Support\Facades\Auth;
 
 class AutoArchiveProjects extends Command
 {
     protected $signature = 'projects:auto-archive';
-    protected $description = 'Archive projects whose end date has passed';
+    protected $description = 'Close projects whose end date has passed (marking them done or archived per their setting)';
 
     public function handle(): void
     {
@@ -19,7 +18,8 @@ class AutoArchiveProjects extends Command
             ->get();
 
         foreach ($projects as $project) {
-            $project->status = 'archived';
+            $action = $project->auto_close_action ?? 'archived';
+            $project->status = $action;
             $project->save();
 
             $project->changeLogs()->create([
@@ -27,12 +27,12 @@ class AutoArchiveProjects extends Command
                 'user_id'     => $project->user_id,
                 'entity_type' => 'projects',
                 'entity_id'   => $project->id,
-                'description' => "auto-archived: end date ({$project->end_date->toDateString()}) has passed",
+                'description' => "auto-{$action}: end date ({$project->end_date->toDateString()}) has passed",
             ]);
 
-            $this->line("Archived project #{$project->id}: {$project->name}");
+            $this->line("Marked {$action} project #{$project->id}: {$project->name}");
         }
 
-        $this->info("Done. Archived {$projects->count()} project(s).");
+        $this->info("Done. Closed {$projects->count()} project(s).");
     }
 }

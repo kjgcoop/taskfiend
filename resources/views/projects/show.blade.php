@@ -383,18 +383,20 @@
             @elseif($project->end_date)
                 @php
                     $daysUntil = (int) now()->startOfDay()->diffInDays($project->end_date, false);
+                    $verb = $project->auto_close_action === 'done' ? 'marked done' : 'archived';
+                    $verbFuture = $project->auto_close_action === 'done' ? 'Mark done' : 'Archive';
                     if ($daysUntil < 0) {
                         $urgency = ['bg' => 'bg-red-950/40', 'border' => 'border-red-700/60', 'icon' => 'text-red-400', 'head' => 'text-red-300', 'sub' => 'text-red-500'];
-                        $label = 'Past end date — will be archived overnight';
+                        $label = 'Past end date — will be ' . $verb . ' overnight';
                     } elseif ($daysUntil === 0) {
                         $urgency = ['bg' => 'bg-orange-950/40', 'border' => 'border-orange-600/60', 'icon' => 'text-orange-400', 'head' => 'text-orange-300', 'sub' => 'text-orange-500'];
-                        $label = 'Scheduled to be archived tonight';
+                        $label = 'Scheduled to be ' . $verb . ' tonight';
                     } elseif ($daysUntil <= 7) {
                         $urgency = ['bg' => 'bg-orange-950/30', 'border' => 'border-orange-700/50', 'icon' => 'text-orange-500', 'head' => 'text-orange-400', 'sub' => 'text-orange-600'];
-                        $label = 'Archiving in ' . $daysUntil . ' ' . Str::plural('day', $daysUntil) . ' — ' . $project->end_date->format('F j');
+                        $label = $verbFuture . ' in ' . $daysUntil . ' ' . Str::plural('day', $daysUntil) . ' — ' . $project->end_date->format('F j');
                     } else {
                         $urgency = ['bg' => 'bg-gray-800/60', 'border' => 'border-gray-600/60', 'icon' => 'text-gray-400', 'head' => 'text-gray-300', 'sub' => 'text-gray-500'];
-                        $label = 'Scheduled to archive on ' . $project->end_date->format('F j, Y');
+                        $label = 'Scheduled to be ' . $verb . ' on ' . $project->end_date->format('F j, Y');
                     }
                 @endphp
                 <div class="{{ $urgency['bg'] }} border {{ $urgency['border'] }} rounded-lg p-4 flex items-center gap-3">
@@ -507,9 +509,28 @@
                                     Save
                                 </button>
                             </div>
-                            <p class="mt-1 text-xs text-gray-500">The project will be automatically archived the morning after this date.</p>
                         @else
                             <p class="text-gray-300 px-1">{{ $project->end_date ? $project->end_date->format('F j, Y') : '—' }}</p>
+                        @endif
+                    </div>
+
+                    {{-- Auto-close action --}}
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-400 mb-1">When end date passes</label>
+                        @if(!$isInactive)
+                            <div class="flex gap-2">
+                                <select x-model="fields.auto_close_action"
+                                        class="flex-1 rounded-md bg-gray-700 border-gray-600 text-gray-100 shadow-sm focus:border-blue-500 focus:ring-blue-500 px-3 py-2 text-sm">
+                                    <option value="archived">Archive the project</option>
+                                    <option value="done">Mark the project as done</option>
+                                </select>
+                                <button @click="saveField('auto_close_action')"
+                                        class="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700">
+                                    Save
+                                </button>
+                            </div>
+                        @else
+                            <p class="text-gray-300 px-1">{{ $project->auto_close_action === 'done' ? 'Mark as done' : 'Archive' }}</p>
                         @endif
                     </div>
 
@@ -1117,6 +1138,7 @@
                         description: @js($project->description ?? ''),
                         status: @js($project->status),
                         end_date: @js($project->end_date ? $project->end_date->format('Y-m-d') : ''),
+                        auto_close_action: @js($project->auto_close_action ?? 'archived'),
                         assignee_ids: @js($project->assignees->pluck('id')->toArray()),
                     },
                     original: {},

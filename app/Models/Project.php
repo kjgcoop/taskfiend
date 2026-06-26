@@ -18,6 +18,7 @@ class Project extends Model
         'user_id',
         'status',
         'end_date',
+        'auto_close_action',
         'is_default',
         'is_hearted',
         'template_id',
