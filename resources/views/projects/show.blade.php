@@ -366,7 +366,7 @@
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-6 relative">
             @if($project->status === 'archived')
                 <div class="bg-amber-950/40 border border-amber-700/60 rounded-lg p-4 flex items-center gap-3">
-                    <span class="text-amber-500 text-xl">🗄</span>
+                    <span class="text-amber-500 text-xl">⊘</span>
                     <div>
                         <p class="text-amber-400 font-semibold">This project is archived{{ $statusChangedAt ? ' on ' . $statusChangedAt->format('l, F j, Y') : '' }}</p>
                         <p class="text-amber-600 text-sm mt-0.5">Tasks in this project are hidden from your task lists.</p>

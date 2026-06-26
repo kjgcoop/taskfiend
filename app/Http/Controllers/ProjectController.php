@@ -265,8 +265,11 @@ class ProjectController extends Controller
         if (in_array($project->status, ['done', 'archived'])) {
             $statusChangedAt = \App\Models\ChangeLog::where('entity_type', 'projects')
                 ->where('entity_id', $project->id)
-                ->where('field', 'status')
-                ->where('new_value', $project->status)
+                ->where(function ($q) use ($project) {
+                    $q->where(function ($q2) use ($project) {
+                        $q2->where('field', 'status')->where('new_value', $project->status);
+                    })->orWhere('description', 'like', '%status from%to ' . $project->status . '%');
+                })
                 ->orderByDesc('date')
                 ->value('date');
         }
@@ -451,7 +454,7 @@ class ProjectController extends Controller
                 $old = $project->$field;
                 $project->$field = $value;
                 $project->save();
-                $this->logChange($project, "changed {$field} from {$old} to {$value}");
+                $this->logChange($project, "changed {$field} from {$old} to {$value}", $field, $old, $value);
             }
 
             return response()->json(['success' => true]);
@@ -825,14 +828,17 @@ class ProjectController extends Controller
         }
     }
 
-    protected function logChange(Project $project, string $description)
+    protected function logChange(Project $project, string $description, ?string $field = null, $oldValue = null, $newValue = null)
     {
         $project->changeLogs()->create([
-            'date' => now(),
-            'user_id' => Auth::id(),
+            'date'       => now(),
+            'user_id'    => Auth::id(),
             'entity_type' => 'projects',
-            'entity_id' => $project->id,
+            'entity_id'  => $project->id,
             'description' => $description,
+            'field'      => $field,
+            'old_value'  => $oldValue,
+            'new_value'  => $newValue,
         ]);
     }
 }
