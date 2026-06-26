@@ -16,6 +16,13 @@ Alpine.data('uploadToggle', () => ({
 }));
 Alpine.data('passwordToggle', () => ({ showPassword: false }));
 Alpine.data('fileInput', () => ({ fileName: '' }));
+Alpine.data('multiFileInput', () => ({
+    fileName: '',
+    updateLabel(files) {
+        if (!files || files.length === 0) { this.fileName = ''; return; }
+        this.fileName = files.length === 1 ? files[0].name : `${files.length} files selected`;
+    },
+}));
 Alpine.data('templateItem', () => ({ showUse: false, showDelete: false }));
 Alpine.data('projectsMenu', () => ({
     open: false,

@@ -28,66 +28,70 @@ class TaskAttachmentController extends Controller
         // error code on the upload rather than passing the file to Laravel.
         // Catch that here so the user gets a readable message instead of
         // a confusing "field is required" validation error.
-        if (isset($_FILES['attachment']) && in_array($_FILES['attachment']['error'], [UPLOAD_ERR_INI_SIZE, UPLOAD_ERR_FORM_SIZE])) {
-            return redirect()->back()
-                ->withErrors(['attachment' => 'The uploaded file is too large. The maximum file size is ' . ini_get('upload_max_filesize') . '.']);
+        if (isset($_FILES['attachments'])) {
+            $errors = (array) $_FILES['attachments']['error'];
+            foreach ($errors as $err) {
+                if (in_array($err, [UPLOAD_ERR_INI_SIZE, UPLOAD_ERR_FORM_SIZE])) {
+                    return redirect()->back()
+                        ->withErrors(['attachments' => 'One or more files are too large. The maximum file size is ' . ini_get('upload_max_filesize') . '.']);
+                }
+            }
         }
 
         $maxFileSizeLabel = env('MAX_FILE_SIZE', '22M');
         $maxFileSizeKb = (int) $maxFileSizeLabel * 1024;
 
-        $validated = $request->validate([
-            'attachment' => [
-                'required',
+        $mimetypes = 'image/jpeg,image/png,image/webp,image/gif,image/heic,image/heif,' .
+            'application/pdf,' .
+            'application/msword,' .
+            'application/vnd.openxmlformats-officedocument.wordprocessingml.document,' .
+            'application/vnd.ms-excel,' .
+            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,' .
+            'application/vnd.ms-powerpoint,' .
+            'application/vnd.openxmlformats-officedocument.presentationml.presentation,' .
+            'application/vnd.oasis.opendocument.text,' .
+            'application/vnd.oasis.opendocument.spreadsheet,' .
+            'application/vnd.oasis.opendocument.presentation,' .
+            'text/csv,text/plain,application/json,text/json';
+
+        $request->validate([
+            'attachments' => ['required', 'array'],
+            'attachments.*' => [
                 'file',
                 "max:{$maxFileSizeKb}",
-                'mimetypes:' .
-                    // Images
-                    'image/jpeg,image/png,image/webp,image/gif,image/heic,image/heif,' .
-                    // PDF
-                    'application/pdf,' .
-                    // Word
-                    'application/msword,' .
-                    'application/vnd.openxmlformats-officedocument.wordprocessingml.document,' .
-                    // Excel
-                    'application/vnd.ms-excel,' .
-                    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,' .
-                    // PowerPoint
-                    'application/vnd.ms-powerpoint,' .
-                    'application/vnd.openxmlformats-officedocument.presentationml.presentation,' .
-                    // LibreOffice
-                    'application/vnd.oasis.opendocument.text,' .
-                    'application/vnd.oasis.opendocument.spreadsheet,' .
-                    'application/vnd.oasis.opendocument.presentation,' .
-                    // Text-based formats (text/plain covers TXT; CSV and JSON may also be detected as text/plain)
-                    'text/csv,text/plain,application/json,text/json',
+                "mimetypes:{$mimetypes}",
             ],
         ], [
-            'attachment.max' => "File size must not exceed {$maxFileSizeLabel}.",
-            'attachment.mimetypes' => 'File type not allowed. Accepted: images (JPG, PNG, WebP, GIF, HEIC), PDF, Word, Excel, PowerPoint, LibreOffice formats, CSV, TXT, JSON.',
+            'attachments.required' => 'Please select at least one file.',
+            'attachments.*.max' => "File size must not exceed {$maxFileSizeLabel}.",
+            'attachments.*.mimetypes' => 'File type not allowed. Accepted: images (JPG, PNG, WebP, GIF, HEIC), PDF, Word, Excel, PowerPoint, LibreOffice formats, CSV, TXT, JSON.',
         ]);
 
-        $file = $request->file('attachment');
-        [$path, $fileSize, $mimeType] = $this->storeScaled($file, 'task_attachments');
+        $count = 0;
+        foreach ($request->file('attachments') as $file) {
+            [$path, $fileSize, $mimeType] = $this->storeScaled($file, 'task_attachments');
 
-        $attachment = $task->attachments()->create([
-            'user_id' => Auth::id(),
-            'file_path' => $path,
-            'original_filename' => basename($file->getClientOriginalName()),
-            'mime_type' => $mimeType,
-            'file_size' => $fileSize,
-        ]);
+            $task->attachments()->create([
+                'user_id' => Auth::id(),
+                'file_path' => $path,
+                'original_filename' => basename($file->getClientOriginalName()),
+                'mime_type' => $mimeType,
+                'file_size' => $fileSize,
+            ]);
+
+            $count++;
+        }
 
         $task->changeLogs()->create([
             'date' => now(),
             'user_id' => Auth::id(),
             'entity_type' => 'tasks',
             'entity_id' => $task->id,
-            'description' => 'added an attachment',
+            'description' => $count === 1 ? 'added an attachment' : "added {$count} attachments",
         ]);
 
         return redirect()->route('tasks.show', $task)
-            ->with('success', 'Attachment added successfully.');
+            ->with('success', $count === 1 ? 'Attachment added successfully.' : "{$count} attachments added successfully.");
     }
 
     public function destroy(Task $task, TaskAttachment $attachment)

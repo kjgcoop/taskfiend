@@ -758,13 +758,13 @@ $_panelTaskJson = json_encode([
                 @if(!$isInactive)
                 <form method="POST" action="{{ route('attachments.store', $task) }}" enctype="multipart/form-data">
                     @csrf
-                    <div class="flex gap-2 items-center" x-data="fileInput">
+                    <div class="flex gap-2 items-center" x-data="multiFileInput">
                         <label class="flex items-center gap-2 cursor-pointer">
-                            <span class="px-2 py-1 bg-gray-700 border border-gray-600 text-gray-300 text-xs rounded hover:bg-gray-600">Choose file</span>
-                            <span class="text-xs text-gray-400" x-text="fileName || 'No file chosen'"></span>
-                            <input type="file" name="attachment" required class="hidden"
+                            <span class="px-2 py-1 bg-gray-700 border border-gray-600 text-gray-300 text-xs rounded hover:bg-gray-600">Choose files</span>
+                            <span class="text-xs text-gray-400" x-text="fileName || 'No files chosen'"></span>
+                            <input type="file" name="attachments[]" required multiple class="hidden"
                                    accept=".jpg,.jpeg,.png,.webp,.gif,.heic,.heif,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.odt,.ods,.odp,.csv,.txt,.json"
-                                   @change="fileName = $event.target.files[0] ? ($event.target.files[0].name.length > 20 ? $event.target.files[0].name.slice(0, 20) + '…' : $event.target.files[0].name) : ''">
+                                   @change="updateLabel($event.target.files)">
                         </label>
                         <button type="submit" class="px-3 py-1.5 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 flex-shrink-0">
                             Upload
