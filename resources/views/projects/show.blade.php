@@ -423,7 +423,7 @@
                     </div>
                     <form method="POST" action="{{ route('projects.reminders.dismiss', [$project, $activeReminder]) }}">
                         @csrf
-                        <button type="submit" class="text-xs text-blue-400/60 hover:text-blue-300 transition-colors whitespace-nowrap">Got it</button>
+                        <button type="submit" class="text-xs text-blue-400/60 hover:text-blue-300 transition-colors whitespace-nowrap">Cancel reminder</button>
                     </form>
                 </div>
             @endif

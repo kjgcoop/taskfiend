@@ -106,7 +106,7 @@
                             </div>
                             <form method="POST" action="{{ route('projects.reminders.dismiss', [$reminder->project, $reminder]) }}">
                                 @csrf
-                                <button type="submit" class="text-xs text-blue-400/60 hover:text-blue-200 transition-colors whitespace-nowrap shrink-0">Got it</button>
+                                <button type="submit" class="text-xs text-blue-400/60 hover:text-blue-200 transition-colors whitespace-nowrap shrink-0">Dismiss</button>
                             </form>
                         </div>
                     @endforeach
