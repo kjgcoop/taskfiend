@@ -16,6 +16,12 @@
                     Favorites only
                 </label>
                 <div class="flex gap-2">
+                @if($scheduledCount > 0)
+                <a href="{{ route('scheduled-projects.index') }}" class="inline-flex items-center gap-1.5 px-4 py-2 bg-gray-700 border border-gray-600 rounded-md font-semibold text-xs text-gray-100 uppercase tracking-widest hover:bg-gray-600">
+                    <span class="inline-flex items-center justify-center w-4 h-4 rounded-full bg-blue-600 text-white text-[10px] font-bold">{{ $scheduledCount }}</span>
+                    Scheduled
+                </a>
+                @endif
                 <a href="{{ route('templates.index') }}" class="inline-flex items-center px-4 py-2 bg-gray-700 border border-gray-600 rounded-md font-semibold text-xs text-gray-100 uppercase tracking-widest hover:bg-gray-600">
                     From Template
                 </a>

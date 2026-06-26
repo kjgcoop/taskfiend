@@ -76,25 +76,39 @@
                                      class="fixed inset-0 z-50 flex items-center justify-center bg-black/60"
                                      @keydown.escape.window="showUse = false">
                                     <div class="bg-gray-800 border border-gray-600 rounded-lg p-6 w-full max-w-md shadow-xl"
-                                         @click.stop>
+                                         @click.stop
+                                         x-data="templateDatePicker">
                                         <h4 class="text-gray-100 font-semibold mb-1">Create Project from Template</h4>
                                         <p class="text-gray-400 text-sm mb-4">Using: <span class="text-gray-200">{{ $template->name }}</span></p>
                                         <form method="POST" action="{{ route('templates.createFromTemplate', $template) }}">
                                             @csrf
-                                            <label class="block text-sm text-gray-300 mb-1" for="pname_{{ $template->id }}">Project Name</label>
-                                            <input id="pname_{{ $template->id }}"
-                                                   type="text" name="project_name"
-                                                   value="{{ $template->name }}"
-                                                   required
-                                                   class="w-full bg-gray-700 border border-gray-600 text-gray-100 rounded px-3 py-2 text-sm focus:outline-none focus:border-blue-500 mb-4">
+                                            <div class="mb-3">
+                                                <label class="block text-sm text-gray-300 mb-1" for="pname_{{ $template->id }}">Project Name</label>
+                                                <input id="pname_{{ $template->id }}"
+                                                       type="text" name="project_name"
+                                                       value="{{ $template->name }}"
+                                                       required
+                                                       class="w-full bg-gray-700 border border-gray-600 text-gray-100 rounded px-3 py-2 text-sm focus:outline-none focus:border-blue-500">
+                                            </div>
+                                            <div class="mb-4">
+                                                <label class="block text-sm text-gray-300 mb-1">Start Date</label>
+                                                <input type="text" name="start_date"
+                                                       x-model="dateInput"
+                                                       @input.debounce.400ms="previewDate"
+                                                       placeholder="today, next Monday, March 15…"
+                                                       class="w-full bg-gray-700 border border-gray-600 text-gray-100 rounded px-3 py-2 text-sm focus:outline-none focus:border-blue-500 placeholder-gray-500">
+                                                <p class="mt-1 text-xs"
+                                                   :class="datePreview ? 'text-blue-400' : 'text-gray-500'"
+                                                   x-text="datePreview || 'Leave blank to create today'"></p>
+                                            </div>
                                             <div class="flex justify-end gap-2">
                                                 <button type="button" @click="showUse = false"
                                                         class="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-gray-300 rounded text-sm">
                                                     Cancel
                                                 </button>
                                                 <button type="submit"
-                                                        class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded text-sm">
-                                                    Create Project
+                                                        class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded text-sm"
+                                                        x-text="isFuture ? 'Schedule Project' : 'Create Project'">
                                                 </button>
                                             </div>
                                         </form>
@@ -174,25 +188,39 @@
                                      class="fixed inset-0 z-50 flex items-center justify-center bg-black/60"
                                      @keydown.escape.window="showUse = false">
                                     <div class="bg-gray-800 border border-gray-600 rounded-lg p-6 w-full max-w-md shadow-xl"
-                                         @click.stop>
+                                         @click.stop
+                                         x-data="templateDatePicker">
                                         <h4 class="text-gray-100 font-semibold mb-1">Create Project from Template</h4>
                                         <p class="text-gray-400 text-sm mb-4">Using: <span class="text-gray-200">{{ $template->name }}</span></p>
                                         <form method="POST" action="{{ route('templates.createFromTemplate', $template) }}">
                                             @csrf
-                                            <label class="block text-sm text-gray-300 mb-1" for="pname_pub_{{ $template->id }}">Project Name</label>
-                                            <input id="pname_pub_{{ $template->id }}"
-                                                   type="text" name="project_name"
-                                                   value="{{ $template->name }}"
-                                                   required
-                                                   class="w-full bg-gray-700 border border-gray-600 text-gray-100 rounded px-3 py-2 text-sm focus:outline-none focus:border-blue-500 mb-4">
+                                            <div class="mb-3">
+                                                <label class="block text-sm text-gray-300 mb-1" for="pname_pub_{{ $template->id }}">Project Name</label>
+                                                <input id="pname_pub_{{ $template->id }}"
+                                                       type="text" name="project_name"
+                                                       value="{{ $template->name }}"
+                                                       required
+                                                       class="w-full bg-gray-700 border border-gray-600 text-gray-100 rounded px-3 py-2 text-sm focus:outline-none focus:border-blue-500">
+                                            </div>
+                                            <div class="mb-4">
+                                                <label class="block text-sm text-gray-300 mb-1">Start Date</label>
+                                                <input type="text" name="start_date"
+                                                       x-model="dateInput"
+                                                       @input.debounce.400ms="previewDate"
+                                                       placeholder="today, next Monday, March 15…"
+                                                       class="w-full bg-gray-700 border border-gray-600 text-gray-100 rounded px-3 py-2 text-sm focus:outline-none focus:border-blue-500 placeholder-gray-500">
+                                                <p class="mt-1 text-xs"
+                                                   :class="datePreview ? 'text-blue-400' : 'text-gray-500'"
+                                                   x-text="datePreview || 'Leave blank to create today'"></p>
+                                            </div>
                                             <div class="flex justify-end gap-2">
                                                 <button type="button" @click="showUse = false"
                                                         class="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-gray-300 rounded text-sm">
                                                     Cancel
                                                 </button>
                                                 <button type="submit"
-                                                        class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded text-sm">
-                                                    Create Project
+                                                        class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded text-sm"
+                                                        x-text="isFuture ? 'Schedule Project' : 'Create Project'">
                                                 </button>
                                             </div>
                                         </form>

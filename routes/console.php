@@ -9,3 +9,4 @@ Artisan::command('inspire', function () {
 })->purpose('Display an inspiring quote');
 
 Schedule::command('projects:auto-archive')->dailyAt('00:15');
+Schedule::command('projects:create-scheduled')->dailyAt('00:20');

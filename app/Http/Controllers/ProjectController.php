@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Project;
 use App\Models\ProjectReminder;
 use App\Models\ProjectStatusLog;
+use App\Models\ScheduledProject;
 use App\Models\Tag;
 use App\Models\Task;
 use App\Models\User;
@@ -39,7 +40,11 @@ class ProjectController extends Controller
         $projects         = $all->where('status', 'incomplete')->sort($natSort)->values();
         $inactiveProjects = $all->whereIn('status', ['done', 'archived'])->sort($natSort)->values();
 
-        return view('projects.index', compact('projects', 'inactiveProjects'));
+        $scheduledCount = ScheduledProject::where('user_id', Auth::id())
+            ->where('is_created', false)
+            ->count();
+
+        return view('projects.index', compact('projects', 'inactiveProjects', 'scheduledCount'));
     }
 
     public function create()
