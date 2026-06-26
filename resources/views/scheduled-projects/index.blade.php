@@ -36,18 +36,14 @@
                             <div class="text-sm text-gray-300 whitespace-nowrap">
                                 {{ $item->start_date->format('l, M j, Y') }}
                             </div>
-                            @if($item->is_created)
-                                <span class="text-xs px-2 py-0.5 rounded bg-green-900/40 border border-green-700/50 text-green-400 whitespace-nowrap">Created</span>
-                            @else
-                                <form method="POST" action="{{ route('scheduled-projects.destroy', $item) }}">
-                                    @csrf
-                                    @method('DELETE')
-                                    <button type="submit"
-                                            class="text-sm px-3 py-1.5 bg-gray-700 hover:bg-red-900/60 text-gray-300 hover:text-red-300 rounded border border-gray-600 hover:border-red-700/50">
-                                        Cancel
-                                    </button>
-                                </form>
-                            @endif
+                            <form method="POST" action="{{ route('scheduled-projects.destroy', $item) }}">
+                                @csrf
+                                @method('DELETE')
+                                <button type="submit"
+                                        class="text-sm px-3 py-1.5 bg-gray-700 hover:bg-red-900/60 text-gray-300 hover:text-red-300 rounded border border-gray-600 hover:border-red-700/50">
+                                    Cancel
+                                </button>
+                            </form>
                         </div>
                     @endforeach
                 </div>

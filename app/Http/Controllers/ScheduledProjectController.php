@@ -10,6 +10,7 @@ class ScheduledProjectController extends Controller
     public function index(Request $request)
     {
         $scheduled = ScheduledProject::where('user_id', $request->user()->id)
+            ->where('is_created', false)
             ->with('template')
             ->orderBy('start_date')
             ->get();
