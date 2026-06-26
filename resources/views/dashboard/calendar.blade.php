@@ -58,7 +58,7 @@
                                     @foreach($dayTasks->take(3) as $task)
                                         <button type="button"
                                                 data-task-group-id="{{ $task->id }}"
-                                                @click="$dispatch('open-task-panel', { taskId: {{ $task->id }} })"
+                                                @click="($event.ctrlKey || $event.metaKey) ? window.open('{{ route('tasks.show', $task) }}', '_blank') : $dispatch('open-task-panel', { taskId: {{ $task->id }} })"
                                                 class="block w-full text-left text-xs p-1 bg-blue-900 text-blue-200 rounded truncate hover:bg-blue-800 task-title">
                                             {!! render_title($task->name) !!}
                                         </button>
@@ -140,7 +140,7 @@
                 const btn = document.createElement('button');
                 btn.type = 'button';
                 btn.dataset.taskGroupId = d.id;
-                btn.addEventListener('click', () => window.dispatchEvent(new CustomEvent('open-task-panel', { detail: { taskId: d.id } })));
+                btn.addEventListener('click', (e) => { if (e.ctrlKey || e.metaKey) { window.open(d.url, '_blank'); } else { window.dispatchEvent(new CustomEvent('open-task-panel', { detail: { taskId: d.id } })); } });
                 btn.className = 'block w-full text-left text-xs p-1 bg-blue-900 text-blue-200 rounded truncate hover:bg-blue-800';
                 btn.textContent = d.name;
                 btn.style.opacity = '0';
