@@ -1282,10 +1282,20 @@ class TaskController extends Controller
         $this->authorizeTaskAccess($task);
         $this->assertProjectActive($task);
 
-        $task->load(['tags', 'assignees', 'attachments']);
+        $newTask = $this->copyTask($task, ['name' => 'Copy of ' . $task->name]);
 
-        $newTask = Task::create([
-            'name'                => 'Copy of ' . $task->name,
+        $this->logChange($newTask, 'duplicated from task #' . $task->id, 'created');
+
+        return redirect()->route('tasks.show', $newTask)
+            ->with('success', 'Task duplicated successfully.');
+    }
+
+    public function copyTask(Task $task, array $overrides = []): Task
+    {
+        $task->loadMissing(['tags', 'assignees', 'attachments']);
+
+        $newTask = Task::create(array_merge([
+            'name'                => $task->name,
             'description'         => $task->description,
             'date'                => $task->date,
             'time'                => $task->time,
@@ -1296,7 +1306,7 @@ class TaskController extends Controller
             'recurrence_floating' => $task->recurrence_floating,
             'creator_id'          => Auth::id(),
             'status'              => 'incomplete',
-        ]);
+        ], $overrides));
 
         $newTask->tags()->sync($task->tags->pluck('id'));
 
@@ -1325,10 +1335,7 @@ class TaskController extends Controller
             ]);
         }
 
-        $this->logChange($newTask, 'duplicated from task #' . $task->id, 'created');
-
-        return redirect()->route('tasks.show', $newTask)
-            ->with('success', 'Task duplicated successfully.');
+        return $newTask;
     }
 
     public function destroy(Task $task)

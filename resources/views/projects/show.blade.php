@@ -128,6 +128,13 @@
                             Save as Template
                         </button>
                     @endif
+                    <form method="POST" action="{{ route('projects.duplicate', $project) }}">
+                        @csrf
+                        <button type="submit"
+                                class="w-full text-left px-4 py-2 text-gray-200 hover:bg-gray-700">
+                            Duplicate Project
+                        </button>
+                    </form>
                 </div>
             </div>
 
