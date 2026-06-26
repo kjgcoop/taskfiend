@@ -15,7 +15,7 @@
             <div class="grid gap-4 md:grid-cols-3 lg:grid-cols-4">
                 @forelse($tags as $tag)
                     <div class="bg-[#202020] border border-gray-700 p-4 rounded-lg shadow hover:shadow-md transition cursor-pointer border-l-4"
-                         x-data="clickableCard" data-href="{{ route('tags.show', $tag) }}" @click="go()"
+                         x-data="clickableCard" data-href="{{ route('tags.show', $tag) }}" @click="go($event)"
                          style="border-left-color: {{ $tag->color }}">
                         <h3 class="font-semibold text-lg" style="color: {{ $tag->color }}">
                             {{ $tag->tag_name }}

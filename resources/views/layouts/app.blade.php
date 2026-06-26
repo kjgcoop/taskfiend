@@ -372,7 +372,7 @@
                     openDetails(eventName) { this.open = false; this.$dispatch(eventName); },
                 }));
                 Alpine.data('clickableCard', () => ({
-                    go() { const h = this.$el.dataset.href; if (h) location.href = h; },
+                    go(event) { const h = this.$el.dataset.href; if (!h) return; if (event && (event.ctrlKey || event.metaKey)) { window.open(h, '_blank'); } else { location.href = h; } },
                 }));
                 Alpine.data('copyButton', () => ({
                     copied: false,

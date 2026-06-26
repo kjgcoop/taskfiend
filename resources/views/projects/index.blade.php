@@ -107,7 +107,7 @@
                     <div class="relative border border-gray-700 rounded-lg shadow hover:shadow-md transition cursor-pointer overflow-hidden {{ $hasBg ? 'min-h-[140px]' : 'bg-[#202020]' }}"
                          x-data="clickableCard" data-href="{{ route('projects.show', $project) }}"
                          x-show="!favoritesOnly || {{ $project->is_hearted ? 'true' : 'false' }}"
-                         @click="go()"
+                         @click="go($event)"
                          @if($hasBg)
                          style="background-image: url('{{ route('projects.background', $project) }}'); background-size: cover; background-position: center;"
                          @endif>
@@ -213,7 +213,7 @@
                     <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                         @foreach($inactiveProjects as $project)
                             <div class="bg-[#161616] border border-gray-700/50 p-6 rounded-lg opacity-60 hover:opacity-80 transition cursor-pointer"
-                                 x-data="clickableCard" data-href="{{ route('projects.show', $project) }}" @click="go()">
+                                 x-data="clickableCard" data-href="{{ route('projects.show', $project) }}" @click="go($event)">
                                 <div class="flex items-start justify-between gap-2">
                                     <h3 class="font-semibold text-lg text-gray-400 line-through">{{ $project->name }}</h3>
                                     <div class="shrink-0 flex items-center gap-2">
