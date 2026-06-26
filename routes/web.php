@@ -101,6 +101,8 @@ Route::middleware('auth')->group(function () {
     Route::get('/scheduled-projects', [ScheduledProjectController::class, 'index'])->name('scheduled-projects.index');
     Route::delete('/scheduled-projects/{scheduledProject}', [ScheduledProjectController::class, 'destroy'])->name('scheduled-projects.destroy');
 
+    Route::get('/project-reminders', [ProjectController::class, 'remindersIndex'])->name('projects.reminders.index');
+
     Route::get('/export', [DataExportController::class, 'exportAll'])->name('export.all');
     // TODO: importAll is disabled — the ID-based upsert has no ownership checks, so importing
     // into an account that already has data (e.g. a shared server) can silently overwrite

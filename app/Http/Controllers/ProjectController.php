@@ -44,7 +44,11 @@ class ProjectController extends Controller
             ->where('is_created', false)
             ->count();
 
-        return view('projects.index', compact('projects', 'inactiveProjects', 'scheduledCount'));
+        $remindersCount = ProjectReminder::where('user_id', Auth::id())
+            ->where('dismissed', false)
+            ->count();
+
+        return view('projects.index', compact('projects', 'inactiveProjects', 'scheduledCount', 'remindersCount'));
     }
 
     public function create()
@@ -634,6 +638,17 @@ class ProjectController extends Controller
         return response($contents)
             ->header('Content-Type', $mimeType)
             ->header('Cache-Control', 'private, max-age=86400');
+    }
+
+    public function remindersIndex(Request $request)
+    {
+        $reminders = ProjectReminder::where('user_id', Auth::id())
+            ->where('dismissed', false)
+            ->with('project')
+            ->orderBy('date')
+            ->get();
+
+        return view('projects.reminders-index', compact('reminders'));
     }
 
     public function storeReminder(Request $request, Project $project)

@@ -1,16 +1,30 @@
 <x-app-layout>
     <x-slot name="header">
         <div class="flex justify-between items-center">
-            <div class="flex items-center gap-4">
-                <h2 class="font-semibold text-xl text-gray-100 leading-tight">
-                    {{ __('Projects') }}
-                </h2>
-                @if($scheduledCount > 0)
+            <h2 class="font-semibold text-xl text-gray-100 leading-tight">
+                {{ __('Projects') }}
+            </h2>
+            <div class="relative" x-data="{ open: false }" @keydown.escape.window="open = false" @click.outside="open = false">
+                <button @click="open = !open"
+                        class="inline-flex items-center px-2 py-1 text-gray-400 hover:text-gray-200 rounded"
+                        title="Project overview">
+                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M10 6a2 2 0 110-4 2 2 0 010 4zm0 6a2 2 0 110-4 2 2 0 010 4zm0 6a2 2 0 110-4 2 2 0 010 4z"/>
+                    </svg>
+                </button>
+                <div x-show="open" x-cloak
+                     class="absolute right-0 mt-1 w-64 bg-gray-800 border border-gray-600 rounded-md shadow-lg z-20 py-1">
                     <a href="{{ route('scheduled-projects.index') }}"
-                       class="text-sm text-blue-400 hover:text-blue-300">
-                        {{ $scheduledCount }} scheduled &rarr;
+                       class="flex items-center justify-between px-4 py-2 text-sm text-gray-300 hover:bg-gray-700 hover:text-gray-100">
+                        <span>Scheduled projects</span>
+                        <span class="text-gray-500 tabular-nums">{{ $scheduledCount }}</span>
                     </a>
-                @endif
+                    <a href="{{ route('projects.reminders.index') }}"
+                       class="flex items-center justify-between px-4 py-2 text-sm text-gray-300 hover:bg-gray-700 hover:text-gray-100">
+                        <span>Projects with reminders</span>
+                        <span class="text-gray-500 tabular-nums">{{ $remindersCount }}</span>
+                    </a>
+                </div>
             </div>
         </div>
     </x-slot>
