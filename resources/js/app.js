@@ -17,6 +17,45 @@ Alpine.data('uploadToggle', () => ({
 Alpine.data('passwordToggle', () => ({ showPassword: false }));
 Alpine.data('fileInput', () => ({ fileName: '' }));
 Alpine.data('templateItem', () => ({ showUse: false, showDelete: false }));
+Alpine.data('projectsMenu', () => ({
+    open: false,
+    openImportTemplate() {
+        this.open = false;
+        window.dispatchEvent(new CustomEvent('do-toggle-import-template'));
+    },
+    openMarkdownImport() {
+        this.open = false;
+        window.dispatchEvent(new CustomEvent('do-toggle-markdown-import'));
+    },
+}));
+Alpine.data('templateDatePicker', () => ({
+    dateInput: '',
+    datePreview: '',
+    isFuture: false,
+    async previewDate() {
+        const val = this.dateInput.trim();
+        if (!val) { this.datePreview = ''; this.isFuture = false; return; }
+        try {
+            const resp = await fetch('/tasks/parse-date', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                },
+                body: JSON.stringify({ input: val }),
+            });
+            const data = await resp.json();
+            if (data.date) {
+                this.datePreview = data.formatted;
+                const today = new Date().toISOString().slice(0, 10);
+                this.isFuture = data.date > today;
+            } else {
+                this.datePreview = '';
+                this.isFuture = false;
+            }
+        } catch { this.datePreview = ''; this.isFuture = false; }
+    },
+}));
 Alpine.data('colorPicker', () => ({
     selected: '#3B82F6',
     init() { if (this.$el.dataset.color) this.selected = this.$el.dataset.color; },

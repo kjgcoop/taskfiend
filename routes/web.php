@@ -14,6 +14,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\NotificationsController;
 use App\Http\Controllers\OtherLinksController;
 use App\Http\Controllers\ProjectTemplateController;
+use App\Http\Controllers\ScheduledProjectController;
 
 Route::middleware('auth')->group(function () {
     Route::get('/notifications/feed', [NotificationsController::class, 'feed'])->name('notifications.feed');
@@ -97,6 +98,11 @@ Route::middleware('auth')->group(function () {
     Route::post('/projects/{project}/save-as-template', [ProjectTemplateController::class, 'store'])->name('templates.store');
     Route::post('/templates/{template}/create-project', [ProjectTemplateController::class, 'createFromTemplate'])->name('templates.createFromTemplate');
     Route::delete('/templates/{template}', [ProjectTemplateController::class, 'destroy'])->name('templates.destroy');
+
+    Route::get('/scheduled-projects', [ScheduledProjectController::class, 'index'])->name('scheduled-projects.index');
+    Route::delete('/scheduled-projects/{scheduledProject}', [ScheduledProjectController::class, 'destroy'])->name('scheduled-projects.destroy');
+
+    Route::get('/project-reminders', [ProjectController::class, 'remindersIndex'])->name('projects.reminders.index');
 
     Route::get('/export', [DataExportController::class, 'exportAll'])->name('export.all');
     // TODO: importAll is disabled — the ID-based upsert has no ownership checks, so importing

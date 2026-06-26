@@ -4,10 +4,34 @@
             <h2 class="font-semibold text-xl text-gray-100 leading-tight">
                 {{ __('Projects') }}
             </h2>
+            <div class="relative" x-data="{ open: false }" @keydown.escape.window="open = false" @click.outside="open = false">
+                <button @click="open = !open"
+                        class="inline-flex items-center px-2 py-1 text-gray-400 hover:text-gray-200 rounded"
+                        title="Project overview">
+                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M10 6a2 2 0 110-4 2 2 0 010 4zm0 6a2 2 0 110-4 2 2 0 010 4zm0 6a2 2 0 110-4 2 2 0 010 4z"/>
+                    </svg>
+                </button>
+                <div x-show="open" x-cloak
+                     class="absolute right-0 mt-1 w-64 bg-gray-800 border border-gray-600 rounded-md shadow-lg z-20 py-1">
+                    <a href="{{ route('scheduled-projects.index') }}"
+                       class="flex items-center justify-between px-4 py-2 text-sm text-gray-300 hover:bg-gray-700 hover:text-gray-100">
+                        <span>Scheduled projects</span>
+                        <span class="text-gray-500 tabular-nums">{{ $scheduledCount }}</span>
+                    </a>
+                    <a href="{{ route('projects.reminders.index') }}"
+                       class="flex items-center justify-between px-4 py-2 text-sm text-gray-300 hover:bg-gray-700 hover:text-gray-100">
+                        <span>Projects with reminders</span>
+                        <span class="text-gray-500 tabular-nums">{{ $remindersCount }}</span>
+                    </a>
+                </div>
+            </div>
         </div>
     </x-slot>
 
-    <div class="py-12" x-data="projectsIndex">
+    <div class="py-12" x-data="projectsIndex"
+         @do-toggle-import-template.window="toggleImportTemplate()"
+         @do-toggle-markdown-import.window="toggleMarkdownImport()">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-6">
             <!-- Action Buttons -->
             <div class="flex justify-between items-center gap-2">
@@ -15,19 +39,35 @@
                     <input type="checkbox" x-model="favoritesOnly" class="rounded bg-gray-700 border-gray-600 text-pink-500 focus:ring-pink-500">
                     Favorites only
                 </label>
-                <div class="flex gap-2">
-                <a href="{{ route('templates.index') }}" class="inline-flex items-center px-4 py-2 bg-gray-700 border border-gray-600 rounded-md font-semibold text-xs text-gray-100 uppercase tracking-widest hover:bg-gray-600">
-                    From Template
-                </a>
-                <button @click="toggleImportTemplate()" class="inline-flex items-center px-4 py-2 bg-gray-700 border border-gray-600 rounded-md font-semibold text-xs text-gray-100 uppercase tracking-widest hover:bg-gray-600">
-                    Import Template
-                </button>
-                <button @click="toggleMarkdownImport()" class="inline-flex items-center px-4 py-2 bg-gray-700 border border-gray-600 rounded-md font-semibold text-xs text-gray-100 uppercase tracking-widest hover:bg-gray-600">
-                    Import from Markdown
-                </button>
-                <a href="{{ route('projects.create') }}" class="inline-flex items-center px-4 py-2 bg-blue-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-blue-700">
-                    New Project
-                </a>
+                <div class="flex gap-2 items-center">
+                    <!-- Three-dot menu -->
+                    <div class="relative" x-data="projectsMenu" @keydown.escape.window="open = false" @click.outside="open = false">
+                        <button @click="open = !open"
+                                class="inline-flex items-center px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-gray-300 hover:bg-gray-600 hover:text-gray-100"
+                                title="More options">
+                            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                <path d="M10 6a2 2 0 110-4 2 2 0 010 4zm0 6a2 2 0 110-4 2 2 0 010 4zm0 6a2 2 0 110-4 2 2 0 010 4z"/>
+                            </svg>
+                        </button>
+                        <div x-show="open" x-cloak
+                             class="absolute right-0 mt-1 w-52 bg-gray-800 border border-gray-600 rounded-md shadow-lg z-20 py-1">
+                            <a href="{{ route('templates.index') }}"
+                               class="flex items-center gap-2 px-4 py-2 text-sm text-gray-300 hover:bg-gray-700 hover:text-gray-100">
+                                From Template
+                            </a>
+                            <button @click="openImportTemplate()"
+                                    class="w-full text-left flex items-center gap-2 px-4 py-2 text-sm text-gray-300 hover:bg-gray-700 hover:text-gray-100">
+                                Import Template File
+                            </button>
+                            <button @click="openMarkdownImport()"
+                                    class="w-full text-left flex items-center gap-2 px-4 py-2 text-sm text-gray-300 hover:bg-gray-700 hover:text-gray-100">
+                                Import from Markdown
+                            </button>
+                        </div>
+                    </div>
+                    <a href="{{ route('projects.create') }}" class="inline-flex items-center px-4 py-2 bg-blue-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-blue-700">
+                        New Blank Project
+                    </a>
                 </div>
             </div>
             <!-- Import from Markdown Form -->

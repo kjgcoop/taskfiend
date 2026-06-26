@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Project;
 use App\Models\ProjectReminder;
 use App\Models\ProjectStatusLog;
+use App\Models\ScheduledProject;
 use App\Models\Tag;
 use App\Models\Task;
 use App\Models\User;
@@ -39,7 +40,15 @@ class ProjectController extends Controller
         $projects         = $all->where('status', 'incomplete')->sort($natSort)->values();
         $inactiveProjects = $all->whereIn('status', ['done', 'archived'])->sort($natSort)->values();
 
-        return view('projects.index', compact('projects', 'inactiveProjects'));
+        $scheduledCount = ScheduledProject::where('user_id', Auth::id())
+            ->where('is_created', false)
+            ->count();
+
+        $remindersCount = ProjectReminder::where('user_id', Auth::id())
+            ->where('dismissed', false)
+            ->count();
+
+        return view('projects.index', compact('projects', 'inactiveProjects', 'scheduledCount', 'remindersCount'));
     }
 
     public function create()
@@ -641,6 +650,17 @@ class ProjectController extends Controller
         return response($contents)
             ->header('Content-Type', $mimeType)
             ->header('Cache-Control', 'private, max-age=86400');
+    }
+
+    public function remindersIndex(Request $request)
+    {
+        $reminders = ProjectReminder::where('user_id', Auth::id())
+            ->where('dismissed', false)
+            ->with('project')
+            ->orderBy('date')
+            ->get();
+
+        return view('projects.reminders-index', compact('reminders'));
     }
 
     public function storeReminder(Request $request, Project $project)

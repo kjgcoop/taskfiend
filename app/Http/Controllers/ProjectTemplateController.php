@@ -6,9 +6,12 @@ use App\Models\Assignment;
 use App\Models\ChangeLog;
 use App\Models\Project;
 use App\Models\ProjectTemplate;
+use App\Models\ScheduledProject;
 use App\Models\Tag;
 use App\Models\Task;
 use App\Models\TaskAttachment;
+use App\Services\DateParser;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 
@@ -83,6 +86,7 @@ class ProjectTemplateController extends Controller
     {
         $request->validate([
             'project_name' => 'required|string|max:255',
+            'start_date'   => 'nullable|string|max:255',
         ]);
 
         $user = $request->user();
@@ -91,6 +95,30 @@ class ProjectTemplateController extends Controller
             abort(403, 'You do not have access to this template.');
         }
 
+        // Parse start_date (natural language or blank = today)
+        $startDate = null;
+        if ($request->filled('start_date')) {
+            $parsed = (new DateParser())->parseTaskInput($request->start_date);
+            $startDate = $parsed['date'] ?? null;
+        }
+
+        $today = now()->toDateString();
+
+        // If start_date is in the future, schedule instead of creating immediately
+        if ($startDate && $startDate > $today) {
+            ScheduledProject::create([
+                'template_id'  => $template->id,
+                'user_id'      => $user->id,
+                'project_name' => $request->project_name,
+                'start_date'   => $startDate,
+            ]);
+
+            $formatted = Carbon::parse($startDate)->format('l, F j, Y');
+            return redirect()->route('templates.index')
+                ->with('status', 'Project "' . $request->project_name . '" scheduled to be created on ' . $formatted . '.');
+        }
+
+        // Create immediately
         $zipPath = Storage::disk('private')->path($template->filename);
 
         if (!file_exists($zipPath)) {
