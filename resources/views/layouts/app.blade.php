@@ -1543,6 +1543,9 @@
                                 const listEl = doneSection.querySelector('[x-ref="list"]');
                                 if (!listEl) return;
                                 listEl.insertAdjacentHTML('afterbegin', data.html);
+                                // Hide the "No tasks found." placeholder if present
+                                const emptyState = listEl.querySelector('[data-empty-state]');
+                                if (emptyState) emptyState.style.display = 'none';
                                 toast.doneEl = listEl.firstElementChild;
                                 try {
                                     const sd = doneSection._x_dataStack?.[0];

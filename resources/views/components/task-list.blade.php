@@ -816,6 +816,9 @@
             if (!listEl) return null;
             listEl.insertAdjacentHTML('afterbegin', data.html);
             const inserted = listEl.firstElementChild;
+            // Hide the "No tasks found." placeholder if present
+            const emptyState = listEl.querySelector('[data-empty-state]');
+            if (emptyState) emptyState.style.display = 'none';
             try {
                 const sd = section._x_dataStack?.[0];
                 if (sd) sd.totalCount++;
@@ -1351,7 +1354,7 @@
         @endif
         </div>{{-- /data-task-group --}}
     @empty
-        <div class="bg-[#202020] p-8 rounded-lg text-center text-gray-400 border border-gray-700">
+        <div data-empty-state class="bg-[#202020] p-8 rounded-lg text-center text-gray-400 border border-gray-700">
             No tasks found.
         </div>
     @endforelse
