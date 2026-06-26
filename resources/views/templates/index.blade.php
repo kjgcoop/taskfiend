@@ -94,7 +94,7 @@
                                                 <label class="block text-sm text-gray-300 mb-1">Start Date</label>
                                                 <input type="text" name="start_date"
                                                        x-model="dateInput"
-                                                       @input.debounce.400ms="previewDate"
+                                                       @input.debounce.400ms="previewDate()"
                                                        placeholder="today, next Monday, March 15…"
                                                        class="w-full bg-gray-700 border border-gray-600 text-gray-100 rounded px-3 py-2 text-sm focus:outline-none focus:border-blue-500 placeholder-gray-500">
                                                 <p class="mt-1 text-xs"
@@ -206,7 +206,7 @@
                                                 <label class="block text-sm text-gray-300 mb-1">Start Date</label>
                                                 <input type="text" name="start_date"
                                                        x-model="dateInput"
-                                                       @input.debounce.400ms="previewDate"
+                                                       @input.debounce.400ms="previewDate()"
                                                        placeholder="today, next Monday, March 15…"
                                                        class="w-full bg-gray-700 border border-gray-600 text-gray-100 rounded px-3 py-2 text-sm focus:outline-none focus:border-blue-500 placeholder-gray-500">
                                                 <p class="mt-1 text-xs"
@@ -235,4 +235,5 @@
 
         </div>
     </div>
+
 </x-app-layout>

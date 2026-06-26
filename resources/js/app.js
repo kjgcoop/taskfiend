@@ -34,7 +34,7 @@ Alpine.data('templateDatePicker', () => ({
                 body: JSON.stringify({ input: val }),
             });
             const data = await resp.json();
-            if (data.formatted && data.date) {
+            if (data.date) {
                 this.datePreview = data.formatted;
                 const today = new Date().toISOString().slice(0, 10);
                 this.isFuture = data.date > today;
