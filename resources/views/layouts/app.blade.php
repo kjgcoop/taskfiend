@@ -367,6 +367,8 @@
 
         <script nonce="{{ csp_nonce() }}">
             document.addEventListener('alpine:init', () => {
+                Alpine.magic('confirmSubmit', () => (el, msg) => { if (window.confirm(msg)) el.closest('form').submit(); });
+
                 Alpine.data('dropdown', () => ({
                     open: false,
                     openDetails(eventName) { this.open = false; this.$dispatch(eventName); },

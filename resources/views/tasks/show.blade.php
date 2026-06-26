@@ -711,7 +711,7 @@
                                                 <form method="POST" action="{{ route('comments.destroy', [$task, $comment]) }}" class="inline">
                                                     @csrf
                                                     @method('DELETE')
-                                                    <button type="submit" class="text-xs text-red-600 hover:underline" @click.prevent="confirm('Are you sure?') && $el.closest('form').submit()">
+                                                    <button type="submit" class="text-xs text-red-600 hover:underline" @click.prevent="$confirmSubmit($el, 'Are you sure?')">
                                                         Delete
                                                     </button>
                                                 </form>
@@ -825,7 +825,7 @@
                                                     <form method="POST" action="{{ route('attachments.destroy', [$task, $attachment]) }}" class="inline">
                                                         @csrf
                                                         @method('DELETE')
-                                                        <button type="submit" class="text-sm text-red-600 hover:underline" @click.prevent="confirm('Are you sure?') && $el.closest('form').submit()">
+                                                        <button type="submit" class="text-sm text-red-600 hover:underline" @click.prevent="$confirmSubmit($el, 'Are you sure?')">
                                                             Delete
                                                         </button>
                                                     </form>
