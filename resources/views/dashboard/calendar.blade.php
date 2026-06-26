@@ -58,7 +58,6 @@
                                     @foreach($dayTasks->take(3) as $task)
                                         <a href="{{ route('tasks.show', $task) }}"
                                            data-task-group-id="{{ $task->id }}"
-                                           @click.prevent="($event.ctrlKey || $event.metaKey) ? window.open('{{ route('tasks.show', $task) }}', '_blank') : $dispatch('open-task-panel', { taskId: {{ $task->id }} })"
                                            class="block w-full text-left text-xs p-1 bg-blue-900 text-blue-200 rounded truncate hover:bg-blue-800 task-title">
                                             {!! render_title($task->name) !!}
                                         </a>
@@ -140,7 +139,6 @@
                 const btn = document.createElement('a');
                 btn.href = d.url;
                 btn.dataset.taskGroupId = d.id;
-                btn.addEventListener('click', (e) => { if (!(e.ctrlKey || e.metaKey)) { e.preventDefault(); window.dispatchEvent(new CustomEvent('open-task-panel', { detail: { taskId: d.id } })); } });
                 btn.className = 'block w-full text-left text-xs p-1 bg-blue-900 text-blue-200 rounded truncate hover:bg-blue-800';
                 btn.textContent = d.name;
                 btn.style.opacity = '0';
@@ -163,5 +161,15 @@
                 }
             }
         }
+
+        // Delegated handler for all calendar task chips (both Blade-rendered and JS-created).
+        // Ctrl/meta+click lets the browser open the link natively; plain click opens the panel.
+        document.addEventListener('click', function(e) {
+            const chip = e.target.closest('a[data-task-group-id]');
+            if (!chip) return;
+            if (e.ctrlKey || e.metaKey) return;
+            e.preventDefault();
+            window.dispatchEvent(new CustomEvent('open-task-panel', { detail: { taskId: parseInt(chip.dataset.taskGroupId) } }));
+        });
     </script>
 </x-app-layout>
