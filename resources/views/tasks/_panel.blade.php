@@ -644,7 +644,7 @@ $_panelTaskJson = json_encode([
                                             @csrf
                                             @method('DELETE')
                                             <button type="submit" class="text-xs text-red-600 hover:underline"
-                                                    @click.prevent="confirmSubmit($el, 'Delete this comment?')">Delete</button>
+                                                    @click.prevent="confirm('Delete this comment?') && $el.closest('form').submit()">Delete</button>
                                         </form>
                                     @endif
                                 </div>
@@ -744,7 +744,7 @@ $_panelTaskJson = json_encode([
                                                 @csrf
                                                 @method('DELETE')
                                                 <button type="submit" class="text-xs text-red-600 hover:underline"
-                                                        @click.prevent="confirmSubmit($el, 'Delete this attachment?')">Delete</button>
+                                                        @click.prevent="confirm('Delete this attachment?') && $el.closest('form').submit()">Delete</button>
                                             </form>
                                         @endif
                                     </div>
