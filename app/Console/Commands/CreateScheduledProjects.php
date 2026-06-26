@@ -19,7 +19,7 @@ class CreateScheduledProjects extends Command
     {
         $today = now()->toDateString();
 
-        $due = ScheduledProject::where('start_date', $today)
+        $due = ScheduledProject::whereDate('start_date', $today)
             ->where('is_created', false)
             ->with(['template', 'user'])
             ->get();
