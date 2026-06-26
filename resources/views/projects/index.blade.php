@@ -15,25 +15,43 @@
                     <input type="checkbox" x-model="favoritesOnly" class="rounded bg-gray-700 border-gray-600 text-pink-500 focus:ring-pink-500">
                     Favorites only
                 </label>
-                <div class="flex gap-2">
-                @if($scheduledCount > 0)
-                <a href="{{ route('scheduled-projects.index') }}" class="inline-flex items-center gap-1.5 px-4 py-2 bg-gray-700 border border-gray-600 rounded-md font-semibold text-xs text-gray-100 uppercase tracking-widest hover:bg-gray-600">
-                    <span class="inline-flex items-center justify-center w-4 h-4 rounded-full bg-blue-600 text-white text-[10px] font-bold">{{ $scheduledCount }}</span>
-                    Scheduled
-                </a>
-                @endif
-                <a href="{{ route('templates.index') }}" class="inline-flex items-center px-4 py-2 bg-gray-700 border border-gray-600 rounded-md font-semibold text-xs text-gray-100 uppercase tracking-widest hover:bg-gray-600">
-                    From Template
-                </a>
-                <button @click="toggleImportTemplate()" class="inline-flex items-center px-4 py-2 bg-gray-700 border border-gray-600 rounded-md font-semibold text-xs text-gray-100 uppercase tracking-widest hover:bg-gray-600">
-                    Import Template
-                </button>
-                <button @click="toggleMarkdownImport()" class="inline-flex items-center px-4 py-2 bg-gray-700 border border-gray-600 rounded-md font-semibold text-xs text-gray-100 uppercase tracking-widest hover:bg-gray-600">
-                    Import from Markdown
-                </button>
-                <a href="{{ route('projects.create') }}" class="inline-flex items-center px-4 py-2 bg-blue-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-blue-700">
-                    New Project
-                </a>
+                <div class="flex gap-2 items-center">
+                    <!-- Three-dot menu -->
+                    <div class="relative" x-data="{ open: false }" @keydown.escape.window="open = false" @click.outside="open = false">
+                        <button @click="open = !open"
+                                class="inline-flex items-center px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-gray-300 hover:bg-gray-600 hover:text-gray-100"
+                                title="More options">
+                            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                <path d="M10 6a2 2 0 110-4 2 2 0 010 4zm0 6a2 2 0 110-4 2 2 0 010 4zm0 6a2 2 0 110-4 2 2 0 010 4z"/>
+                            </svg>
+                        </button>
+                        <div x-show="open" x-cloak
+                             class="absolute right-0 mt-1 w-52 bg-gray-800 border border-gray-600 rounded-md shadow-lg z-20 py-1">
+                            <a href="{{ route('templates.index') }}"
+                               class="flex items-center gap-2 px-4 py-2 text-sm text-gray-300 hover:bg-gray-700 hover:text-gray-100">
+                                From Template
+                            </a>
+                            <button @click="open = false; toggleImportTemplate()"
+                                    class="w-full text-left flex items-center gap-2 px-4 py-2 text-sm text-gray-300 hover:bg-gray-700 hover:text-gray-100">
+                                Import Template File
+                            </button>
+                            <button @click="open = false; toggleMarkdownImport()"
+                                    class="w-full text-left flex items-center gap-2 px-4 py-2 text-sm text-gray-300 hover:bg-gray-700 hover:text-gray-100">
+                                Import from Markdown
+                            </button>
+                            @if($scheduledCount > 0)
+                            <div class="border-t border-gray-700 my-1"></div>
+                            <a href="{{ route('scheduled-projects.index') }}"
+                               class="flex items-center gap-2 px-4 py-2 text-sm text-gray-300 hover:bg-gray-700 hover:text-gray-100">
+                                Scheduled
+                                <span class="ml-auto inline-flex items-center justify-center w-5 h-5 rounded-full bg-blue-600 text-white text-[10px] font-bold">{{ $scheduledCount }}</span>
+                            </a>
+                            @endif
+                        </div>
+                    </div>
+                    <a href="{{ route('projects.create') }}" class="inline-flex items-center px-4 py-2 bg-blue-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-blue-700">
+                        New Blank Project
+                    </a>
                 </div>
             </div>
             <!-- Import from Markdown Form -->
