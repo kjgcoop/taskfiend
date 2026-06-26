@@ -87,6 +87,43 @@ class Project extends Model
      * projects they own, are assigned to at the project level, or have
      * at least one task assigned to them within.
      */
+    public function duplicate(): self
+    {
+        $new = self::create([
+            'name'        => 'Copy of ' . $this->name,
+            'description' => $this->description,
+            'end_date'    => $this->end_date,
+            'user_id'     => auth()->id(),
+            'status'      => 'incomplete',
+        ]);
+
+        $new->assignees()->sync($this->assignees->pluck('id')->toArray() ?: [auth()->id()]);
+
+        $this->tasks()
+            ->where('status', 'incomplete')
+            ->whereNull('parent_id')
+            ->with(['tags', 'assignees', 'attachments', 'children.tags', 'children.assignees', 'children.attachments'])
+            ->get()
+            ->each(function (Task $task) use ($new) {
+                $copy = $task->duplicate(['project_id' => $new->id]);
+                $this->duplicateChildren($task, $copy->id, $new->id);
+            });
+
+        return $new;
+    }
+
+    private function duplicateChildren(Task $parent, int $newParentId, int $newProjectId): void
+    {
+        foreach ($parent->children as $child) {
+            if ($child->status !== 'incomplete') {
+                continue;
+            }
+            $child->loadMissing(['tags', 'assignees', 'attachments', 'children.tags', 'children.assignees', 'children.attachments']);
+            $copy = $child->duplicate(['project_id' => $newProjectId, 'parent_id' => $newParentId]);
+            $this->duplicateChildren($child, $copy->id, $newProjectId);
+        }
+    }
+
     public function scopeActiveForUser(Builder $query, int $userId): Builder
     {
         return $query->where('status', 'incomplete')

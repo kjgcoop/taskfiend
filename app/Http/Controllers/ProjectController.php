@@ -469,45 +469,12 @@ class ProjectController extends Controller
     {
         $this->authorizeProjectAccess($project);
 
-        $newProject = Project::create([
-            'name'        => 'Copy of ' . $project->name,
-            'description' => $project->description,
-            'end_date'    => $project->end_date,
-            'user_id'     => Auth::id(),
-            'status'      => 'incomplete',
-        ]);
-
-        $newProject->assignees()->sync($project->assignees->pluck('id')->toArray() ?: [Auth::id()]);
+        $newProject = $project->duplicate();
 
         $this->logChange($newProject, 'duplicated from project #' . $project->id);
 
-        $taskController = app(TaskController::class);
-
-        $incompleteTasks = $project->tasks()
-            ->where('status', 'incomplete')
-            ->whereNull('parent_id')
-            ->with(['tags', 'assignees', 'attachments', 'children.tags', 'children.assignees', 'children.attachments'])
-            ->get();
-
-        foreach ($incompleteTasks as $task) {
-            $newTask = $taskController->copyTask($task, ['project_id' => $newProject->id]);
-            $this->copyChildTasks($taskController, $task, $newTask->id, $newProject->id);
-        }
-
         return redirect()->route('projects.show', $newProject)
-            ->with('success', 'Project duplicated successfully with ' . $incompleteTasks->count() . ' task(s).');
-    }
-
-    private function copyChildTasks(TaskController $taskController, Task $parentTask, int $newParentId, int $newProjectId): void
-    {
-        foreach ($parentTask->children as $child) {
-            if ($child->status !== 'incomplete') {
-                continue;
-            }
-            $child->loadMissing(['tags', 'assignees', 'attachments', 'children.tags', 'children.assignees', 'children.attachments']);
-            $newChild = $taskController->copyTask($child, ['project_id' => $newProjectId, 'parent_id' => $newParentId]);
-            $this->copyChildTasks($taskController, $child, $newChild->id, $newProjectId);
-        }
+            ->with('success', 'Project duplicated successfully.');
     }
 
     public function destroy(Project $project)

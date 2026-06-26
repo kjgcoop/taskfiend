@@ -251,6 +251,51 @@ class Task extends Model
      * Format a duration in minutes as a human-readable string (e.g. "2h 20m").
      * Returns null if $minutes is null or zero.
      */
+    public function duplicate(array $overrides = []): self
+    {
+        $this->loadMissing(['tags', 'assignees', 'attachments']);
+
+        $new = self::create(array_merge([
+            'name'                => $this->name,
+            'description'         => $this->description,
+            'date'                => $this->date,
+            'time'                => $this->time,
+            'duration_minutes'    => $this->duration_minutes,
+            'project_id'          => $this->project_id,
+            'parent_id'           => $this->parent_id,
+            'recurrence_pattern'  => $this->recurrence_pattern,
+            'recurrence_floating' => $this->recurrence_floating,
+            'creator_id'          => auth()->id(),
+            'status'              => 'incomplete',
+        ], $overrides));
+
+        $new->tags()->sync($this->tags->pluck('id'));
+
+        $assigneeIds = $this->assignees->pluck('id')->toArray() ?: [auth()->id()];
+        foreach ($assigneeIds as $assigneeId) {
+            $new->assignments()->create([
+                'assignee_id'    => $assigneeId,
+                'assigned_by_id' => auth()->id(),
+            ]);
+        }
+
+        foreach ($this->attachments as $attachment) {
+            $extension = pathinfo($attachment->file_path, PATHINFO_EXTENSION);
+            $newPath = 'task_attachments/' . \Illuminate\Support\Str::random(40) . ($extension ? '.' . $extension : '');
+            \Illuminate\Support\Facades\Storage::disk('private')->copy($attachment->file_path, $newPath);
+            $new->attachments()->create([
+                'user_id'           => auth()->id(),
+                'task_id'           => $new->id,
+                'file_path'         => $newPath,
+                'original_filename' => $attachment->original_filename,
+                'mime_type'         => $attachment->mime_type,
+                'file_size'         => $attachment->file_size,
+            ]);
+        }
+
+        return $new;
+    }
+
     public static function formatDuration(?int $minutes): ?string
     {
         if (!$minutes) {
