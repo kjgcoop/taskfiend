@@ -17,6 +17,17 @@ Alpine.data('uploadToggle', () => ({
 Alpine.data('passwordToggle', () => ({ showPassword: false }));
 Alpine.data('fileInput', () => ({ fileName: '' }));
 Alpine.data('templateItem', () => ({ showUse: false, showDelete: false }));
+Alpine.data('projectsMenu', () => ({
+    open: false,
+    openImportTemplate() {
+        this.open = false;
+        window.dispatchEvent(new CustomEvent('do-toggle-import-template'));
+    },
+    openMarkdownImport() {
+        this.open = false;
+        window.dispatchEvent(new CustomEvent('do-toggle-markdown-import'));
+    },
+}));
 Alpine.data('templateDatePicker', () => ({
     dateInput: '',
     datePreview: '',

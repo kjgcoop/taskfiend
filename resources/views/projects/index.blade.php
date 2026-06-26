@@ -27,7 +27,7 @@
                 </label>
                 <div class="flex gap-2 items-center">
                     <!-- Three-dot menu -->
-                    <div class="relative" x-data="{ open: false }" @keydown.escape.window="open = false" @click.outside="open = false">
+                    <div class="relative" x-data="projectsMenu" @keydown.escape.window="open = false" @click.outside="open = false">
                         <button @click="open = !open"
                                 class="inline-flex items-center px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-gray-300 hover:bg-gray-600 hover:text-gray-100"
                                 title="More options">
@@ -41,11 +41,11 @@
                                class="flex items-center gap-2 px-4 py-2 text-sm text-gray-300 hover:bg-gray-700 hover:text-gray-100">
                                 From Template
                             </a>
-                            <button @click="open = false; $dispatch('do-toggle-import-template')"
+                            <button @click="openImportTemplate()"
                                     class="w-full text-left flex items-center gap-2 px-4 py-2 text-sm text-gray-300 hover:bg-gray-700 hover:text-gray-100">
                                 Import Template File
                             </button>
-                            <button @click="open = false; $dispatch('do-toggle-markdown-import')"
+                            <button @click="openMarkdownImport()"
                                     class="w-full text-left flex items-center gap-2 px-4 py-2 text-sm text-gray-300 hover:bg-gray-700 hover:text-gray-100">
                                 Import from Markdown
                             </button>
