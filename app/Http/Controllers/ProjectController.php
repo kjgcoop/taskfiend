@@ -261,11 +261,22 @@ class ProjectController extends Controller
         // All tasks here belong to one project, so no breakdown tooltip is needed.
         $breakdown = [];
 
+        $statusChangedAt = null;
+        if (in_array($project->status, ['done', 'archived'])) {
+            $statusChangedAt = \App\Models\ChangeLog::where('entity_type', 'projects')
+                ->where('entity_id', $project->id)
+                ->where('field', 'status')
+                ->where('new_value', $project->status)
+                ->orderByDesc('date')
+                ->value('date');
+        }
+
         return view('projects.show', compact(
             'project', 'tasks', 'breakdown',
             'completedTasks', 'completedTasksHasMore', 'completedTasksTotal',
             'archivedTasks', 'archivedTasksHasMore', 'archivedTasksTotal',
-            'users', 'projects', 'tags', 'locations', 'sort', 'activeReminder'
+            'users', 'projects', 'tags', 'locations', 'sort', 'activeReminder',
+            'statusChangedAt'
         ));
     }
 

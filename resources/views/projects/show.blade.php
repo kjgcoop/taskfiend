@@ -368,7 +368,7 @@
                 <div class="bg-amber-950/40 border border-amber-700/60 rounded-lg p-4 flex items-center gap-3">
                     <span class="text-amber-500 text-xl">🗄</span>
                     <div>
-                        <p class="text-amber-400 font-semibold">This project is archived</p>
+                        <p class="text-amber-400 font-semibold">This project is archived{{ $statusChangedAt ? ' on ' . $statusChangedAt->format('l, F j, Y') : '' }}</p>
                         <p class="text-amber-600 text-sm mt-0.5">Tasks in this project are hidden from your task lists.</p>
                     </div>
                 </div>
@@ -376,7 +376,7 @@
                 <div class="bg-green-950/40 border border-green-700/60 rounded-lg p-4 flex items-center gap-3">
                     <span class="text-green-500 text-xl">✓</span>
                     <div>
-                        <p class="text-green-400 font-semibold">This project is done</p>
+                        <p class="text-green-400 font-semibold">This project is done{{ $statusChangedAt ? ' as of ' . $statusChangedAt->format('l, F j, Y') : '' }}</p>
                         <p class="text-green-600 text-sm mt-0.5">Tasks in this project are hidden from your task lists.</p>
                     </div>
                 </div>
