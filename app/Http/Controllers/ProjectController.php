@@ -265,11 +265,8 @@ class ProjectController extends Controller
         if (in_array($project->status, ['done', 'archived'])) {
             $statusChangedAt = \App\Models\ChangeLog::where('entity_type', 'projects')
                 ->where('entity_id', $project->id)
-                ->where(function ($q) use ($project) {
-                    $q->where(function ($q2) use ($project) {
-                        $q2->where('field', 'status')->where('new_value', $project->status);
-                    })->orWhere('description', 'like', '%status from%to ' . $project->status . '%');
-                })
+                ->where('field', 'status')
+                ->where('new_value', $project->status)
                 ->orderByDesc('date')
                 ->value('date');
         }
