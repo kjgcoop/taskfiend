@@ -946,7 +946,8 @@
                  data-projects="{{ json_encode($projects) }}"
                  data-tags="{{ json_encode($tags) }}"
                  data-users="{{ json_encode($users) }}"
-                 data-locations="{{ json_encode($locations) }}">
+                 data-locations="{{ json_encode($locations) }}"
+                 data-view-project-id="{{ $project->id }}">
                 <div class="flex items-center justify-between mb-4">
                     <button type="button"
                             @click="toggleIncomplete()"

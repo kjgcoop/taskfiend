@@ -793,17 +793,62 @@
     });
     });
 
+    // Helper: decrement the incomplete task count badge
+    function _decrementIncompleteCount() {
+        try {
+            const tc = Alpine.store('taskCount');
+            if (tc && typeof tc.total === 'number') tc.total = Math.max(0, tc.total - 1);
+        } catch {}
+    }
+
+    // Helper: inject a completed/archived task row into the matching section
+    function _injectIntoSection(taskId, status) {
+        const section = document.querySelector(`[data-status-section="${status}"]`);
+        if (!section) return Promise.resolve(null);
+        const hideDate = section.dataset.hideDate === 'true';
+        return fetch('/tasks/' + taskId + '/row-html' + (hideDate ? '?hide_date=1' : ''), {
+            headers: { 'X-Requested-With': 'XMLHttpRequest' },
+        })
+        .then(r => r.ok ? r.json() : null)
+        .then(data => {
+            if (!data?.html) return null;
+            const listEl = section.querySelector('[x-ref="list"]');
+            if (!listEl) return null;
+            listEl.insertAdjacentHTML('afterbegin', data.html);
+            const inserted = listEl.firstElementChild;
+            try {
+                const sd = section._x_dataStack?.[0];
+                if (sd) sd.totalCount++;
+            } catch {}
+            return inserted;
+        })
+        .catch(() => null);
+    }
+
     // Live-update list rows when the side panel saves a field
     window.addEventListener('task-panel-updated', (e) => {
         const d = e.detail;
         const group = document.querySelector(`[data-task-group-id="${d.id}"]`);
         if (!group) return;
 
+        // Task moved to a different project while viewing a project page: fade it out
+        const projectContainer = group.closest('[data-view-project-id]');
+        if (projectContainer && d.updated_field === 'project_id' &&
+            String(d.project_id) !== projectContainer.dataset.viewProjectId) {
+            group.style.transition = 'opacity 0.4s';
+            group.style.opacity = '0';
+            setTimeout(() => { group.style.display = 'none'; }, 400);
+            _decrementIncompleteCount();
+            return;
+        }
+
         // Inactive (done/archived) AND the status field was just changed: fade the row out
         if (d.inactive && d.updated_field === 'status') {
             group.style.transition = 'opacity 0.4s';
             group.style.opacity = '0';
             setTimeout(() => { group.style.display = 'none'; }, 400);
+            _decrementIncompleteCount();
+            _injectIntoSection(d.id, d.status);
             return;
         }
 
@@ -813,6 +858,7 @@
             group.style.transition = 'opacity 0.4s';
             group.style.opacity = '0';
             setTimeout(() => { group.style.display = 'none'; }, 400);
+            _decrementIncompleteCount();
             return;
         }
 

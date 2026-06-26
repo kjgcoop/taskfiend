@@ -10,11 +10,18 @@
     'nextPage' => 2,
 ])
 
-@php $displayCount = $totalCount ?? $tasks->count(); @endphp
+@php
+    $displayCount  = $totalCount ?? $tasks->count();
+    $statusSection = $showAsArchived ? 'archived' : 'done';
+@endphp
 
-@if($displayCount > 0)
+{{-- Always render so JS can inject newly-completed tasks. Hidden via x-show when empty. --}}
 <div class="mt-4 border-t border-gray-700 pt-4"
      x-data="completedTasksLoader"
+     x-show="totalCount > 0"
+     @unless($displayCount > 0) style="display:none" @endunless
+     data-status-section="{{ $statusSection }}"
+     data-hide-date="{{ $hideDate ? 'true' : 'false' }}"
      data-has-more="{{ $hasMore ? 'true' : 'false' }}"
      data-next-page="{{ $nextPage }}"
      data-ajax-url="{{ $ajaxUrl }}"
@@ -103,4 +110,3 @@ document.addEventListener('alpine:init', () => {
 </script>
 @endpush
 @endonce
-@endif

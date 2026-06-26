@@ -1036,6 +1036,7 @@ class TaskController extends Controller
             'date'               => $task->date,
             'date_formatted'     => $task->date ? \Carbon\Carbon::parse($task->date)->format('l, F j, Y') : null,
             'time_formatted'     => $task->time ? \Carbon\Carbon::parse($task->time)->format('g:i A') : null,
+            'project_id'         => $task->project_id,
             'project_name'       => $task->project?->name,
             'project_url'        => $task->project ? route('projects.show', $task->project) : null,
             'recurrence_pattern' => $task->recurrence_pattern,
@@ -1044,6 +1045,24 @@ class TaskController extends Controller
             'inactive'           => in_array($task->status, ['done', 'archived']),
             'updated_field'      => $updatedField,
         ];
+    }
+
+    public function rowHtml(Task $task, Request $request)
+    {
+        $this->authorizeTaskAccess($task);
+
+        $task->load(['creator', 'project', 'tags', 'assignees', 'attachments', 'comments',
+                     'children', 'children.assignees', 'children.tags', 'children.attachments',
+                     'children.comments', 'completionLog.user']);
+
+        $tasks        = collect([$task]);
+        $hideDate     = $request->boolean('hide_date');
+        $readOnly     = false;
+        $showAsArchived = $task->status === 'archived';
+
+        return response()->json([
+            'html' => view('tasks.partials.completed-list', compact('tasks', 'hideDate', 'readOnly', 'showAsArchived'))->render(),
+        ]);
     }
 
     /**

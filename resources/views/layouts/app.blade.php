@@ -1521,9 +1521,36 @@
                             duration,
                             visible: true,
                             timer: null,
+                            doneEl: null,
                         };
                         toast.timer = setTimeout(() => this._expire(toast), duration);
                         this.toasts.push(toast);
+
+                        // Decrement incomplete count and inject into the done section
+                        try {
+                            const tc = Alpine.store('taskCount');
+                            if (tc && typeof tc.total === 'number') tc.total = Math.max(0, tc.total - 1);
+                        } catch {}
+                        const doneSection = document.querySelector('[data-status-section="done"]');
+                        if (doneSection) {
+                            const hideDate = doneSection.dataset.hideDate === 'true';
+                            fetch('/tasks/' + taskId + '/row-html' + (hideDate ? '?hide_date=1' : ''), {
+                                headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                            })
+                            .then(r => r.ok ? r.json() : null)
+                            .then(data => {
+                                if (!data?.html) return;
+                                const listEl = doneSection.querySelector('[x-ref="list"]');
+                                if (!listEl) return;
+                                listEl.insertAdjacentHTML('afterbegin', data.html);
+                                toast.doneEl = listEl.firstElementChild;
+                                try {
+                                    const sd = doneSection._x_dataStack?.[0];
+                                    if (sd) sd.totalCount++;
+                                } catch {}
+                            })
+                            .catch(() => {});
+                        }
                     },
 
                     _expire(toast) {
@@ -1555,6 +1582,24 @@
                         if (toast.form) {
                             toast.form.dispatchEvent(new CustomEvent('undo-complete', { bubbles: false }));
                         }
+
+                        // Remove injected done-section row and reverse the count changes
+                        if (toast.doneEl) {
+                            const section = toast.doneEl.closest('[data-status-section]');
+                            toast.doneEl.remove();
+                            toast.doneEl = null;
+                            if (section) {
+                                try {
+                                    const sd = section._x_dataStack?.[0];
+                                    if (sd && sd.totalCount > 0) sd.totalCount--;
+                                } catch {}
+                            }
+                        }
+                        try {
+                            const tc = Alpine.store('taskCount');
+                            if (tc && typeof tc.total === 'number') tc.total++;
+                        } catch {}
+
                         this._dismiss(toast);
 
                         // Tell the server
