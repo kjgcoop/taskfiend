@@ -31,29 +31,46 @@
                                    class="w-full bg-gray-700 border border-gray-600 text-gray-100 placeholder-gray-500 rounded-md px-3 py-1.5 text-sm focus:outline-none focus:border-blue-500">
                         </div>
 
-                        {{-- Project multi-select --}}
-                        <div class="min-w-44" x-data="multiSelect" data-selected="{{ json_encode(request('projects', [])) }}">
+                        {{-- Project combo-box multi-select --}}
+                        <div class="min-w-52"
+                             x-data="projectComboBox"
+                             data-selected="{{ json_encode(request('projects', [])) }}"
+                             data-projects="{{ json_encode($availableProjects->map(fn($p) => ['id' => (string)$p->id, 'name' => $p->name, 'status' => $p->status])) }}">
                             <label class="block text-xs text-gray-400 mb-1">Project</label>
                             <div class="relative">
-                                <button type="button" @click="open = !open"
-                                        class="w-full bg-gray-700 border border-gray-600 text-sm text-left rounded-md px-3 py-1.5 flex items-center justify-between"
-                                        :class="selected.length ? 'text-gray-100' : 'text-gray-500'">
-                                    <span x-text="selected.length ? selected.length + ' selected' : 'Any project'"></span>
-                                    <svg class="w-4 h-4 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                {{-- Hidden checkboxes for form submission --}}
+                                <template x-for="id in selected" :key="id">
+                                    <input type="checkbox" name="projects[]" :value="id" checked class="hidden">
+                                </template>
+
+                                {{-- Combo input --}}
+                                <div class="flex items-center bg-gray-700 border border-gray-600 rounded-md px-3 py-1.5 gap-1 cursor-text" @click="$refs.search.focus(); open = true">
+                                    <template x-for="id in selected" :key="id">
+                                        <span class="inline-flex items-center gap-1 bg-gray-600 text-gray-200 text-xs rounded px-1.5 py-0.5 flex-shrink-0">
+                                            <span x-text="labelFor(id)"></span>
+                                            <button type="button" @click.stop="deselect(id)" class="text-gray-400 hover:text-gray-100 leading-none">&times;</button>
+                                        </span>
+                                    </template>
+                                    <input x-ref="search" type="text" x-model="query" @focus="open = true" @input="open = true"
+                                           @keydown.escape="open = false" @keydown.enter.prevent="selectFirst()"
+                                           placeholder="Any project"
+                                           class="flex-1 min-w-16 bg-transparent text-sm text-gray-100 placeholder-gray-500 outline-none">
+                                    <svg class="w-4 h-4 text-gray-400 flex-shrink-0 cursor-pointer" fill="none" stroke="currentColor" viewBox="0 0 24 24" @click.stop="open = !open">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
                                     </svg>
-                                </button>
+                                </div>
+
+                                {{-- Dropdown list --}}
                                 <div x-show="open" @click.outside="open = false"
                                      class="absolute z-20 mt-1 w-full bg-gray-800 border border-gray-600 rounded-md shadow-lg max-h-52 overflow-y-auto">
-                                    @forelse($availableProjects as $proj)
-                                    <label class="flex items-center gap-2 px-3 py-2 hover:bg-gray-700 cursor-pointer text-sm text-gray-200">
-                                        <input type="checkbox" name="projects[]" value="{{ $proj->id }}"
-                                               x-model="selected" class="rounded border-gray-500 bg-gray-600 text-blue-500">
-                                        {{ $proj->name }}
-                                    </label>
-                                    @empty
-                                        <p class="px-3 py-2 text-sm text-gray-500">No projects</p>
-                                    @endforelse
+                                    <template x-for="proj in filtered" :key="proj.id">
+                                        <label class="flex items-center gap-2 px-3 py-2 hover:bg-gray-700 cursor-pointer text-sm text-gray-200">
+                                            <input type="checkbox" :value="proj.id" x-model="selected"
+                                                   class="rounded border-gray-500 bg-gray-600 text-blue-500">
+                                            <span x-text="proj.label"></span>
+                                        </label>
+                                    </template>
+                                    <p x-show="filtered.length === 0" class="px-3 py-2 text-sm text-gray-500">No projects</p>
                                 </div>
                             </div>
                         </div>
@@ -272,6 +289,47 @@
             selected: [],
             init() {
                 this.selected = JSON.parse(this.$el.dataset.selected || '[]').map(String);
+            },
+        };
+    });
+
+    Alpine.data('projectComboBox', function () {
+        return {
+            open: false,
+            selected: [],
+            query: '',
+            projects: [],
+
+            init() {
+                this.selected  = JSON.parse(this.$el.dataset.selected || '[]').map(String);
+                this.projects  = JSON.parse(this.$el.dataset.projects || '[]').map(p => ({
+                    ...p,
+                    label: p.status === 'done'     ? p.name + ' [done]'
+                         : p.status === 'archived' ? p.name + ' [archived]'
+                         : p.name,
+                }));
+            },
+
+            get filtered() {
+                const q = this.query.toLowerCase();
+                return q ? this.projects.filter(p => p.label.toLowerCase().includes(q)) : this.projects;
+            },
+
+            labelFor(id) {
+                const p = this.projects.find(p => p.id === id);
+                return p ? p.label : id;
+            },
+
+            deselect(id) {
+                this.selected = this.selected.filter(s => s !== id);
+            },
+
+            selectFirst() {
+                if (this.filtered.length > 0) {
+                    const id = this.filtered[0].id;
+                    if (!this.selected.includes(id)) this.selected.push(id);
+                    this.query = '';
+                }
             },
         };
     });
