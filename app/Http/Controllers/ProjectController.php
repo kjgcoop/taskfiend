@@ -44,7 +44,9 @@ class ProjectController extends Controller
             ->where('is_created', false)
             ->count();
 
-        $remindersCount = ProjectReminder::where('user_id', Auth::id())
+        $remindersCount = ProjectReminder::where('p.user_id', Auth::id())
+            ->join('projects as p', 'p.id', '=', 'project_reminders.project_id')
+            ->where('status', 'incomplete')
             ->where('dismissed', false)
             ->count();
 
@@ -224,7 +226,9 @@ class ProjectController extends Controller
         $project->load(['creator', 'assignees', 'changeLogs.user', 'statusLogs.user']);
 
         $activeReminder = $project->reminders()
-            ->where('user_id', Auth::id())
+            ->join('projects as p', 'p.id', '=', 'project_reminders.project_id')
+            ->where('status', 'incomplete')
+            ->where('p.user_id', Auth::id())
             ->where('dismissed', false)
             ->orderBy('date')
             ->first();
@@ -654,7 +658,9 @@ class ProjectController extends Controller
 
     public function remindersIndex(Request $request)
     {
-        $reminders = ProjectReminder::where('user_id', Auth::id())
+        $reminders = ProjectReminder::where('p.user_id', Auth::id())
+            ->join('projects as p', 'p.id', '=', 'project_reminders.project_id')
+            ->where('p.status', 'incomplete')
             ->where('dismissed', false)
             ->with('project')
             ->orderBy('date')
