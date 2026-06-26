@@ -214,15 +214,16 @@
                                     @if($project->end_date)
                                         @php
                                             $daysUntil = (int) now()->startOfDay()->diffInDays($project->end_date, false);
+                                            $closeVerb = $project->auto_close_action === 'done' ? 'done' : 'archived';
                                             if ($daysUntil === 0) {
                                                 $textColor = $hasBg ? 'text-orange-300' : 'text-orange-400';
-                                                $archiveLabel = 'archives tonight';
+                                                $archiveLabel = $closeVerb . ' tonight';
                                             } elseif ($daysUntil <= 7) {
                                                 $textColor = $hasBg ? 'text-orange-300' : 'text-orange-500';
-                                                $archiveLabel = 'archives in ' . $daysUntil . ' ' . Str::plural('day', $daysUntil);
+                                                $archiveLabel = $closeVerb . ' in ' . $daysUntil . ' ' . Str::plural('day', $daysUntil);
                                             } else {
                                                 $textColor = $hasBg ? 'text-gray-300' : 'text-gray-500';
-                                                $archiveLabel = 'archives ' . $project->end_date->format('M j');
+                                                $archiveLabel = $closeVerb . ' ' . $project->end_date->format('M j');
                                             }
                                         @endphp
                                         <span class="text-sm {{ $textColor }}">{{ $archiveLabel }}</span>
