@@ -319,9 +319,7 @@
                             @if($task->location)
                                 @if($task->show_map)
                                     @php $mapUrl = sprintf(config('taskfiend.maps_url_template', 'https://maps.google.com/?q=%s'), urlencode($task->location)); @endphp
-                                    <a href="{{ $mapUrl }}" target="_blank" rel="noopener"
-                                       @click.stop
-                                       class="inline-flex items-center gap-1 text-orange-400 hover:underline">{{ $task->location }}<svg class="inline w-3 h-3 opacity-70 flex-shrink-0" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M1 9L9 1M9 1H4M9 1V6"/></svg></a>
+                                    <span class="inline-flex items-center gap-1 text-gray-300">{{ $task->location }}<a href="{{ $mapUrl }}" target="_blank" rel="noopener" @click.stop title="Open in map" class="text-orange-400 hover:text-orange-300 flex-shrink-0"><svg class="inline w-3 h-3 opacity-70" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M1 9L9 1M9 1H4M9 1V6"/></svg></a></span>
                                 @else
                                     <p class="text-gray-300">{{ $task->location }}</p>
                                 @endif
