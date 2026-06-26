@@ -308,57 +308,7 @@
             }));
         });
 
-        document.addEventListener('alpine:init', () => {
-            Alpine.data('dayDateEditor', function() {
-                return {
-                    editing: false,
-                    input: '',
-                    error: false,
-                    currentDate: '',
-                    parseRoute: '',
-                    parseDateUrl: '',
-                    init() {
-                        this.currentDate = this.$el.dataset.currentDate || '';
-                        this.parseRoute = this.$el.dataset.parseRoute || '';
-                        this.parseDateUrl = this.$el.dataset.parseDateUrl || '';
-                    },
-                    activate() {
-                        this.input = this.currentDate;
-                        this.error = false;
-                        this.editing = true;
-                        this.$nextTick(() => { this.$refs.dateInput.focus(); this.$refs.dateInput.select(); });
-                    },
-                    cancel() {
-                        this.editing = false;
-                        this.error = false;
-                    },
-                    async navigate() {
-                        const val = this.input.trim();
-                        if (!val) { this.cancel(); return; }
-                        const resp = await fetch(this.parseDateUrl, {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json',
-                                'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content,
-                                'Accept': 'application/json',
-                            },
-                            body: JSON.stringify({ input: val })
-                        });
-                        const data = await resp.json();
-                        if (data.success) {
-                            if (data.date === this.currentDate) { this.cancel(); return; }
-                            window.location.href = this.parseRoute + '?date=' + data.date;
-                        } else {
-                            this.error = true;
-                        }
-                    },
-                    pickDate(value) {
-                        if (!value || value === this.currentDate) return;
-                        window.location.href = this.parseRoute + '?date=' + value;
-                    }
-                };
-            });
-        });
+
 
         document.addEventListener('alpine:init', () => {
             Alpine.store('dayView', {
