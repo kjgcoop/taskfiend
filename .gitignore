@@ -1,4 +1,6 @@
 database.sqbpro
+database.sqlite
+venv
 *.log
 .DS_Store
 .env

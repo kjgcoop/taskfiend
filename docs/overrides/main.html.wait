@@ -1,6 +1,0 @@
-{% extends "base.html" %}
-
-{% block announce %}
-  <a href="https://example.com">My Link</a>
-{% endblock %}
-
