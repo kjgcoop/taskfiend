@@ -1,6 +1,7 @@
 site_name: Task Fiend Documentation
 site_url: https://taskfiend.kjcoop.com/
 nav:
+  - Download the Code: https://github.com/kjgcoop/taskfiend/
   - Home: index.md
   - About:
     - About: about/about.md
@@ -29,6 +30,7 @@ theme:
   name: material
   favicon: img/favicon.ico
   logo: img/favicon.svg
+  custom_dir: overrides
   palette:
     scheme: slate
     primary: deep purple
