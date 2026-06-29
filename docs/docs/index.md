@@ -18,4 +18,4 @@ It's not designed to scale to thousands of users. It assumes at least one person
 - **Recurring tasks** automatically create the next instance when you complete the current one
 - A full **changelog** is kept for every task, project, and tag
 
-If you find a disagreement between this documentation and the README in the repository, trust this one.
+If you find a disagreement between this documentation and the README in the repository, trust the README.
