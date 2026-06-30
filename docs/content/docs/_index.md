@@ -6,7 +6,7 @@ Task Fiend is a self-hosted to-do list for small groups of people who trust each
 
 It's not designed to scale to thousands of users. It assumes at least one person in the group is comfortable running a server and typing commands.
 
-# Quick links
+## Quick links
 
 - **[Download the code](https://github.com/kjgcoop/taskfiend/)**
 - **New here?** Start with [Installation](getting-started/installation.md)
@@ -14,7 +14,7 @@ It's not designed to scale to thousands of users. It assumes at least one person
 - **Feature overview:** [What it does](features/overview.md)
 - **Running in production:** [Docker deployment](self-hosting/docker.md)
 
-# What makes it different
+## What makes it different
 
 - Tasks and projects are **private by default** — only the creator and explicitly assigned people can see them
 - **No deletion** — tasks are archived, not destroyed
