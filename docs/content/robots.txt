@@ -1,0 +1,5 @@
+User-agent: *
+Disallow:
+
+Sitemap: https://taskfiend.kjcoop.com/sitemap.xml
+
