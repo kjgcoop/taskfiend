@@ -1,7 +1,7 @@
 <!DOCTYPE html>
-<html lang="en" dir="ltr"><head><script src="/livereload.js?mindelay=10&amp;v=2&amp;port=1313&amp;path=livereload" data-no-instant defer></script>
+<html lang="en" dir="ltr"><head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="robots" content="noindex, nofollow" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="robots" content="index, follow" />
   <link rel="icon shortcut" href="/favicon.ico" sizes="32x32" />
 <link rel="icon" href="/favicon.svg" type="image/svg+xml" id="favicon-svg" />
 <link rel="icon" href="/favicon-16x16.png" type="image/png" sizes="16x16" />
@@ -9,7 +9,7 @@
 <link rel="apple-touch-icon" href="/apple-touch-icon.png" sizes="180x180" />
 <link fetchpriority="low" href="/site.webmanifest" rel="manifest" />
 <title>Features – Task Fiend</title>
-  <meta name="description" content=" Recurring tasks - set a recurrence pattern on any task; completing it automatically creates the next occurrence (see RECURRING_TASKS.md) Quick-add bar on task list views - type a task name with natural language dates and inline shortcuts (#project, @tag, &#43;location, &amp;user, nodate) to autofill fields; autocomplete suggestions appear as you type. Paste multiple lines to create multiple tasks at once, or use Shift-Enter to add them in sequence. Day page Tasks can be marked done inline without a page reload, but to mark a task archived, you need to open it up and update the dropdown. Click the date header to jump to any date. Toggle between layouts with the buttons on the right extreme of the page, toward the top. List view - pretty much what it sounds like. Agenda view - use the time-unit dropdown to control how finely the agenda is divided. Natural language dates &amp; recurrence - type natural language in the quick-add bar and dates/recurrence are parsed automatically (see below for full syntax) Markdown is supported in task descriptions and comments; `code` spans are also supported in task titles Links - link to other tasks, projects, tags, or locations from any description or comment. [task:1], [project:1], or [tag:1] will be replaced with the ID and title of the relevant task, project or tag. About the asterisk on the location: there isn’t a locations table, it’s just a column in the tasks table. Consequently, there’s no ID. So [location:Home] will link to all the tasks with that location. It works with multi-word locations, no quotes necessary [location:value]: there isn’t a locations table, it’s just a column in the tasks table. Consequently, there’s no ID. So [location:Home] will link to all the tasks with that location. It works with multi-word locations, no quotes necessary You can also paste a task, project or tag URL and it’ll know to replace it with the ID followed by the thing’s name. Project/tag navigation - the header nav includes dropdowns listing all your projects and tags Favorite projects - star any project to mark it as a favorite from the project list or the project’s own page; the project list can be filtered to show only favorites, making it easy to separate active work from back-burner projects Task count breakdown - click the task count on any list view to see a breakdown by project Duration in task lists - tasks that have a duration set show it directly in list view rows so you can gauge workload at a glance Sorting - sort task lists by date, duration, or other fields; a reverse-sort button flips the current order. Tasks without a date or time are sorted by creation date (newest last), so the bottom of an undated list stays stable. Manual task reordering - drag tasks to reorder them, with auto-scroll when dragging to the edge of the page. Scoot arrows (↑ ↓ ⤒ ⤓) let you nudge a task up, down, to the top, or to the bottom one tap at a time; the page follows the arrows so you don’t have to hunt for them after each move. Import from a markdown file - create a brand-new project by uploading a .md file, or export an existing project, rearrange tasks in any text editor, and re-upload to sync changes back; new tasks are created, statuses updated, and incomplete task order reset to match the file (see Import from .md) Multi-select - activate with the clipboard icon next to the quick-add bar to select multiple tasks and perform bulk operations including status, project (combo box), location, and duration. Only tasks on the current page are affected; if the list is paginated, navigate to each page to act on those tasks. Search - find tasks by title, description, tags, projects, assignees, duration, and date presence; title and description can be targeted independently Inline comment images - image attachments on comments are displayed inline alongside the download link Changelogs - every create/edit is logged and browsable by task, project, tag, or user API - create and query tasks via bearer token (see Admin-Like Functions below for key management) " /><link rel="canonical" href="http://localhost:1313/docs/features/" itemprop="url" />
+  <meta name="description" content=" Recurring tasks - set a recurrence pattern on any task; completing it automatically creates the next occurrence (see RECURRING_TASKS.md) Quick-add bar on task list views - type a task name with natural language dates and inline shortcuts (#project, @tag, &#43;location, &amp;user, nodate) to autofill fields; autocomplete suggestions appear as you type. Paste multiple lines to create multiple tasks at once, or use Shift-Enter to add them in sequence. Day page Tasks can be marked done inline without a page reload, but to mark a task archived, you need to open it up and update the dropdown. Click the date header to jump to any date. Toggle between layouts with the buttons on the right extreme of the page, toward the top. List view - pretty much what it sounds like. Agenda view - use the time-unit dropdown to control how finely the agenda is divided. Natural language dates &amp; recurrence - type natural language in the quick-add bar and dates/recurrence are parsed automatically (see below for full syntax) Markdown is supported in task descriptions and comments; `code` spans are also supported in task titles Links - link to other tasks, projects, tags, or locations from any description or comment. [task:1], [project:1], or [tag:1] will be replaced with the ID and title of the relevant task, project or tag. About the asterisk on the location: there isn’t a locations table, it’s just a column in the tasks table. Consequently, there’s no ID. So [location:Home] will link to all the tasks with that location. It works with multi-word locations, no quotes necessary [location:value]: there isn’t a locations table, it’s just a column in the tasks table. Consequently, there’s no ID. So [location:Home] will link to all the tasks with that location. It works with multi-word locations, no quotes necessary You can also paste a task, project or tag URL and it’ll know to replace it with the ID followed by the thing’s name. Project/tag navigation - the header nav includes dropdowns listing all your projects and tags Favorite projects - star any project to mark it as a favorite from the project list or the project’s own page; the project list can be filtered to show only favorites, making it easy to separate active work from back-burner projects Task count breakdown - click the task count on any list view to see a breakdown by project Duration in task lists - tasks that have a duration set show it directly in list view rows so you can gauge workload at a glance Sorting - sort task lists by date, duration, or other fields; a reverse-sort button flips the current order. Tasks without a date or time are sorted by creation date (newest last), so the bottom of an undated list stays stable. Manual task reordering - drag tasks to reorder them, with auto-scroll when dragging to the edge of the page. Scoot arrows (↑ ↓ ⤒ ⤓) let you nudge a task up, down, to the top, or to the bottom one tap at a time; the page follows the arrows so you don’t have to hunt for them after each move. Import from a markdown file - create a brand-new project by uploading a .md file, or export an existing project, rearrange tasks in any text editor, and re-upload to sync changes back; new tasks are created, statuses updated, and incomplete task order reset to match the file (see Import from .md) Multi-select - activate with the clipboard icon next to the quick-add bar to select multiple tasks and perform bulk operations including status, project (combo box), location, and duration. Only tasks on the current page are affected; if the list is paginated, navigate to each page to act on those tasks. Search - find tasks by title, description, tags, projects, assignees, duration, and date presence; title and description can be targeted independently Inline comment images - image attachments on comments are displayed inline alongside the download link Changelogs - every create/edit is logged and browsable by task, project, tag, or user API - create and query tasks via bearer token (see Admin-Like Functions below for key management) " /><link rel="canonical" href="https://taskfiend.kjcoop.com/docs/features/" itemprop="url" />
 
 <meta property="og:title" content="Features">
 <meta
@@ -24,7 +24,7 @@
   content="
     website
   ">
-<meta property="og:url" content="http://localhost:1313/docs/features/">
+<meta property="og:url" content="https://taskfiend.kjcoop.com/docs/features/">
 
 
   <meta itemprop="name" content="Features">
@@ -33,12 +33,18 @@
   <meta name="twitter:card" content="summary">
   <meta name="twitter:title" content="Features">
   <meta name="twitter:description" content="Recurring tasks - set a recurrence pattern on any task; completing it automatically creates the next occurrence (see RECURRING_TASKS.md) Quick-add bar on task list views - type a task name with natural language dates and inline shortcuts (#project, @tag, &#43;location, &amp;user, nodate) to autofill fields; autocomplete suggestions appear as you type. Paste multiple lines to create multiple tasks at once, or use Shift-Enter to add them in sequence. Day page Tasks can be marked done inline without a page reload, but to mark a task archived, you need to open it up and update the dropdown. Click the date header to jump to any date. Toggle between layouts with the buttons on the right extreme of the page, toward the top. List view - pretty much what it sounds like. Agenda view - use the time-unit dropdown to control how finely the agenda is divided. Natural language dates &amp; recurrence - type natural language in the quick-add bar and dates/recurrence are parsed automatically (see below for full syntax) Markdown is supported in task descriptions and comments; `code` spans are also supported in task titles Links - link to other tasks, projects, tags, or locations from any description or comment. [task:1], [project:1], or [tag:1] will be replaced with the ID and title of the relevant task, project or tag. About the asterisk on the location: there isn’t a locations table, it’s just a column in the tasks table. Consequently, there’s no ID. So [location:Home] will link to all the tasks with that location. It works with multi-word locations, no quotes necessary [location:value]: there isn’t a locations table, it’s just a column in the tasks table. Consequently, there’s no ID. So [location:Home] will link to all the tasks with that location. It works with multi-word locations, no quotes necessary You can also paste a task, project or tag URL and it’ll know to replace it with the ID followed by the thing’s name. Project/tag navigation - the header nav includes dropdowns listing all your projects and tags Favorite projects - star any project to mark it as a favorite from the project list or the project’s own page; the project list can be filtered to show only favorites, making it easy to separate active work from back-burner projects Task count breakdown - click the task count on any list view to see a breakdown by project Duration in task lists - tasks that have a duration set show it directly in list view rows so you can gauge workload at a glance Sorting - sort task lists by date, duration, or other fields; a reverse-sort button flips the current order. Tasks without a date or time are sorted by creation date (newest last), so the bottom of an undated list stays stable. Manual task reordering - drag tasks to reorder them, with auto-scroll when dragging to the edge of the page. Scoot arrows (↑ ↓ ⤒ ⤓) let you nudge a task up, down, to the top, or to the bottom one tap at a time; the page follows the arrows so you don’t have to hunt for them after each move. Import from a markdown file - create a brand-new project by uploading a .md file, or export an existing project, rearrange tasks in any text editor, and re-upload to sync changes back; new tasks are created, statuses updated, and incomplete task order reset to match the file (see Import from .md) Multi-select - activate with the clipboard icon next to the quick-add bar to select multiple tasks and perform bulk operations including status, project (combo box), location, and duration. Only tasks on the current page are affected; if the list is paginated, navigate to each page to act on those tasks. Search - find tasks by title, description, tags, projects, assignees, duration, and date presence; title and description can be targeted independently Inline comment images - image attachments on comments are displayed inline alongside the download link Changelogs - every create/edit is logged and browsable by task, project, tag, or user API - create and query tasks via bearer token (see Admin-Like Functions below for key management)">
-<link href="/css/compiled/main.css" rel="stylesheet" />
-    <link href="/css/variables.css" rel="stylesheet" />
-    <link href="/css/custom.css" rel="stylesheet" />
+
+    <link rel="preload" href="/css/compiled/main.min.1a431501cdeb52323c920e7761f7d9e327b2bee53160196c4bd1d34a3fd9fbc9.css" as="style" integrity="sha256-GkMVAc3rUjI8kg53YffZ4yeyvuUxYBlsS9HTSj/Z&#43;8k=" />
+    <link href="/css/compiled/main.min.1a431501cdeb52323c920e7761f7d9e327b2bee53160196c4bd1d34a3fd9fbc9.css" rel="stylesheet" integrity="sha256-GkMVAc3rUjI8kg53YffZ4yeyvuUxYBlsS9HTSj/Z&#43;8k=" />
 
   
-<script src="/js/main-head.js" integrity=""></script>
+
+
+
+
+
+
+<script src="/js/main-head.min.94da6f95b126542222dab3a6e07ffefe1aaf63ec3ca555e827b58b80e7d3f0b7.js" integrity="sha256-lNpvlbEmVCIi2rOm4H/&#43;/hqvY&#43;w8pVXoJ7WLgOfT8Lc="></script>
 
   
   
@@ -56,6 +62,12 @@
     <span class="hx:mr-2 hx:font-extrabold hx:inline hx:select-none">Task Fiend</span>
 </a>
 <a
+  title=""
+  href="/about/"
+  
+  class="hx:text-sm hx:contrast-more:text-gray-700 hx:contrast-more:dark:text-gray-100 hx:relative hx:-ml-2 hx:hidden hx:whitespace-nowrap hx:p-2 hx:md:inline-flex hx:items-center hx:gap-1 hx:text-gray-600 hx:hover:text-gray-800 hx:dark:text-gray-400 hx:dark:hover:text-gray-200"
+><span class="hx:text-center">About</span>
+</a><a
   title=""
   href="/blog/"
   
@@ -109,6 +121,48 @@
               <li class=""><div class="hextra-sidebar-item hx:group hx:relative hx:flex hx:items-center" data-active="false">
     <a
       class="hx:flex hx:items-center hx:justify-between hx:gap-2 hx:grow hx:cursor-pointer hx:rounded-sm hx:px-2 hx:py-1.5 hx:text-sm hx:transition-colors [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] hx:hextra-focus-visible-inset hx:ltr:pr-8 hx:rtl:pl-8 hx:text-gray-500 hx:hover:bg-gray-100 hx:hover:text-gray-900 hx:contrast-more:border hx:contrast-more:border-transparent hx:contrast-more:text-gray-900 hx:contrast-more:hover:border-gray-900 hx:dark:text-neutral-400 hx:dark:hover:bg-primary-100/5 hx:dark:hover:text-gray-50 hx:contrast-more:dark:text-gray-50 hx:contrast-more:dark:hover:border-gray-50"
+      href="/about/"
+      
+    >
+      <span class="hx:min-w-0 [word-break:break-word]">About</span>
+    </a>
+      <button type="button" class="hextra-sidebar-collapsible-button hx:absolute hx:top-1/2 hx:-translate-y-1/2 hx:ltr:right-2 hx:rtl:left-2 hx:shrink-0 hx:cursor-pointer hx:p-0 hx:text-gray-500 hx:dark:text-neutral-400 hx:group-hover:text-gray-900 hx:dark:group-hover:text-gray-50 hx:group-data-[active=true]:text-primary-800 hx:group-data-[active=true]:dark:text-primary-600 hx:hextra-focus-visible-inset" aria-label="Toggle section" aria-expanded="false"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true" focusable="false" class="hx:h-[18px] hx:min-w-[18px] hx:rounded-xs hx:p-0.5 hx:hover:bg-gray-800/5 hx:dark:hover:bg-gray-100/5"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" class="hx:origin-center hx:transition-transform hx:rtl:-rotate-180"></path></svg></button>
+  </div><div class="hextra-sidebar-children hx:ltr:pr-0 hx:rtl:pl-0 hx:overflow-hidden">
+        <ul class='hx:relative hx:flex hx:flex-col hx:gap-1 hx:before:absolute hx:before:inset-y-1 hx:before:w-px hx:before:bg-gray-200 hx:before:content-[""] hx:ltr:ml-3 hx:ltr:pl-3 hx:ltr:before:left-0 hx:rtl:mr-3 hx:rtl:pr-3 hx:rtl:before:right-0 hx:dark:before:bg-neutral-800'><li class="hx:flex hx:flex-col "><div class="hextra-sidebar-item hx:group hx:relative hx:flex hx:items-center" data-active="false">
+    <a
+      class="hx:flex hx:items-center hx:justify-between hx:gap-2 hx:grow hx:cursor-pointer hx:rounded-sm hx:px-2 hx:py-1.5 hx:text-sm hx:transition-colors [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] hx:hextra-focus-visible-inset hx:text-gray-500 hx:hover:bg-gray-100 hx:hover:text-gray-900 hx:contrast-more:border hx:contrast-more:border-transparent hx:contrast-more:text-gray-900 hx:contrast-more:hover:border-gray-900 hx:dark:text-neutral-400 hx:dark:hover:bg-primary-100/5 hx:dark:hover:text-gray-50 hx:contrast-more:dark:text-gray-50 hx:contrast-more:dark:hover:border-gray-50"
+      href="/about/todoist-differences/"
+      
+    >
+      <span class="hx:min-w-0 [word-break:break-word]">Differences from Todoist</span>
+    </a>
+  </div>
+              
+            </li><li class="hx:flex hx:flex-col "><div class="hextra-sidebar-item hx:group hx:relative hx:flex hx:items-center" data-active="false">
+    <a
+      class="hx:flex hx:items-center hx:justify-between hx:gap-2 hx:grow hx:cursor-pointer hx:rounded-sm hx:px-2 hx:py-1.5 hx:text-sm hx:transition-colors [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] hx:hextra-focus-visible-inset hx:text-gray-500 hx:hover:bg-gray-100 hx:hover:text-gray-900 hx:contrast-more:border hx:contrast-more:border-transparent hx:contrast-more:text-gray-900 hx:contrast-more:hover:border-gray-900 hx:dark:text-neutral-400 hx:dark:hover:bg-primary-100/5 hx:dark:hover:text-gray-50 hx:contrast-more:dark:text-gray-50 hx:contrast-more:dark:hover:border-gray-50"
+      href="/about/maybe-someday/"
+      
+    >
+      <span class="hx:min-w-0 [word-break:break-word]">Features that Sound Nice But that May Never Be Implemented</span>
+    </a>
+  </div>
+              
+            </li><li class="hx:flex hx:flex-col "><div class="hextra-sidebar-item hx:group hx:relative hx:flex hx:items-center" data-active="false">
+    <a
+      class="hx:flex hx:items-center hx:justify-between hx:gap-2 hx:grow hx:cursor-pointer hx:rounded-sm hx:px-2 hx:py-1.5 hx:text-sm hx:transition-colors [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] hx:hextra-focus-visible-inset hx:text-gray-500 hx:hover:bg-gray-100 hx:hover:text-gray-900 hx:contrast-more:border hx:contrast-more:border-transparent hx:contrast-more:text-gray-900 hx:contrast-more:hover:border-gray-900 hx:dark:text-neutral-400 hx:dark:hover:bg-primary-100/5 hx:dark:hover:text-gray-50 hx:contrast-more:dark:text-gray-50 hx:contrast-more:dark:hover:border-gray-50"
+      href="/about/intentionally-missing-features/"
+      
+    >
+      <span class="hx:min-w-0 [word-break:break-word]">Intentionally Missing Features</span>
+    </a>
+  </div>
+              
+            </li></ul>
+      </div></li>
+              <li class=""><div class="hextra-sidebar-item hx:group hx:relative hx:flex hx:items-center" data-active="false">
+    <a
+      class="hx:flex hx:items-center hx:justify-between hx:gap-2 hx:grow hx:cursor-pointer hx:rounded-sm hx:px-2 hx:py-1.5 hx:text-sm hx:transition-colors [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] hx:hextra-focus-visible-inset hx:ltr:pr-8 hx:rtl:pl-8 hx:text-gray-500 hx:hover:bg-gray-100 hx:hover:text-gray-900 hx:contrast-more:border hx:contrast-more:border-transparent hx:contrast-more:text-gray-900 hx:contrast-more:hover:border-gray-900 hx:dark:text-neutral-400 hx:dark:hover:bg-primary-100/5 hx:dark:hover:text-gray-50 hx:contrast-more:dark:text-gray-50 hx:contrast-more:dark:hover:border-gray-50"
       href="/blog/"
       
     >
@@ -119,20 +173,10 @@
         <ul class='hx:relative hx:flex hx:flex-col hx:gap-1 hx:before:absolute hx:before:inset-y-1 hx:before:w-px hx:before:bg-gray-200 hx:before:content-[""] hx:ltr:ml-3 hx:ltr:pl-3 hx:ltr:before:left-0 hx:rtl:mr-3 hx:rtl:pr-3 hx:rtl:before:right-0 hx:dark:before:bg-neutral-800'><li class="hx:flex hx:flex-col "><div class="hextra-sidebar-item hx:group hx:relative hx:flex hx:items-center" data-active="false">
     <a
       class="hx:flex hx:items-center hx:justify-between hx:gap-2 hx:grow hx:cursor-pointer hx:rounded-sm hx:px-2 hx:py-1.5 hx:text-sm hx:transition-colors [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] hx:hextra-focus-visible-inset hx:text-gray-500 hx:hover:bg-gray-100 hx:hover:text-gray-900 hx:contrast-more:border hx:contrast-more:border-transparent hx:contrast-more:text-gray-900 hx:contrast-more:hover:border-gray-900 hx:dark:text-neutral-400 hx:dark:hover:bg-primary-100/5 hx:dark:hover:text-gray-50 hx:contrast-more:dark:text-gray-50 hx:contrast-more:dark:hover:border-gray-50"
-      href="/blog/2026/06/woo/"
+      href="/blog/2026/new-documentation-engine/"
       
     >
-      <span class="hx:min-w-0 [word-break:break-word]">Woo</span>
-    </a>
-  </div>
-              
-            </li><li class="hx:flex hx:flex-col "><div class="hextra-sidebar-item hx:group hx:relative hx:flex hx:items-center" data-active="false">
-    <a
-      class="hx:flex hx:items-center hx:justify-between hx:gap-2 hx:grow hx:cursor-pointer hx:rounded-sm hx:px-2 hx:py-1.5 hx:text-sm hx:transition-colors [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] hx:hextra-focus-visible-inset hx:text-gray-500 hx:hover:bg-gray-100 hx:hover:text-gray-900 hx:contrast-more:border hx:contrast-more:border-transparent hx:contrast-more:text-gray-900 hx:contrast-more:hover:border-gray-900 hx:dark:text-neutral-400 hx:dark:hover:bg-primary-100/5 hx:dark:hover:text-gray-50 hx:contrast-more:dark:text-gray-50 hx:contrast-more:dark:hover:border-gray-50"
-      href="/blog/2026/06/hello-world/"
-      
-    >
-      <span class="hx:min-w-0 [word-break:break-word]">Hello World!</span>
+      <span class="hx:min-w-0 [word-break:break-word]">New Documentation Engine</span>
     </a>
   </div>
               
@@ -148,50 +192,7 @@
     </a>
       <button type="button" class="hextra-sidebar-collapsible-button hx:absolute hx:top-1/2 hx:-translate-y-1/2 hx:ltr:right-2 hx:rtl:left-2 hx:shrink-0 hx:cursor-pointer hx:p-0 hx:text-gray-500 hx:dark:text-neutral-400 hx:group-hover:text-gray-900 hx:dark:group-hover:text-gray-50 hx:group-data-[active=true]:text-primary-800 hx:group-data-[active=true]:dark:text-primary-600 hx:hextra-focus-visible-inset" aria-label="Toggle section" aria-expanded="true"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true" focusable="false" class="hx:h-[18px] hx:min-w-[18px] hx:rounded-xs hx:p-0.5 hx:hover:bg-gray-800/5 hx:dark:hover:bg-gray-100/5"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" class="hx:origin-center hx:transition-transform hx:rtl:-rotate-180"></path></svg></button>
   </div><div class="hextra-sidebar-children hx:ltr:pr-0 hx:rtl:pl-0 hx:overflow-hidden">
-        <ul class='hx:relative hx:flex hx:flex-col hx:gap-1 hx:before:absolute hx:before:inset-y-1 hx:before:w-px hx:before:bg-gray-200 hx:before:content-[""] hx:ltr:ml-3 hx:ltr:pl-3 hx:ltr:before:left-0 hx:rtl:mr-3 hx:rtl:pr-3 hx:rtl:before:right-0 hx:dark:before:bg-neutral-800'><li class="hx:flex hx:flex-col "><div class="hextra-sidebar-item hx:group hx:relative hx:flex hx:items-center" data-active="false">
-    <a
-      class="hx:flex hx:items-center hx:justify-between hx:gap-2 hx:grow hx:cursor-pointer hx:rounded-sm hx:px-2 hx:py-1.5 hx:text-sm hx:transition-colors [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] hx:hextra-focus-visible-inset hx:ltr:pr-8 hx:rtl:pl-8 hx:text-gray-500 hx:hover:bg-gray-100 hx:hover:text-gray-900 hx:contrast-more:border hx:contrast-more:border-transparent hx:contrast-more:text-gray-900 hx:contrast-more:hover:border-gray-900 hx:dark:text-neutral-400 hx:dark:hover:bg-primary-100/5 hx:dark:hover:text-gray-50 hx:contrast-more:dark:text-gray-50 hx:contrast-more:dark:hover:border-gray-50"
-      href="/docs/about/"
-      
-    >
-      <span class="hx:min-w-0 [word-break:break-word]">About</span>
-    </a>
-      <button type="button" class="hextra-sidebar-collapsible-button hx:absolute hx:top-1/2 hx:-translate-y-1/2 hx:ltr:right-2 hx:rtl:left-2 hx:shrink-0 hx:cursor-pointer hx:p-0 hx:text-gray-500 hx:dark:text-neutral-400 hx:group-hover:text-gray-900 hx:dark:group-hover:text-gray-50 hx:group-data-[active=true]:text-primary-800 hx:group-data-[active=true]:dark:text-primary-600 hx:hextra-focus-visible-inset" aria-label="Toggle section" aria-expanded="false"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true" focusable="false" class="hx:h-[18px] hx:min-w-[18px] hx:rounded-xs hx:p-0.5 hx:hover:bg-gray-800/5 hx:dark:hover:bg-gray-100/5"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" class="hx:origin-center hx:transition-transform hx:rtl:-rotate-180"></path></svg></button>
-  </div>
-              <div class="hextra-sidebar-children hx:ltr:pr-0 hx:rtl:pl-0 hx:overflow-hidden">
-        <ul class='hx:relative hx:flex hx:flex-col hx:gap-1 hx:before:absolute hx:before:inset-y-1 hx:before:w-px hx:before:bg-gray-200 hx:before:content-[""] hx:ltr:ml-3 hx:ltr:pl-3 hx:ltr:before:left-0 hx:rtl:mr-3 hx:rtl:pr-3 hx:rtl:before:right-0 hx:dark:before:bg-neutral-800'><li class="hx:flex hx:flex-col "><div class="hextra-sidebar-item hx:group hx:relative hx:flex hx:items-center" data-active="false">
-    <a
-      class="hx:flex hx:items-center hx:justify-between hx:gap-2 hx:grow hx:cursor-pointer hx:rounded-sm hx:px-2 hx:py-1.5 hx:text-sm hx:transition-colors [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] hx:hextra-focus-visible-inset hx:text-gray-500 hx:hover:bg-gray-100 hx:hover:text-gray-900 hx:contrast-more:border hx:contrast-more:border-transparent hx:contrast-more:text-gray-900 hx:contrast-more:hover:border-gray-900 hx:dark:text-neutral-400 hx:dark:hover:bg-primary-100/5 hx:dark:hover:text-gray-50 hx:contrast-more:dark:text-gray-50 hx:contrast-more:dark:hover:border-gray-50"
-      href="/docs/about/todoist-differences/"
-      
-    >
-      <span class="hx:min-w-0 [word-break:break-word]">Differences from Todoist</span>
-    </a>
-  </div>
-              
-            </li><li class="hx:flex hx:flex-col "><div class="hextra-sidebar-item hx:group hx:relative hx:flex hx:items-center" data-active="false">
-    <a
-      class="hx:flex hx:items-center hx:justify-between hx:gap-2 hx:grow hx:cursor-pointer hx:rounded-sm hx:px-2 hx:py-1.5 hx:text-sm hx:transition-colors [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] hx:hextra-focus-visible-inset hx:text-gray-500 hx:hover:bg-gray-100 hx:hover:text-gray-900 hx:contrast-more:border hx:contrast-more:border-transparent hx:contrast-more:text-gray-900 hx:contrast-more:hover:border-gray-900 hx:dark:text-neutral-400 hx:dark:hover:bg-primary-100/5 hx:dark:hover:text-gray-50 hx:contrast-more:dark:text-gray-50 hx:contrast-more:dark:hover:border-gray-50"
-      href="/docs/about/maybe-someday/"
-      
-    >
-      <span class="hx:min-w-0 [word-break:break-word]">Features that Sound Nice But that May Never Be Implemented</span>
-    </a>
-  </div>
-              
-            </li><li class="hx:flex hx:flex-col "><div class="hextra-sidebar-item hx:group hx:relative hx:flex hx:items-center" data-active="false">
-    <a
-      class="hx:flex hx:items-center hx:justify-between hx:gap-2 hx:grow hx:cursor-pointer hx:rounded-sm hx:px-2 hx:py-1.5 hx:text-sm hx:transition-colors [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] hx:hextra-focus-visible-inset hx:text-gray-500 hx:hover:bg-gray-100 hx:hover:text-gray-900 hx:contrast-more:border hx:contrast-more:border-transparent hx:contrast-more:text-gray-900 hx:contrast-more:hover:border-gray-900 hx:dark:text-neutral-400 hx:dark:hover:bg-primary-100/5 hx:dark:hover:text-gray-50 hx:contrast-more:dark:text-gray-50 hx:contrast-more:dark:hover:border-gray-50"
-      href="/docs/about/intentionally-missing-features/"
-      
-    >
-      <span class="hx:min-w-0 [word-break:break-word]">Intentionally Missing Features</span>
-    </a>
-  </div>
-              
-            </li></ul>
-      </div>
-            </li><li class="hx:flex hx:flex-col open"><div class="hextra-sidebar-item hx:group hx:relative hx:flex hx:items-center" data-active="true">
+        <ul class='hx:relative hx:flex hx:flex-col hx:gap-1 hx:before:absolute hx:before:inset-y-1 hx:before:w-px hx:before:bg-gray-200 hx:before:content-[""] hx:ltr:ml-3 hx:ltr:pl-3 hx:ltr:before:left-0 hx:rtl:mr-3 hx:rtl:pr-3 hx:rtl:before:right-0 hx:dark:before:bg-neutral-800'><li class="hx:flex hx:flex-col open"><div class="hextra-sidebar-item hx:group hx:relative hx:flex hx:items-center" data-active="true">
     <a
       class="hx:flex hx:items-center hx:justify-between hx:gap-2 hx:grow hx:cursor-pointer hx:rounded-sm hx:px-2 hx:py-1.5 hx:text-sm hx:transition-colors [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] hx:hextra-focus-visible-inset hx:ltr:pr-8 hx:rtl:pl-8 hextra-sidebar-active-item hx:bg-primary-100 hx:font-semibold hx:text-primary-800 hx:contrast-more:border hx:contrast-more:border-primary-500 hx:dark:bg-primary-400/10 hx:dark:text-primary-600 hx:contrast-more:dark:border-primary-500"
       href="/docs/features/"
@@ -337,48 +338,6 @@
 
     <ul class="hx:flex hx:flex-col hx:gap-1 hx:max-md:hidden">
         
-            <li class=""><div class="hextra-sidebar-item hx:group hx:relative hx:flex hx:items-center" data-active="false">
-    <a
-      class="hx:flex hx:items-center hx:justify-between hx:gap-2 hx:grow hx:cursor-pointer hx:rounded-sm hx:px-2 hx:py-1.5 hx:text-sm hx:transition-colors [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] hx:hextra-focus-visible-inset hx:ltr:pr-8 hx:rtl:pl-8 hx:text-gray-500 hx:hover:bg-gray-100 hx:hover:text-gray-900 hx:contrast-more:border hx:contrast-more:border-transparent hx:contrast-more:text-gray-900 hx:contrast-more:hover:border-gray-900 hx:dark:text-neutral-400 hx:dark:hover:bg-primary-100/5 hx:dark:hover:text-gray-50 hx:contrast-more:dark:text-gray-50 hx:contrast-more:dark:hover:border-gray-50"
-      href="/docs/about/"
-      
-    >
-      <span class="hx:min-w-0 [word-break:break-word]">About</span>
-    </a>
-      <button type="button" class="hextra-sidebar-collapsible-button hx:absolute hx:top-1/2 hx:-translate-y-1/2 hx:ltr:right-2 hx:rtl:left-2 hx:shrink-0 hx:cursor-pointer hx:p-0 hx:text-gray-500 hx:dark:text-neutral-400 hx:group-hover:text-gray-900 hx:dark:group-hover:text-gray-50 hx:group-data-[active=true]:text-primary-800 hx:group-data-[active=true]:dark:text-primary-600 hx:hextra-focus-visible-inset" aria-label="Toggle section" aria-expanded="false"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true" focusable="false" class="hx:h-[18px] hx:min-w-[18px] hx:rounded-xs hx:p-0.5 hx:hover:bg-gray-800/5 hx:dark:hover:bg-gray-100/5"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" class="hx:origin-center hx:transition-transform hx:rtl:-rotate-180"></path></svg></button>
-  </div><div class="hextra-sidebar-children hx:ltr:pr-0 hx:rtl:pl-0 hx:overflow-hidden">
-        <ul class='hx:relative hx:flex hx:flex-col hx:gap-1 hx:before:absolute hx:before:inset-y-1 hx:before:w-px hx:before:bg-gray-200 hx:before:content-[""] hx:ltr:ml-3 hx:ltr:pl-3 hx:ltr:before:left-0 hx:rtl:mr-3 hx:rtl:pr-3 hx:rtl:before:right-0 hx:dark:before:bg-neutral-800'><li class="hx:flex hx:flex-col "><div class="hextra-sidebar-item hx:group hx:relative hx:flex hx:items-center" data-active="false">
-    <a
-      class="hx:flex hx:items-center hx:justify-between hx:gap-2 hx:grow hx:cursor-pointer hx:rounded-sm hx:px-2 hx:py-1.5 hx:text-sm hx:transition-colors [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] hx:hextra-focus-visible-inset hx:text-gray-500 hx:hover:bg-gray-100 hx:hover:text-gray-900 hx:contrast-more:border hx:contrast-more:border-transparent hx:contrast-more:text-gray-900 hx:contrast-more:hover:border-gray-900 hx:dark:text-neutral-400 hx:dark:hover:bg-primary-100/5 hx:dark:hover:text-gray-50 hx:contrast-more:dark:text-gray-50 hx:contrast-more:dark:hover:border-gray-50"
-      href="/docs/about/todoist-differences/"
-      
-    >
-      <span class="hx:min-w-0 [word-break:break-word]">Differences from Todoist</span>
-    </a>
-  </div>
-              
-            </li><li class="hx:flex hx:flex-col "><div class="hextra-sidebar-item hx:group hx:relative hx:flex hx:items-center" data-active="false">
-    <a
-      class="hx:flex hx:items-center hx:justify-between hx:gap-2 hx:grow hx:cursor-pointer hx:rounded-sm hx:px-2 hx:py-1.5 hx:text-sm hx:transition-colors [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] hx:hextra-focus-visible-inset hx:text-gray-500 hx:hover:bg-gray-100 hx:hover:text-gray-900 hx:contrast-more:border hx:contrast-more:border-transparent hx:contrast-more:text-gray-900 hx:contrast-more:hover:border-gray-900 hx:dark:text-neutral-400 hx:dark:hover:bg-primary-100/5 hx:dark:hover:text-gray-50 hx:contrast-more:dark:text-gray-50 hx:contrast-more:dark:hover:border-gray-50"
-      href="/docs/about/maybe-someday/"
-      
-    >
-      <span class="hx:min-w-0 [word-break:break-word]">Features that Sound Nice But that May Never Be Implemented</span>
-    </a>
-  </div>
-              
-            </li><li class="hx:flex hx:flex-col "><div class="hextra-sidebar-item hx:group hx:relative hx:flex hx:items-center" data-active="false">
-    <a
-      class="hx:flex hx:items-center hx:justify-between hx:gap-2 hx:grow hx:cursor-pointer hx:rounded-sm hx:px-2 hx:py-1.5 hx:text-sm hx:transition-colors [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] hx:hextra-focus-visible-inset hx:text-gray-500 hx:hover:bg-gray-100 hx:hover:text-gray-900 hx:contrast-more:border hx:contrast-more:border-transparent hx:contrast-more:text-gray-900 hx:contrast-more:hover:border-gray-900 hx:dark:text-neutral-400 hx:dark:hover:bg-primary-100/5 hx:dark:hover:text-gray-50 hx:contrast-more:dark:text-gray-50 hx:contrast-more:dark:hover:border-gray-50"
-      href="/docs/about/intentionally-missing-features/"
-      
-    >
-      <span class="hx:min-w-0 [word-break:break-word]">Intentionally Missing Features</span>
-    </a>
-  </div>
-              
-            </li></ul>
-      </div></li>
             <li class="open"><div class="hextra-sidebar-item hx:group hx:relative hx:flex hx:items-center" data-active="true">
     <a
       class="hx:flex hx:items-center hx:justify-between hx:gap-2 hx:grow hx:cursor-pointer hx:rounded-sm hx:px-2 hx:py-1.5 hx:text-sm hx:transition-colors [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] hx:hextra-focus-visible-inset hx:ltr:pr-8 hx:rtl:pl-8 hextra-sidebar-active-item hx:bg-primary-100 hx:font-semibold hx:text-primary-800 hx:contrast-more:border hx:contrast-more:border-primary-500 hx:dark:bg-primary-400/10 hx:dark:text-primary-600 hx:contrast-more:dark:border-primary-500"
@@ -666,7 +625,7 @@
   </a></div></div>
     </div></footer>
     
-    <script defer src="/js/main.js" integrity=""></script>
-<script defer src="/js/flexsearch.9f5b5908f93ae86f1ecd4b043b799f580c2d1654e703dd9357d568ac41b2547a.js" integrity="sha256-n1tZCPk66G8ezUsEO3mfWAwtFlTnA92TV9VorEGyVHo=" crossorigin="anonymous"></script><script defer src="/en.search.js" integrity=""></script>
+    <script defer src="/js/main.min.d9fbefbbac8caeb66025dbb14d569c30defac0effcba45486a78209fba9360af.js" integrity="sha256-2fvvu6yMrrZgJduxTVacMN76wO/8ukVIanggn7qTYK8="></script>
+<script defer src="/js/flexsearch.433e941a8a573ebb9931fc16fc75266ab6b93f569ac2fb4f3dc66882e0416f4c.js" integrity="sha256-Qz6UGopXPruZMfwW/HUmara5P1aawvtPPcZoguBBb0w=" crossorigin="anonymous"></script><script defer src="/en.search.min.423a47566acadc2f8b92bbb4ca95334500545268040247c4966cf47d6d0eb1b3.js" integrity="sha256-QjpHVmrK3C&#43;Lkru0ypUzRQBUUmgEAkfElmz0fW0OsbM="></script>
   </body>
 </html>

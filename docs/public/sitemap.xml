@@ -2,50 +2,55 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
   xmlns:xhtml="http://www.w3.org/1999/xhtml">
   <url>
-    <loc>http://localhost:1313/docs/developers/</loc>
+    <loc>https://taskfiend.kjcoop.com/blog/</loc>
+    <lastmod>2026-06-29T18:30:30-07:00</lastmod>
   </url><url>
-    <loc>http://localhost:1313/docs/developers/api/</loc>
+    <loc>https://taskfiend.kjcoop.com/blog/2026/new-documentation-engine/</loc>
+    <lastmod>2026-06-29T18:30:30-07:00</lastmod>
   </url><url>
-    <loc>http://localhost:1313/docs/developers/testing/</loc>
+    <loc>https://taskfiend.kjcoop.com/</loc>
+    <lastmod>2026-06-29T18:30:30-07:00</lastmod>
   </url><url>
-    <loc>http://localhost:1313/docs/features/</loc>
+    <loc>https://taskfiend.kjcoop.com/about/</loc>
   </url><url>
-    <loc>http://localhost:1313/docs/features/admin-functionality/</loc>
+    <loc>https://taskfiend.kjcoop.com/docs/features/admin-functionality/</loc>
   </url><url>
-    <loc>http://localhost:1313/docs/features/dates/</loc>
+    <loc>https://taskfiend.kjcoop.com/docs/developers/api/</loc>
   </url><url>
-    <loc>http://localhost:1313/docs/features/import-from-md/</loc>
+    <loc>https://taskfiend.kjcoop.com/categories/</loc>
   </url><url>
-    <loc>http://localhost:1313/docs/features/inline/</loc>
+    <loc>https://taskfiend.kjcoop.com/docs/features/dates/</loc>
   </url><url>
-    <loc>http://localhost:1313/docs/features/recurring-tasks/</loc>
+    <loc>https://taskfiend.kjcoop.com/about/todoist-differences/</loc>
   </url><url>
-    <loc>http://localhost:1313/docs/getting-started/</loc>
+    <loc>https://taskfiend.kjcoop.com/docs/getting-started/docker/</loc>
   </url><url>
-    <loc>http://localhost:1313/docs/getting-started/todoist-import/</loc>
+    <loc>https://taskfiend.kjcoop.com/docs/</loc>
   </url><url>
-    <loc>http://localhost:1313/docs/self-hosting/</loc>
+    <loc>https://taskfiend.kjcoop.com/docs/features/</loc>
   </url><url>
-    <loc>http://localhost:1313/docs/self-hosting/docker/</loc>
+    <loc>https://taskfiend.kjcoop.com/about/maybe-someday/</loc>
   </url><url>
-    <loc>http://localhost:1313/privacy/</loc>
+    <loc>https://taskfiend.kjcoop.com/docs/developers/</loc>
   </url><url>
-    <loc>http://localhost:1313/docs/about/</loc>
+    <loc>https://taskfiend.kjcoop.com/docs/getting-started/</loc>
   </url><url>
-    <loc>http://localhost:1313/blog/</loc>
+    <loc>https://taskfiend.kjcoop.com/docs/features/import-from-md/</loc>
   </url><url>
-    <loc>http://localhost:1313/categories/</loc>
+    <loc>https://taskfiend.kjcoop.com/docs/features/inline/</loc>
   </url><url>
-    <loc>http://localhost:1313/docs/about/todoist-differences/</loc>
+    <loc>https://taskfiend.kjcoop.com/about/intentionally-missing-features/</loc>
   </url><url>
-    <loc>http://localhost:1313/docs/</loc>
+    <loc>https://taskfiend.kjcoop.com/docs/getting-started/todoist-import/</loc>
   </url><url>
-    <loc>http://localhost:1313/docs/about/maybe-someday/</loc>
+    <loc>https://taskfiend.kjcoop.com/privacy/</loc>
   </url><url>
-    <loc>http://localhost:1313/docs/about/intentionally-missing-features/</loc>
+    <loc>https://taskfiend.kjcoop.com/docs/features/recurring-tasks/</loc>
   </url><url>
-    <loc>http://localhost:1313/tags/</loc>
+    <loc>https://taskfiend.kjcoop.com/docs/getting-started/security/</loc>
   </url><url>
-    <loc>http://localhost:1313/</loc>
+    <loc>https://taskfiend.kjcoop.com/tags/</loc>
+  </url><url>
+    <loc>https://taskfiend.kjcoop.com/docs/developers/testing/</loc>
   </url>
 </urlset>

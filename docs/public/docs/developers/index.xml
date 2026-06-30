@@ -1,12 +1,12 @@
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>Task Fiend – For Developers</title>
-    <link>http://localhost:1313/docs/developers/</link>
+    <link>https://taskfiend.kjcoop.com/docs/developers/</link>
     <description>Recent content in For Developers on Task Fiend</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
     
-	  <atom:link href="http://localhost:1313/docs/developers/index.xml" rel="self" type="application/rss+xml" />
+	  <atom:link href="https://taskfiend.kjcoop.com/docs/developers/index.xml" rel="self" type="application/rss+xml" />
     
     
       
@@ -16,10 +16,10 @@
     
     <item>
       <title>API Reference</title>
-      <link>http://localhost:1313/docs/developers/api/</link>
+      <link>https://taskfiend.kjcoop.com/docs/developers/api/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
-      <guid>http://localhost:1313/docs/developers/api/</guid>
+      <guid>https://taskfiend.kjcoop.com/docs/developers/api/</guid>
       <description>
         
         
@@ -176,10 +176,10 @@
     
     <item>
       <title>Testing</title>
-      <link>http://localhost:1313/docs/developers/testing/</link>
+      <link>https://taskfiend.kjcoop.com/docs/developers/testing/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
-      <guid>http://localhost:1313/docs/developers/testing/</guid>
+      <guid>https://taskfiend.kjcoop.com/docs/developers/testing/</guid>
       <description>
         
         
