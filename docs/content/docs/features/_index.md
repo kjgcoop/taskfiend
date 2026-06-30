@@ -2,7 +2,7 @@
 title: "Features"
 ---
 
-- **Recurring tasks** - set a recurrence pattern on any task; completing it automatically creates the next occurrence (see `RECURRING_TASKS.md`)
+- **[Recurring tasks](/docs/features/recurring-tasks/)** - set a recurrence pattern on any task; completing it automatically creates the next occurrence.
 - **Quick-add bar** on task list views - type a task name with natural language dates and inline shortcuts (`#project`, `@tag`, `+location`, `&user`, `nodate`) to autofill fields; autocomplete suggestions appear as you type. Paste multiple lines to create multiple tasks at once, or use Shift-Enter to add them in sequence.
 - **Day page**
     - Tasks can be marked done inline without a page reload, but to mark a task archived, you need to open it up and update the dropdown.

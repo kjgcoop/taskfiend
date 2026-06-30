@@ -93,6 +93,8 @@ The `testing` connection is defined in `config/database.php` and always points t
 
 ## Adding pages to Other Links
 
+I added the ability to add other links because I didn't want to put words in your mouth with respect to a privacy policy or Terms of Service or such nonsense. Now it's your problem to add. 
+
 Drop any Markdown file into `storage/app/other-links/`. It will:
 
 - Appear as a link in the **Other Links** nav dropdown (desktop) and collapsible section (mobile)
