@@ -9,7 +9,7 @@ title: "Getting Started"
 3. Create your first user: `php artisan user:create admin@example.com "Admin User" password123`
 4. Start the dev server: `php artisan serve`
 
-## Get Docker Running:
+## Alternative Docker Setup:
 1. Create environment file: `cp .env.example .env`
 2. Edit .env and set APP_KEY, APP_ENV=production, APP_DEBUG=false
 3. Build and start containers: `docker compose up -d --build` (or `docker-compose` for Docker V1)

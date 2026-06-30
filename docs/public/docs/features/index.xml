@@ -24,22 +24,62 @@
         
         
         &lt;p&gt;There is no admin UI. Here are the commands to do admin-like things.&lt;/p&gt;
-&lt;h2&gt;Create/Disable Users&lt;span class=&#34;hx:absolute hx:-mt-20&#34; id=&#34;createdisable-users&#34;&gt;&lt;/span&gt;
-    &lt;a href=&#34;#createdisable-users&#34; class=&#34;subheading-anchor&#34; aria-label=&#34;Permalink for this section&#34;&gt;&lt;/a&gt;&lt;/h2&gt;&lt;ul&gt;
-&lt;li&gt;Create a user: &lt;code&gt;php artisan user:create {email} {name} {password}&lt;/code&gt;&lt;/li&gt;
-&lt;li&gt;Toggle whether a user is enabled or disabled: &lt;code&gt;php artisan user:toggle {email}&lt;/code&gt;&lt;/li&gt;
-&lt;/ul&gt;
-&lt;p&gt;A user who is disabled is unable to log in, but their tasks remain present. If they&amp;rsquo;re re-enabled, their tasks are still waiting for them. Tasks they&amp;rsquo;ve assigned to other user(s) are still available to those other user(s).&lt;/p&gt;
-&lt;h2&gt;Reset a Forgotten Password&lt;span class=&#34;hx:absolute hx:-mt-20&#34; id=&#34;reset-a-forgotten-password&#34;&gt;&lt;/span&gt;
-    &lt;a href=&#34;#reset-a-forgotten-password&#34; class=&#34;subheading-anchor&#34; aria-label=&#34;Permalink for this section&#34;&gt;&lt;/a&gt;&lt;/h2&gt;&lt;p&gt;Because I run this on a server with outbound mail ports blocked, I didn&amp;rsquo;t bother implementing a forgotten password form. A user has to log into the server and run this from the command line:
+&lt;h2&gt;User management&lt;span class=&#34;hx:absolute hx:-mt-20&#34; id=&#34;user-management&#34;&gt;&lt;/span&gt;
+    &lt;a href=&#34;#user-management&#34; class=&#34;subheading-anchor&#34; aria-label=&#34;Permalink for this section&#34;&gt;&lt;/a&gt;&lt;/h2&gt;&lt;div class=&#34;hextra-code-block hx:relative hx:mt-6 hx:first:mt-0 hx:group/code&#34;&gt;
+
+&lt;div&gt;&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;php artisan user:create &lt;span style=&#34;color:#f92672&#34;&gt;{&lt;/span&gt;email&lt;span style=&#34;color:#f92672&#34;&gt;}&lt;/span&gt; &lt;span style=&#34;color:#f92672&#34;&gt;{&lt;/span&gt;name&lt;span style=&#34;color:#f92672&#34;&gt;}&lt;/span&gt; &lt;span style=&#34;color:#f92672&#34;&gt;{&lt;/span&gt;password&lt;span style=&#34;color:#f92672&#34;&gt;}&lt;/span&gt;   &lt;span style=&#34;color:#75715e&#34;&gt;# Create a user&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;php artisan user:toggle &lt;span style=&#34;color:#f92672&#34;&gt;{&lt;/span&gt;email&lt;span style=&#34;color:#f92672&#34;&gt;}&lt;/span&gt;                      &lt;span style=&#34;color:#75715e&#34;&gt;# Enable or disable a user&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;php artisan user:password &lt;span style=&#34;color:#f92672&#34;&gt;{&lt;/span&gt;email&lt;span style=&#34;color:#f92672&#34;&gt;}&lt;/span&gt;                    &lt;span style=&#34;color:#75715e&#34;&gt;# Reset password; outputs new password&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;&lt;div class=&#34;hextra-code-copy-btn-container hx:opacity-0 hx:transition hx:group-hover/code:opacity-100 hx:flex hx:gap-1 hx:absolute hx:m-[11px] hx:right-0 hx:top-0&#34;&gt;
+  &lt;button
+    class=&#34;hextra-code-copy-btn hx:group/copybtn hx:cursor-pointer hx:transition-all hx:active:opacity-50 hx:bg-primary-700/5 hx:border hx:border-black/5 hx:text-gray-600 hx:hover:text-gray-900 hx:rounded-md hx:p-1.5 hx:dark:bg-primary-300/10 hx:dark:border-white/10 hx:dark:text-gray-400 hx:dark:hover:text-gray-50&#34;
+    title=&#34;Copy code&#34;
+    aria-label=&#34;Copy code&#34;
+    data-copied-label=&#34;Copied!&#34;
+  &gt;
+    &lt;div class=&#34;hextra-copy-icon hx:group-[.copied]/copybtn:hidden hx:pointer-events-none hx:h-4 hx:w-4&#34;&gt;&lt;/div&gt;
+&lt;div class=&#34;hextra-success-icon hx:hidden hx:group-[.copied]/copybtn:block hx:pointer-events-none hx:h-4 hx:w-4&#34;&gt;&lt;/div&gt;
+  &lt;/button&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+&lt;p&gt;Disabled users cannot log in, but their tasks remain. An account can be re-enabled. API keys for disabled users are rejected by the API middleware.&lt;/p&gt;
+&lt;h3&gt;Reset a Forgotten Password&lt;span class=&#34;hx:absolute hx:-mt-20&#34; id=&#34;reset-a-forgotten-password&#34;&gt;&lt;/span&gt;
+    &lt;a href=&#34;#reset-a-forgotten-password&#34; class=&#34;subheading-anchor&#34; aria-label=&#34;Permalink for this section&#34;&gt;&lt;/a&gt;&lt;/h3&gt;&lt;p&gt;Because I run this on a server with outbound mail ports blocked, I didn&amp;rsquo;t bother implementing a forgotten password form. A user has to log into the server and run this from the command line:
 &lt;code&gt;php artisan user:password {email}&lt;/code&gt;&lt;/p&gt;
 &lt;p&gt;It will output the user&amp;rsquo;s new password.&lt;/p&gt;
-&lt;h2&gt;API Keys&lt;span class=&#34;hx:absolute hx:-mt-20&#34; id=&#34;api-keys&#34;&gt;&lt;/span&gt;
-    &lt;a href=&#34;#api-keys&#34; class=&#34;subheading-anchor&#34; aria-label=&#34;Permalink for this section&#34;&gt;&lt;/a&gt;&lt;/h2&gt;&lt;ul&gt;
-&lt;li&gt;Create an API key: &lt;code&gt;php artisan apikey:create {email}&lt;/code&gt; - this will only print the API key the one time, so note the value immediately.&lt;/li&gt;
-&lt;li&gt;Disable an API key: &lt;code&gt;php artisan apikey:invalidate {key}&lt;/code&gt;&lt;/li&gt;
-&lt;/ul&gt;
+&lt;h2&gt;API keys&lt;span class=&#34;hx:absolute hx:-mt-20&#34; id=&#34;api-keys&#34;&gt;&lt;/span&gt;
+    &lt;a href=&#34;#api-keys&#34; class=&#34;subheading-anchor&#34; aria-label=&#34;Permalink for this section&#34;&gt;&lt;/a&gt;&lt;/h2&gt;&lt;div class=&#34;hextra-code-block hx:relative hx:mt-6 hx:first:mt-0 hx:group/code&#34;&gt;
+
+&lt;div&gt;&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;php artisan apikey:create &lt;span style=&#34;color:#f92672&#34;&gt;{&lt;/span&gt;email&lt;span style=&#34;color:#f92672&#34;&gt;}&lt;/span&gt;    &lt;span style=&#34;color:#75715e&#34;&gt;# Generate a key — printed once, note it immediately&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;php artisan apikey:invalidate &lt;span style=&#34;color:#f92672&#34;&gt;{&lt;/span&gt;key&lt;span style=&#34;color:#f92672&#34;&gt;}&lt;/span&gt;  &lt;span style=&#34;color:#75715e&#34;&gt;# Permanently invalidate a key (cannot be re-enabled)&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;&lt;div class=&#34;hextra-code-copy-btn-container hx:opacity-0 hx:transition hx:group-hover/code:opacity-100 hx:flex hx:gap-1 hx:absolute hx:m-[11px] hx:right-0 hx:top-0&#34;&gt;
+  &lt;button
+    class=&#34;hextra-code-copy-btn hx:group/copybtn hx:cursor-pointer hx:transition-all hx:active:opacity-50 hx:bg-primary-700/5 hx:border hx:border-black/5 hx:text-gray-600 hx:hover:text-gray-900 hx:rounded-md hx:p-1.5 hx:dark:bg-primary-300/10 hx:dark:border-white/10 hx:dark:text-gray-400 hx:dark:hover:text-gray-50&#34;
+    title=&#34;Copy code&#34;
+    aria-label=&#34;Copy code&#34;
+    data-copied-label=&#34;Copied!&#34;
+  &gt;
+    &lt;div class=&#34;hextra-copy-icon hx:group-[.copied]/copybtn:hidden hx:pointer-events-none hx:h-4 hx:w-4&#34;&gt;&lt;/div&gt;
+&lt;div class=&#34;hextra-success-icon hx:hidden hx:group-[.copied]/copybtn:block hx:pointer-events-none hx:h-4 hx:w-4&#34;&gt;&lt;/div&gt;
+  &lt;/button&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+&lt;p&gt;Keys are stored hashed; there is no way to retrieve a key after creation.&lt;/p&gt;
 &lt;p&gt;An invalidated API key cannot be re-validated.&lt;/p&gt;
+&lt;h2&gt;Move Overdue Tasks to Today&lt;span class=&#34;hx:absolute hx:-mt-20&#34; id=&#34;move-overdue-tasks-to-today&#34;&gt;&lt;/span&gt;
+    &lt;a href=&#34;#move-overdue-tasks-to-today&#34; class=&#34;subheading-anchor&#34; aria-label=&#34;Permalink for this section&#34;&gt;&lt;/a&gt;&lt;/h2&gt;&lt;p&gt;I only use this in my test environment, but somebody may want it for prod use. I don&amp;rsquo;t remember offhand why I had the AI build a script for it as opposed to running something like &lt;code&gt;update tasks set date=NOW() where date &amp;lt; NOW and user_id=[whatever]();&lt;/code&gt;.&lt;/p&gt;
+&lt;div class=&#34;hextra-code-block hx:relative hx:mt-6 hx:first:mt-0 hx:group/code&#34;&gt;
+
+&lt;div&gt;&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;php artisan tasks:move-overdue    &lt;span style=&#34;color:#75715e&#34;&gt;# Reschedule all overdue incomplete tasks to today&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;&lt;div class=&#34;hextra-code-copy-btn-container hx:opacity-0 hx:transition hx:group-hover/code:opacity-100 hx:flex hx:gap-1 hx:absolute hx:m-[11px] hx:right-0 hx:top-0&#34;&gt;
+  &lt;button
+    class=&#34;hextra-code-copy-btn hx:group/copybtn hx:cursor-pointer hx:transition-all hx:active:opacity-50 hx:bg-primary-700/5 hx:border hx:border-black/5 hx:text-gray-600 hx:hover:text-gray-900 hx:rounded-md hx:p-1.5 hx:dark:bg-primary-300/10 hx:dark:border-white/10 hx:dark:text-gray-400 hx:dark:hover:text-gray-50&#34;
+    title=&#34;Copy code&#34;
+    aria-label=&#34;Copy code&#34;
+    data-copied-label=&#34;Copied!&#34;
+  &gt;
+    &lt;div class=&#34;hextra-copy-icon hx:group-[.copied]/copybtn:hidden hx:pointer-events-none hx:h-4 hx:w-4&#34;&gt;&lt;/div&gt;
+&lt;div class=&#34;hextra-success-icon hx:hidden hx:group-[.copied]/copybtn:block hx:pointer-events-none hx:h-4 hx:w-4&#34;&gt;&lt;/div&gt;
+  &lt;/button&gt;
+&lt;/div&gt;
+&lt;/div&gt;
 
       </description>
     </item>

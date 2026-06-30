@@ -26,10 +26,6 @@ A full security audit was completed covering IDOR/authorization, file upload saf
 | CSRF | All state-changing web routes protected | No issue found |
 | SQL injection | No raw query interpolation | No issue found |
 
-### Deferred: Content Security Policy
-
-A strict CSP would require `nonce` attributes on inline `<script>` blocks across 16+ view files. This is a meaningful refactor and was deferred. When implemented, every `<script>` tag in Blade templates will need a server-generated nonce, and the CSP header should use `script-src 'self' 'nonce-{value}'`.
-
 ---
 
 ## Authentication and authorization

@@ -9,7 +9,9 @@
 <link rel="apple-touch-icon" href="/apple-touch-icon.png" sizes="180x180" />
 <link fetchpriority="low" href="/site.webmanifest" rel="manifest" />
 <title>For Developers – Task Fiend</title>
-  <meta name="description" content="Local setup cp .env.example .env composer setup # installs deps, generates app key, runs migrations, builds assets php artisan user:create admin@example.com &#34;Admin User&#34; password123 php artisan serve Docker setup cp .env.example .env # Edit .env: set APP_KEY, APP_ENV=production, APP_DEBUG=false docker compose up -d --build docker compose exec app php artisan migrate --force docker compose exec app php artisan user:create admin@example.com &#34;Admin User&#34; password123 CLI commands User management php artisan user:create {email} {name} {password} # Create a user php artisan user:toggle {email} # Enable or disable a user php artisan user:purge {email} --force # Delete all data for a user (irreversible) php artisan user:password {email} # Reset password; outputs new password Disabled users cannot log in, but their tasks remain. An account can be re-enabled. API keys for disabled users are rejected by the API middleware." /><link rel="canonical" href="https://taskfiend.kjcoop.com/docs/developers/" itemprop="url" />
+  <meta name="description" content="Start with the Getting Started instructions to install.
+Database management Path Used by Production database/database.sqlite .env Test database/test-database.sqlite .env.testing Always specify the environment when running artisan commands against a specific database:
+# Production php artisan migrate:fresh --force # Test database php artisan migrate:fresh --force --env=testing php artisan user:create test@example.com &#34;Test&#34; password123 --env=testing The testing connection is defined in config/database.php and always points to the test database file regardless of .env." /><link rel="canonical" href="https://taskfiend.kjcoop.com/docs/developers/" itemprop="url" />
 
 <meta property="og:title" content="For Developers">
 <meta
@@ -28,11 +30,15 @@
 
 
   <meta itemprop="name" content="For Developers">
-  <meta itemprop="description" content="Local setup cp .env.example .env composer setup # installs deps, generates app key, runs migrations, builds assets php artisan user:create admin@example.com &#34;Admin User&#34; password123 php artisan serve Docker setup cp .env.example .env # Edit .env: set APP_KEY, APP_ENV=production, APP_DEBUG=false docker compose up -d --build docker compose exec app php artisan migrate --force docker compose exec app php artisan user:create admin@example.com &#34;Admin User&#34; password123 CLI commands User management php artisan user:create {email} {name} {password} # Create a user php artisan user:toggle {email} # Enable or disable a user php artisan user:purge {email} --force # Delete all data for a user (irreversible) php artisan user:password {email} # Reset password; outputs new password Disabled users cannot log in, but their tasks remain. An account can be re-enabled. API keys for disabled users are rejected by the API middleware.">
-  <meta itemprop="wordCount" content="516">
+  <meta itemprop="description" content="Start with the Getting Started instructions to install.
+Database management Path Used by Production database/database.sqlite .env Test database/test-database.sqlite .env.testing Always specify the environment when running artisan commands against a specific database:
+# Production php artisan migrate:fresh --force # Test database php artisan migrate:fresh --force --env=testing php artisan user:create test@example.com &#34;Test&#34; password123 --env=testing The testing connection is defined in config/database.php and always points to the test database file regardless of .env.">
+  <meta itemprop="wordCount" content="373">
   <meta name="twitter:card" content="summary">
   <meta name="twitter:title" content="For Developers">
-  <meta name="twitter:description" content="Local setup cp .env.example .env composer setup # installs deps, generates app key, runs migrations, builds assets php artisan user:create admin@example.com &#34;Admin User&#34; password123 php artisan serve Docker setup cp .env.example .env # Edit .env: set APP_KEY, APP_ENV=production, APP_DEBUG=false docker compose up -d --build docker compose exec app php artisan migrate --force docker compose exec app php artisan user:create admin@example.com &#34;Admin User&#34; password123 CLI commands User management php artisan user:create {email} {name} {password} # Create a user php artisan user:toggle {email} # Enable or disable a user php artisan user:purge {email} --force # Delete all data for a user (irreversible) php artisan user:password {email} # Reset password; outputs new password Disabled users cannot log in, but their tasks remain. An account can be re-enabled. API keys for disabled users are rejected by the API middleware.">
+  <meta name="twitter:description" content="Start with the Getting Started instructions to install.
+Database management Path Used by Production database/database.sqlite .env Test database/test-database.sqlite .env.testing Always specify the environment when running artisan commands against a specific database:
+# Production php artisan migrate:fresh --force # Test database php artisan migrate:fresh --force --env=testing php artisan user:create test@example.com &#34;Test&#34; password123 --env=testing The testing connection is defined in config/database.php and always points to the test database file regardless of .env.">
 
     <link rel="preload" href="/css/compiled/main.min.1a431501cdeb52323c920e7761f7d9e327b2bee53160196c4bd1d34a3fd9fbc9.css" as="style" integrity="sha256-GkMVAc3rUjI8kg53YffZ4yeyvuUxYBlsS9HTSj/Z&#43;8k=" />
     <link href="/css/compiled/main.min.1a431501cdeb52323c920e7761f7d9e327b2bee53160196c4bd1d34a3fd9fbc9.css" rel="stylesheet" integrity="sha256-GkMVAc3rUjI8kg53YffZ4yeyvuUxYBlsS9HTSj/Z&#43;8k=" />
@@ -267,24 +273,6 @@
   </div>
   
     <ul class='hx:flex hx:flex-col hx:gap-1 hx:relative hx:before:absolute hx:before:inset-y-1 hx:before:w-px hx:before:bg-gray-200 hx:before:content-[""] hx:dark:before:bg-neutral-800 hx:ltr:pl-3 hx:ltr:before:left-0 hx:rtl:pr-3 hx:rtl:before:right-0 hx:ltr:ml-3 hx:rtl:mr-3'><li>
-              <a
-                href="#local-setup"
-                class="hx:flex hx:rounded-sm hx:px-2 hx:py-1.5 hx:text-sm hx:transition-colors [word-break:break-word] hx:cursor-pointer [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] hx:contrast-more:border hx:gap-2 hx:before:opacity-25 hx:before:content-['#'] hx:text-gray-500 hx:hover:bg-gray-100 hx:hover:text-gray-900 hx:dark:text-neutral-400 hx:dark:hover:bg-primary-100/5 hx:dark:hover:text-gray-50 hx:contrast-more:text-gray-900 hx:contrast-more:dark:text-gray-50 hx:contrast-more:border-transparent hx:contrast-more:hover:border-gray-900 hx:contrast-more:dark:hover:border-gray-50"
-              >Local setup</a>
-            </li>
-          <li>
-              <a
-                href="#docker-setup"
-                class="hx:flex hx:rounded-sm hx:px-2 hx:py-1.5 hx:text-sm hx:transition-colors [word-break:break-word] hx:cursor-pointer [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] hx:contrast-more:border hx:gap-2 hx:before:opacity-25 hx:before:content-['#'] hx:text-gray-500 hx:hover:bg-gray-100 hx:hover:text-gray-900 hx:dark:text-neutral-400 hx:dark:hover:bg-primary-100/5 hx:dark:hover:text-gray-50 hx:contrast-more:text-gray-900 hx:contrast-more:dark:text-gray-50 hx:contrast-more:border-transparent hx:contrast-more:hover:border-gray-900 hx:contrast-more:dark:hover:border-gray-50"
-              >Docker setup</a>
-            </li>
-          <li>
-              <a
-                href="#cli-commands"
-                class="hx:flex hx:rounded-sm hx:px-2 hx:py-1.5 hx:text-sm hx:transition-colors [word-break:break-word] hx:cursor-pointer [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] hx:contrast-more:border hx:gap-2 hx:before:opacity-25 hx:before:content-['#'] hx:text-gray-500 hx:hover:bg-gray-100 hx:hover:text-gray-900 hx:dark:text-neutral-400 hx:dark:hover:bg-primary-100/5 hx:dark:hover:text-gray-50 hx:contrast-more:text-gray-900 hx:contrast-more:dark:text-gray-50 hx:contrast-more:border-transparent hx:contrast-more:hover:border-gray-900 hx:contrast-more:dark:hover:border-gray-50"
-              >CLI commands</a>
-            </li>
-          <li>
               <a
                 href="#database-management"
                 class="hx:flex hx:rounded-sm hx:px-2 hx:py-1.5 hx:text-sm hx:transition-colors [word-break:break-word] hx:cursor-pointer [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] hx:contrast-more:border hx:gap-2 hx:before:opacity-25 hx:before:content-['#'] hx:text-gray-500 hx:hover:bg-gray-100 hx:hover:text-gray-900 hx:dark:text-neutral-400 hx:dark:hover:bg-primary-100/5 hx:dark:hover:text-gray-50 hx:contrast-more:text-gray-900 hx:contrast-more:dark:text-gray-50 hx:contrast-more:border-transparent hx:contrast-more:hover:border-gray-900 hx:contrast-more:dark:hover:border-gray-50"
@@ -591,30 +579,6 @@
 <nav class="hextra-toc hx:order-last hx:hidden hx:w-64 hx:shrink-0 hx:xl:block hx:print:hidden hx:px-4" aria-label="Table of contents">
     <div class="hextra-scrollbar hx:sticky hx:top-16 hx:overflow-y-auto hx:pr-4 hx:pt-6 hx:text-sm [hyphens:auto] hx:max-h-[calc(100vh-var(--navbar-height)-env(safe-area-inset-bottom))] hx:ltr:-mr-4 hx:rtl:-ml-4"><p class="hx:mb-4 hx:font-semibold hx:tracking-tight">On this page</p><ul>
       <li class="hx:my-2 hx:scroll-my-6 hx:scroll-py-6">
-        <a class="hx:font-medium hx:inline-block hx:rounded-sm hx:text-gray-500 hx:hover:text-gray-900 hx:dark:text-gray-400 hx:dark:hover:text-gray-300 hx:contrast-more:text-gray-900 hx:contrast-more:underline hx:contrast-more:dark:text-gray-50 hx:w-full hx:wrap-break-word hx:hextra-focus-visible-inset" href="#local-setup">Local setup
-        </a>
-      </li>
-      <li class="hx:my-2 hx:scroll-my-6 hx:scroll-py-6">
-        <a class="hx:font-medium hx:inline-block hx:rounded-sm hx:text-gray-500 hx:hover:text-gray-900 hx:dark:text-gray-400 hx:dark:hover:text-gray-300 hx:contrast-more:text-gray-900 hx:contrast-more:underline hx:contrast-more:dark:text-gray-50 hx:w-full hx:wrap-break-word hx:hextra-focus-visible-inset" href="#docker-setup">Docker setup
-        </a>
-      </li>
-      <li class="hx:my-2 hx:scroll-my-6 hx:scroll-py-6">
-        <a class="hx:font-medium hx:inline-block hx:rounded-sm hx:text-gray-500 hx:hover:text-gray-900 hx:dark:text-gray-400 hx:dark:hover:text-gray-300 hx:contrast-more:text-gray-900 hx:contrast-more:underline hx:contrast-more:dark:text-gray-50 hx:w-full hx:wrap-break-word hx:hextra-focus-visible-inset" href="#cli-commands">CLI commands
-        </a>
-      </li>
-      <li class="hx:my-2 hx:scroll-my-6 hx:scroll-py-6">
-        <a class="hx:ltr:pl-4 hx:rtl:pr-4 hx:inline-block hx:rounded-sm hx:text-gray-500 hx:hover:text-gray-900 hx:dark:text-gray-400 hx:dark:hover:text-gray-300 hx:contrast-more:text-gray-900 hx:contrast-more:underline hx:contrast-more:dark:text-gray-50 hx:w-full hx:wrap-break-word hx:hextra-focus-visible-inset" href="#user-management">User management
-        </a>
-      </li>
-      <li class="hx:my-2 hx:scroll-my-6 hx:scroll-py-6">
-        <a class="hx:ltr:pl-4 hx:rtl:pr-4 hx:inline-block hx:rounded-sm hx:text-gray-500 hx:hover:text-gray-900 hx:dark:text-gray-400 hx:dark:hover:text-gray-300 hx:contrast-more:text-gray-900 hx:contrast-more:underline hx:contrast-more:dark:text-gray-50 hx:w-full hx:wrap-break-word hx:hextra-focus-visible-inset" href="#api-keys">API keys
-        </a>
-      </li>
-      <li class="hx:my-2 hx:scroll-my-6 hx:scroll-py-6">
-        <a class="hx:ltr:pl-4 hx:rtl:pr-4 hx:inline-block hx:rounded-sm hx:text-gray-500 hx:hover:text-gray-900 hx:dark:text-gray-400 hx:dark:hover:text-gray-300 hx:contrast-more:text-gray-900 hx:contrast-more:underline hx:contrast-more:dark:text-gray-50 hx:w-full hx:wrap-break-word hx:hextra-focus-visible-inset" href="#maintenance">Maintenance
-        </a>
-      </li>
-      <li class="hx:my-2 hx:scroll-my-6 hx:scroll-py-6">
         <a class="hx:font-medium hx:inline-block hx:rounded-sm hx:text-gray-500 hx:hover:text-gray-900 hx:dark:text-gray-400 hx:dark:hover:text-gray-300 hx:contrast-more:text-gray-900 hx:contrast-more:underline hx:contrast-more:dark:text-gray-50 hx:w-full hx:wrap-break-word hx:hextra-focus-visible-inset" href="#database-management">Database management
         </a>
       </li>
@@ -657,97 +621,7 @@
             
           </div>
           
-          <h2>Local setup<span class="hx:absolute hx:-mt-20" id="local-setup"></span>
-    <a href="#local-setup" class="subheading-anchor" aria-label="Permalink for this section"></a></h2><div class="hextra-code-block hx:relative hx:mt-6 hx:first:mt-0 hx:group/code">
-
-<div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>cp .env.example .env
-</span></span><span style="display:flex;"><span>composer setup        <span style="color:#75715e"># installs deps, generates app key, runs migrations, builds assets</span>
-</span></span><span style="display:flex;"><span>php artisan user:create admin@example.com <span style="color:#e6db74">&#34;Admin User&#34;</span> password123
-</span></span><span style="display:flex;"><span>php artisan serve</span></span></code></pre></div></div><div class="hextra-code-copy-btn-container hx:opacity-0 hx:transition hx:group-hover/code:opacity-100 hx:flex hx:gap-1 hx:absolute hx:m-[11px] hx:right-0 hx:top-0">
-  <button
-    class="hextra-code-copy-btn hx:group/copybtn hx:cursor-pointer hx:transition-all hx:active:opacity-50 hx:bg-primary-700/5 hx:border hx:border-black/5 hx:text-gray-600 hx:hover:text-gray-900 hx:rounded-md hx:p-1.5 hx:dark:bg-primary-300/10 hx:dark:border-white/10 hx:dark:text-gray-400 hx:dark:hover:text-gray-50"
-    title="Copy code"
-    aria-label="Copy code"
-    data-copied-label="Copied!"
-  >
-    <div class="hextra-copy-icon hx:group-[.copied]/copybtn:hidden hx:pointer-events-none hx:h-4 hx:w-4"></div>
-<div class="hextra-success-icon hx:hidden hx:group-[.copied]/copybtn:block hx:pointer-events-none hx:h-4 hx:w-4"></div>
-  </button>
-</div>
-</div>
-<h2>Docker setup<span class="hx:absolute hx:-mt-20" id="docker-setup"></span>
-    <a href="#docker-setup" class="subheading-anchor" aria-label="Permalink for this section"></a></h2><div class="hextra-code-block hx:relative hx:mt-6 hx:first:mt-0 hx:group/code">
-
-<div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>cp .env.example .env
-</span></span><span style="display:flex;"><span><span style="color:#75715e"># Edit .env: set APP_KEY, APP_ENV=production, APP_DEBUG=false</span>
-</span></span><span style="display:flex;"><span>docker compose up -d --build
-</span></span><span style="display:flex;"><span>docker compose exec app php artisan migrate --force
-</span></span><span style="display:flex;"><span>docker compose exec app php artisan user:create admin@example.com <span style="color:#e6db74">&#34;Admin User&#34;</span> password123</span></span></code></pre></div></div><div class="hextra-code-copy-btn-container hx:opacity-0 hx:transition hx:group-hover/code:opacity-100 hx:flex hx:gap-1 hx:absolute hx:m-[11px] hx:right-0 hx:top-0">
-  <button
-    class="hextra-code-copy-btn hx:group/copybtn hx:cursor-pointer hx:transition-all hx:active:opacity-50 hx:bg-primary-700/5 hx:border hx:border-black/5 hx:text-gray-600 hx:hover:text-gray-900 hx:rounded-md hx:p-1.5 hx:dark:bg-primary-300/10 hx:dark:border-white/10 hx:dark:text-gray-400 hx:dark:hover:text-gray-50"
-    title="Copy code"
-    aria-label="Copy code"
-    data-copied-label="Copied!"
-  >
-    <div class="hextra-copy-icon hx:group-[.copied]/copybtn:hidden hx:pointer-events-none hx:h-4 hx:w-4"></div>
-<div class="hextra-success-icon hx:hidden hx:group-[.copied]/copybtn:block hx:pointer-events-none hx:h-4 hx:w-4"></div>
-  </button>
-</div>
-</div>
-<hr>
-<h2>CLI commands<span class="hx:absolute hx:-mt-20" id="cli-commands"></span>
-    <a href="#cli-commands" class="subheading-anchor" aria-label="Permalink for this section"></a></h2><h3>User management<span class="hx:absolute hx:-mt-20" id="user-management"></span>
-    <a href="#user-management" class="subheading-anchor" aria-label="Permalink for this section"></a></h3><div class="hextra-code-block hx:relative hx:mt-6 hx:first:mt-0 hx:group/code">
-
-<div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>php artisan user:create <span style="color:#f92672">{</span>email<span style="color:#f92672">}</span> <span style="color:#f92672">{</span>name<span style="color:#f92672">}</span> <span style="color:#f92672">{</span>password<span style="color:#f92672">}</span>   <span style="color:#75715e"># Create a user</span>
-</span></span><span style="display:flex;"><span>php artisan user:toggle <span style="color:#f92672">{</span>email<span style="color:#f92672">}</span>                      <span style="color:#75715e"># Enable or disable a user</span>
-</span></span><span style="display:flex;"><span>php artisan user:purge <span style="color:#f92672">{</span>email<span style="color:#f92672">}</span> --force               <span style="color:#75715e"># Delete all data for a user (irreversible)</span>
-</span></span><span style="display:flex;"><span>php artisan user:password <span style="color:#f92672">{</span>email<span style="color:#f92672">}</span>                    <span style="color:#75715e"># Reset password; outputs new password</span></span></span></code></pre></div></div><div class="hextra-code-copy-btn-container hx:opacity-0 hx:transition hx:group-hover/code:opacity-100 hx:flex hx:gap-1 hx:absolute hx:m-[11px] hx:right-0 hx:top-0">
-  <button
-    class="hextra-code-copy-btn hx:group/copybtn hx:cursor-pointer hx:transition-all hx:active:opacity-50 hx:bg-primary-700/5 hx:border hx:border-black/5 hx:text-gray-600 hx:hover:text-gray-900 hx:rounded-md hx:p-1.5 hx:dark:bg-primary-300/10 hx:dark:border-white/10 hx:dark:text-gray-400 hx:dark:hover:text-gray-50"
-    title="Copy code"
-    aria-label="Copy code"
-    data-copied-label="Copied!"
-  >
-    <div class="hextra-copy-icon hx:group-[.copied]/copybtn:hidden hx:pointer-events-none hx:h-4 hx:w-4"></div>
-<div class="hextra-success-icon hx:hidden hx:group-[.copied]/copybtn:block hx:pointer-events-none hx:h-4 hx:w-4"></div>
-  </button>
-</div>
-</div>
-<p>Disabled users cannot log in, but their tasks remain. An account can be re-enabled. API keys for disabled users are rejected by the API middleware.</p>
-<h3>API keys<span class="hx:absolute hx:-mt-20" id="api-keys"></span>
-    <a href="#api-keys" class="subheading-anchor" aria-label="Permalink for this section"></a></h3><div class="hextra-code-block hx:relative hx:mt-6 hx:first:mt-0 hx:group/code">
-
-<div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>php artisan apikey:create <span style="color:#f92672">{</span>email<span style="color:#f92672">}</span>    <span style="color:#75715e"># Generate a key — printed once, note it immediately</span>
-</span></span><span style="display:flex;"><span>php artisan apikey:invalidate <span style="color:#f92672">{</span>key<span style="color:#f92672">}</span>  <span style="color:#75715e"># Permanently invalidate a key (cannot be re-enabled)</span></span></span></code></pre></div></div><div class="hextra-code-copy-btn-container hx:opacity-0 hx:transition hx:group-hover/code:opacity-100 hx:flex hx:gap-1 hx:absolute hx:m-[11px] hx:right-0 hx:top-0">
-  <button
-    class="hextra-code-copy-btn hx:group/copybtn hx:cursor-pointer hx:transition-all hx:active:opacity-50 hx:bg-primary-700/5 hx:border hx:border-black/5 hx:text-gray-600 hx:hover:text-gray-900 hx:rounded-md hx:p-1.5 hx:dark:bg-primary-300/10 hx:dark:border-white/10 hx:dark:text-gray-400 hx:dark:hover:text-gray-50"
-    title="Copy code"
-    aria-label="Copy code"
-    data-copied-label="Copied!"
-  >
-    <div class="hextra-copy-icon hx:group-[.copied]/copybtn:hidden hx:pointer-events-none hx:h-4 hx:w-4"></div>
-<div class="hextra-success-icon hx:hidden hx:group-[.copied]/copybtn:block hx:pointer-events-none hx:h-4 hx:w-4"></div>
-  </button>
-</div>
-</div>
-<p>Keys are stored hashed; there is no way to retrieve a key after creation.</p>
-<h3>Maintenance<span class="hx:absolute hx:-mt-20" id="maintenance"></span>
-    <a href="#maintenance" class="subheading-anchor" aria-label="Permalink for this section"></a></h3><div class="hextra-code-block hx:relative hx:mt-6 hx:first:mt-0 hx:group/code">
-
-<div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>php artisan tasks:move-overdue    <span style="color:#75715e"># Reschedule all overdue incomplete tasks to today</span></span></span></code></pre></div></div><div class="hextra-code-copy-btn-container hx:opacity-0 hx:transition hx:group-hover/code:opacity-100 hx:flex hx:gap-1 hx:absolute hx:m-[11px] hx:right-0 hx:top-0">
-  <button
-    class="hextra-code-copy-btn hx:group/copybtn hx:cursor-pointer hx:transition-all hx:active:opacity-50 hx:bg-primary-700/5 hx:border hx:border-black/5 hx:text-gray-600 hx:hover:text-gray-900 hx:rounded-md hx:p-1.5 hx:dark:bg-primary-300/10 hx:dark:border-white/10 hx:dark:text-gray-400 hx:dark:hover:text-gray-50"
-    title="Copy code"
-    aria-label="Copy code"
-    data-copied-label="Copied!"
-  >
-    <div class="hextra-copy-icon hx:group-[.copied]/copybtn:hidden hx:pointer-events-none hx:h-4 hx:w-4"></div>
-<div class="hextra-success-icon hx:hidden hx:group-[.copied]/copybtn:block hx:pointer-events-none hx:h-4 hx:w-4"></div>
-  </button>
-</div>
-</div>
-<hr>
+          <p>Start with the <a href="/docs/getting-started/">Getting Started</a> instructions to install.</p>
 <h2>Database management<span class="hx:absolute hx:-mt-20" id="database-management"></span>
     <a href="#database-management" class="subheading-anchor" aria-label="Permalink for this section"></a></h2><table>
   <thead>
@@ -801,7 +675,8 @@
 <p><strong>Auth split</strong> — Session-based auth for web routes, hashed-token auth for API routes. The <code>auth.api</code> middleware (<code>app/Http/Middleware/AuthenticateApiKey.php</code>) validates bearer tokens against bcrypt hashes in <code>api_keys</code> and checks the user&rsquo;s enabled status.</p>
 <hr>
 <h2>Adding pages to Other Links<span class="hx:absolute hx:-mt-20" id="adding-pages-to-other-links"></span>
-    <a href="#adding-pages-to-other-links" class="subheading-anchor" aria-label="Permalink for this section"></a></h2><p>Drop any Markdown file into <code>storage/app/other-links/</code>. It will:</p>
+    <a href="#adding-pages-to-other-links" class="subheading-anchor" aria-label="Permalink for this section"></a></h2><p>I added the ability to add other links because I didn&rsquo;t want to put words in your mouth with respect to a privacy policy or Terms of Service or such nonsense. Now it&rsquo;s your problem to add.</p>
+<p>Drop any Markdown file into <code>storage/app/other-links/</code>. It will:</p>
 <ul>
 <li>Appear as a link in the <strong>Other Links</strong> nav dropdown (desktop) and collapsible section (mobile)</li>
 <li>Be accessible at <code>/other-links/{filename}</code> (filename including extension)</li>
@@ -810,13 +685,11 @@
 <p>The nav is populated by <code>app/View/Composers/NavigationComposer.php</code>, which shares <code>$otherLinksFiles</code> to all views using the navigation layout. Symlinks are supported.</p>
 <hr>
 <h2>Contributing to documentation<span class="hx:absolute hx:-mt-20" id="contributing-to-documentation"></span>
-    <a href="#contributing-to-documentation" class="subheading-anchor" aria-label="Permalink for this section"></a></h2><p>The docs live in <code>docs/</code> and are built with <a href="https://squidfunk.github.io/mkdocs-material/"target="_blank" rel="noopener">MkDocs Material</a>.</p>
-<p>To preview changes locally:</p>
+    <a href="#contributing-to-documentation" class="subheading-anchor" aria-label="Permalink for this section"></a></h2><p>The docs live in <code>docs/</code> and are built with <a href="https://gohugo.io/"target="_blank" rel="noopener">Hugo</a>.</p>
+<p>If you don&rsquo;t already have Hugo installed, you can do so on Ubuntu with:</p>
 <div class="hextra-code-block hx:relative hx:mt-6 hx:first:mt-0 hx:group/code">
 
-<div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>pip install mkdocs-material
-</span></span><span style="display:flex;"><span>cd docs
-</span></span><span style="display:flex;"><span>mkdocs serve</span></span></code></pre></div></div><div class="hextra-code-copy-btn-container hx:opacity-0 hx:transition hx:group-hover/code:opacity-100 hx:flex hx:gap-1 hx:absolute hx:m-[11px] hx:right-0 hx:top-0">
+<div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>apt-get install hugo</span></span></code></pre></div></div><div class="hextra-code-copy-btn-container hx:opacity-0 hx:transition hx:group-hover/code:opacity-100 hx:flex hx:gap-1 hx:absolute hx:m-[11px] hx:right-0 hx:top-0">
   <button
     class="hextra-code-copy-btn hx:group/copybtn hx:cursor-pointer hx:transition-all hx:active:opacity-50 hx:bg-primary-700/5 hx:border hx:border-black/5 hx:text-gray-600 hx:hover:text-gray-900 hx:rounded-md hx:p-1.5 hx:dark:bg-primary-300/10 hx:dark:border-white/10 hx:dark:text-gray-400 hx:dark:hover:text-gray-50"
     title="Copy code"
@@ -828,7 +701,23 @@
   </button>
 </div>
 </div>
-<p>Then open <code>http://localhost:8000</code>. The nav is defined in <code>docs/mkdocs.yml</code> — update it when adding new pages.</p>
+<p>To preview changes locally:</p>
+<div class="hextra-code-block hx:relative hx:mt-6 hx:first:mt-0 hx:group/code">
+
+<div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>cd docs
+</span></span><span style="display:flex;"><span>hugo serve -D</span></span></code></pre></div></div><div class="hextra-code-copy-btn-container hx:opacity-0 hx:transition hx:group-hover/code:opacity-100 hx:flex hx:gap-1 hx:absolute hx:m-[11px] hx:right-0 hx:top-0">
+  <button
+    class="hextra-code-copy-btn hx:group/copybtn hx:cursor-pointer hx:transition-all hx:active:opacity-50 hx:bg-primary-700/5 hx:border hx:border-black/5 hx:text-gray-600 hx:hover:text-gray-900 hx:rounded-md hx:p-1.5 hx:dark:bg-primary-300/10 hx:dark:border-white/10 hx:dark:text-gray-400 hx:dark:hover:text-gray-50"
+    title="Copy code"
+    aria-label="Copy code"
+    data-copied-label="Copied!"
+  >
+    <div class="hextra-copy-icon hx:group-[.copied]/copybtn:hidden hx:pointer-events-none hx:h-4 hx:w-4"></div>
+<div class="hextra-success-icon hx:hidden hx:group-[.copied]/copybtn:block hx:pointer-events-none hx:h-4 hx:w-4"></div>
+  </button>
+</div>
+</div>
+<p>Then open http://localhost:1313.</p>
 <p>If you document something that others running Task Fiend would find useful, please consider contributing it back.</p>
 
         </div>

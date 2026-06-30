@@ -37,7 +37,7 @@ Security audit (June 2026)
   <meta itemprop="name" content="Security">
   <meta itemprop="description" content="Overview Task Fiend is designed for use by a single household or small trusted group. All data is private by default — tasks and projects are only visible to their creator and explicitly assigned members.
 Security audit (June 2026) A full security audit was completed covering IDOR/authorization, file upload safety, XSS, input validation/DoS, mass assignment, API security, CSRF, security headers, and SQL injection.">
-  <meta itemprop="wordCount" content="524">
+  <meta itemprop="wordCount" content="475">
   <meta name="twitter:card" content="summary">
   <meta name="twitter:title" content="Security">
   <meta name="twitter:description" content="Overview Task Fiend is designed for use by a single household or small trusted group. All data is private by default — tasks and projects are only visible to their creator and explicitly assigned members.
@@ -614,10 +614,6 @@ Security audit (June 2026) A full security audit was completed covering IDOR/aut
         </a>
       </li>
       <li class="hx:my-2 hx:scroll-my-6 hx:scroll-py-6">
-        <a class="hx:ltr:pl-4 hx:rtl:pr-4 hx:inline-block hx:rounded-sm hx:text-gray-500 hx:hover:text-gray-900 hx:dark:text-gray-400 hx:dark:hover:text-gray-300 hx:contrast-more:text-gray-900 hx:contrast-more:underline hx:contrast-more:dark:text-gray-50 hx:w-full hx:wrap-break-word hx:hextra-focus-visible-inset" href="#deferred-content-security-policy">Deferred: Content Security Policy
-        </a>
-      </li>
-      <li class="hx:my-2 hx:scroll-my-6 hx:scroll-py-6">
         <a class="hx:font-medium hx:inline-block hx:rounded-sm hx:text-gray-500 hx:hover:text-gray-900 hx:dark:text-gray-400 hx:dark:hover:text-gray-300 hx:contrast-more:text-gray-900 hx:contrast-more:underline hx:contrast-more:dark:text-gray-50 hx:w-full hx:wrap-break-word hx:hextra-focus-visible-inset" href="#authentication-and-authorization">Authentication and authorization
         </a>
       </li>
@@ -742,8 +738,6 @@ Security audit (June 2026) A full security audit was completed covering IDOR/aut
       </tr>
   </tbody>
 </table>
-<h3>Deferred: Content Security Policy<span class="hx:absolute hx:-mt-20" id="deferred-content-security-policy"></span>
-    <a href="#deferred-content-security-policy" class="subheading-anchor" aria-label="Permalink for this section"></a></h3><p>A strict CSP would require <code>nonce</code> attributes on inline <code>&lt;script&gt;</code> blocks across 16+ view files. This is a meaningful refactor and was deferred. When implemented, every <code>&lt;script&gt;</code> tag in Blade templates will need a server-generated nonce, and the CSP header should use <code>script-src 'self' 'nonce-{value}'</code>.</p>
 <hr>
 <h2>Authentication and authorization<span class="hx:absolute hx:-mt-20" id="authentication-and-authorization"></span>
     <a href="#authentication-and-authorization" class="subheading-anchor" aria-label="Permalink for this section"></a></h2><ul>

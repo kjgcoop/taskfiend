@@ -562,8 +562,6 @@ Note the API key — it&amp;rsquo;s only shown once.&lt;/li&gt;
       &lt;/tr&gt;
   &lt;/tbody&gt;
 &lt;/table&gt;
-&lt;h3&gt;Deferred: Content Security Policy&lt;span class=&#34;hx:absolute hx:-mt-20&#34; id=&#34;deferred-content-security-policy&#34;&gt;&lt;/span&gt;
-    &lt;a href=&#34;#deferred-content-security-policy&#34; class=&#34;subheading-anchor&#34; aria-label=&#34;Permalink for this section&#34;&gt;&lt;/a&gt;&lt;/h3&gt;&lt;p&gt;A strict CSP would require &lt;code&gt;nonce&lt;/code&gt; attributes on inline &lt;code&gt;&amp;lt;script&amp;gt;&lt;/code&gt; blocks across 16+ view files. This is a meaningful refactor and was deferred. When implemented, every &lt;code&gt;&amp;lt;script&amp;gt;&lt;/code&gt; tag in Blade templates will need a server-generated nonce, and the CSP header should use &lt;code&gt;script-src &#39;self&#39; &#39;nonce-{value}&#39;&lt;/code&gt;.&lt;/p&gt;
 &lt;hr&gt;
 &lt;h2&gt;Authentication and authorization&lt;span class=&#34;hx:absolute hx:-mt-20&#34; id=&#34;authentication-and-authorization&#34;&gt;&lt;/span&gt;
     &lt;a href=&#34;#authentication-and-authorization&#34; class=&#34;subheading-anchor&#34; aria-label=&#34;Permalink for this section&#34;&gt;&lt;/a&gt;&lt;/h2&gt;&lt;ul&gt;

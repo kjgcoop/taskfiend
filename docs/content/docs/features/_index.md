@@ -27,5 +27,5 @@ title: "Features"
 - **Search** - find tasks by title, description, tags, projects, assignees, duration, and date presence; title and description can be targeted independently
 - **Inline comment images** - image attachments on comments are displayed inline alongside the download link
 - **Changelogs** - every create/edit is logged and browsable by task, project, tag, or user
-- **API** - create and query tasks via bearer token (see Admin-Like Functions below for key management)
+- **API** - create and query tasks via bearer token (see [Admin-Like Functions](/docs/features/admin-functionality/) for key management)
 
