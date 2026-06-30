@@ -36,3 +36,5 @@ Thumbs.db
 resources/links/For-Claude-Code.md
 resources/links/Read-Me.md
 site
+docs/public/*
+.hugo_build.lock
