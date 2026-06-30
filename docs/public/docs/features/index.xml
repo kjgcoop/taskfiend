@@ -1,0 +1,370 @@
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Task Fiend – Features</title>
+    <link>http://localhost:1313/docs/features/</link>
+    <description>Recent content in Features on Task Fiend</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en-us</language>
+    
+	  <atom:link href="http://localhost:1313/docs/features/index.xml" rel="self" type="application/rss+xml" />
+    
+    
+      
+        
+      
+    
+    
+    <item>
+      <title>Admin Functionality</title>
+      <link>http://localhost:1313/docs/features/admin-functionality/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>http://localhost:1313/docs/features/admin-functionality/</guid>
+      <description>
+        
+        
+        &lt;p&gt;There is no admin UI. Here are the commands to do admin-like things.&lt;/p&gt;
+&lt;h2&gt;Create/Disable Users&lt;span class=&#34;hx:absolute hx:-mt-20&#34; id=&#34;createdisable-users&#34;&gt;&lt;/span&gt;
+    &lt;a href=&#34;#createdisable-users&#34; class=&#34;subheading-anchor&#34; aria-label=&#34;Permalink for this section&#34;&gt;&lt;/a&gt;&lt;/h2&gt;&lt;ul&gt;
+&lt;li&gt;Create a user: &lt;code&gt;php artisan user:create {email} {name} {password}&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;Toggle whether a user is enabled or disabled: &lt;code&gt;php artisan user:toggle {email}&lt;/code&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;A user who is disabled is unable to log in, but their tasks remain present. If they&amp;rsquo;re re-enabled, their tasks are still waiting for them. Tasks they&amp;rsquo;ve assigned to other user(s) are still available to those other user(s).&lt;/p&gt;
+&lt;h2&gt;Reset a Forgotten Password&lt;span class=&#34;hx:absolute hx:-mt-20&#34; id=&#34;reset-a-forgotten-password&#34;&gt;&lt;/span&gt;
+    &lt;a href=&#34;#reset-a-forgotten-password&#34; class=&#34;subheading-anchor&#34; aria-label=&#34;Permalink for this section&#34;&gt;&lt;/a&gt;&lt;/h2&gt;&lt;p&gt;Because I run this on a server with outbound mail ports blocked, I didn&amp;rsquo;t bother implementing a forgotten password form. A user has to log into the server and run this from the command line:
+&lt;code&gt;php artisan user:password {email}&lt;/code&gt;&lt;/p&gt;
+&lt;p&gt;It will output the user&amp;rsquo;s new password.&lt;/p&gt;
+&lt;h2&gt;API Keys&lt;span class=&#34;hx:absolute hx:-mt-20&#34; id=&#34;api-keys&#34;&gt;&lt;/span&gt;
+    &lt;a href=&#34;#api-keys&#34; class=&#34;subheading-anchor&#34; aria-label=&#34;Permalink for this section&#34;&gt;&lt;/a&gt;&lt;/h2&gt;&lt;ul&gt;
+&lt;li&gt;Create an API key: &lt;code&gt;php artisan apikey:create {email}&lt;/code&gt; - this will only print the API key the one time, so note the value immediately.&lt;/li&gt;
+&lt;li&gt;Disable an API key: &lt;code&gt;php artisan apikey:invalidate {key}&lt;/code&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;An invalidated API key cannot be re-validated.&lt;/p&gt;
+
+      </description>
+    </item>
+    
+    <item>
+      <title>Dates</title>
+      <link>http://localhost:1313/docs/features/dates/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>http://localhost:1313/docs/features/dates/</guid>
+      <description>
+        
+        
+        &lt;p&gt;Assigned dates are always in the future.&lt;/p&gt;
+&lt;p&gt;You can assign a date in any of the following formats:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;today&lt;/code&gt;, &lt;code&gt;tomorrow&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;Plural day of week such as &lt;code&gt;Sundays&lt;/code&gt; sets a weekly recurrence&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;next Sunday&lt;/code&gt; (or any weekday) — one-time date for the next occurrence of that day, no recurrence set&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;yyyy-mm-dd&lt;/code&gt; such as &lt;code&gt;2026-01-24&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;Month and day such as &lt;code&gt;January 24&lt;/code&gt; or &lt;code&gt;1/24&lt;/code&gt; — uses the next future occurrence of that date&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;If you&amp;rsquo;d like to refer to a specific day without using it as the due date, add a second date or use &lt;code&gt;nodate&lt;/code&gt;. The last date wins. For example, &amp;ldquo;Reply to the letter that came on Sunday Tuesday&amp;rdquo; becomes a task due Tuesday with the title &amp;ldquo;Reply to the letter that came on Sunday&amp;rdquo;.&lt;/p&gt;
+&lt;h2&gt;Recurrences&lt;span class=&#34;hx:absolute hx:-mt-20&#34; id=&#34;recurrences&#34;&gt;&lt;/span&gt;
+    &lt;a href=&#34;#recurrences&#34; class=&#34;subheading-anchor&#34; aria-label=&#34;Permalink for this section&#34;&gt;&lt;/a&gt;&lt;/h2&gt;&lt;p&gt;To make a task recurring, set a recurrence pattern using &lt;code&gt;every [interval]&lt;/code&gt; or &lt;code&gt;every! [interval]&lt;/code&gt;. The exclamation mark after &lt;code&gt;every&lt;/code&gt; indicates &lt;a href=&#34;#floating-recurrence&#34;&gt;floating recurrence&lt;/a&gt;.&lt;/p&gt;
+&lt;h3&gt;Patterns supported&lt;span class=&#34;hx:absolute hx:-mt-20&#34; id=&#34;patterns-supported&#34;&gt;&lt;/span&gt;
+    &lt;a href=&#34;#patterns-supported&#34; class=&#34;subheading-anchor&#34; aria-label=&#34;Permalink for this section&#34;&gt;&lt;/a&gt;&lt;/h3&gt;&lt;table&gt;
+  &lt;thead&gt;
+      &lt;tr&gt;
+          &lt;th&gt;Pattern&lt;/th&gt;
+          &lt;th&gt;Description&lt;/th&gt;
+      &lt;/tr&gt;
+  &lt;/thead&gt;
+  &lt;tbody&gt;
+      &lt;tr&gt;
+          &lt;td&gt;&lt;code&gt;daily&lt;/code&gt; or &lt;code&gt;every day&lt;/code&gt;&lt;/td&gt;
+          &lt;td&gt;Every day&lt;/td&gt;
+      &lt;/tr&gt;
+      &lt;tr&gt;
+          &lt;td&gt;&lt;code&gt;every other day&lt;/code&gt;&lt;/td&gt;
+          &lt;td&gt;Every two days&lt;/td&gt;
+      &lt;/tr&gt;
+      &lt;tr&gt;
+          &lt;td&gt;&lt;code&gt;weekdays&lt;/code&gt;&lt;/td&gt;
+          &lt;td&gt;Monday–Friday&lt;/td&gt;
+      &lt;/tr&gt;
+      &lt;tr&gt;
+          &lt;td&gt;&lt;code&gt;weekends&lt;/code&gt;&lt;/td&gt;
+          &lt;td&gt;Saturday and Sunday&lt;/td&gt;
+      &lt;/tr&gt;
+      &lt;tr&gt;
+          &lt;td&gt;&lt;code&gt;weekly&lt;/code&gt; or &lt;code&gt;every week&lt;/code&gt;&lt;/td&gt;
+          &lt;td&gt;Every week&lt;/td&gt;
+      &lt;/tr&gt;
+      &lt;tr&gt;
+          &lt;td&gt;&lt;code&gt;every other week&lt;/code&gt;&lt;/td&gt;
+          &lt;td&gt;Every two weeks&lt;/td&gt;
+      &lt;/tr&gt;
+      &lt;tr&gt;
+          &lt;td&gt;&lt;code&gt;every N weeks&lt;/code&gt;&lt;/td&gt;
+          &lt;td&gt;Every N weeks (e.g. &lt;code&gt;every 3 weeks&lt;/code&gt;)&lt;/td&gt;
+      &lt;/tr&gt;
+      &lt;tr&gt;
+          &lt;td&gt;&lt;code&gt;Monday&lt;/code&gt; / &lt;code&gt;every Monday&lt;/code&gt;&lt;/td&gt;
+          &lt;td&gt;Every Monday (or any weekday name)&lt;/td&gt;
+      &lt;/tr&gt;
+      &lt;tr&gt;
+          &lt;td&gt;&lt;code&gt;every other Wednesday&lt;/code&gt;&lt;/td&gt;
+          &lt;td&gt;Every two weeks on Wednesday (works with any weekday)&lt;/td&gt;
+      &lt;/tr&gt;
+      &lt;tr&gt;
+          &lt;td&gt;&lt;code&gt;mon,tue,fri&lt;/code&gt;&lt;/td&gt;
+          &lt;td&gt;Multiple days per week — comma-separated 3-letter abbreviations, no spaces&lt;/td&gt;
+      &lt;/tr&gt;
+      &lt;tr&gt;
+          &lt;td&gt;&lt;code&gt;every first Monday&lt;/code&gt;&lt;/td&gt;
+          &lt;td&gt;First Monday of each month (supports 1st–4th and last, word or numeric)&lt;/td&gt;
+      &lt;/tr&gt;
+      &lt;tr&gt;
+          &lt;td&gt;&lt;code&gt;every last Friday&lt;/code&gt;&lt;/td&gt;
+          &lt;td&gt;Last Friday of each month&lt;/td&gt;
+      &lt;/tr&gt;
+      &lt;tr&gt;
+          &lt;td&gt;&lt;code&gt;every 15th&lt;/code&gt; or &lt;code&gt;every 15&lt;/code&gt;&lt;/td&gt;
+          &lt;td&gt;On the 15th of each month (any day 1–31)&lt;/td&gt;
+      &lt;/tr&gt;
+      &lt;tr&gt;
+          &lt;td&gt;&lt;code&gt;monthly&lt;/code&gt; or &lt;code&gt;every month&lt;/code&gt;&lt;/td&gt;
+          &lt;td&gt;Every month on the same day&lt;/td&gt;
+      &lt;/tr&gt;
+      &lt;tr&gt;
+          &lt;td&gt;&lt;code&gt;every N months&lt;/code&gt;&lt;/td&gt;
+          &lt;td&gt;Every N months&lt;/td&gt;
+      &lt;/tr&gt;
+      &lt;tr&gt;
+          &lt;td&gt;&lt;code&gt;yearly&lt;/code&gt; or &lt;code&gt;every year&lt;/code&gt;&lt;/td&gt;
+          &lt;td&gt;Every year&lt;/td&gt;
+      &lt;/tr&gt;
+  &lt;/tbody&gt;
+&lt;/table&gt;
+&lt;p&gt;Day abbreviations are flexible: &lt;code&gt;Thu&lt;/code&gt;, &lt;code&gt;Thurs&lt;/code&gt;, &lt;code&gt;Tue&lt;/code&gt;, &lt;code&gt;Tues&lt;/code&gt;, &lt;code&gt;Wed&lt;/code&gt;, &lt;code&gt;Weds&lt;/code&gt;, &lt;code&gt;Sun&lt;/code&gt;, &lt;code&gt;Suns&lt;/code&gt; are all accepted.&lt;/p&gt;
+&lt;h3&gt;Floating recurrence&lt;span class=&#34;hx:absolute hx:-mt-20&#34; id=&#34;floating-recurrence&#34;&gt;&lt;/span&gt;
+    &lt;a href=&#34;#floating-recurrence&#34; class=&#34;subheading-anchor&#34; aria-label=&#34;Permalink for this section&#34;&gt;&lt;/a&gt;&lt;/h3&gt;&lt;p&gt;Prefix your pattern with &lt;code&gt;every!&lt;/code&gt; to make the next occurrence relative to when you &lt;em&gt;complete&lt;/em&gt; the task rather than the original due date.&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;every week&lt;/code&gt; on a task due Tuesday → the next instance always lands on Tuesday, even if you complete it on Wednesday.&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;every! week&lt;/code&gt; → the next instance is scheduled one week from whenever you actually complete it.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;Useful for habits where slipping a day shouldn&amp;rsquo;t cause permanent catch-up. See &lt;a href=&#34;recurring-tasks.md#floating-recurrence&#34;&gt;Recurring Tasks&lt;/a&gt; for more detail.&lt;/p&gt;
+
+      </description>
+    </item>
+    
+    <item>
+      <title>Import from Markdown</title>
+      <link>http://localhost:1313/docs/features/import-from-md/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>http://localhost:1313/docs/features/import-from-md/</guid>
+      <description>
+        
+        
+        &lt;p&gt;The markdown import feature lets you create a new project or update an existing one by uploading a &lt;code&gt;.md&lt;/code&gt; file — useful when it&amp;rsquo;s faster to work in a text editor than to click through the UI.&lt;/p&gt;
+&lt;h2&gt;Creating a new project from a file&lt;span class=&#34;hx:absolute hx:-mt-20&#34; id=&#34;creating-a-new-project-from-a-file&#34;&gt;&lt;/span&gt;
+    &lt;a href=&#34;#creating-a-new-project-from-a-file&#34; class=&#34;subheading-anchor&#34; aria-label=&#34;Permalink for this section&#34;&gt;&lt;/a&gt;&lt;/h2&gt;&lt;ol&gt;
+&lt;li&gt;From the Projects list, click &lt;strong&gt;Import from .md&lt;/strong&gt;.&lt;/li&gt;
+&lt;li&gt;Upload your file. The first &lt;code&gt;#&lt;/code&gt; heading is used as the project name.&lt;/li&gt;
+&lt;li&gt;You&amp;rsquo;ll see a preview of the tasks that will be created.&lt;/li&gt;
+&lt;li&gt;Click &lt;strong&gt;Confirm import&lt;/strong&gt; to create the project.&lt;/li&gt;
+&lt;/ol&gt;
+&lt;h2&gt;Updating an existing project&lt;span class=&#34;hx:absolute hx:-mt-20&#34; id=&#34;updating-an-existing-project&#34;&gt;&lt;/span&gt;
+    &lt;a href=&#34;#updating-an-existing-project&#34; class=&#34;subheading-anchor&#34; aria-label=&#34;Permalink for this section&#34;&gt;&lt;/a&gt;&lt;/h2&gt;&lt;p&gt;If you have a large, unwieldy project, you can export it as a markdown file, reorganize it in any text editor, and re-upload it to bring the app up to speed — without clicking through each task individually.&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;Open a project you own.&lt;/li&gt;
+&lt;li&gt;Click the &lt;strong&gt;⋮&lt;/strong&gt; (three-dot) menu in the top right of the project header.&lt;/li&gt;
+&lt;li&gt;Select &lt;strong&gt;Export .md&lt;/strong&gt; to download the current state of the project.&lt;/li&gt;
+&lt;li&gt;Edit the file in any text editor: reorder tasks, move them between sections, or add new ones.&lt;/li&gt;
+&lt;li&gt;Back in the ⋮ menu, select &lt;strong&gt;Import Updates from .md&lt;/strong&gt;.&lt;/li&gt;
+&lt;li&gt;Upload your edited file. You&amp;rsquo;ll see a preview of what will change before anything is applied.&lt;/li&gt;
+&lt;li&gt;Click &lt;strong&gt;Confirm import&lt;/strong&gt; to apply.&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;Only the project&amp;rsquo;s creator can import updates.&lt;/p&gt;
+&lt;h2&gt;File format&lt;span class=&#34;hx:absolute hx:-mt-20&#34; id=&#34;file-format&#34;&gt;&lt;/span&gt;
+    &lt;a href=&#34;#file-format&#34; class=&#34;subheading-anchor&#34; aria-label=&#34;Permalink for this section&#34;&gt;&lt;/a&gt;&lt;/h2&gt;&lt;p&gt;The importer accepts the same format the exporter produces:&lt;/p&gt;
+&lt;div class=&#34;hextra-code-block hx:relative hx:mt-6 hx:first:mt-0 hx:group/code&#34;&gt;
+
+&lt;div&gt;&lt;pre&gt;&lt;code&gt;# Project Name
+## Incomplete
+* Task one
+* Task two
+
+## Done
+* Task three
+
+## Archived
+* Task four&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;div class=&#34;hextra-code-copy-btn-container hx:opacity-0 hx:transition hx:group-hover/code:opacity-100 hx:flex hx:gap-1 hx:absolute hx:m-[11px] hx:right-0 hx:top-0&#34;&gt;
+  &lt;button
+    class=&#34;hextra-code-copy-btn hx:group/copybtn hx:cursor-pointer hx:transition-all hx:active:opacity-50 hx:bg-primary-700/5 hx:border hx:border-black/5 hx:text-gray-600 hx:hover:text-gray-900 hx:rounded-md hx:p-1.5 hx:dark:bg-primary-300/10 hx:dark:border-white/10 hx:dark:text-gray-400 hx:dark:hover:text-gray-50&#34;
+    title=&#34;Copy code&#34;
+    aria-label=&#34;Copy code&#34;
+    data-copied-label=&#34;Copied!&#34;
+  &gt;
+    &lt;div class=&#34;hextra-copy-icon hx:group-[.copied]/copybtn:hidden hx:pointer-events-none hx:h-4 hx:w-4&#34;&gt;&lt;/div&gt;
+&lt;div class=&#34;hextra-success-icon hx:hidden hx:group-[.copied]/copybtn:block hx:pointer-events-none hx:h-4 hx:w-4&#34;&gt;&lt;/div&gt;
+  &lt;/button&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+&lt;p&gt;It also accepts the simpler single-&lt;code&gt;#&lt;/code&gt; form:&lt;/p&gt;
+&lt;div class=&#34;hextra-code-block hx:relative hx:mt-6 hx:first:mt-0 hx:group/code&#34;&gt;
+
+&lt;div&gt;&lt;pre&gt;&lt;code&gt;# Incomplete
+- Task one
+- Task two
+
+# Done
+- Task three&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;div class=&#34;hextra-code-copy-btn-container hx:opacity-0 hx:transition hx:group-hover/code:opacity-100 hx:flex hx:gap-1 hx:absolute hx:m-[11px] hx:right-0 hx:top-0&#34;&gt;
+  &lt;button
+    class=&#34;hextra-code-copy-btn hx:group/copybtn hx:cursor-pointer hx:transition-all hx:active:opacity-50 hx:bg-primary-700/5 hx:border hx:border-black/5 hx:text-gray-600 hx:hover:text-gray-900 hx:rounded-md hx:p-1.5 hx:dark:bg-primary-300/10 hx:dark:border-white/10 hx:dark:text-gray-400 hx:dark:hover:text-gray-50&#34;
+    title=&#34;Copy code&#34;
+    aria-label=&#34;Copy code&#34;
+    data-copied-label=&#34;Copied!&#34;
+  &gt;
+    &lt;div class=&#34;hextra-copy-icon hx:group-[.copied]/copybtn:hidden hx:pointer-events-none hx:h-4 hx:w-4&#34;&gt;&lt;/div&gt;
+&lt;div class=&#34;hextra-success-icon hx:hidden hx:group-[.copied]/copybtn:block hx:pointer-events-none hx:h-4 hx:w-4&#34;&gt;&lt;/div&gt;
+  &lt;/button&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+&lt;p&gt;Both &lt;code&gt;-&lt;/code&gt; and &lt;code&gt;*&lt;/code&gt; are accepted as list markers. Section headings are case-insensitive (&lt;code&gt;incomplete&lt;/code&gt;, &lt;code&gt;Incomplete&lt;/code&gt;, and &lt;code&gt;INCOMPLETE&lt;/code&gt; are all fine). Any number of leading &lt;code&gt;#&lt;/code&gt; characters works for the section headings. A leading project-name heading (the first &lt;code&gt;#&lt;/code&gt; line, if it doesn&amp;rsquo;t match a section name) is silently ignored.&lt;/p&gt;
+&lt;p&gt;If the file contains any unrecognized headings, the importer will report all of them at once so you can fix everything in one pass before re-uploading.&lt;/p&gt;
+&lt;h2&gt;What changes (and what doesn&amp;rsquo;t)&lt;span class=&#34;hx:absolute hx:-mt-20&#34; id=&#34;what-changes-and-what-doesnt&#34;&gt;&lt;/span&gt;
+    &lt;a href=&#34;#what-changes-and-what-doesnt&#34; class=&#34;subheading-anchor&#34; aria-label=&#34;Permalink for this section&#34;&gt;&lt;/a&gt;&lt;/h2&gt;&lt;table&gt;
+  &lt;thead&gt;
+      &lt;tr&gt;
+          &lt;th&gt;Scenario&lt;/th&gt;
+          &lt;th&gt;What happens&lt;/th&gt;
+      &lt;/tr&gt;
+  &lt;/thead&gt;
+  &lt;tbody&gt;
+      &lt;tr&gt;
+          &lt;td&gt;Task name in file, not in project&lt;/td&gt;
+          &lt;td&gt;Created as a new task&lt;/td&gt;
+      &lt;/tr&gt;
+      &lt;tr&gt;
+          &lt;td&gt;Task name in file, already in project&lt;/td&gt;
+          &lt;td&gt;Status updated if it moved to a different section; otherwise left alone&lt;/td&gt;
+      &lt;/tr&gt;
+      &lt;tr&gt;
+          &lt;td&gt;Task in project, not in file&lt;/td&gt;
+          &lt;td&gt;Left completely unchanged&lt;/td&gt;
+      &lt;/tr&gt;
+      &lt;tr&gt;
+          &lt;td&gt;Incomplete tasks in file&lt;/td&gt;
+          &lt;td&gt;Sort order reset to match file order; incomplete tasks not in the file are pushed to the bottom&lt;/td&gt;
+      &lt;/tr&gt;
+      &lt;tr&gt;
+          &lt;td&gt;Done / Archived tasks&lt;/td&gt;
+          &lt;td&gt;Sort order is not changed&lt;/td&gt;
+      &lt;/tr&gt;
+  &lt;/tbody&gt;
+&lt;/table&gt;
+&lt;h2&gt;Limitations&lt;span class=&#34;hx:absolute hx:-mt-20&#34; id=&#34;limitations&#34;&gt;&lt;/span&gt;
+    &lt;a href=&#34;#limitations&#34; class=&#34;subheading-anchor&#34; aria-label=&#34;Permalink for this section&#34;&gt;&lt;/a&gt;&lt;/h2&gt;&lt;p&gt;&lt;strong&gt;Exact name matching.&lt;/strong&gt; Tasks are matched by their exact name. If you rename a task in the file before uploading, the original task is left unchanged and a new task is created with the new name. There is no way for the importer to tell the difference between a rename and a brand-new task.&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;No subtasks.&lt;/strong&gt; Indented items (subtasks) are ignored during import.&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;No metadata.&lt;/strong&gt; Dates, tags, assignees, and other fields are not read from the file. The importer only handles task names and their section (status).&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;Creators only.&lt;/strong&gt; Only the project&amp;rsquo;s creator can run an import. Assignees who aren&amp;rsquo;t the creator will not see the option.&lt;/p&gt;
+
+      </description>
+    </item>
+    
+    <item>
+      <title>Inline Values</title>
+      <link>http://localhost:1313/docs/features/inline/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>http://localhost:1313/docs/features/inline/</guid>
+      <description>
+        
+        
+        &lt;p&gt;When creating a task in the quick add, you can assign given properties inline.&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Assign a project by typing # and selecting the project from the list below. A task can have only one project.&lt;/li&gt;
+&lt;li&gt;Assign a tag by typing @ and selecting the tag from the list below. A task can have multiple tags. To assign a subsequent tag, type a new @ and select the subsequent tag from the dropdown.&lt;/li&gt;
+&lt;li&gt;Add a location with a + symbol, such as +Home.
+&lt;ul&gt;
+&lt;li&gt;If you&amp;rsquo;d like it to be formatted as a link to Google Maps, use ++. For example, ++library.&lt;/li&gt;
+&lt;li&gt;If you&amp;rsquo;d like to assign a location with a space in it, surround it with quotes, +&amp;ldquo;Hollywood Library&amp;rdquo; or ++&amp;ldquo;123 Main Street, Town, ST, 12345 USA&amp;rdquo;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;li&gt;Assign to one or more users by typing &amp;amp; and selecting a user. You can select one user at a time, but you can type additional &amp;amp; symbols to assign additional users.&lt;/li&gt;
+&lt;li&gt;Dates and recurrences - see &lt;a href=&#34;dates.md&#34;&gt;Dates&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+      </description>
+    </item>
+    
+    <item>
+      <title>Recurring Tasks</title>
+      <link>http://localhost:1313/docs/features/recurring-tasks/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>http://localhost:1313/docs/features/recurring-tasks/</guid>
+      <description>
+        
+        
+        &lt;h2&gt;How it works&lt;span class=&#34;hx:absolute hx:-mt-20&#34; id=&#34;how-it-works&#34;&gt;&lt;/span&gt;
+    &lt;a href=&#34;#how-it-works&#34; class=&#34;subheading-anchor&#34; aria-label=&#34;Permalink for this section&#34;&gt;&lt;/a&gt;&lt;/h2&gt;&lt;p&gt;Set a recurrence pattern on any task. When you mark it done, the current instance is completed and a new one is automatically created for the next occurrence date. The series continues until you stop it.&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;Requirements:&lt;/strong&gt; the task must have both a date and a recurrence pattern set. Without a date, the next occurrence can&amp;rsquo;t be calculated.&lt;/p&gt;
+&lt;h2&gt;Creating a recurring task&lt;span class=&#34;hx:absolute hx:-mt-20&#34; id=&#34;creating-a-recurring-task&#34;&gt;&lt;/span&gt;
+    &lt;a href=&#34;#creating-a-recurring-task&#34; class=&#34;subheading-anchor&#34; aria-label=&#34;Permalink for this section&#34;&gt;&lt;/a&gt;&lt;/h2&gt;&lt;p&gt;Set the &lt;strong&gt;Recurrence&lt;/strong&gt; field on any task to a pattern like:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;daily&lt;/code&gt; — every day&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;weekdays&lt;/code&gt; — Monday–Friday&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;every Monday&lt;/code&gt; — every Monday&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;every other Wednesday&lt;/code&gt; — every two weeks on Wednesday&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;every 3 weeks&lt;/code&gt; — every three weeks&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;monthly&lt;/code&gt; — same day each month&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;yearly&lt;/code&gt; — annually&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;See &lt;a href=&#34;dates.md&#34;&gt;Dates &amp;amp; Recurrence&lt;/a&gt; for the complete syntax.&lt;/p&gt;
+&lt;h2&gt;What happens when you complete one&lt;span class=&#34;hx:absolute hx:-mt-20&#34; id=&#34;what-happens-when-you-complete-one&#34;&gt;&lt;/span&gt;
+    &lt;a href=&#34;#what-happens-when-you-complete-one&#34; class=&#34;subheading-anchor&#34; aria-label=&#34;Permalink for this section&#34;&gt;&lt;/a&gt;&lt;/h2&gt;&lt;ol&gt;
+&lt;li&gt;The current task instance is marked done&lt;/li&gt;
+&lt;li&gt;A new instance is created for the next occurrence&lt;/li&gt;
+&lt;li&gt;The series continues indefinitely&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;&lt;strong&gt;What&amp;rsquo;s copied to the next instance:&lt;/strong&gt; name, description, date/time (recalculated), project, tags, assignees, file attachments.&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;What&amp;rsquo;s not copied:&lt;/strong&gt; comments (each instance has its own) and completion status (new instance starts as incomplete).&lt;/p&gt;
+&lt;h2&gt;Stopping the series&lt;span class=&#34;hx:absolute hx:-mt-20&#34; id=&#34;stopping-the-series&#34;&gt;&lt;/span&gt;
+    &lt;a href=&#34;#stopping-the-series&#34; class=&#34;subheading-anchor&#34; aria-label=&#34;Permalink for this section&#34;&gt;&lt;/a&gt;&lt;/h2&gt;&lt;p&gt;&lt;strong&gt;Option 1 — remove the pattern before completing:&lt;/strong&gt;
+Edit the task, clear the Recurrence field, save, then mark it done. No new instance is created.&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;Option 2 — archive instead of complete:&lt;/strong&gt;
+Change the status to Archived. The series stops immediately.&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;Option 3 — remove the pattern from the next instance:&lt;/strong&gt;
+Mark the current task done (creates one more instance), then open that new instance and clear its recurrence pattern.&lt;/p&gt;
+&lt;h2&gt;End dates&lt;span class=&#34;hx:absolute hx:-mt-20&#34; id=&#34;end-dates&#34;&gt;&lt;/span&gt;
+    &lt;a href=&#34;#end-dates&#34; class=&#34;subheading-anchor&#34; aria-label=&#34;Permalink for this section&#34;&gt;&lt;/a&gt;&lt;/h2&gt;&lt;p&gt;You can set an end date on a recurring task to stop the series automatically. Once the end date is reached, completing the task will not create a new instance.&lt;/p&gt;
+&lt;p&gt;The end date field is available in both the full-page task editor and the task detail panel/sidebar. If an end date is set, hovering the recurrence indicator shows a tooltip with the end date.&lt;/p&gt;
+&lt;h2&gt;Visual indicators&lt;span class=&#34;hx:absolute hx:-mt-20&#34; id=&#34;visual-indicators&#34;&gt;&lt;/span&gt;
+    &lt;a href=&#34;#visual-indicators&#34; class=&#34;subheading-anchor&#34; aria-label=&#34;Permalink for this section&#34;&gt;&lt;/a&gt;&lt;/h2&gt;&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;Purple banner&lt;/strong&gt; at the top of the task detail page&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;🔄 icon&lt;/strong&gt; next to the status field — hover for a tooltip; if an end date is set, the tooltip shows it&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;Purple quick-complete button&lt;/strong&gt; in task lists — hover to see a tooltip explaining what will happen&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;Confirmation dialog&lt;/strong&gt; when marking done from the detail page&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2&gt;Floating recurrence&lt;span class=&#34;hx:absolute hx:-mt-20&#34; id=&#34;floating-recurrence&#34;&gt;&lt;/span&gt;
+    &lt;a href=&#34;#floating-recurrence&#34; class=&#34;subheading-anchor&#34; aria-label=&#34;Permalink for this section&#34;&gt;&lt;/a&gt;&lt;/h2&gt;&lt;p&gt;Prefix your recurrence pattern with &lt;code&gt;every!&lt;/code&gt; (with an exclamation mark) to make the next occurrence relative to when you &lt;em&gt;complete&lt;/em&gt; the task rather than the original due date.&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;Example:&lt;/strong&gt; &lt;code&gt;every! 3 days&lt;/code&gt; on a task due Monday that you complete Wednesday → next instance is Saturday (3 days from Wednesday), not Thursday (3 days from Monday).&lt;/p&gt;
+&lt;p&gt;Useful for habits where slipping a day shouldn&amp;rsquo;t cause permanent catch-up.&lt;/p&gt;
+&lt;h2&gt;Undoing an accidental completion&lt;span class=&#34;hx:absolute hx:-mt-20&#34; id=&#34;undoing-an-accidental-completion&#34;&gt;&lt;/span&gt;
+    &lt;a href=&#34;#undoing-an-accidental-completion&#34; class=&#34;subheading-anchor&#34; aria-label=&#34;Permalink for this section&#34;&gt;&lt;/a&gt;&lt;/h2&gt;&lt;p&gt;If you complete a recurring task by mistake, the original instance is now marked done and a new one has been created for the next occurrence. To undo:&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;Move the newly created instance&amp;rsquo;s date back to the original due date&lt;/li&gt;
+&lt;li&gt;Mark the completed instance as incomplete again&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;The next time you complete the task, a new instance will be created at the correct future date — the series doesn&amp;rsquo;t drift just because you manually adjusted one instance&amp;rsquo;s date.&lt;/p&gt;
+&lt;h2&gt;Tips and edge cases&lt;span class=&#34;hx:absolute hx:-mt-20&#34; id=&#34;tips-and-edge-cases&#34;&gt;&lt;/span&gt;
+    &lt;a href=&#34;#tips-and-edge-cases&#34; class=&#34;subheading-anchor&#34; aria-label=&#34;Permalink for this section&#34;&gt;&lt;/a&gt;&lt;/h2&gt;&lt;ul&gt;
+&lt;li&gt;If you complete a recurring task and a next instance already exists for that date, a duplicate won&amp;rsquo;t be created&lt;/li&gt;
+&lt;li&gt;Overdue recurring tasks stay in the overdue pile — no automatic rescheduling&lt;/li&gt;
+&lt;li&gt;Attachments are copied to each instance; remove or replace them if each occurrence needs different files&lt;/li&gt;
+&lt;li&gt;Assignees are persistent across instances&lt;/li&gt;
+&lt;li&gt;Comments are instance-specific — use them for notes about that particular occurrence&lt;/li&gt;
+&lt;/ul&gt;
+
+      </description>
+    </item>
+    
+  </channel>
+</rss>

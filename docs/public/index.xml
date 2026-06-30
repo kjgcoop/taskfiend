@@ -1,0 +1,32 @@
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Task Fiend – Task Fiend</title>
+    <link>http://localhost:1313/</link>
+    <description>Recent content on Task Fiend</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en-us</language>
+    <lastBuildDate>Mon, 29 Jun 2026 18:30:30 -0700</lastBuildDate>
+    
+	  <atom:link href="http://localhost:1313/index.xml" rel="self" type="application/rss+xml" />
+    
+    
+      
+      
+    
+    
+    <item>
+      <title>Hello World!</title>
+      <link>http://localhost:1313/blog/2026/hello-world/</link>
+      <pubDate>Mon, 29 Jun 2026 18:30:30 -0700</pubDate>
+      
+      <guid>http://localhost:1313/blog/2026/hello-world/</guid>
+      <description>
+        
+        
+        &lt;p&gt;I don&amp;rsquo;t know if a Hello World post is appropriate given given that there&amp;rsquo;s already been some content on the site for some time, but the blog portion is new.&lt;/p&gt;
+
+      </description>
+    </item>
+    
+  </channel>
+</rss>

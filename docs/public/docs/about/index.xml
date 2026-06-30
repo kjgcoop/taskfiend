@@ -1,0 +1,113 @@
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Task Fiend – About</title>
+    <link>http://localhost:1313/docs/about/</link>
+    <description>Recent content in About on Task Fiend</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en-us</language>
+    
+	  <atom:link href="http://localhost:1313/docs/about/index.xml" rel="self" type="application/rss+xml" />
+    
+    
+      
+        
+      
+    
+    
+    <item>
+      <title>Differences from Todoist</title>
+      <link>http://localhost:1313/docs/about/todoist-differences/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>http://localhost:1313/docs/about/todoist-differences/</guid>
+      <description>
+        
+        
+        &lt;p&gt;This was originally planned as an almost Todoist clone. It&amp;rsquo;s been a while since I used Todoist, so my recollection is foggy. This is what I remember off the top of my head:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;I wasn&amp;rsquo;t happy with how it handled multiple users, which is why I set about making a near clone. I can&amp;rsquo;t speak to the finer points of how they differ because I don&amp;rsquo;t remember. But they are different.&lt;/li&gt;
+&lt;li&gt;If today you complete a daily task scheduled for yesterday, the next iteration is today. Todoist always has the next itration in the future.&lt;/li&gt;
+&lt;/ul&gt;
+
+      </description>
+    </item>
+    
+    <item>
+      <title>Features that Sound Nice But that May Never Be Implemented</title>
+      <link>http://localhost:1313/docs/about/maybe-someday/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>http://localhost:1313/docs/about/maybe-someday/</guid>
+      <description>
+        
+        
+        &lt;p&gt;I&amp;rsquo;d be interested to know if anybody has any interest in these. Currently, they&amp;rsquo;re implemented in the order in which they tickle my fancy. If you feel like voicing an opinion, let me know at &lt;a href=&#34;mailto:taskfiend@kjcoop.com&#34;&gt;taskfiend@kjcoop.com&lt;/a&gt;.&lt;/p&gt;
+&lt;p&gt;This list is by no means exhaustive. It&amp;rsquo;s sorted by absolutely nothing.&lt;/p&gt;
+&lt;h2&gt;Useful to All Existing Users (that is, me and my household but mostly me)&lt;span class=&#34;hx:absolute hx:-mt-20&#34; id=&#34;useful-to-all-existing-users-that-is-me-and-my-household-but-mostly-me&#34;&gt;&lt;/span&gt;
+    &lt;a href=&#34;#useful-to-all-existing-users-that-is-me-and-my-household-but-mostly-me&#34; class=&#34;subheading-anchor&#34; aria-label=&#34;Permalink for this section&#34;&gt;&lt;/a&gt;&lt;/h2&gt;&lt;h3&gt;Projects&lt;span class=&#34;hx:absolute hx:-mt-20&#34; id=&#34;projects&#34;&gt;&lt;/span&gt;
+    &lt;a href=&#34;#projects&#34; class=&#34;subheading-anchor&#34; aria-label=&#34;Permalink for this section&#34;&gt;&lt;/a&gt;&lt;/h3&gt;&lt;ul&gt;
+&lt;li&gt;Making projects shareable read-only as a link. If this ever gets implemented, this page will go away.&lt;/li&gt;
+&lt;li&gt;Projects can have background images; add the option to have a background color instead of image.&lt;/li&gt;
+&lt;li&gt;Each task that is linked to in another task has a list of which tasks link to it. It might be nice to have a similar lists within projects - list the tasks that reference it. I don&amp;rsquo;t know where in the UI this would go.&lt;/li&gt;
+&lt;li&gt;Recurring projects? Say I put together a newsletter every month. A recurring project would automatially be created from a given template at whatever interval is specified.&lt;/li&gt;
+&lt;li&gt;Springing projects? I have projects for each release of a given software I&amp;rsquo;m working on. Every time I complete a release, I create a new project. It might be fun if this happened automatically.&lt;/li&gt;
+&lt;li&gt;Right now, if you want to alter a template, you need to create an instance of the project, edit it, save it as a new template, then chuck the starting template. This is awkward. It would be nice if you could just alter the template inline.&lt;/li&gt;
+&lt;li&gt;Duplicate projects&lt;/li&gt;
+&lt;li&gt;Currently able to archive a project on a given date but not mark done on a given date.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h3&gt;Tasks&lt;span class=&#34;hx:absolute hx:-mt-20&#34; id=&#34;tasks&#34;&gt;&lt;/span&gt;
+    &lt;a href=&#34;#tasks&#34; class=&#34;subheading-anchor&#34; aria-label=&#34;Permalink for this section&#34;&gt;&lt;/a&gt;&lt;/h3&gt;&lt;ul&gt;
+&lt;li&gt;The quick filter (to filter down a list of tasks to only those matching a search term) supports &amp;ldquo;not:&amp;rdquo; to find everything not matching that term. It recognizes project (#project) and tag (@tag) shorthand. Maybe one day I&amp;rsquo;ll add these to the full search page input and/or the nav bar search.&lt;/li&gt;
+&lt;li&gt;When tasks are altered in a list, the list isn&amp;rsquo;t necessarily update. There are a few ways this plays out, but off the top of my head:
+&lt;ul&gt;
+&lt;li&gt;When tasks are completed, they disappear off a list, as they should. They don&amp;rsquo;t reappear under the list of completed tasks. If you want an updated list of completed tasks, you have to refresh the page.&lt;/li&gt;
+&lt;li&gt;Counts are not updated when tasks are marked complete.&lt;/li&gt;
+&lt;li&gt;If you change a task&amp;rsquo;s project, the new project will appear on the list, but if the list in question is a project, it won&amp;rsquo;t disappear from that list.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;li&gt;Import ics files (calendar events)&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h3&gt;Some Combination of Projects/Tags/Tasks&lt;span class=&#34;hx:absolute hx:-mt-20&#34; id=&#34;some-combination-of-projectstagstasks&#34;&gt;&lt;/span&gt;
+    &lt;a href=&#34;#some-combination-of-projectstagstasks&#34; class=&#34;subheading-anchor&#34; aria-label=&#34;Permalink for this section&#34;&gt;&lt;/a&gt;&lt;/h3&gt;&lt;ul&gt;
+&lt;li&gt;Tags applied to a whole project? Still working out how I&amp;rsquo;d like it to behave.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2&gt;Solutions in Search of Problems&lt;span class=&#34;hx:absolute hx:-mt-20&#34; id=&#34;solutions-in-search-of-problems&#34;&gt;&lt;/span&gt;
+    &lt;a href=&#34;#solutions-in-search-of-problems&#34; class=&#34;subheading-anchor&#34; aria-label=&#34;Permalink for this section&#34;&gt;&lt;/a&gt;&lt;/h2&gt;&lt;ul&gt;
+&lt;li&gt;Profile preference to dictate which properties appear on a task in a list. Right now it shows almost everything, but there may be users who don&amp;rsquo;t care to see the recurrence or location or whatever, so maybe one day they&amp;rsquo;ll have the ability to not show those. This is kind of a feature for feature&amp;rsquo;s sake - I don&amp;rsquo;t plan to use it, and I don&amp;rsquo;t think this software has any other users. Is that stopping me from writing documentation for imaginary friends? It is not.&lt;/li&gt;
+&lt;li&gt;When you type &amp;amp; in quick add, it&amp;rsquo;ll provide a list of users you might want to assign the task to. It might be kind of cool to show their profile images. Again, this is solving a non-problem - I have two users on my system. I can remember which one is me and which one is not. But it sounds cool.&lt;/li&gt;
+&lt;li&gt;Tag users in comments - as of v9, there&amp;rsquo;s now an alert for lists of changes that other users made to shared tasks, so it&amp;rsquo;s not really necessary.&lt;/li&gt;
+&lt;li&gt;There&amp;rsquo;s syntax to link to a project or tag (for project 5 and tag five, these would be [project:5] and [tag:5], respectively). Now that URLs are replaced by the task/tag/project name, I doubt I&amp;rsquo;ll ever use this syntax. That said, if I do, it might be nice to have a dropdown from which to select your project/tag/whatever.&lt;/li&gt;
+&lt;li&gt;More sophisticated search? I wouldn&amp;rsquo;t use any of these frequently enough to justify the dev time, but they sound cool.
+&lt;ul&gt;
+&lt;li&gt;Saved searches?&lt;/li&gt;
+&lt;li&gt;Specify whether the search is and/or. Right now all search terms refine the list - you can&amp;rsquo;t search for Tag A or Tag B.&lt;/li&gt;
+&lt;li&gt;Search in multiple projects&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+
+      </description>
+    </item>
+    
+    <item>
+      <title>Intentionally Missing Features</title>
+      <link>http://localhost:1313/docs/about/intentionally-missing-features/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>http://localhost:1313/docs/about/intentionally-missing-features/</guid>
+      <description>
+        
+        
+        &lt;p&gt;There are some features that are pretty standard to to-do list software that I&amp;rsquo;ve intentionally omitted. I find I spend a lot of time entering data without actually benefitting from said data entry. It becomes a sort of navel-gazing. Because I don&amp;rsquo;t know if there are any other users, I&amp;rsquo;m creating this software as though I&amp;rsquo;m the center of the world.&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Priorities&lt;/li&gt;
+&lt;li&gt;Inter-task relationships (blockers, dependencies, etc) - as of v9, there&amp;rsquo;s a section in each task that lists other tasks that that link back to the task you&amp;rsquo;re looking at. This is about as close as I plan to get.&lt;/li&gt;
+&lt;li&gt;Multiple dates (due date vs show on date) - I intentionally named the &lt;code&gt;tasks&lt;/code&gt;&amp;rsquo; date field &lt;code&gt;date&lt;/code&gt; as opposed to &lt;code&gt;due_date&lt;/code&gt;. I don&amp;rsquo;t know if you want to use it as a day on which you can start the task, or the day on which the task is due. Now you get to choose your own adventure.&lt;/li&gt;
+&lt;li&gt;Kanban - I &amp;lt;333333 kanban, but I&amp;rsquo;m trying to keep this simple. For more complicated projects, I use and recommend &lt;a href=&#34;https://vikunja.io/&#34;target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;Vikunja&lt;/a&gt;. I&amp;rsquo;m not affiliated with them, just a fan.&lt;/li&gt;
+&lt;/ul&gt;
+
+      </description>
+    </item>
+    
+  </channel>
+</rss>

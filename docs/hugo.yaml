@@ -1,0 +1,39 @@
+languageCode: en-US
+taxonomies:
+  category: categories
+  tag: tags
+params:
+  defaultTheme: auto
+  disableThemeToggle: false
+  showShareButtons: false
+  showReadingTime: false
+  showToc: true
+  showBreadCrumbs: true
+  showCodeCopyButtons: true
+  comments: false
+  hideFooter: true
+  assets:
+    favicon: /favicon.ico
+    disableHLJS: true
+  author:
+    name: KJ
+markup:
+  highlight:
+    codeFences: true
+    guessSyntax: true
+    style: monokai
+  goldmark:
+    renderer:
+      unsafe: true
+outputs:
+  home:
+    - HTML
+    - RSS
+    - JSON
+outputFormats:
+  RSS:
+    mediaType: application/rss+xml
+    baseName: feed
+menu:
+  main: []
+

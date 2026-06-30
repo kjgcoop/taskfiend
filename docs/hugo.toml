@@ -1,0 +1,12 @@
+baseURL = 'https://taskfiend.kjcoop.com/'
+locale = 'en-us'
+title = 'Task Fiend'
+theme = 'hextra'
+
+sectionPagesMenu = 'main'
+
+cover_dimming_class = ''
+
+
+[params]
+  favicon = 'images/favicon.ico'
