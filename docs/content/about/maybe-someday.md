@@ -6,7 +6,7 @@ I'd be interested to know if anybody has any interest in these. Currently, they'
 
 This list is by no means exhaustive. It's sorted by absolutely nothing.
 
-See also [Known Issues](/about/known-issues)
+See also [Known Issues](/docs/about/known-issues)
 
 ## Useful to All Existing Users (that is, me and my household but mostly me)
 
