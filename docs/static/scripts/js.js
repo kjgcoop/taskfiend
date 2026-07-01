@@ -57,7 +57,7 @@ document.addEventListener("DOMContentLoaded", function (event) {
         cookie_banner.style.display = 'none';
 
         // Offer to let them revisit it.
-        document.getElementById('revisit_cookie_banner').style.display = 'list-item';
+//        document.getElementById('revisit_cookie_banner').style.display = 'list-item';
     } else {
         // If they haven't, add the padding at the bottom of the page so that
         // the banner doesn't cover the footer.
@@ -67,29 +67,29 @@ document.addEventListener("DOMContentLoaded", function (event) {
     // Banner has been acknowledged.
     document.getElementById('cookie_banner').addEventListener("click", function (event) {
         removeBannerPadding();
-        document.getElementById('revisit_cookie_banner').style.display = 'list-item';
+//        document.getElementById('revisit_cookie_banner').style.display = 'list-item';
         document.getElementById('cookie_banner').style.display = 'none';
         setCookie(cookie_name, cookie_value);
     })
 
 
     // Set up the code to revisit the cookie banner - can do this even if the cookie is already in place.
-    document.getElementById("revisit_cookie_banner").addEventListener("click", function(event){
-        console.debug('clicked');
+    /*    document.getElementById("revisit_cookie_banner").addEventListener("click", function(event){
+            console.debug('clicked');
 
-        // Don't show the cookie banner if it's already showing.
-        if (cookie_banner.style.display == 'none') {
-            console.log("Show cookie banner");
-            document.getElementById('cookie_banner').style.display = 'flex';
+            // Don't show the cookie banner if it's already showing.
+            if (cookie_banner.style.display == 'none') {
+                console.log("Show cookie banner");
+                document.getElementById('cookie_banner').style.display = 'flex';
 
-            // Hide the link to restore the cookie banner because it's already showing.
-            document.getElementById('revisit_cookie_banner').style.display = 'none';
+                // Hide the link to restore the cookie banner because it's already showing.
+                document.getElementById('revisit_cookie_banner').style.display = 'none';
 
-            showCookieConsent();
-        } else {
-            console.log("Not showing cookie banner because it's already there");
-        }
-    });
+                showCookieConsent();
+            } else {
+                console.log("Not showing cookie banner because it's already there");
+            }
+        });*/
 
 
 });
