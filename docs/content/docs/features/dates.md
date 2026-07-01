@@ -48,4 +48,4 @@ Prefix your pattern with `every!` to make the next occurrence relative to when y
 - `every week` on a task due Tuesday → the next instance always lands on Tuesday, even if you complete it on Wednesday.
 - `every! week` → the next instance is scheduled one week from whenever you actually complete it.
 
-Useful for habits where slipping a day shouldn't cause permanent catch-up. See [Recurring Tasks](recurring-tasks.md#floating-recurrence) for more detail.
+Useful for habits where slipping a day shouldn't cause permanent catch-up. 

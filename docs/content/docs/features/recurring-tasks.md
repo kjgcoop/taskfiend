@@ -20,7 +20,7 @@ Set the **Recurrence** field on any task to a pattern like:
 - `monthly` — same day each month
 - `yearly` — annually
 
-See [Dates & Recurrence](dates.md) for the complete syntax.
+See [Dates & Recurrence](/docs/features/dates) for the complete syntax.
 
 ## What happens when you complete one
 

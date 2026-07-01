@@ -11,10 +11,10 @@ It's not designed to scale to thousands of users. It assumes at least one person
 ## Quick links
 
 - **[Download the code](https://github.com/kjgcoop/taskfiend/)**
-- **New here?** Start with [Installation](/docs/getting-started/installation.md)
-- **Coming from Todoist?** See [Migrating from Todoist](/docs/getting-started/todoist-import.md)
-- **Feature overview:** [What it does](/docs/features/overview.md)
-- **Running in production:** [Docker deployment](/docs/self-hosting/docker.md)
+- **New here?** Start with [Installation](/docs/getting-started)
+- **Coming from Todoist?** See [Migrating from Todoist](/docs/getting-started/todoist-import)
+- **Feature overview:** [What it does](/docs/features/)
+- **Running in production:** [Docker deployment](/docs/getting-started/docker)
 
 ## What makes it different
 
