@@ -1,4 +1,4 @@
-baseURL = 'https://taskfiend.kjcoop.com/'
+baseURL = 'https://taskfiend.online/'
 locale = 'en-us'
 title = 'Task Fiend'
 theme = 'hextra'
@@ -7,6 +7,6 @@ sectionPagesMenu = 'main'
 
 cover_dimming_class = ''
 
-
 [params]
   favicon = 'images/favicon.ico'
+  custom_css = ["css/kj.css"]

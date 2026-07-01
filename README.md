@@ -2,7 +2,7 @@
 
 A self-hosted to-do list for small groups. Vibe-coded because no existing tool handled multi-user task assignment quite right, and watching an AI write software is fun.
 
-**[Full documentation at taskfiend.kjcoop.com](https://taskfiend.kjcoop.com)**
+**[Full documentation at taskfiend.online](https://taskfiend.online)**
 
 ## Quick start
 

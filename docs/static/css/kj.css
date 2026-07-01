@@ -1,0 +1,176 @@
+/* Put your custom styles here and run `npm start` from the "src" directory on */
+@font-face {
+  font-family: terminal-grotesque-open; /* set name */
+  src: url('/fonts/terminal-grotesque_open.otf'); /* url of the font */
+}
+
+body {
+  background-color: #e3f4f8 !important;
+}
+
+
+/* https://www.codestudy.net/blog/how-do-you-get-the-footer-to-stay-at-the-bottom-of-a-web-page/ */
+/*html, body {
+  min-height: 100vh;
+}*/
+
+body {
+  display: flex;
+  flex-direction: column;
+}
+
+main {
+  flex: 1;
+}
+
+
+
+
+header {
+  height: 250px;
+  text-shadow: -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000;
+}
+
+article header {
+  height: auto;
+  text-shadow: none;
+}
+
+main {
+  background-color: #e3f4f8;
+}
+
+article, .rounded_grey_outline {
+  border: 1px solid #d0d0d0;
+  background-color: white;
+  border-radius: 5px;
+}
+
+header h1 {
+  font-family: terminal-grotesque-open;
+  padding-top: 0;
+  padding-bottom: 0;
+  text-shadow: -1px -1px 0 #000, 1px -1px 0 #0f0, -1px 1px 0 #00f, 1px 1px 0 #f00;
+}
+
+#opportunities {
+  color: black;
+  background-color: white;
+  height: auto;
+  border-bottom: 1px solid #d0d0d0;
+  font-size: x-small;
+}
+
+@media screen and (min-width: 60em) {
+  header .pv6-l {
+    padding-top: 0;
+    padding-bottom: 0;
+  }
+}
+
+@media screen and (min-width: 40em) {
+  .flex-l {
+    display: flex;
+  }
+}
+
+header h2 {
+font-size: smaller;
+}
+
+#TableOfContents ul li {
+  margin-bottom: 1em;
+}
+
+.lh-copy blockquote {
+  display: block;
+  font-size: .875em;
+  margin-left: 2rem;
+  margin-top: 2rem;
+  margin-bottom: 2rem;
+  border-left: 4px solid #ccc;
+  padding-left: 1rem;
+
+}
+
+.nested-links a{
+  overflow-wrap: break-word;
+}
+
+footer {
+  border-top: 1px solid #d0d0d0;
+}
+
+
+
+/* Cookie consent styling */
+/* From https://www.w3schools.com/howto/howto_js_popup.asp */
+/* Popup container */
+/*#cookie_box {
+  position: relative;
+  display: inline-block;
+  cursor: pointer;
+}*/
+
+/* The actual popup (appears on top) */
+#cookie_banner {
+/*  visibility: hidden;
+  width: 160px;*/
+  background-color: #555;
+  color: #fff;
+  text-align: center;
+/*  border-radius: 6px;*/
+  padding: 8px 0;
+/*  position: absolute;
+  z-index: 1;
+  bottom: 125%;
+  left: 50%;
+  margin-left: -80px; */
+  /* position: fixed; */ /* makes it disappear */
+}
+
+/* Popup arrow */
+/*#cookie_consent p::after {
+  content: "";
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  margin-left: -5px;
+  border-width: 5px;
+  border-style: solid;
+  border-color: #555 transparent transparent transparent;
+}*/
+
+/* Toggle this class when clicking on the popup container (hide and show the popup) */
+#cookie_banner .show {
+  visibility: visible;
+  -webkit-animation: fadeIn 1s;
+  animation: fadeIn 1s
+}
+
+#revisit_cookie_banner {
+  display: none;
+}
+
+
+
+/* Add animation (fade in the popup) */
+@-webkit-keyframes fadeIn {
+  from {opacity: 0;}
+  to {opacity: 1;}
+}
+
+@keyframes fadeIn {
+  from {opacity: 0;}
+  to {opacity:1 ;}
+}
+/*
+#cookie_banner,
+#cookie_box {
+  display: none;
+}*/
+
+.red {
+  color: red;
+  border: 1px solid red;
+}
