@@ -24,6 +24,68 @@ Alpine.data('multiFileInput', () => ({
     },
 }));
 Alpine.data('templateItem', () => ({ showUse: false, showDelete: false }));
+Alpine.data('templateNameEditor', function () {
+    return {
+        templateId: 0,
+        name: '',
+        original: '',
+        editing: false,
+
+        init() {
+            this.templateId = parseInt(this.$el.dataset.templateId);
+            this.name = this.$el.dataset.templateName || '';
+            this.original = this.name;
+        },
+
+        startEdit() {
+            this.original = this.name;
+            this.editing = true;
+            this.$nextTick(() => {
+                if (this.$refs.nameInput) {
+                    this.$refs.nameInput.focus();
+                    this.$refs.nameInput.select();
+                }
+            });
+        },
+
+        cancel() {
+            this.name = this.original;
+            this.editing = false;
+        },
+
+        async save() {
+            if (this.name.trim() === this.original.trim()) {
+                this.editing = false;
+                return;
+            }
+            try {
+                const resp = await fetch(`/templates/${this.templateId}`, {
+                    method: 'PATCH',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                    },
+                    body: JSON.stringify({ name: this.name.trim() }),
+                });
+                const data = await resp.json();
+                if (data.success) {
+                    this.name = data.name;
+                    this.original = data.name;
+                    this.editing = false;
+                    window.location.reload();
+                } else {
+                    alert(data.message || 'Failed to save');
+                    this.name = this.original;
+                    this.editing = false;
+                }
+            } catch (e) {
+                alert('An error occurred while saving');
+                this.name = this.original;
+                this.editing = false;
+            }
+        },
+    };
+});
 Alpine.data('projectsMenu', () => ({
     open: false,
     openImportTemplate() {

@@ -37,7 +37,21 @@
                                 <div class="flex items-start justify-between gap-2">
                                     <div class="flex-1 min-w-0">
                                         <div class="flex items-center gap-2 flex-wrap">
-                                            <span class="text-gray-100 font-medium">{{ $template->name }}</span>
+                                            <div x-data="templateNameEditor"
+                                                 data-template-id="{{ $template->id }}"
+                                                 data-template-name="{{ $template->name }}"
+                                                 class="min-w-0">
+                                                <span x-show="!editing"
+                                                      @click="startEdit()"
+                                                      x-text="name"
+                                                      class="text-gray-100 font-medium cursor-pointer hover:text-gray-300"></span>
+                                                <input x-show="editing" x-cloak x-ref="nameInput"
+                                                       x-model="name"
+                                                       @blur="save()"
+                                                       @keydown.enter.prevent="save()"
+                                                       @keydown.escape.prevent="cancel()"
+                                                       class="text-gray-100 font-medium bg-gray-700 border border-gray-600 rounded px-2 py-0.5 text-sm focus:outline-none focus:border-blue-500 w-48" />
+                                            </div>
                                             @if($template->is_public)
                                                 <span class="text-xs px-1.5 py-0.5 rounded bg-blue-900/50 text-blue-300 border border-blue-700/50">Public</span>
                                             @else

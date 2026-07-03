@@ -136,6 +136,29 @@ class ProjectTemplateController extends Controller
     }
 
     /**
+     * Rename a stored template. Only the creator may rename.
+     */
+    public function updateName(Request $request, ProjectTemplate $template)
+    {
+        if ($template->created_by !== $request->user()->id) {
+            return response()->json(['success' => false, 'message' => 'Only the template creator can rename it.'], 403);
+        }
+
+        $name = trim((string) $request->input('name'));
+
+        if ($name === '') {
+            return response()->json(['success' => false, 'message' => 'Name cannot be empty'], 400);
+        }
+        if (strlen($name) > 255) {
+            return response()->json(['success' => false, 'message' => 'Name cannot exceed 255 characters.'], 422);
+        }
+
+        $template->update(['name' => $name]);
+
+        return response()->json(['success' => true, 'name' => $template->name]);
+    }
+
+    /**
      * Delete a stored template (zip + DB record). Only the creator may delete.
      */
     public function destroy(Request $request, ProjectTemplate $template)
