@@ -33,6 +33,28 @@
          @do-toggle-import-template.window="toggleImportTemplate()"
          @do-toggle-markdown-import.window="toggleMarkdownImport()">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-6">
+            @if(session('status'))
+                <div class="bg-green-900/40 border border-green-700 text-green-300 px-4 py-3 rounded">
+                    {{ session('status') }}
+                </div>
+            @endif
+
+            @if(session('error'))
+                <div class="bg-red-900/40 border border-red-700 text-red-300 px-4 py-3 rounded">
+                    {{ session('error') }}
+                </div>
+            @endif
+
+            @if($errors->any())
+                <div class="bg-red-900/40 border border-red-700 text-red-300 px-4 py-3 rounded">
+                    <ul class="list-disc list-inside space-y-1">
+                        @foreach($errors->all() as $err)
+                            <li>{{ $err }}</li>
+                        @endforeach
+                    </ul>
+                </div>
+            @endif
+
             <!-- Action Buttons -->
             <div class="flex justify-between items-center gap-2">
                 <label class="flex items-center gap-2 text-sm text-gray-400 cursor-pointer select-none">
