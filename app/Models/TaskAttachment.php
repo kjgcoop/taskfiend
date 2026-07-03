@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class TaskAttachment extends Model
 {
     protected $fillable = [
+        'task_id',
         'user_id',
         'file_path',
         'original_filename',

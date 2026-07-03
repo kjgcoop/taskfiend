@@ -142,14 +142,14 @@ class DataExportController extends Controller
             $data['task_attachments'][] = [
                 'id' => $attachment->id,
                 'task_id' => $attachment->task_id,
-                'filename' => $attachment->filename,
-                'path' => $attachment->path,
+                'filename' => $attachment->original_filename,
+                'path' => $attachment->file_path,
                 'created_at' => $attachment->created_at->toIso8601String(),
                 'updated_at' => $attachment->updated_at->toIso8601String(),
             ];
 
-            if ($attachment->path) {
-                $taskAttachmentPaths[] = $attachment->path;
+            if ($attachment->file_path) {
+                $taskAttachmentPaths[] = $attachment->file_path;
             }
         }
 
@@ -468,16 +468,16 @@ class DataExportController extends Controller
                 // Update existing attachment
                 $attachment->update([
                     'task_id' => $attachmentData['task_id'],
-                    'filename' => $attachmentData['filename'],
-                    'path' => $attachmentData['path'],
+                    'original_filename' => $attachmentData['filename'],
+                    'file_path' => $attachmentData['path'],
                 ]);
             } else {
                 // Create new attachment with original ID
                 TaskAttachment::create([
                     'id' => $attachmentData['id'],
                     'task_id' => $attachmentData['task_id'],
-                    'filename' => $attachmentData['filename'],
-                    'path' => $attachmentData['path'],
+                    'original_filename' => $attachmentData['filename'],
+                    'file_path' => $attachmentData['path'],
                 ]);
             }
         }
@@ -594,12 +594,13 @@ class DataExportController extends Controller
             $data['tasks'][] = [
                 'name' => $task->name,
                 'description' => $task->description,
-                'date' => $task->date,
-                'time' => $task->time,
+                'date' => null,
+                'time' => null,
+                'location' => $task->location,
                 'recurrence_pattern' => $task->recurrence_pattern,
                 'parent_index' => isset($taskIdToIndex[$task->parent_id]) ? $taskIdToIndex[$task->parent_id] : null,
                 'tags' => $task->tags->pluck('id')->toArray(),
-                'assignees' => $task->assignments->pluck('assignee_id')->toArray(),
+                'assignees' => [],
             ];
 
             // Collect tag IDs
@@ -613,10 +614,10 @@ class DataExportController extends Controller
             foreach ($task->attachments as $attachment) {
                 $data['task_attachments'][] = [
                     'task_index' => count($data['tasks']) - 1,
-                    'filename' => $attachment->filename,
-                    'path' => $attachment->path,
+                    'filename' => $attachment->original_filename,
+                    'path' => $attachment->file_path,
                 ];
-                $taskAttachmentPaths[] = $attachment->path;
+                $taskAttachmentPaths[] = $attachment->file_path;
             }
         }
 
@@ -786,6 +787,7 @@ class DataExportController extends Controller
                 'status' => 'incomplete',
                 'date' => $taskData['date'] ?? null,
                 'time' => $taskData['time'] ?? null,
+                'location' => $taskData['location'] ?? null,
                 'recurrence_pattern' => $taskData['recurrence_pattern'],
                 'project_id' => $project->id,
                 'creator_id' => $user->id,
@@ -842,8 +844,10 @@ class DataExportController extends Controller
 
                         TaskAttachment::create([
                             'task_id' => $task->id,
-                            'filename' => $attachmentData['filename'],
-                            'path' => $newPath,
+                            'user_id' => $user->id,
+                            'original_filename' => $attachmentData['filename'],
+                            'file_path' => $newPath,
+                            'file_size' => filesize($sourceFile),
                         ]);
                     }
                 }

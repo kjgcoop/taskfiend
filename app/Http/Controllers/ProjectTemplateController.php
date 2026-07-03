@@ -191,12 +191,13 @@ class ProjectTemplateController extends Controller
             $data['tasks'][] = [
                 'name'               => $task->name,
                 'description'        => $task->description,
-                'date'               => $task->date,
-                'time'               => $task->time,
+                'date'               => null,
+                'time'               => null,
+                'location'           => $task->location,
                 'recurrence_pattern' => $task->recurrence_pattern,
                 'parent_index'       => isset($taskIdToIndex[$task->parent_id]) ? $taskIdToIndex[$task->parent_id] : null,
                 'tags'               => $task->tags->pluck('id')->toArray(),
-                'assignees'          => $task->assignments->pluck('assignee_id')->toArray(),
+                'assignees'          => [],
             ];
 
             foreach ($task->tags as $tag) {
@@ -208,10 +209,10 @@ class ProjectTemplateController extends Controller
             foreach ($task->attachments as $attachment) {
                 $data['task_attachments'][] = [
                     'task_index' => count($data['tasks']) - 1,
-                    'filename'   => $attachment->filename,
-                    'path'       => $attachment->path,
+                    'filename'   => $attachment->original_filename,
+                    'path'       => $attachment->file_path,
                 ];
-                $taskAttachmentPaths[] = $attachment->path;
+                $taskAttachmentPaths[] = $attachment->file_path;
             }
         }
 
@@ -357,6 +358,7 @@ class ProjectTemplateController extends Controller
                 'status'             => 'incomplete',
                 'date'               => $taskData['date'] ?? null,
                 'time'               => $taskData['time'] ?? null,
+                'location'           => $taskData['location'] ?? null,
                 'recurrence_pattern' => $taskData['recurrence_pattern'],
                 'project_id'         => $project->id,
                 'creator_id'         => $user->id,
@@ -406,9 +408,11 @@ class ProjectTemplateController extends Controller
                         $newPath = 'task_attachments/' . uniqid() . '_' . $attachmentData['filename'];
                         Storage::disk('private')->put($newPath, file_get_contents($sourceFile));
                         TaskAttachment::create([
-                            'task_id'  => $task->id,
-                            'filename' => $attachmentData['filename'],
-                            'path'     => $newPath,
+                            'task_id'           => $task->id,
+                            'user_id'           => $user->id,
+                            'original_filename' => $attachmentData['filename'],
+                            'file_path'         => $newPath,
+                            'file_size'         => filesize($sourceFile),
                         ]);
                     }
                 }
