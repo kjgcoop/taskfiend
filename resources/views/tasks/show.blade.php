@@ -1009,7 +1009,12 @@
                     this.projectSearch = p ? p.name : '';
                     this.projectComboOpen = true;
                     this.projectComboActiveIndex = -1;
-                    this.$nextTick(() => this.$refs.project_idInput?.focus());
+                    this.$nextTick(() => {
+                        if (this.$refs.project_idInput) {
+                            this.$refs.project_idInput.focus();
+                            this.$refs.project_idInput.select();
+                        }
+                    });
                 },
 
                 selectComboProject(project) {
