@@ -8,6 +8,7 @@ use App\Models\Project;
 use App\Models\Tag;
 use App\Models\Task;
 use App\Models\User;
+use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -155,9 +156,11 @@ class TaskStoreTest extends TestCase
 
     public function test_iso_date_is_stored(): void
     {
-        $this->storeTask(['date' => '2026-06-15']);
+        $date = Carbon::now()->addDays(30)->toDateString();
 
-        $this->assertDatabaseHas('tasks', ['date' => '2026-06-15']);
+        $this->storeTask(['date' => $date]);
+
+        $this->assertDatabaseHas('tasks', ['date' => $date]);
     }
 
     public function test_tags_are_synced(): void
@@ -389,15 +392,17 @@ class TaskStoreTest extends TestCase
 
     public function test_recurrence_with_explicit_date_keeps_that_date(): void
     {
+        $date = Carbon::now()->addDays(30)->toDateString();
+
         $this->storeTask([
             'recurrence_pattern' => 'weekly',
-            'date'               => '2026-07-04',
+            'date'               => $date,
         ]);
 
         $this->assertDatabaseHas('tasks', [
             'name'               => 'Test Task',
             'recurrence_pattern' => 'weekly',
-            'date'               => '2026-07-04',
+            'date'               => $date,
         ]);
     }
 
