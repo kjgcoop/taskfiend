@@ -7,6 +7,7 @@ use App\Models\Project;
 use App\Models\Tag;
 use App\Models\Task;
 use App\Models\User;
+use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
@@ -261,10 +262,12 @@ class ApiTaskTest extends TestCase
     {
         $this->createDefaultProject();
 
-        $this->apiPost(['name' => 'Stand-up daily', 'date' => '2026-07-01']);
+        $date = Carbon::now()->addDays(30)->toDateString();
+
+        $this->apiPost(['name' => 'Stand-up daily', 'date' => $date]);
 
         $task = Task::where('creator_id', $this->user->id)->latest()->first();
-        $this->assertSame('2026-07-01', $task->date);
+        $this->assertSame($date, $task->date);
     }
 
     public function test_create_stores_tags(): void
