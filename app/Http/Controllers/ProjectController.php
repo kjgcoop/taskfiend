@@ -706,18 +706,24 @@ class ProjectController extends Controller
             $pattern = $normalized;
         }
 
-        // Replace any existing undismissed reminder for this user on this project
-        ProjectReminder::where('project_id', $project->id)
+        // Update any existing undismissed reminder for this user on this project in place
+        // (rather than delete + recreate) so an already-rendered dismiss link doesn't 404.
+        $existing = ProjectReminder::where('project_id', $project->id)
             ->where('user_id', Auth::id())
             ->where('dismissed', false)
-            ->delete();
+            ->first();
 
-        $project->reminders()->create([
-            'user_id'             => Auth::id(),
+        $attributes = [
             'date'                => $request->input('date'),
             'recurrence_pattern'  => $pattern,
             'recurrence_floating' => $request->boolean('recurrence_floating'),
-        ]);
+        ];
+
+        if ($existing) {
+            $existing->update($attributes);
+        } else {
+            $project->reminders()->create($attributes + ['user_id' => Auth::id()]);
+        }
 
         $this->logChange($project, 'set a project reminder for ' . $request->input('date'));
 
