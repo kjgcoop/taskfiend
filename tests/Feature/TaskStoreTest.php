@@ -441,6 +441,50 @@ class TaskStoreTest extends TestCase
         $this->assertTrue($task->tags->contains($tag));
     }
 
+    public function test_unrecognized_at_token_is_left_in_task_name(): void
+    {
+        // No "notatag" tag exists, so @notatag is not a tag token — it must survive
+        // as plain text in the task name, not be stripped.
+        $this->actingAs($this->user)->post('/tasks', [
+            'name'       => 'Clean the toilet @notatag',
+            'project_id' => $this->project->id,
+            'quick_add'  => true,
+        ]);
+
+        $task = Task::where('creator_id', $this->user->id)->latest()->first();
+        $this->assertSame('Clean the toilet @notatag', $task->name);
+        $this->assertCount(0, $task->tags);
+    }
+
+    public function test_bulk_add_at_tag_token_assigns_tag_and_strips_token(): void
+    {
+        $tag = $this->createTag('home');
+
+        $this->actingAs($this->user)->post('/tasks', [
+            'name'       => "Clean the toilet @home\nBuy milk",
+            'project_id' => $this->project->id,
+            'quick_add'  => true,
+        ]);
+
+        $task = Task::where('name', 'Clean the toilet')->firstOrFail();
+        $this->assertTrue($task->tags->contains($tag));
+    }
+
+    public function test_bulk_add_unrecognized_at_token_is_left_in_task_name(): void
+    {
+        // Regression test: bulk/multi-line quick-add previously stripped every
+        // "@word" token unconditionally, even when it didn't match a real tag.
+        $this->actingAs($this->user)->post('/tasks', [
+            'name'       => "Clean the toilet @notatag\nBuy milk",
+            'project_id' => $this->project->id,
+            'quick_add'  => true,
+        ]);
+
+        $task = Task::where('name', 'Clean the toilet @notatag')->first();
+        $this->assertNotNull($task, 'Unrecognized @word token should remain in the task name.');
+        $this->assertCount(0, $task->tags);
+    }
+
     public function test_quick_add_parses_date_keyword_from_name(): void
     {
         $this->actingAs($this->user)->post('/tasks', [

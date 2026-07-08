@@ -1995,6 +1995,7 @@ class TaskController extends Controller
 
         // ── Parse @tag tokens (additive with form-level tags) ────────────────────────
         if (preg_match_all('/@([\w-]+)/', $taskName, $tagMatches)) {
+            $matchedTagSlugs = [];
             foreach ($tagMatches[1] as $tagSlug) {
                 $tag = Tag::where(function ($q) use ($tagSlug) {
                         $q->whereRaw('LOWER(tag_name) = ?', [strtolower($tagSlug)])
@@ -2004,10 +2005,15 @@ class TaskController extends Controller
                     ->first();
                 if ($tag) {
                     $tagIds[] = $tag->id;
+                    $matchedTagSlugs[] = preg_quote($tagSlug, '/');
                 }
+                // Unrecognised @word: leave it as plain text in the title.
             }
-            $tagIds   = array_unique($tagIds);
-            $taskName = trim(preg_replace('/@[\w-]+\s*/', '', $taskName));
+            $tagIds = array_unique($tagIds);
+            // Only strip the tokens that actually matched a tag.
+            if (!empty($matchedTagSlugs)) {
+                $taskName = trim(preg_replace('/@(' . implode('|', $matchedTagSlugs) . ')\s*/', '', $taskName));
+            }
         }
 
         // ── Parse +location / ++location tokens ─────────────────────────────────────
