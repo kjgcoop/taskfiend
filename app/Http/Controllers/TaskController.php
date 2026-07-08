@@ -1041,6 +1041,7 @@ class TaskController extends Controller
             'project_url'        => $task->project ? route('projects.show', $task->project) : null,
             'recurrence_pattern' => $task->recurrence_pattern,
             'tags'               => $task->tags->map(fn ($t) => ['name' => $t->tag_name, 'color' => $t->color])->values()->toArray(),
+            'tag_ids'            => $task->tags->pluck('id')->toArray(),
             'url'                => route('tasks.show', $task),
             'inactive'           => in_array($task->status, ['done', 'archived']),
             'updated_field'      => $updatedField,

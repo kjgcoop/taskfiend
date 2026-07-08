@@ -845,6 +845,17 @@
             return;
         }
 
+        // Tag removed from the task while viewing that tag's task list: fade it out
+        const tagContainer = group.closest('[data-view-tag-id]');
+        if (tagContainer && d.updated_field === 'tag_ids' &&
+            !(d.tag_ids || []).map(String).includes(tagContainer.dataset.viewTagId)) {
+            group.style.transition = 'opacity 0.4s';
+            group.style.opacity = '0';
+            setTimeout(() => { group.style.display = 'none'; }, 400);
+            _decrementIncompleteCount();
+            return;
+        }
+
         // Inactive (done/archived) AND the status field was just changed: fade the row out
         if (d.inactive && d.updated_field === 'status') {
             group.style.transition = 'opacity 0.4s';

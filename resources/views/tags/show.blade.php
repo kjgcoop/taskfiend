@@ -150,7 +150,8 @@
                  data-projects="{{ json_encode($projects) }}"
                  data-tags="{{ json_encode($allTags) }}"
                  data-users="{{ json_encode($users) }}"
-                 data-locations="{{ json_encode($locations) }}">
+                 data-locations="{{ json_encode($locations) }}"
+                 data-view-tag-id="{{ $tag->id }}">
                 <div class="flex items-center justify-between mb-4">
                     <button type="button"
                             @click="showIncomplete = !showIncomplete"
