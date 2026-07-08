@@ -24,7 +24,8 @@ class TagController extends Controller
                       });
                 })
                 ->where('status', '!=', 'archived')
-                ->where('status', '!=', 'done');
+                ->where('status', '!=', 'done')
+                ->whereHas('project', fn($pq) => $pq->whereNotIn('status', ['archived', 'done']));
             }])
             ->orderByRaw('LOWER(tag_name)')
             ->get();
@@ -66,6 +67,7 @@ class TagController extends Controller
             })
             ->where('status', '!=', 'archived')
             ->where('status', '!=', 'done')
+            ->whereHas('project', fn($pq) => $pq->whereNotIn('status', ['archived', 'done']))
             ->with(['creator', 'project', 'assignees', 'attachments', 'comments', 'completionLog.user']);
         match ($sort) {
             'created'  => $tasksQuery->orderBy('created_at', $reversed ? 'asc' : 'desc'),
