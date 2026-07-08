@@ -398,7 +398,8 @@ class DashboardController extends Controller
 
         $breakdown = $this->projectBreakdown($tasks);
 
-        $projectReminders = ProjectReminder::where('p.user_id', Auth::id())
+        $projectReminders = ProjectReminder::select('project_reminders.*')
+            ->where('p.user_id', Auth::id())
             ->join('projects as p', 'p.id', '=', 'project_reminders.project_id')
             ->where('status', 'incomplete')
             ->where('dismissed', false)
