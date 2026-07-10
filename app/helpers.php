@@ -253,7 +253,12 @@ if (! function_exists('render_body')) {
         $text = preg_replace_callback('/\[location:([^\]]+)\]/', function ($m) {
             $location = trim($m[1]);
             if ($location === '') return $m[0];
-            $url = route('search') . '?' . http_build_query(['location' => $location]);
+            $url = route('search') . '?' . http_build_query([
+                'location'        => $location,
+                'show_incomplete' => 1,
+                'show_done'       => 1,
+                'show_archived'   => 1,
+            ]);
             return "[{$location}]({$url})";
         }, $text);
 
