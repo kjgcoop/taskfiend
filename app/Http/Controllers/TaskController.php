@@ -875,8 +875,12 @@ class TaskController extends Controller
                     }
                     $value = $parsed->format('Y-m-d');
 
-                    // Reject dates in the past (today is always valid)
-                    if (Carbon::parse($value)->startOfDay()->lt(Carbon::today())) {
+                    // Reject dates in the past (today is always valid), but only when the
+                    // date is actually being changed — not when resaving a task that already
+                    // has a past due date (e.g. an open date field getting resent alongside
+                    // another field save while the task itself is overdue).
+                    if ($value !== $task->date
+                        && Carbon::parse($value)->startOfDay()->lt(Carbon::today())) {
                         return response()->json(['success' => false, 'message' => 'Task date cannot be in the past.'], 422);
                     }
                 }
