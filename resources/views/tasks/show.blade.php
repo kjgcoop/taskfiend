@@ -371,7 +371,8 @@
                         </div>
                         @if(!$isInactive)
                         <div x-show="editing.project_id" class="mt-1"
-                             x-effect="editing.project_id && initProjectCombo()">
+                             x-effect="editing.project_id && initProjectCombo()"
+                             @keydown.escape.window.capture="cancelProjectEditOnEscape($event)">
                             <div class="relative">
                                 <input type="text"
                                        x-ref="project_idInput"
@@ -380,7 +381,6 @@
                                        @keydown.arrow-down.prevent="moveComboDown()"
                                        @keydown.arrow-up.prevent="moveComboUp()"
                                        @keydown.enter.prevent="selectCurrentComboProject()"
-                                       @keydown.escape="cancelEdit('project_id')"
                                        @input="openProjectCombo()"
                                        autocomplete="off"
                                        placeholder="Search projects..."
@@ -1015,6 +1015,12 @@
                             this.$refs.project_idInput.select();
                         }
                     });
+                },
+
+                cancelProjectEditOnEscape(event) {
+                    if (!this.editing.project_id) return;
+                    event.stopPropagation();
+                    this.cancelEdit('project_id');
                 },
 
                 selectComboProject(project) {
