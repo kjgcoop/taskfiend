@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\ScheduledProject;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 
 class ScheduledProjectController extends Controller
 {
@@ -49,5 +50,40 @@ class ScheduledProjectController extends Controller
         $scheduledProject->update(['project_name' => $request->project_name]);
 
         return response()->json(['success' => true, 'project_name' => $scheduledProject->project_name]);
+    }
+
+    public function createNow(Request $request, ScheduledProject $scheduledProject)
+    {
+        if ($scheduledProject->user_id !== $request->user()->id) {
+            abort(403);
+        }
+
+        if ($scheduledProject->is_created) {
+            return back()->with('error', 'This project has already been created.');
+        }
+
+        $template = $scheduledProject->template;
+        if (!$template) {
+            return back()->with('error', 'The template for this scheduled project no longer exists.');
+        }
+
+        $zipPath = Storage::disk('private')->path($template->filename);
+        if (!file_exists($zipPath)) {
+            return back()->with('error', 'Template file not found on the server.');
+        }
+
+        $templateController = new ProjectTemplateController();
+        $method = new \ReflectionMethod($templateController, 'createProjectFromZip');
+        $method->setAccessible(true);
+        $project = $method->invoke($templateController, $zipPath, $scheduledProject->project_name, $request->user(), $template->id);
+
+        if ($project === false) {
+            return back()->with('error', 'Failed to create project from template.');
+        }
+
+        $scheduledProject->delete();
+
+        return redirect()->route('projects.show', $project)
+            ->with('status', 'Project "' . $project->name . '" created.');
     }
 }

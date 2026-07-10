@@ -19,6 +19,12 @@
                 </div>
             @endif
 
+            @if(session('error'))
+                <div class="bg-red-900/40 border border-red-700 text-red-300 px-4 py-3 rounded">
+                    {{ session('error') }}
+                </div>
+            @endif
+
             @if($scheduled->isEmpty())
                 <div class="bg-[#202020] border border-gray-700 rounded-lg p-8 text-center text-gray-500">
                     No projects are scheduled. Use a template and pick a future date to schedule one.
@@ -51,14 +57,23 @@
                             <div class="text-sm text-gray-300 whitespace-nowrap">
                                 {{ $item->start_date->format('l, M j, Y') }}
                             </div>
-                            <form method="POST" action="{{ route('scheduled-projects.destroy', $item) }}">
-                                @csrf
-                                @method('DELETE')
-                                <button type="submit"
-                                        class="text-sm px-3 py-1.5 bg-gray-700 hover:bg-red-900/60 text-gray-300 hover:text-red-300 rounded border border-gray-600 hover:border-red-700/50">
-                                    Cancel
-                                </button>
-                            </form>
+                            <div class="flex items-center gap-2 shrink-0">
+                                <form method="POST" action="{{ route('scheduled-projects.create-now', $item) }}">
+                                    @csrf
+                                    <button type="submit"
+                                            class="text-sm px-3 py-1.5 bg-gray-700 hover:bg-blue-900/60 text-gray-300 hover:text-blue-300 rounded border border-gray-600 hover:border-blue-700/50">
+                                        Create Now
+                                    </button>
+                                </form>
+                                <form method="POST" action="{{ route('scheduled-projects.destroy', $item) }}">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button type="submit"
+                                            class="text-sm px-3 py-1.5 bg-gray-700 hover:bg-red-900/60 text-gray-300 hover:text-red-300 rounded border border-gray-600 hover:border-red-700/50">
+                                        Cancel
+                                    </button>
+                                </form>
+                            </div>
                         </div>
                     @endforeach
                 </div>

@@ -103,6 +103,7 @@ Route::middleware('auth')->group(function () {
 
     Route::get('/scheduled-projects', [ScheduledProjectController::class, 'index'])->name('scheduled-projects.index');
     Route::patch('/scheduled-projects/{scheduledProject}', [ScheduledProjectController::class, 'update'])->name('scheduled-projects.update');
+    Route::post('/scheduled-projects/{scheduledProject}/create-now', [ScheduledProjectController::class, 'createNow'])->name('scheduled-projects.create-now');
     Route::delete('/scheduled-projects/{scheduledProject}', [ScheduledProjectController::class, 'destroy'])->name('scheduled-projects.destroy');
 
     Route::get('/project-reminders', [ProjectController::class, 'remindersIndex'])->name('projects.reminders.index');
