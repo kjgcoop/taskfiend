@@ -373,7 +373,8 @@ $_panelTaskJson = json_encode([
             </div>
             @if(!$isInactive)
             <div x-show="editing.project_id" class="mt-1"
-                 x-effect="editing.project_id && initProjectCombo()">
+                 x-effect="editing.project_id && initProjectCombo()"
+                 @keydown.escape.window.capture="cancelProjectEditOnEscape($event)">
                 <div class="relative">
                     <input type="text"
                            x-ref="project_idInput"
@@ -382,7 +383,6 @@ $_panelTaskJson = json_encode([
                            @keydown.arrow-down.prevent="moveComboDown()"
                            @keydown.arrow-up.prevent="moveComboUp()"
                            @keydown.enter.prevent="selectCurrentComboProject()"
-                           @keydown.escape.stop="cancelEdit('project_id')"
                            @input="openProjectCombo()"
                            autocomplete="off"
                            placeholder="Search projects..."

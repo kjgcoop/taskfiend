@@ -815,6 +815,12 @@
                     });
                 },
 
+                cancelProjectEditOnEscape(event) {
+                    if (!this.editing.project_id) return;
+                    event.stopPropagation();
+                    this.cancelEdit('project_id');
+                },
+
                 init() {
                     const el = this.$el;
                     const taskData = JSON.parse(el.dataset.taskJson || '{}');
