@@ -27,11 +27,26 @@
                 <div class="bg-[#202020] border border-gray-700 rounded-lg divide-y divide-gray-700">
                     @foreach($scheduled as $item)
                         <div class="flex items-center justify-between gap-4 px-5 py-4">
-                            <div class="flex-1 min-w-0">
-                                <div class="text-gray-100 font-medium truncate">{{ $item->project_name }}</div>
+                            <div class="flex-1 min-w-0"
+                                 x-data="scheduledProjectNameEditor"
+                                 data-scheduled-id="{{ $item->id }}"
+                                 data-project-name="{{ $item->project_name }}">
+                                <div class="text-gray-100 font-medium truncate">
+                                    <span x-show="!editing"
+                                          @click="startEdit()"
+                                          class="cursor-pointer hover:text-gray-300"
+                                          x-text="name"></span>
+                                    <input x-show="editing" x-cloak x-ref="nameInput"
+                                           x-model="name"
+                                           @blur="save()"
+                                           @keydown.enter.prevent="save()"
+                                           @keydown.escape.prevent="cancel()"
+                                           class="text-gray-100 font-medium bg-transparent border-b border-gray-400 focus:outline-none focus:border-blue-400 w-full max-w-xs" />
+                                </div>
                                 <div class="text-sm text-gray-400 mt-0.5">
                                     From template: <span class="text-gray-300">{{ $item->template?->name ?? 'Deleted template' }}</span>
                                 </div>
+                                <div x-show="error" x-cloak class="text-sm text-red-400 mt-0.5" x-text="error"></div>
                             </div>
                             <div class="text-sm text-gray-300 whitespace-nowrap">
                                 {{ $item->start_date->format('l, M j, Y') }}
@@ -51,4 +66,80 @@
 
         </div>
     </div>
+
+    @push('scripts')
+    <script nonce="{{ csp_nonce() }}">
+        document.addEventListener('alpine:init', () => {
+            Alpine.data('scheduledProjectNameEditor', function () {
+                return {
+                    scheduledId: 0,
+                    name: '',
+                    original: '',
+                    editing: false,
+                    error: null,
+
+                    init() {
+                        this.scheduledId = parseInt(this.$el.dataset.scheduledId);
+                        this.name = this.$el.dataset.projectName || '';
+                        this.original = this.name;
+                    },
+
+                    startEdit() {
+                        this.original = this.name;
+                        this.error = null;
+                        this.editing = true;
+                        this.$nextTick(() => {
+                            if (this.$refs.nameInput) {
+                                this.$refs.nameInput.focus();
+                                this.$refs.nameInput.select();
+                            }
+                        });
+                    },
+
+                    cancel() {
+                        this.name = this.original;
+                        this.editing = false;
+                        this.error = null;
+                    },
+
+                    async save() {
+                        if (!this.editing) {
+                            return;
+                        }
+                        if (this.name.trim() === this.original.trim()) {
+                            this.editing = false;
+                            return;
+                        }
+                        const formData = new FormData();
+                        formData.append('_token', document.querySelector('meta[name="csrf-token"]').content);
+                        formData.append('_method', 'PATCH');
+                        formData.append('project_name', this.name.trim());
+                        try {
+                            const resp = await fetch(`/scheduled-projects/${this.scheduledId}`, {
+                                method: 'POST',
+                                headers: { 'Accept': 'application/json' },
+                                body: formData,
+                            });
+                            const data = await resp.json();
+                            if (resp.ok && data.success) {
+                                this.original = data.project_name;
+                                this.name = data.project_name;
+                                this.error = null;
+                                this.editing = false;
+                            } else {
+                                this.name = this.original;
+                                this.editing = false;
+                                this.error = data.message || 'Failed to save';
+                            }
+                        } catch (e) {
+                            this.name = this.original;
+                            this.editing = false;
+                            this.error = 'An error occurred while saving';
+                        }
+                    },
+                };
+            });
+        });
+    </script>
+    @endpush
 </x-app-layout>

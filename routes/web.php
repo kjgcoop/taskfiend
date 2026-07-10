@@ -102,6 +102,7 @@ Route::middleware('auth')->group(function () {
     Route::delete('/templates/{template}', [ProjectTemplateController::class, 'destroy'])->name('templates.destroy');
 
     Route::get('/scheduled-projects', [ScheduledProjectController::class, 'index'])->name('scheduled-projects.index');
+    Route::patch('/scheduled-projects/{scheduledProject}', [ScheduledProjectController::class, 'update'])->name('scheduled-projects.update');
     Route::delete('/scheduled-projects/{scheduledProject}', [ScheduledProjectController::class, 'destroy'])->name('scheduled-projects.destroy');
 
     Route::get('/project-reminders', [ProjectController::class, 'remindersIndex'])->name('projects.reminders.index');
