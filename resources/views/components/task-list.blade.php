@@ -1,4 +1,4 @@
-@props(['tasks', 'depth' => 0, 'hideDate' => false, 'readOnly' => false, 'viewDate' => null, 'showAsArchived' => false, 'sortable' => false, 'reorderUrl' => null])
+@props(['tasks', 'depth' => 0, 'hideDate' => false, 'readOnly' => false, 'viewDate' => null, 'showAsArchived' => false, 'sortable' => false, 'reorderUrl' => null, 'overdueView' => false])
 
 @pushOnce('scripts')
 <script nonce="{{ csp_nonce() }}">
@@ -866,6 +866,17 @@
             return;
         }
 
+        // Task rescheduled while viewing the overdue list: dates can only be set in the
+        // future, so any date change means it's no longer overdue. Fade it out.
+        const overdueContainer = group.closest('[data-overdue-view]');
+        if (overdueContainer && d.updated_field === 'date') {
+            group.style.transition = 'opacity 0.4s';
+            group.style.opacity = '0';
+            setTimeout(() => { group.style.display = 'none'; }, 400);
+            _decrementIncompleteCount();
+            return;
+        }
+
         // Task moved off this day view: fade it out
         const list = group.closest('[data-view-date]');
         if (list && d.date !== list.dataset.viewDate) {
@@ -979,9 +990,10 @@
 <div class="space-y-2"
      x-data="taskSortableList"
      @if($reorderUrl) data-reorder-url="{{ $reorderUrl }}" @endif
-     @if($viewDate) data-view-date="{{ $viewDate }}" @endif>
+     @if($viewDate) data-view-date="{{ $viewDate }}" @endif
+     @if($overdueView) data-overdue-view="1" @endif>
 @else
-<div class="space-y-2" @if($viewDate) data-view-date="{{ $viewDate }}" @endif>
+<div class="space-y-2" @if($viewDate) data-view-date="{{ $viewDate }}" @endif @if($overdueView) data-overdue-view="1" @endif>
 @endif
     @forelse($tasks as $task)
         @php
