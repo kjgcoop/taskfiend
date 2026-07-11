@@ -1251,7 +1251,13 @@ class TaskController extends Controller
         if ($parsed['nodate']) {
             $dateFormatted = 'no date';
         } elseif ($parsed['date']) {
-            $dateFormatted = Carbon::parse($parsed['date'])->format('D, M j');
+            $parsedDate = Carbon::parse($parsed['date']);
+            // Only show the year when it differs from the current year - keeps the
+            // common case ("Wed, Jun 10") short, but disambiguates an explicit
+            // out-of-year date ("Wed, Jun 10, 2028") instead of silently hiding it.
+            $dateFormatted = $parsedDate->year === Carbon::now()->year
+                ? $parsedDate->format('D, M j')
+                : $parsedDate->format('D, M j, Y');
         }
 
         $hasSpecial = $projectName !== null
@@ -1462,11 +1468,15 @@ class TaskController extends Controller
 
     private function taskToastData(Task $task): array
     {
+        $datetime = $task->datetime ? \Carbon\Carbon::parse($task->datetime) : null;
+
         return [
             'id'        => $task->id,
             'name'      => $task->name,
-            'datetime'  => $task->datetime
-                ? \Carbon\Carbon::parse($task->datetime)->format('D, M j')
+            // Only show the year when it differs from the current year - keeps the
+            // common case short but disambiguates a date scheduled in another year.
+            'datetime'  => $datetime
+                ? $datetime->format($datetime->year === now()->year ? 'D, M j' : 'D, M j, Y')
                 : null,
             'time'      => $task->time
                 ? \Carbon\Carbon::parse($task->time)->format('g:i A')
