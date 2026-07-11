@@ -1,0 +1,59 @@
+# Version control
+.git
+.gitignore
+.gitattributes
+
+# Environment / secrets
+.env
+.env.*
+!.env.example
+auth.json
+
+# Databases
+database/*.sqlite
+database/*.sqlite-journal
+database/*.sqbpro
+database/test-database.sqlite
+
+# Storage / cache / keys
+storage/*.key
+storage/framework/cache/*
+storage/framework/sessions/*
+storage/framework/views/*
+storage/logs/*
+storage/pail
+bootstrap/cache/*.php
+.phpunit.result.cache
+.phpunit.cache
+
+# Dependencies (installed during build)
+vendor
+node_modules
+
+# Build artifacts
+public/build
+public/hot
+public/storage
+
+# Editors / OS
+.DS_Store
+Thumbs.db
+.idea
+.vscode
+.fleet
+.nova
+.zed
+
+# Testing
+tests/e2e/node_modules
+playwright-report
+test-results
+
+# Claude Code
+.claude/
+
+# Docs / misc
+implementation_notes
+docs/public/*
+site
+.hugo_build.lock
