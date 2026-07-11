@@ -79,7 +79,7 @@ class TagController extends Controller
         };
         $tasks = $tasksQuery->get();
 
-        $perPage = (int) env('PAGINATION_PER_PAGE', 100);
+        $perPage = (int) config('taskfiend.pagination_per_page');
 
         $completedTasksTotal = $tag->tasks()
             ->where(function ($q) {
@@ -179,7 +179,7 @@ class TagController extends Controller
 
     public function completedTasks(Request $request, Tag $tag)
     {
-        $perPage = (int) env('PAGINATION_PER_PAGE', 100);
+        $perPage = (int) config('taskfiend.pagination_per_page');
         $page    = max(1, (int) $request->get('page', 1));
         $offset  = ($page - 1) * $perPage;
 
@@ -212,7 +212,7 @@ class TagController extends Controller
 
     public function archivedTasks(Request $request, Tag $tag)
     {
-        $perPage = (int) env('PAGINATION_PER_PAGE', 100);
+        $perPage = (int) config('taskfiend.pagination_per_page');
         $page    = max(1, (int) $request->get('page', 1));
         $offset  = ($page - 1) * $perPage;
 

@@ -36,10 +36,10 @@ class CommentController extends Controller
                 ->withInput($request->except('attachment'));
         }
 
-        $maxFileSizeLabel = env('MAX_FILE_SIZE', '22M');
+        $maxFileSizeLabel = config('taskfiend.max_file_size');
         $maxFileSizeKb = (int) $maxFileSizeLabel * 1024;
 
-        $longTextMax = (int) env('LONG_TEXT_MAX_CHARS', 10000);
+        $longTextMax = (int) config('taskfiend.long_text_max_chars');
         $validated = $request->validate([
             'comment' => "required|string|max:{$longTextMax}",
             'attachment' => [

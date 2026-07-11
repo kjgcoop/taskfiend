@@ -65,7 +65,7 @@ class TodoistImport extends Command
         $this->user = $user;
 
         // Check for Todoist API key (CLI argument takes precedence over env var)
-        $todoistKey = $this->option('todoist-api-key') ?: env('TODOIST_KEY');
+        $todoistKey = $this->option('todoist-api-key') ?: config('taskfiend.todoist_key');
         if (!$todoistKey) {
             $this->error('Todoist API key not provided. Use --todoist-api-key or set TODOIST_KEY in .env');
             return 1;

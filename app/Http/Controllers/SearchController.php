@@ -215,7 +215,7 @@ class SearchController extends Controller
             ]);
         }
 
-        $perPage = (int) env('PAGINATION_PER_PAGE', 100);
+        $perPage = (int) config('taskfiend.pagination_per_page');
 
         [$tasks, $tasksHasMore, $tasksTotal]                         = $this->fetchPage($baseQuery, 'incomplete', $sort, $reversed, $with, $perPage, $request->boolean('show_incomplete'));
         [$completedTasks, $completedTasksHasMore, $completedTasksTotal] = $this->fetchPage($baseQuery, 'done',       $sort, $reversed, $with, $perPage, $request->boolean('show_done'));
@@ -261,7 +261,7 @@ class SearchController extends Controller
             'page'   => 'nullable|integer|min:1',
         ]);
 
-        $perPage = (int) env('PAGINATION_PER_PAGE', 100);
+        $perPage = (int) config('taskfiend.pagination_per_page');
         $page    = max(1, (int) $request->get('page', 1));
         $offset  = ($page - 1) * $perPage;
         $status   = $request->status;

@@ -13,7 +13,7 @@ class ChangeLogController extends Controller
 {
     private static function perPage(): int
     {
-        return max(1, (int) env('PAGINATION_PER_PAGE', 100));
+        return max(1, (int) config('taskfiend.pagination_per_page'));
     }
 
     public function task(Request $request, Task $task)

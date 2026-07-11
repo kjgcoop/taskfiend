@@ -40,7 +40,7 @@ class TaskAttachmentController extends Controller
             }
         }
 
-        $maxFileSizeLabel = env('MAX_FILE_SIZE', '22M');
+        $maxFileSizeLabel = config('taskfiend.max_file_size');
         $maxFileSizeKb = (int) $maxFileSizeLabel * 1024;
 
         $request->validate([

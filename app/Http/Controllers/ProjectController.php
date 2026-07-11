@@ -64,7 +64,7 @@ class ProjectController extends Controller
 
     public function store(Request $request)
     {
-        $longTextMax = (int) env('LONG_TEXT_MAX_CHARS', 10000);
+        $longTextMax = (int) config('taskfiend.long_text_max_chars');
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'description' => "nullable|string|max:{$longTextMax}",
@@ -162,7 +162,7 @@ class ProjectController extends Controller
 //            ->orderBy('time')
             ->get();
 
-        $perPage = (int) env('PAGINATION_PER_PAGE', 100);
+        $perPage = (int) config('taskfiend.pagination_per_page');
 
         $completedTasksTotal = $project->tasks()
             ->where($visibleToUser)
@@ -285,7 +285,7 @@ class ProjectController extends Controller
     {
         $this->authorizeProjectAccess($project);
 
-        $perPage = (int) env('PAGINATION_PER_PAGE', 100);
+        $perPage = (int) config('taskfiend.pagination_per_page');
         $page    = max(1, (int) $request->get('page', 1));
         $offset  = ($page - 1) * $perPage;
 
@@ -340,7 +340,7 @@ class ProjectController extends Controller
     {
         $this->authorizeProjectAccess($project);
 
-        $perPage = (int) env('PAGINATION_PER_PAGE', 100);
+        $perPage = (int) config('taskfiend.pagination_per_page');
         $page    = max(1, (int) $request->get('page', 1));
         $offset  = ($page - 1) * $perPage;
 
@@ -436,7 +436,7 @@ class ProjectController extends Controller
                 if ($field === 'name' && strlen((string) $value) > 255) {
                     return response()->json(['success' => false, 'message' => 'Name cannot exceed 255 characters.'], 422);
                 }
-                $longTextMax = (int) env('LONG_TEXT_MAX_CHARS', 10000);
+                $longTextMax = (int) config('taskfiend.long_text_max_chars');
                 if ($field === 'description' && strlen((string) $value) > $longTextMax) {
                     return response()->json(['success' => false, 'message' => "Description cannot exceed {$longTextMax} characters."], 422);
                 }
@@ -570,7 +570,7 @@ class ProjectController extends Controller
         $path      = null;
 
         if (in_array($mime, ['image/jpeg', 'image/png', 'image/webp', 'image/gif'])) {
-            $scaleTo = (int) env('SCALE_LARGEST_TO', 2048);
+            $scaleTo = (int) config('taskfiend.scale_largest_to');
             $src = @imagecreatefromstring(file_get_contents($file->getRealPath()));
 
             if ($src) {

@@ -39,7 +39,7 @@ trait StoresAttachments
         $scalableMimes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
 
         if (in_array($mime, $scalableMimes)) {
-            $scaleTo = (int) env('SCALE_LARGEST_TO', 2048);
+            $scaleTo = (int) config('taskfiend.scale_largest_to');
             $src = @imagecreatefromstring(file_get_contents($file->getRealPath()));
 
             if ($src) {

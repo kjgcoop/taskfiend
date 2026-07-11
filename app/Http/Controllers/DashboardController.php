@@ -77,7 +77,7 @@ class DashboardController extends Controller
     {
         $sort     = $request->input('sort', 'date');
         $reversed = $request->boolean('reversed');
-        $perPage  = (int) env('PAGINATION_PER_PAGE', 100);
+        $perPage  = (int) config('taskfiend.pagination_per_page');
         $page     = max(1, (int) $request->input('page', 1));
         $offset   = ($page - 1) * $perPage;
 
@@ -324,7 +324,7 @@ class DashboardController extends Controller
         $this->applySortOrder($tasksQuery, $sort, $reversed);
         $tasks = $tasksQuery->get();
 
-        $perPage = (int) env('PAGINATION_PER_PAGE', 100);
+        $perPage = (int) config('taskfiend.pagination_per_page');
 
         $userConstraint = function ($q) {
             $q->where('creator_id', Auth::id())
@@ -418,7 +418,7 @@ class DashboardController extends Controller
 
     public function dayCompletedTasks(Request $request)
     {
-        $perPage = (int) env('PAGINATION_PER_PAGE', 100);
+        $perPage = (int) config('taskfiend.pagination_per_page');
         $page    = max(1, (int) $request->get('page', 1));
         $offset  = ($page - 1) * $perPage;
         $dateStr = $request->get('date', today()->format('Y-m-d'));
@@ -451,7 +451,7 @@ class DashboardController extends Controller
 
     public function dayArchivedTasks(Request $request)
     {
-        $perPage = (int) env('PAGINATION_PER_PAGE', 100);
+        $perPage = (int) config('taskfiend.pagination_per_page');
         $page    = max(1, (int) $request->get('page', 1));
         $offset  = ($page - 1) * $perPage;
         $dateStr = $request->get('date', today()->format('Y-m-d'));

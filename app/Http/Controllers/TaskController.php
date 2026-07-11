@@ -106,7 +106,7 @@ class TaskController extends Controller
 
     public function store(Request $request)
     {
-        $longTextMax = (int) env('LONG_TEXT_MAX_CHARS', 10000);
+        $longTextMax = (int) config('taskfiend.long_text_max_chars');
         $validated = $request->validate([
             'name' => 'required|string',  // max enforced per-line below to support bulk (multi-line) input
             'description' => "nullable|string|max:{$longTextMax}",
@@ -153,8 +153,8 @@ class TaskController extends Controller
         }
 
         // Guard against excessively large bulk input before any expensive processing.
-        $bulkMaxChars = (int) env('BULK_INPUT_MAX_CHARS', 10000);
-        $bulkMaxLines = (int) env('BULK_INPUT_MAX_LINES', 100);
+        $bulkMaxChars = (int) config('taskfiend.bulk_input_max_chars');
+        $bulkMaxLines = (int) config('taskfiend.bulk_input_max_lines');
         if (strlen($validated['name']) > $bulkMaxChars) {
             return $this->storeError($request, ['name' => "Input is too long. Maximum {$bulkMaxChars} characters total."]);
         }
@@ -548,7 +548,7 @@ class TaskController extends Controller
         $this->authorizeTaskAccess($task);
         $this->assertProjectActive($task, asJson: $request->ajax() || $request->wantsJson());
 
-        $longTextMax = (int) env('LONG_TEXT_MAX_CHARS', 10000);
+        $longTextMax = (int) config('taskfiend.long_text_max_chars');
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'description' => "nullable|string|max:{$longTextMax}",
@@ -867,7 +867,7 @@ class TaskController extends Controller
             } else {
                 $value = $request->input('value');
 
-                $longTextMax = (int) env('LONG_TEXT_MAX_CHARS', 10000);
+                $longTextMax = (int) config('taskfiend.long_text_max_chars');
                 if ($field === 'name' && strlen((string) $value) > 255) {
                     return response()->json(['success' => false, 'message' => 'Name cannot exceed 255 characters.'], 422);
                 }
