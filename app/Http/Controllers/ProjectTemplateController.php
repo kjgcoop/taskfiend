@@ -11,6 +11,7 @@ use App\Models\Tag;
 use App\Models\Task;
 use App\Models\TaskAttachment;
 use App\Services\DateParser;
+use App\Services\SafeZipExtractor;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -305,10 +306,7 @@ class ProjectTemplateController extends Controller
             mkdir($tempDir, 0755, true);
         }
 
-        $returnCode = 0;
-        exec('unzip -o ' . escapeshellarg($zipPath) . ' -d ' . escapeshellarg($tempDir), $_, $returnCode);
-
-        if ($returnCode !== 0) {
+        if (!SafeZipExtractor::extract($zipPath, $tempDir)) {
             $this->deleteDirectory($tempDir);
             return false;
         }
@@ -428,12 +426,15 @@ class ProjectTemplateController extends Controller
                 if ($attachmentData['task_index'] === $index) {
                     $sourceFile = $attachmentsDir . '/' . basename($attachmentData['path']);
                     if (file_exists($sourceFile)) {
-                        $newPath = 'task_attachments/' . uniqid() . '_' . $attachmentData['filename'];
+                        // basename() guards against path traversal in the
+                        // zip's JSON-supplied filename
+                        $safeFilename = basename($attachmentData['filename']);
+                        $newPath = 'task_attachments/' . uniqid() . '_' . $safeFilename;
                         Storage::disk('private')->put($newPath, file_get_contents($sourceFile));
                         TaskAttachment::create([
                             'task_id'           => $task->id,
                             'user_id'           => $user->id,
-                            'original_filename' => $attachmentData['filename'],
+                            'original_filename' => $safeFilename,
                             'file_path'         => $newPath,
                             'file_size'         => filesize($sourceFile),
                         ]);

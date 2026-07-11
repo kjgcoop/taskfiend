@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use App\Services\SafeZipExtractor;
 use App\Models\Project;
 use App\Models\Task;
 use App\Models\Tag;
@@ -701,7 +702,7 @@ class DataExportController extends Controller
     public function importProjectTemplate(Request $request)
     {
         $request->validate([
-            'template_file' => 'required|file|mimes:zip',
+            'template_file' => 'required|file|mimes:zip|max:10240',
             'project_name' => 'required|string|max:255',
         ]);
 
@@ -716,11 +717,8 @@ class DataExportController extends Controller
         // Save uploaded file
         $zipPath = $request->file('template_file')->path();
 
-        // Extract zip using the system unzip binary (no php-zip extension required)
-        $returnCode = 0;
-        exec('unzip -o ' . escapeshellarg($zipPath) . ' -d ' . escapeshellarg($tempDir), $_, $returnCode);
-
-        if ($returnCode !== 0) {
+        // Extract zip, rejecting symlinks/path traversal and enforcing size/entry limits
+        if (!SafeZipExtractor::extract($zipPath, $tempDir)) {
             $this->deleteDirectory($tempDir);
             return back()->with('error', 'Failed to extract template file.');
         }
@@ -838,14 +836,16 @@ class DataExportController extends Controller
                     $sourceFile = $attachmentsDir . '/' . basename($attachmentData['path']);
 
                     if (file_exists($sourceFile)) {
-                        // Generate new unique path
-                        $newPath = 'task_attachments/' . uniqid() . '_' . $attachmentData['filename'];
+                        // Generate new unique path (basename() guards against
+                        // path traversal in the zip's JSON-supplied filename)
+                        $safeFilename = basename($attachmentData['filename']);
+                        $newPath = 'task_attachments/' . uniqid() . '_' . $safeFilename;
                         Storage::disk('private')->put($newPath, file_get_contents($sourceFile));
 
                         TaskAttachment::create([
                             'task_id' => $task->id,
                             'user_id' => $user->id,
-                            'original_filename' => $attachmentData['filename'],
+                            'original_filename' => $safeFilename,
                             'file_path' => $newPath,
                             'file_size' => filesize($sourceFile),
                         ]);
