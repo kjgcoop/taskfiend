@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\Project;
 use App\Models\Task;
 use App\Services\DateParser;
 use Carbon\Carbon;
@@ -27,6 +28,23 @@ class TaskApiController extends Controller
         ]);
 
         $user = $request->user();
+
+        // Reject project IDs the user doesn't have access to (creator or assignee)
+        if (!empty($validated['project_id'])) {
+            $hasAccess = Project::where('id', $validated['project_id'])
+                ->where(function ($q) use ($user) {
+                    $q->where('user_id', $user->id)
+                      ->orWhereHas('assignees', fn ($q2) => $q2->where('users.id', $user->id));
+                })
+                ->exists();
+
+            if (!$hasAccess) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'You do not have access to this project.',
+                ], 422);
+            }
+        }
 
         $taskName = $validated['name'];
         $date = $validated['date'] ?? null;
