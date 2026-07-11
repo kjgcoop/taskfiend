@@ -114,6 +114,64 @@ class DateParserTest extends TestCase
         $this->assertSame('2027-03-15', $result['date']);
     }
 
+    public function test_month_day_equal_to_today_still_wraps_to_next_year(): void
+    {
+        // Today is March 26 2026. Typing today's own date should schedule
+        // next year, not today - "today" and "tomorrow" are the only ways
+        // to schedule the current date.
+        $result = $this->parser->parseTaskInput('Reminder March 26');
+
+        $this->assertSame('2027-03-26', $result['date']);
+    }
+
+    public function test_slash_date_equal_to_today_still_wraps_to_next_year(): void
+    {
+        $result = $this->parser->parseTaskInput('Dentist 3/26');
+
+        $this->assertSame('2027-03-26', $result['date']);
+    }
+
+    public function test_month_day_with_explicit_future_year_is_honored(): void
+    {
+        $result = $this->parser->parseTaskInput('Birthday March 15, 2027');
+
+        $this->assertSame('Birthday', $result['name']);
+        $this->assertSame('2027-03-15', $result['date']);
+    }
+
+    public function test_month_day_with_explicit_year_and_no_comma_is_honored(): void
+    {
+        $result = $this->parser->parseTaskInput('Birthday March 15 2027');
+
+        $this->assertSame('Birthday', $result['name']);
+        $this->assertSame('2027-03-15', $result['date']);
+    }
+
+    public function test_month_day_with_explicit_past_year_is_kept_literal(): void
+    {
+        // An explicit year is never rolled forward, even if it's in the past -
+        // only a bare month/day (no year) gets the "assume future" treatment.
+        $result = $this->parser->parseTaskInput('Birthday March 15, 2025');
+
+        $this->assertSame('2025-03-15', $result['date']);
+    }
+
+    public function test_slash_date_with_explicit_four_digit_year_is_honored(): void
+    {
+        $result = $this->parser->parseTaskInput('Dentist 3/15/2027');
+
+        $this->assertSame('Dentist', $result['name']);
+        $this->assertSame('2027-03-15', $result['date']);
+    }
+
+    public function test_slash_date_with_explicit_two_digit_year_is_honored(): void
+    {
+        $result = $this->parser->parseTaskInput('Dentist 3/15/27');
+
+        $this->assertSame('Dentist', $result['name']);
+        $this->assertSame('2027-03-15', $result['date']);
+    }
+
     // =========================================================================
     // parseTaskInput() — day-of-week (non-recurring, single occurrence)
     // =========================================================================
@@ -1199,5 +1257,54 @@ class DateParserTest extends TestCase
     public function test_normalize_arbitrary_text_returns_null(): void
     {
         $this->assertNull($this->parser->normalizeRecurrencePattern('buy groceries'));
+    }
+
+    // =========================================================================
+    // resolveDate() — plain-date resolution used by the task DATE field
+    // (edit forms, quick-edit, and the /tasks/parse-date preview endpoint)
+    // =========================================================================
+
+    public function test_resolve_date_returns_carbon_for_iso_date(): void
+    {
+        $result = $this->parser->resolveDate('2026-04-15');
+
+        $this->assertInstanceOf(Carbon::class, $result);
+        $this->assertSame('2026-04-15', $result->format('Y-m-d'));
+    }
+
+    public function test_resolve_date_handles_tomorrow(): void
+    {
+        $result = $this->parser->resolveDate('tomorrow');
+
+        $this->assertSame('2026-03-27', $result->format('Y-m-d'));
+    }
+
+    public function test_resolve_date_handles_next_day_name(): void
+    {
+        $result = $this->parser->resolveDate('next friday');
+
+        $this->assertSame('2026-03-27', $result->format('Y-m-d'));
+    }
+
+    public function test_resolve_date_wraps_bare_month_day_in_past_to_next_year(): void
+    {
+        $result = $this->parser->resolveDate('March 15');
+
+        $this->assertSame('2027-03-15', $result->format('Y-m-d'));
+    }
+
+    public function test_resolve_date_returns_null_for_empty_string(): void
+    {
+        $this->assertNull($this->parser->resolveDate(''));
+    }
+
+    public function test_resolve_date_returns_null_for_whitespace_only(): void
+    {
+        $this->assertNull($this->parser->resolveDate('   '));
+    }
+
+    public function test_resolve_date_returns_null_for_unparseable_text(): void
+    {
+        $this->assertNull($this->parser->resolveDate('nonsense zzz'));
     }
 }
