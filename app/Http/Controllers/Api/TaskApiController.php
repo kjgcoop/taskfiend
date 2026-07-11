@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Project;
+use App\Models\ProjectReminder;
 use App\Models\Task;
 use App\Services\DateParser;
 use Carbon\Carbon;
@@ -203,10 +204,21 @@ class TaskApiController extends Controller
             ->orderBy('date')
             ->get();
 
+        $projectReminders = ProjectReminder::select('project_reminders.*')
+            ->join('projects as p', 'p.id', '=', 'project_reminders.project_id')
+            ->where('p.user_id', $user->id)
+            ->where('p.status', 'incomplete')
+            ->where('dismissed', false)
+            ->whereDate('date', '<=', $carbonDate->format('Y-m-d'))
+            ->with('project')
+            ->orderBy('date')
+            ->get();
+
         return response()->json([
             'success' => true,
             'date' => $date,
             'tasks' => $tasks,
+            'project_reminders' => $projectReminders,
         ]);
     }
 }
