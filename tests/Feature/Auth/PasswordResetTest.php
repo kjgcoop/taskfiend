@@ -30,6 +30,27 @@ class PasswordResetTest extends TestCase
         Notification::assertSentTo($user, ResetPassword::class);
     }
 
+    public function test_forgot_password_endpoint_is_rate_limited_after_six_attempts(): void
+    {
+        Notification::fake();
+
+        // Use a distinct user per request so the password broker's own
+        // per-email resend throttle doesn't interfere with the per-IP
+        // route throttle under test here.
+        $users = User::factory()->count(6)->create();
+
+        for ($i = 0; $i < 5; $i++) {
+            $response = $this->post('/forgot-password', ['email' => $users[$i]->email]);
+
+            $response->assertStatus(302);
+            $response->assertSessionHasNoErrors();
+        }
+
+        $response = $this->post('/forgot-password', ['email' => $users[5]->email]);
+
+        $response->assertStatus(429);
+    }
+
     public function test_reset_password_screen_can_be_rendered(): void
     {
         Notification::fake();
