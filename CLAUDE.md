@@ -237,6 +237,26 @@ Test user already created with API key generated.
 
 ## Important Notes
 
+### Session Summary (Jul 11, 2026) — Deduplication refactor
+- **`Task::visibleTo($userId)` scope** (`app/Models/Task.php`) — the canonical creator-or-assignee
+  visibility rule. Replaced ~30 hand-copied query closures across 9 controllers. Always use this
+  scope for task list queries; never hand-roll the creator/assignee check.
+- **`Project::forMember($userId)` scope** (`app/Models/Project.php`) — owner or project-level
+  assignee; the access rule for acting on a project (creating/moving tasks into it). Stricter than
+  `activeForUser`, which also grants visibility via assigned tasks.
+- **`QuickAddParser` service** (`app/Services/QuickAddParser.php`) — single source of truth for
+  inline token parsing (`#project`, `@tag`, `+location`/`++location`, `&user`). Returns a
+  `QuickAddTokens` DTO. Used by single-task store, bulk (multi-line) store, and the quick-add live
+  preview, so all three interpret input identically (previously three drifted copies).
+- **Bug fixes from consolidating the drifted copies**:
+  - `parseDate()` preview endpoint queried a non-existent `user_id` column (errored at runtime)
+  - Location token fuzzy-match now scoped to the user's visible tasks (was matching all users')
+  - Bulk lines now match projects/tags exactly like single-line input (hyphen normalization, active
+    projects only, unmatched tokens stay in the title)
+  - Preview now strips matched `&user` tokens the same way store does (typed token, not re-derived slug)
+- **Tests**: `tests/Unit/VisibilityScopeTest.php`, `tests/Unit/QuickAddParserTest.php`,
+  `tests/Feature/ParseDatePreviewTest.php`
+
 ### Session Summary (Mar 27, 2026)
 - **Drag-and-drop task ordering** implemented (was last remaining Alpine.js feature from spec)
 - **Multi-select mode** added to task list views

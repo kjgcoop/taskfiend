@@ -8,6 +8,7 @@ use App\Models\Project;
 use App\Models\Tag;
 use App\Models\User;
 use App\Services\DateParser;
+use App\Services\QuickAddParser;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -168,116 +169,32 @@ class TaskController extends Controller
         $recurrencePattern = $validated['recurrence_pattern'] ?? null;
         $recurrenceFloating = !empty($validated['recurrence_floating']);
 
-        // Parse #project and @tag tokens from the task name.
-        // On quick-add, project_id may already be set by autocomplete — treat that as resolved.
-        // On the full add form, project_id is always submitted from the dropdown and does NOT
-        // indicate the #token was matched, so always do the lookup there.
-        if (preg_match('/#([\w-]+)/', $taskName, $projectMatch)) {
-            $projectWasResolved = $isQuickAdd && isset($validated['project_id']);
-            if (!$projectWasResolved) {
-                $projectQuery = strtolower($projectMatch[1]);
-                // Normalize query by stripping hyphens so "#my-project" matches "My Project".
-                $queryNorm    = str_replace('-', '', $projectQuery);
-                // Strip hyphens, spaces, apostrophes, and periods from the stored name —
-                // mirrors the JS slug: spaces→hyphens then /[^a-z0-9-]/g→'', then strip hyphens.
-                // e.g. "KJ's Inbox" → "kjsinbox", "My Project" → "myproject" ✓
-                $stripped = "LOWER(REPLACE(REPLACE(REPLACE(REPLACE(name, '-', ''), ' ', ''), '''', ''), '.', ''))";
-                $project = Project::where(function ($q) use ($projectQuery, $queryNorm, $stripped) {
-                        $q->whereRaw('LOWER(name) = ?', [$projectQuery])
-                          ->orWhereRaw("{$stripped} = ?", [$queryNorm]);
-                    })
-                    ->activeForUser(Auth::id())
-                    ->first();
-                if ($project) {
-                    $validated['project_id'] = $project->id;
-                    $projectWasResolved = true;
-                }
-            }
-            // Only remove the token from the title if we actually matched a project.
-            // An unrecognised #word should be left as plain text.
-            if ($projectWasResolved) {
-                $taskName = trim(preg_replace('/#[\w-]+\s*/', '', $taskName));
-            }
+        // Parse inline tokens (#project, @tag, +location, &user) from the task name.
+        // On quick-add, project_id may already be set by autocomplete — treat that as
+        // resolved. On the full add form, project_id is always submitted from the
+        // dropdown and does NOT indicate the #token was matched, so the lookup runs.
+        // Location and assignee tokens are quick-add-only and never override an
+        // explicitly provided value.
+        $tokens = (new QuickAddParser(Auth::id()))->parse(
+            $taskName,
+            projectPreResolved: $isQuickAdd && isset($validated['project_id']),
+            parseLocation: $isQuickAdd && empty($validated['location']),
+            parseAssignees: $isQuickAdd && empty($validated['assignee_ids']),
+        );
+        $taskName = $tokens->name;
+        if ($tokens->project) {
+            $validated['project_id'] = $tokens->project->id;
         }
-
-        if (preg_match_all('/@([\w-]+)/', $taskName, $tagMatches)) {
-            $parsedTagIds = [];
-            $matchedTagSlugs = [];
-            foreach ($tagMatches[1] as $tagSlug) {
-                $tag = Tag::where(function ($q) use ($tagSlug) {
-                        // Exact match, hyphen-slug match (handles "Long Tag" → "@long-tag"),
-                        // space-stripped match (handles "5 minutes" → "@5minutes"),
-                        // and prefix match as a last resort.
-                        $q->whereRaw('LOWER(tag_name) = ?', [strtolower($tagSlug)])
-                          ->orWhereRaw("LOWER(REPLACE(tag_name, ' ', '-')) = ?", [strtolower($tagSlug)])
-                          ->orWhereRaw("LOWER(REPLACE(tag_name, ' ', '')) = ?", [strtolower($tagSlug)])
-                          ->orWhereRaw('LOWER(tag_name) LIKE ?', [strtolower($tagSlug) . '%']);
-                    })
-                    ->first();
-                if ($tag) {
-                    $parsedTagIds[] = $tag->id;
-                    $matchedTagSlugs[] = preg_quote($tagSlug, '/');
-                }
-                // Unrecognised @word: leave it as plain text in the title.
-            }
-            if (!empty($parsedTagIds)) {
-                $existingTagIds = $validated['tag_ids'] ?? [];
-                $validated['tag_ids'] = array_unique(array_merge($existingTagIds, $parsedTagIds));
-            }
-            // Only strip the tokens that actually matched a tag.
-            if (!empty($matchedTagSlugs)) {
-                $taskName = trim(preg_replace('/@(' . implode('|', $matchedTagSlugs) . ')\s*/', '', $taskName));
-            }
+        if (!empty($tokens->tagIds)) {
+            $validated['tag_ids'] = array_unique(array_merge($validated['tag_ids'] ?? [], $tokens->tagIds));
         }
-
-        // Parse location tokens (only in quick-add, only if no location explicitly provided).
-        // Supported forms (++ = show as map link):
-        //   ++"123 Main St, Town"   ++office   +"Coffee Shop"   +home
-        if ($isQuickAdd && empty($validated['location'])) {
-            if (preg_match('/(?<!\S)\+\+"([^"]+)"/', $taskName, $m)) {
-                $validated['location'] = $this->resolveLocationToken($m[1]);
-                $validated['show_map'] = true;
-                $taskName = trim(preg_replace('/(?<!\S)\+\+"[^"]*"\s*/', '', $taskName));
-            } elseif (preg_match('/(?<!\S)\+\+(\w[\w-]*)/', $taskName, $m)) {
-                $validated['location'] = $this->resolveLocationToken($m[1]);
-                $validated['show_map'] = true;
-                $taskName = trim(preg_replace('/(?<!\S)\+\+\w[\w-]*\s*/', '', $taskName));
-            } elseif (preg_match('/(?<!\S)\+"([^"]+)"/', $taskName, $m)) {
-                $validated['location'] = $this->resolveLocationToken($m[1]);
-                $validated['show_map'] = false;
-                $taskName = trim(preg_replace('/(?<!\S)\+"[^"]*"\s*/', '', $taskName));
-            } elseif (preg_match('/(?<!\S)\+(\w[\w-]*)/', $taskName, $m)) {
-                $validated['location'] = $this->resolveLocationToken($m[1]);
-                $validated['show_map'] = false;
-                $taskName = trim(preg_replace('/(?<!\S)\+\w[\w-]*\s*/', '', $taskName));
-            }
+        if ($tokens->location !== null) {
+            $validated['location'] = $tokens->location;
+            $validated['show_map'] = $tokens->showMap;
         }
-
-        // Parse &user tokens (only in quick-add, only if no assignees explicitly provided)
-        if ($isQuickAdd && empty($validated['assignee_ids'])) {
-            $parsedAssigneeIds = [];
-            if (preg_match_all('/&([\w-]+)/', $taskName, $userMatches)) {
-                foreach ($userMatches[1] as $userSlug) {
-                    $normalized = strtolower(preg_replace('/[-_]/', '', $userSlug));
-                    $user = User::whereNull('email_enabled_at')
-                        ->where(function ($q) use ($normalized, $userSlug) {
-                            $q->whereRaw("LOWER(REPLACE(REPLACE(REPLACE(name, ' ', ''), '-', ''), '_', '')) = ?", [$normalized])
-                              ->orWhereRaw('LOWER(name) LIKE ?', [strtolower($userSlug) . '%']);
-                        })
-                        ->first();
-                    if ($user) {
-                        $parsedAssigneeIds[] = $user->id;
-                        $taskName = trim(preg_replace('/&' . preg_quote($userSlug, '/') . '(?=\s|$)/', '', $taskName));
-                    }
-                    // Unmatched: leave &token in name as-is
-                }
-            }
-            if (!empty($parsedAssigneeIds)) {
-                $validated['assignee_ids'] = $parsedAssigneeIds;
-            }
+        if (!empty($tokens->assigneeIds)) {
+            $validated['assignee_ids'] = $tokens->assigneeIds;
         }
-        // Collapse any double-spaces left by token removal
-        $taskName = trim(preg_replace('/\s{2,}/', ' ', $taskName));
 
         $dateParser = new DateParser();
 
@@ -1113,96 +1030,15 @@ class TaskController extends Controller
             return response()->json(['has_special' => false]);
         }
 
-        $taskName = $input;
-        $projectName = null;
-        $tagNames = [];
-        $location = null;
-        $assigneeNames = [];
-        $unknownAssignees = [];
-
-        // Mirror the #project token parsing from store()
-        if (preg_match('/#([\w-]+)/', $taskName, $projectMatch)) {
-            $projectQuery = strtolower($projectMatch[1]);
-            $queryNorm    = str_replace('-', '', $projectQuery);
-            $stripped = "LOWER(REPLACE(REPLACE(REPLACE(REPLACE(name, '-', ''), ' ', ''), '''', ''), '.', ''))";
-            $project = Project::where(function ($q) use ($projectQuery, $queryNorm, $stripped) {
-                    $q->whereRaw('LOWER(name) = ?', [$projectQuery])
-                      ->orWhereRaw("{$stripped} = ?", [$queryNorm]);
-                })
-                ->activeForUser(Auth::id())
-                ->first();
-            // Only show the project badge if we actually matched a real project.
-            // Showing the raw slug as green was misleading (looked like a match when it wasn't).
-            $projectName = $project ? $project->name : null;
-            // Only strip the token if a project was found; unrecognised #word stays as plain text.
-            if ($project) {
-                $taskName = trim(preg_replace('/#[\w-]+\s*/', '', $taskName));
-            }
-        }
-
-        // Mirror the @tag token parsing from store()
-        if (preg_match_all('/@([\w-]+)/', $taskName, $tagMatches)) {
-            $matchedTagSlugs = [];
-            foreach ($tagMatches[1] as $tagSlug) {
-                $tag = Tag::where(function ($q) use ($tagSlug) {
-                        $q->whereRaw('LOWER(tag_name) = ?', [strtolower($tagSlug)])
-                          ->orWhereRaw("LOWER(REPLACE(tag_name, ' ', '-')) = ?", [strtolower($tagSlug)])
-                          ->orWhereRaw("LOWER(REPLACE(tag_name, ' ', '')) = ?", [strtolower($tagSlug)])
-                          ->orWhereRaw('LOWER(tag_name) LIKE ?', [strtolower($tagSlug) . '%']);
-                    })->first();
-                if ($tag) {
-                    $tagNames[] = $tag->tag_name;
-                    $matchedTagSlugs[] = preg_quote($tagSlug, '/');
-                }
-                // Unrecognised @word: leave it in the preview title as plain text.
-            }
-            // Only strip the tokens that actually matched a tag.
-            if (!empty($matchedTagSlugs)) {
-                $taskName = trim(preg_replace('/@(' . implode('|', $matchedTagSlugs) . ')\s*/', '', $taskName));
-            }
-        }
-
-        // Mirror the +location / ++location token parsing from store()
-        $showMap = false;
-        if (preg_match('/(?<!\S)\+\+"([^"]+)"/', $taskName, $m)) {
-            $location = $this->resolveLocationToken($m[1]);
-            $showMap  = true;
-            $taskName = trim(preg_replace('/(?<!\S)\+\+"[^"]*"\s*/', '', $taskName));
-        } elseif (preg_match('/(?<!\S)\+\+(\w[\w-]*)/', $taskName, $m)) {
-            $location = $this->resolveLocationToken($m[1]);
-            $showMap  = true;
-            $taskName = trim(preg_replace('/(?<!\S)\+\+\w[\w-]*\s*/', '', $taskName));
-        } elseif (preg_match('/(?<!\S)\+"([^"]+)"/', $taskName, $m)) {
-            $location = $this->resolveLocationToken($m[1]);
-            $taskName = trim(preg_replace('/(?<!\S)\+"[^"]*"\s*/', '', $taskName));
-        } elseif (preg_match('/(?<!\S)\+(\w[\w-]*)/', $taskName, $m)) {
-            $location = $this->resolveLocationToken($m[1]);
-            $taskName = trim(preg_replace('/(?<!\S)\+\w[\w-]*\s*/', '', $taskName));
-        }
-
-        // Mirror the &user token parsing from store()
-        if (preg_match_all('/&([\w-]+)/', $taskName, $userMatches)) {
-            foreach ($userMatches[1] as $userSlug) {
-                $normalized = strtolower(preg_replace('/[-_]/', '', $userSlug));
-                $user = User::whereNull('email_enabled_at')
-                    ->where(function ($q) use ($normalized, $userSlug) {
-                        $q->whereRaw("LOWER(REPLACE(REPLACE(REPLACE(name, ' ', ''), '-', ''), '_', '')) = ?", [$normalized])
-                          ->orWhereRaw('LOWER(name) LIKE ?', [strtolower($userSlug) . '%']);
-                    })
-                    ->first();
-                if ($user) {
-                    $assigneeNames[] = $user->name;
-                } else {
-                    $unknownAssignees[] = '&' . $userSlug;
-                }
-            }
-            // Only strip matched user tokens from preview title
-            foreach ($assigneeNames as $name) {
-                $slug = strtolower(preg_replace('/\s+/', '', $name));
-                $taskName = trim(preg_replace('/&' . preg_quote($slug, '/') . '(?=\s|$)/i', '', $taskName));
-            }
-        }
-        $taskName = trim(preg_replace('/\s{2,}/', ' ', $taskName));
+        // Same parser as store(), so the preview shows exactly what submitting will do.
+        $tokens = (new QuickAddParser(Auth::id()))->parse($input);
+        $taskName         = $tokens->name;
+        $projectName      = $tokens->project?->name;
+        $tagNames         = $tokens->tagNames;
+        $location         = $tokens->location;
+        $showMap          = $tokens->showMap;
+        $assigneeNames    = $tokens->assigneeNames;
+        $unknownAssignees = $tokens->unknownAssignees;
 
         // Parse natural language date/recurrence from the remaining task name
         $dateParser = new DateParser();
@@ -1702,37 +1538,9 @@ class TaskController extends Controller
     }
 
     /**
-     * Parse a flexible duration string into an integer number of minutes.
-     *
-     * Accepts:
-     *   "90"       → 90  (plain integer = minutes)
-     *   "2h 20m"   → 140
-     *   "2h20m"    → 140
-     *   "2h"       → 120
-     *   "20m"      → 20
-     *
-     * Returns null for empty/unparseable input.
-     */
-    /**
      * Return an error response from store() that works for both AJAX (JSON 422)
      * and regular (redirect back with errors) requests.
      */
-    /**
-     * Fuzzy-match a location token against existing task locations.
-     * Strips spaces, hyphens, and underscores before comparing so that
-     * "coffee-shop", "Coffee Shop", and "coffeeshop" all resolve to the
-     * already-stored canonical value (preserving original casing/spacing).
-     * Falls back to the raw token if no match is found.
-     */
-    private function resolveLocationToken(string $token): string
-    {
-        $normalized = strtolower(preg_replace('/[-_\s]/', '', $token));
-        return Task::whereNotNull('location')
-            ->where('location', '!=', '')
-            ->whereRaw("LOWER(REPLACE(REPLACE(REPLACE(location, ' ', ''), '-', ''), '_', '')) = ?", [$normalized])
-            ->value('location') ?? $token;
-    }
-
     private function storeError(Request $request, array $errors)
     {
         if ($request->wantsJson()) {
@@ -1744,6 +1552,18 @@ class TaskController extends Controller
         return back()->withErrors($errors)->withInput();
     }
 
+    /**
+     * Parse a flexible duration string into an integer number of minutes.
+     *
+     * Accepts:
+     *   "90"       → 90  (plain integer = minutes)
+     *   "2h 20m"   → 140
+     *   "2h20m"    → 140
+     *   "2h"       → 120
+     *   "20m"      → 20
+     *
+     * Returns null for empty/unparseable input.
+     */
     private function parseDurationInput(?string $input): ?int
     {
         if ($input === null || trim($input) === '') {
@@ -1918,97 +1738,29 @@ class TaskController extends Controller
         $projectId         = $validated['project_id'] ?? null;
         $tagIds            = $validated['tag_ids'] ?? [];
 
-        // ── Parse #project token (overrides the form-level fallback project) ─────────
-        if (preg_match('/#([\w-]+)/', $taskName, $projectMatch)) {
-            $projectQuery = strtolower($projectMatch[1]);
-            $project = Project::where(function ($q) use ($projectQuery) {
-                    $stripped = "LOWER(REPLACE(REPLACE(REPLACE(name, ' ', ''), '''', ''), '.', ''))";
-                    $q->whereRaw('LOWER(name) = ?', [$projectQuery])
-                      ->orWhereRaw("{$stripped} = ?", [$projectQuery])
-                      ->orWhereRaw('LOWER(name) LIKE ?', [$projectQuery . '%']);
-                })
-                ->forMember(Auth::id())
-                ->first();
+        // ── Parse inline tokens — same parser as single-task store() and the preview,
+        //    so a line behaves identically whether submitted alone or in bulk ─────────
+        $tokens = (new QuickAddParser(Auth::id()))->parse(
+            $taskName,
+            parseLocation: $isQuickAdd && empty($validated['location']),
+            parseAssignees: $isQuickAdd && empty($validated['assignee_ids']),
+        );
+        $taskName = $tokens->name;
 
-            if ($project) {
-                if (in_array($project->status, ['done', 'archived'])) {
-                    throw new \InvalidArgumentException("Project \"{$project->name}\" is inactive.");
-                }
-                $projectId = $project->id;
-            }
-            $taskName = trim(preg_replace('/#[\w-]+\s*/', '', $taskName));
+        // #project overrides the form-level fallback project
+        if ($tokens->project) {
+            $projectId = $tokens->project->id;
         }
 
-        // ── Parse @tag tokens (additive with form-level tags) ────────────────────────
-        if (preg_match_all('/@([\w-]+)/', $taskName, $tagMatches)) {
-            $matchedTagSlugs = [];
-            foreach ($tagMatches[1] as $tagSlug) {
-                $tag = Tag::where(function ($q) use ($tagSlug) {
-                        $q->whereRaw('LOWER(tag_name) = ?', [strtolower($tagSlug)])
-                          ->orWhereRaw("LOWER(REPLACE(tag_name, ' ', '')) = ?", [strtolower($tagSlug)])
-                          ->orWhereRaw('LOWER(tag_name) LIKE ?', [strtolower($tagSlug) . '%']);
-                    })
-                    ->first();
-                if ($tag) {
-                    $tagIds[] = $tag->id;
-                    $matchedTagSlugs[] = preg_quote($tagSlug, '/');
-                }
-                // Unrecognised @word: leave it as plain text in the title.
-            }
-            $tagIds = array_unique($tagIds);
-            // Only strip the tokens that actually matched a tag.
-            if (!empty($matchedTagSlugs)) {
-                $taskName = trim(preg_replace('/@(' . implode('|', $matchedTagSlugs) . ')\s*/', '', $taskName));
-            }
-        }
+        // @tags are additive with form-level tags
+        $tagIds = array_unique(array_merge($tagIds, $tokens->tagIds));
 
-        // ── Parse +location / ++location tokens ─────────────────────────────────────
-        $lineLocation = $validated['location'] ?? null;
-        $lineShowMap  = $validated['show_map'] ?? false;
-        if ($isQuickAdd && empty($lineLocation)) {
-            if (preg_match('/\+\+"([^"]+)"/', $taskName, $m)) {
-                $lineLocation = $this->resolveLocationToken($m[1]);
-                $lineShowMap  = true;
-                $taskName = trim(preg_replace('/\+\+"[^"]*"\s*/', '', $taskName));
-            } elseif (preg_match('/\+\+(\w[\w-]*)/', $taskName, $m)) {
-                $lineLocation = $this->resolveLocationToken($m[1]);
-                $lineShowMap  = true;
-                $taskName = trim(preg_replace('/\+\+\w[\w-]*\s*/', '', $taskName));
-            } elseif (preg_match('/\+"([^"]+)"/', $taskName, $m)) {
-                $lineLocation = $this->resolveLocationToken($m[1]);
-                $lineShowMap  = false;
-                $taskName = trim(preg_replace('/\+"[^"]*"\s*/', '', $taskName));
-            } elseif (preg_match('/\+(\w[\w-]*)/', $taskName, $m)) {
-                $lineLocation = $this->resolveLocationToken($m[1]);
-                $lineShowMap  = false;
-                $taskName = trim(preg_replace('/\+\w[\w-]*\s*/', '', $taskName));
-            }
-        }
+        $lineLocation = $tokens->location ?? ($validated['location'] ?? null);
+        $lineShowMap  = $tokens->location !== null ? $tokens->showMap : ($validated['show_map'] ?? false);
 
-        // ── Parse &user tokens ───────────────────────────────────────────────────────
-        $lineAssigneeIds = $validated['assignee_ids'] ?? null;
-        if ($isQuickAdd && empty($lineAssigneeIds)) {
-            $parsedAssigneeIds = [];
-            if (preg_match_all('/&([\w-]+)/', $taskName, $userMatches)) {
-                foreach ($userMatches[1] as $userSlug) {
-                    $normalized = strtolower(preg_replace('/[-_]/', '', $userSlug));
-                    $user = User::whereNull('email_enabled_at')
-                        ->where(function ($q) use ($normalized, $userSlug) {
-                            $q->whereRaw("LOWER(REPLACE(REPLACE(REPLACE(name, ' ', ''), '-', ''), '_', '')) = ?", [$normalized])
-                              ->orWhereRaw('LOWER(name) LIKE ?', [strtolower($userSlug) . '%']);
-                        })
-                        ->first();
-                    if ($user) {
-                        $parsedAssigneeIds[] = $user->id;
-                        $taskName = trim(preg_replace('/&' . preg_quote($userSlug, '/') . '(?=\s|$)/', '', $taskName));
-                    }
-                }
-            }
-            if (!empty($parsedAssigneeIds)) {
-                $lineAssigneeIds = $parsedAssigneeIds;
-            }
-        }
-        $taskName = trim(preg_replace('/\s{2,}/', ' ', $taskName));
+        $lineAssigneeIds = !empty($tokens->assigneeIds)
+            ? $tokens->assigneeIds
+            : ($validated['assignee_ids'] ?? null);
 
         // ── Quick-add: parse date / recurrence out of the task name ─────────────────
         if ($isQuickAdd && !$recurrencePattern) {
