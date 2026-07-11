@@ -233,6 +233,50 @@ class ApiTaskTest extends TestCase
         ]);
     }
 
+    public function test_create_rejects_project_id_belonging_to_another_user(): void
+    {
+        $other = User::factory()->create();
+        $foreignProject = Project::create([
+            'name'    => 'Foreign Project',
+            'user_id' => $other->id,
+            'status'  => 'incomplete',
+        ]);
+
+        $response = $this->apiPost(['name' => 'Sneaky Task', 'project_id' => $foreignProject->id]);
+
+        $response->assertStatus(422)
+                 ->assertJson(['success' => false])
+                 ->assertJsonPath('message', 'You do not have access to this project.');
+
+        $this->assertDatabaseMissing('tasks', ['name' => 'Sneaky Task']);
+    }
+
+    public function test_create_rejects_nonexistent_project_id(): void
+    {
+        $response = $this->apiPost(['name' => 'Task', 'project_id' => 999999]);
+
+        $response->assertUnprocessable();
+    }
+
+    public function test_create_allows_project_id_where_user_is_an_assignee(): void
+    {
+        $owner = User::factory()->create();
+        $sharedProject = Project::create([
+            'name'    => 'Shared Project',
+            'user_id' => $owner->id,
+            'status'  => 'incomplete',
+        ]);
+        $sharedProject->assignees()->attach($this->user->id);
+
+        $response = $this->apiPost(['name' => 'Shared Task', 'project_id' => $sharedProject->id]);
+
+        $response->assertCreated();
+        $this->assertDatabaseHas('tasks', [
+            'name'       => 'Shared Task',
+            'project_id' => $sharedProject->id,
+        ]);
+    }
+
     public function test_create_falls_back_to_default_project(): void
     {
         $default = $this->createDefaultProject();
