@@ -6,6 +6,37 @@ use Carbon\Carbon;
 
 class DateParser
 {
+    /**
+     * Resolve a plain date string (e.g. the task DATE field) to a Carbon date,
+     * or null if it can't be parsed. Reuses parseTaskInput()'s date patterns
+     * but discards the name/recurrence side output.
+     *
+     * Note: this only matches the fixed set of patterns above (today, tomorrow,
+     * day names, month/day, slash dates, ISO dates) - it does not fall back to
+     * PHP's strtotime() for arbitrary formats (e.g. "next month", "15 June 2026"
+     * with reversed word order). If that flexibility is ever needed, add a
+     * `Carbon::parse($input)` fallback here when none of the patterns match.
+     */
+    public function resolveDate(string $input): ?Carbon
+    {
+        $input = trim($input);
+        if ($input === '') {
+            return null;
+        }
+
+        try {
+            $result = $this->parseTaskInput($input);
+        } catch (\Exception $e) {
+            return null;
+        }
+
+        if (!$result['date']) {
+            return null;
+        }
+
+        return Carbon::createFromFormat('Y-m-d', $result['date'])->startOfDay();
+    }
+
     public function parseTaskInput(string $input): array
     {
         // Detect Todoist-style floating recurrence marker "!" (e.g., "every! month")
@@ -63,8 +94,8 @@ class DateParser
             'yearly' => '/\b(yearly|every year)\b/i',
             'every_n_years' => '/\bevery (\d+) years?\b/i',
             'every_month_day' => '/\bevery (january|february|march|april|may|june|july|august|september|october|november|december) (\d{1,2})\b/i',
-            'date_month_day' => '/\b(january|february|march|april|may|june|july|august|september|october|november|december) (\d{1,2})\b/i',
-            'date_slash' => '/\b(\d{1,2})\/(\d{1,2})\b/',
+            'date_month_day' => '/\b(january|february|march|april|may|june|july|august|september|october|november|december) (\d{1,2})(?:st|nd|rd|th)?(?:,?\s+(\d{4}))?\b/i',
+            'date_slash' => '/\b(\d{1,2})\/(\d{1,2})(?:\/(\d{2}|\d{4}))?\b/',
             'date_iso' => '/\b(\d{4})-(\d{2})-(\d{2})\b/',
         ];
 
@@ -231,13 +262,28 @@ class DateParser
         } elseif (preg_match($patterns['date_month_day'], $input, $matches)) {
             $month = $matches[1];
             $day = (int) $matches[2];
-            $result['date'] = $this->getNextMonthDayDate($month, $day)->format('Y-m-d');
+            if (!empty($matches[3])) {
+                // Explicit year given ("March 15, 2027") - use it as-is, never roll forward.
+                $monthNum = Carbon::parse($month . ' 1')->month;
+                $result['date'] = Carbon::create((int) $matches[3], $monthNum, $day)->format('Y-m-d');
+            } else {
+                $result['date'] = $this->getNextMonthDayDate($month, $day)->format('Y-m-d');
+            }
             $result['date_explicit'] = true;
             $result['name'] = trim(preg_replace($patterns['date_month_day'], '', $input));
         } elseif (preg_match($patterns['date_slash'], $input, $matches)) {
             $month = (int) $matches[1];
             $day = (int) $matches[2];
-            $result['date'] = $this->getNextDate($month, $day)->format('Y-m-d');
+            if (!empty($matches[3])) {
+                // Explicit year given ("3/15/2027" or "3/15/27") - use it as-is, never roll forward.
+                $year = (int) $matches[3];
+                if ($year < 100) {
+                    $year += 2000;
+                }
+                $result['date'] = Carbon::create($year, $month, $day)->format('Y-m-d');
+            } else {
+                $result['date'] = $this->getNextDate($month, $day)->format('Y-m-d');
+            }
             $result['date_explicit'] = true;
             $result['name'] = trim(preg_replace($patterns['date_slash'], '', $input));
         } elseif (preg_match($patterns['date_iso'], $input, $matches)) {
@@ -484,10 +530,14 @@ class DateParser
 
     protected function getNextDate(int $month, int $day): Carbon
     {
-        $year = Carbon::today()->year;
-        $date = Carbon::create($year, $month, $day);
+        $today = Carbon::today();
+        $date  = Carbon::create($today->year, $month, $day);
 
-        if ($date->isPast()) {
+        // Date-only comparison (not isPast(), which compares against the current
+        // time-of-day and would treat today's own date as "past" at any time after
+        // midnight). lte() intentionally rolls today's own date to next year too,
+        // matching getNextMonthDayDate() above.
+        if ($date->lte($today)) {
             $date->addYear();
         }
 

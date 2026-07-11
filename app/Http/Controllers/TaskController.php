@@ -293,9 +293,11 @@ class TaskController extends Controller
         // Collapse any double-spaces left by token removal
         $taskName = trim(preg_replace('/\s{2,}/', ' ', $taskName));
 
+        $dateParser = new DateParser();
+
         // Parse natural language date if provided
         if ($date && !preg_match('/^\d{4}-\d{2}-\d{2}$/', $date)) {
-            $parsedDate = $this->resolveNaturalDate($date);
+            $parsedDate = $dateParser->resolveDate($date);
             if (!$parsedDate) {
                 return $this->storeError($request, [
                     'date' => "Could not understand the date \"{$date}\". Try: tomorrow, next friday, march 15, 3/15, or 2026-03-15"
@@ -303,8 +305,6 @@ class TaskController extends Controller
             }
             $date = $parsedDate->format('Y-m-d');
         }
-
-        $dateParser = new DateParser();
 
         // Validate and normalize explicitly provided recurrence pattern
         if ($recurrencePattern) {
@@ -571,7 +571,7 @@ class TaskController extends Controller
 
         // Parse natural language date if provided
         if (!empty($validated['date']) && !preg_match('/^\d{4}-\d{2}-\d{2}$/', $validated['date'])) {
-            $parsedDate = $this->resolveNaturalDate($validated['date']);
+            $parsedDate = (new DateParser())->resolveDate($validated['date']);
             if (!$parsedDate) {
                 return back()->withErrors([
                     'date' => "Could not understand the date \"{$validated['date']}\". Try: tomorrow, next friday, march 15, 3/15, or 2026-03-15"
@@ -880,7 +880,7 @@ class TaskController extends Controller
 
                 // Parse natural language dates
                 if ($field === 'date' && $value) {
-                    $parsed = $this->resolveNaturalDate($value);
+                    $parsed = (new DateParser())->resolveDate($value);
                     if (!$parsed) {
                         return response()->json(['success' => false, 'message' => "Could not parse date: \"{$value}\". Try formats like: tomorrow, next friday, march 15, 3/15, 2026-03-15"], 400);
                     }
@@ -1093,7 +1093,7 @@ class TaskController extends Controller
             return response()->json(['success' => false]);
         }
 
-        $result = $this->resolveNaturalDate($input);
+        $result = (new DateParser())->resolveDate($input);
 
         if ($result) {
             $dateStr = $result->format('Y-m-d');
@@ -1281,35 +1281,6 @@ class TaskController extends Controller
             'unknown_assignees' => implode(' ', $unknownAssignees),
             'projects'          => $freshProjects,
         ]);
-    }
-
-    /**
-     * Attempt to parse a natural language date string into a Carbon date.
-     * Accepts: Y-m-d, m/d, m/d/y, "tomorrow", "next friday", "march 15", etc.
-     */
-    protected function resolveNaturalDate(string $input): ?Carbon
-    {
-        // Already in Y-m-d format
-        if (preg_match('/^\d{4}-\d{2}-\d{2}$/', $input)) {
-            try {
-                return Carbon::createFromFormat('Y-m-d', $input);
-            } catch (\Exception $e) {
-                return null;
-            }
-        }
-
-        // Try Carbon::parse which uses strtotime() internally
-        try {
-            $date = Carbon::parse($input);
-            // strtotime can return weird results for random strings - sanity check
-            // that the result is within a reasonable range (10 years)
-            if ($date->diffInYears(Carbon::now()) > 10) {
-                return null;
-            }
-            return $date;
-        } catch (\Exception $e) {
-            return null;
-        }
     }
 
     public function duplicate(Task $task)
@@ -1860,7 +1831,7 @@ class TaskController extends Controller
         // Resolve natural-language date (shared fallback for lines without an inline date).
         $globalDate = $validated['date'] ?? null;
         if ($globalDate && !preg_match('/^\d{4}-\d{2}-\d{2}$/', $globalDate)) {
-            $parsedDate = $this->resolveNaturalDate($globalDate);
+            $parsedDate = (new DateParser())->resolveDate($globalDate);
             if (!$parsedDate) {
                 return $this->storeError($request, [
                     'date' => "Could not understand the date \"{$globalDate}\". Try: tomorrow, next friday, march 15, 3/15, or 2026-03-15",
