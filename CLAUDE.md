@@ -83,7 +83,7 @@ In `app/Console/Commands/`:
 - `detectUnrecognizedPattern(string)` → returns error string if input looks like a recurrence attempt but doesn't parse
 
 ### Recurring Tasks (✓)
-- **Implementation** in TaskController::createRecurringTask()
+- **Implementation** in `app/Services/TaskLifecycle.php` (createNextOccurrence)
 - **User Documentation**: See `RECURRING_TASKS.md` for complete user guide
 - **Behavior**: When a recurring task is marked as "done":
   - The current task instance is marked as complete (status changes to "done")
@@ -99,7 +99,7 @@ In `app/Console/Commands/`:
 - **Prevents duplicate occurrences**: Won't create a new task if one already exists for the next date
 - **Copies to next instance**: name, description, datetime, project, tags, assignments, attachments
 - **Does NOT copy**: comments, completion status
-- **Location**: TaskController::createRecurringTask() (line 322), triggered in updateField() (line 285) and update() (line 220)
+- **Location**: `TaskLifecycle::changeStatus()` handles the full status state machine (descendant cascades, completed_at, change logging, recurring rollover); TaskController's update() and updateField() both delegate to it
 
 ### Frontend Views (✓)
 **All views completed in `resources/views/`:**
@@ -236,6 +236,31 @@ Test user already created with API key generated.
 - Accessibility audit
 
 ## Important Notes
+
+### Session Summary (Jul 11, 2026) — Deduplication refactor
+- **`Task::visibleTo($userId)` scope** (`app/Models/Task.php`) — the canonical creator-or-assignee
+  visibility rule. Replaced ~30 hand-copied query closures across 9 controllers. Always use this
+  scope for task list queries; never hand-roll the creator/assignee check.
+- **`Project::forMember($userId)` scope** (`app/Models/Project.php`) — owner or project-level
+  assignee; the access rule for acting on a project (creating/moving tasks into it). Stricter than
+  `activeForUser`, which also grants visibility via assigned tasks.
+- **`TaskLifecycle` service** (`app/Services/TaskLifecycle.php`) — the task status state machine.
+  `changeStatus()` handles descendant cascades (complete/archive), completed_at bookkeeping, change
+  logging, recurring-task rollover, and archiving the next occurrence on re-open. Both update() and
+  updateField() delegate to it (previously two drifted copies of this logic). Route any new
+  status-changing code through this service.
+- **`QuickAddParser` service** (`app/Services/QuickAddParser.php`) — single source of truth for
+  inline token parsing (`#project`, `@tag`, `+location`/`++location`, `&user`). Returns a
+  `QuickAddTokens` DTO. Used by single-task store, bulk (multi-line) store, and the quick-add live
+  preview, so all three interpret input identically (previously three drifted copies).
+- **Bug fixes from consolidating the drifted copies**:
+  - `parseDate()` preview endpoint queried a non-existent `user_id` column (errored at runtime)
+  - Location token fuzzy-match now scoped to the user's visible tasks (was matching all users')
+  - Bulk lines now match projects/tags exactly like single-line input (hyphen normalization, active
+    projects only, unmatched tokens stay in the title)
+  - Preview now strips matched `&user` tokens the same way store does (typed token, not re-derived slug)
+- **Tests**: `tests/Unit/VisibilityScopeTest.php`, `tests/Unit/QuickAddParserTest.php`,
+  `tests/Feature/ParseDatePreviewTest.php`
 
 ### Session Summary (Mar 27, 2026)
 - **Drag-and-drop task ordering** implemented (was last remaining Alpine.js feature from spec)
