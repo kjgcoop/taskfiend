@@ -42,13 +42,7 @@ class SearchController extends Controller
 
     private function buildSearchQuery(Request $request): Builder
     {
-        $baseQuery = Task::query()
-            ->where(function ($q) {
-                $q->where('creator_id', Auth::id())
-                  ->orWhereHas('assignees', function ($query) {
-                      $query->where('users.id', Auth::id());
-                  });
-            });
+        $baseQuery = Task::visibleTo(Auth::id());
 
         if (!$request->boolean('show_archived_projects')) {
             $baseQuery->where(function ($q) {
@@ -177,12 +171,7 @@ class SearchController extends Controller
         $locations = Task::where('status', 'incomplete')
             ->whereNotNull('location')
             ->where('location', '!=', '')
-            ->where(function ($q) {
-                $q->where('creator_id', Auth::id())
-                  ->orWhereHas('assignees', function ($subq) {
-                      $subq->where('users.id', Auth::id());
-                  });
-            })
+            ->visibleTo(Auth::id())
             ->distinct()
             ->orderByRaw('LOWER(location)')
             ->pluck('location');

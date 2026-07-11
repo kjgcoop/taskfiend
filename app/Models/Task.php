@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -205,6 +206,19 @@ class Task extends Model
     public function isAncestorOf(Task $task): bool
     {
         return $task->getAllAncestors()->contains('id', $this->id);
+    }
+
+    /**
+     * Scope: tasks visible to the given user — tasks they created or are
+     * assigned to. This is the canonical visibility rule for task lists;
+     * use it everywhere instead of hand-rolling the creator/assignee check.
+     */
+    public function scopeVisibleTo(Builder $query, int $userId): Builder
+    {
+        return $query->where(function ($q) use ($userId) {
+            $q->where('creator_id', $userId)
+              ->orWhereHas('assignees', fn ($aq) => $aq->where('users.id', $userId));
+        });
     }
 
     /**

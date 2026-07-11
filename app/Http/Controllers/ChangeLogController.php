@@ -106,12 +106,7 @@ class ChangeLogController extends Controller
         $offset  = ($page - 1) * $perPage;
 
         $taskIds = $tag->tasks()
-            ->where(function ($q) {
-                $q->where('creator_id', Auth::id())
-                  ->orWhereHas('assignees', function ($query) {
-                      $query->where('users.id', Auth::id());
-                  });
-            })
+            ->visibleTo(Auth::id())
             ->pluck('tasks.id');
 
         $changeLogs = ChangeLog::where(function ($q) use ($tag, $taskIds) {
@@ -226,10 +221,8 @@ class ChangeLogController extends Controller
             ]);
         }
 
-        $availableProjects = Project::where(function ($q) {
-            $q->where('user_id', Auth::id())
-              ->orWhereHas('assignees', fn($sq) => $sq->where('users.id', Auth::id()));
-        })->orderByRaw('LOWER(name)')->get();
+        $availableProjects = Project::forMember(Auth::id())
+            ->orderByRaw('LOWER(name)')->get();
 
         $availableTags = Tag::orderByRaw('LOWER(tag_name)')->get();
 
