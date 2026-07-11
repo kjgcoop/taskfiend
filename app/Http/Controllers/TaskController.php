@@ -9,6 +9,7 @@ use App\Models\Tag;
 use App\Models\User;
 use App\Services\DateParser;
 use App\Services\QuickAddParser;
+use App\Services\TaskLifecycle;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -544,35 +545,20 @@ class TaskController extends Controller
             return back()->withErrors(['recurrence_pattern' => $msg])->withInput();
         }
 
-        // Check if marking as done with incomplete descendants
-        $statusChangedToDone = isset($validated['status'])
-            && $validated['status'] === 'done'
-            && $task->status !== 'done';
+        $lifecycle = new TaskLifecycle();
 
-        $statusChangedToIncomplete = isset($validated['status'])
-            && $validated['status'] === 'incomplete'
-            && $task->status !== 'incomplete';
-
-        $statusChangedToArchived = isset($validated['status'])
-            && $validated['status'] === 'archived'
-            && $task->status !== 'archived';
-
-        if ($statusChangedToDone && $task->hasIncompleteDescendants()) {
-            // Auto-complete all descendants
-            $this->completeTaskAndDescendants($task);
-            $this->logChange($task, 'marked done with all subtasks', 'completed');
-
-            // Handle recurring task AFTER completion
-            $nextRecurringTask = null;
-            if ($task->recurrence_pattern) {
-                $nextRecurringTask = $this->createRecurringTask($task);
-            }
+        // Completing a task that has incomplete subtasks completes the whole
+        // subtree and skips any other submitted edits — the form snapshot may
+        // be stale relative to the auto-completed children.
+        if (isset($validated['status']) && $validated['status'] === 'done'
+            && $task->status !== 'done' && $task->hasIncompleteDescendants()) {
+            $statusChange = $lifecycle->changeStatus($task, 'done');
 
             if ($request->has('quick_complete')) {
                 if ($request->ajax()) {
                     $resp = ['ok' => true];
-                    if ($nextRecurringTask) {
-                        $resp['next_task_id'] = $nextRecurringTask->id;
+                    if ($statusChange->nextRecurringTask) {
+                        $resp['next_task_id'] = $statusChange->nextRecurringTask->id;
                     }
                     return response()->json($resp);
                 }
@@ -584,42 +570,24 @@ class TaskController extends Controller
                 ->with('success', 'Task and all subtasks marked as done.');
         }
 
-        // Check if archiving with descendants
-        if (isset($validated['status']) && $validated['status'] === 'archived' && $task->children->count() > 0) {
-            // Auto-archive all descendants
-            $descendants = $task->getAllDescendants();
-            foreach ($descendants as $descendant) {
-                if ($descendant->status !== 'archived') {
-                    $descendant->status = 'archived';
-                    $descendant->save();
-                    $this->logChange($descendant, 'auto-archived (parent archived)', 'archived');
-                }
-            }
-        }
-
         if (array_key_exists('duration_minutes', $validated)) {
             $validated['duration_minutes'] = $this->parseDurationInput($validated['duration_minutes']);
         }
 
+        // Status is applied separately below via the lifecycle service.
         $changes = [];
-        $updatableFields = ['name', 'description', 'location', 'show_map', 'date', 'time', 'duration_minutes', 'project_id', 'parent_id', 'recurrence_pattern', 'recurrence_floating', 'status'];
+        $updatableFields = ['name', 'description', 'location', 'show_map', 'date', 'time', 'duration_minutes', 'project_id', 'parent_id', 'recurrence_pattern', 'recurrence_floating'];
         // Quick-complete only ever intends to flip status to done — its other hidden
         // fields are just the last-rendered snapshot and may be stale, so don't let
         // them silently overwrite the task's actual current values.
         if ($request->boolean('quick_complete')) {
-            $updatableFields = ['status'];
+            $updatableFields = [];
         }
         foreach ($updatableFields as $field) {
             if (isset($validated[$field]) && $task->$field != $validated[$field]) {
                 $changes[$field] = ['old' => $task->$field, 'new' => $validated[$field]];
                 $task->$field = $validated[$field];
             }
-        }
-
-        if ($statusChangedToDone || $statusChangedToArchived) {
-            $task->completed_at = now();
-        } elseif ($statusChangedToIncomplete) {
-            $task->completed_at = null;
         }
 
         if (isset($changes['project_id'])) {
@@ -653,20 +621,16 @@ class TaskController extends Controller
         foreach ($changes as $field => $change) {
             $verb = match($field) {
                 'date' => ($change['old'] && $change['new']) ? 'rescheduled' : ($change['new'] ? 'scheduled' : 'edited'),
-                'status' => match($change['new']) {
-                    'done'     => 'completed',
-                    'archived' => 'archived',
-                    default    => 'edited',
-                },
                 default => 'edited',
             };
             $this->logChange($task, "changed {$field} from {$change['old']} to {$change['new']}", $verb, $field, $change['old'], $change['new']);
         }
 
-        $nextRecurringTask = null;
-        if (($statusChangedToDone || $statusChangedToArchived) && $task->recurrence_pattern) {
-            $nextRecurringTask = $this->createRecurringTask($task);
-        }
+        // Apply the status change with all its side effects (descendant
+        // cascades, completed_at, change logging, recurring rollover).
+        $nextRecurringTask = isset($validated['status'])
+            ? $lifecycle->changeStatus($task, $validated['status'])->nextRecurringTask
+            : null;
 
         // Handle quick complete from task list
         if ($request->has('quick_complete')) {
@@ -748,6 +712,28 @@ class TaskController extends Controller
                 }
 
                 $this->logChange($task, 'updated assignees');
+            } elseif ($field === 'status') {
+                $value = $request->input('value');
+
+                if (!in_array($value, ['incomplete', 'done', 'archived'])) {
+                    return response()->json(['success' => false, 'message' => 'Invalid status'], 400);
+                }
+
+                $statusChange = (new TaskLifecycle())
+                    ->changeStatus($task, $value, $request->input('next_occurrence_action'));
+
+                // Completing with incomplete subtasks completes the whole
+                // subtree — the list view needs a reload to reflect every row.
+                if ($statusChange->completedDescendants) {
+                    $task->load(['project', 'tags']);
+                    $resp = ['success' => true, 'reload' => true, 'taskData' => $this->buildTaskData($task, $field)];
+                    if ($statusChange->nextRecurringTask) {
+                        $resp['next_task_id'] = $statusChange->nextRecurringTask->id;
+                    }
+                    return response()->json($resp);
+                }
+
+                $nextRecurringTask = $statusChange->nextRecurringTask;
             } else {
                 $value = $request->input('value');
 
@@ -821,56 +807,11 @@ class TaskController extends Controller
                     $value = $normalized;
                 }
 
-                if ($field === 'status') {
-                    if (!in_array($value, ['incomplete', 'done', 'archived'])) {
-                        return response()->json(['success' => false, 'message' => 'Invalid status'], 400);
-                    }
-
-                    // Handle completion with subtasks
-                    if ($value === 'done' && $task->status !== 'done' && $task->hasIncompleteDescendants()) {
-                        $this->completeTaskAndDescendants($task);
-                        $this->logChange($task, 'marked done with all subtasks', 'completed');
-
-                        $nextTask = null;
-                        if ($task->recurrence_pattern) {
-                            $nextTask = $this->createRecurringTask($task);
-                        }
-
-                        $task->load(['project', 'tags']);
-                        $resp = ['success' => true, 'reload' => true, 'taskData' => $this->buildTaskData($task, $field)];
-                        if ($nextTask) {
-                            $resp['next_task_id'] = $nextTask->id;
-                        }
-                        return response()->json($resp);
-                    }
-
-                    // Handle archiving with descendants
-                    if ($value === 'archived' && $task->children->count() > 0) {
-                        $descendants = $task->getAllDescendants();
-                        foreach ($descendants as $descendant) {
-                            if ($descendant->status !== 'archived') {
-                                $descendant->status = 'archived';
-                                $descendant->save();
-                                $this->logChange($descendant, 'auto-archived (parent archived)', 'archived');
-                            }
-                        }
-                    }
-                }
-
                 $previousValue = $task->$field;
-                $previousStatus = $task->status;
                 $task->$field = $value;
 
                 if ($field === 'project_id') {
                     $task->project_sort_order = null;
-                }
-
-                if ($field === 'status') {
-                    if (in_array($value, ['done', 'archived']) && $previousStatus !== $value) {
-                        $task->completed_at = now();
-                    } elseif ($value === 'incomplete') {
-                        $task->completed_at = null;
-                    }
                 }
 
                 $task->save();
@@ -878,12 +819,6 @@ class TaskController extends Controller
                 $verb = 'edited';
                 if ($field === 'date') {
                     $verb = ($previousValue && $value) ? 'rescheduled' : ($value ? 'scheduled' : 'edited');
-                } elseif ($field === 'status') {
-                    $verb = match($value) {
-                        'done'     => 'completed',
-                        'archived' => 'archived',
-                        default    => 'edited',
-                    };
                 }
                 $this->logChange($task, "updated {$field}", $verb, $field, $previousValue, $value);
 
@@ -898,16 +833,6 @@ class TaskController extends Controller
                         $task->save();
                         $this->logChange($task, 'updated project_id');
                     }
-                }
-
-                $nextRecurringTask = null;
-                if ($field === 'status' && in_array($value, ['done', 'archived']) && $task->recurrence_pattern) {
-                    $nextRecurringTask = $this->createRecurringTask($task);
-                }
-
-                if ($field === 'status' && $value === 'incomplete' && $task->recurrence_pattern
-                    && $request->input('next_occurrence_action') === 'archive') {
-                    $this->archiveNextOccurrence($task);
                 }
             }
 
@@ -1295,246 +1220,6 @@ class TaskController extends Controller
             'old_value'   => $oldValue !== null ? (string) $oldValue : null,
             'new_value'   => $newValue !== null ? (string) $newValue : null,
         ]);
-    }
-
-    /**
-     * Mark task and all descendant subtasks as done
-     */
-    protected function completeTaskAndDescendants(Task $task): void
-    {
-        // Mark all descendants as done first (bottom-up)
-        $descendants = $task->getAllDescendants();
-
-        foreach ($descendants as $descendant) {
-            if ($descendant->status !== 'done') {
-                $descendant->status = 'done';
-                $descendant->completed_at = now();
-                $descendant->save();
-                $this->logChange($descendant, 'auto-completed (parent marked done)', 'completed');
-            }
-        }
-
-        // Mark parent as done
-        if ($task->status !== 'done') {
-            $task->status = 'done';
-            $task->completed_at = now();
-            $task->save();
-        }
-    }
-
-    protected function createRecurringTask(Task $originalTask): ?Task
-    {
-        if (!$originalTask->recurrence_pattern) {
-            return null;
-        }
-
-        $dateParser = new DateParser();
-        // Floating recurrence: next date relative to today (when completed)
-        // Fixed recurrence: next date relative to the task's due date
-        $baseDate = $originalTask->recurrence_floating
-            ? Carbon::today()
-            : ($originalTask->date ? Carbon::parse($originalTask->date) : Carbon::today());
-        $nextOccurrence = $dateParser->getNextOccurrence(
-            $originalTask->recurrence_pattern,
-            $baseDate
-        );
-
-        if (!$nextOccurrence) {
-            return null;
-        }
-
-        // Advance past-due occurrences forward through the pattern until we reach today
-        // at the earliest. E.g. a daily task last due Monday, completed on Wednesday,
-        // lands on Wednesday (today) — not Tuesday.
-        $today = Carbon::today();
-        while ($nextOccurrence->lt($today)) {
-            $advanced = $dateParser->getNextOccurrence($originalTask->recurrence_pattern, $nextOccurrence);
-            if (!$advanced) {
-                break;
-            }
-            $nextOccurrence = $advanced;
-        }
-
-        // Guard: next occurrence must be strictly after the scheduled date of the task
-        // just completed. This prevents re-creating the same instance when a task is
-        // completed before its due date (e.g. completing Thursday's Mon/Thu task on
-        // Wednesday — the "next" occurrence from today is Thursday itself, not Monday).
-        if ($originalTask->date) {
-            $scheduledDate = Carbon::parse($originalTask->date);
-            while ($nextOccurrence->lte($scheduledDate)) {
-                $advanced = $dateParser->getNextOccurrence($originalTask->recurrence_pattern, $nextOccurrence);
-                if (!$advanced) {
-                    break;
-                }
-                $nextOccurrence = $advanced;
-            }
-        }
-
-        $nextDate = $nextOccurrence->format('Y-m-d');
-
-        // Stop the series if the next occurrence falls after the end date
-        if ($originalTask->recurrence_end_date && $nextDate > $originalTask->recurrence_end_date) {
-            return null;
-        }
-
-        $existingTask = Task::where('creator_id', $originalTask->creator_id)
-            ->where('name', $originalTask->name)
-            ->where('recurrence_pattern', $originalTask->recurrence_pattern)
-            ->where('status', 'incomplete')
-            ->where('date', $nextDate)
-            ->first();
-
-        if ($existingTask) {
-            return $existingTask;
-        }
-
-        $newTask = Task::create([
-            'name' => $originalTask->name,
-            'description' => $originalTask->description,
-            'location' => $originalTask->location,
-            'show_map' => $originalTask->show_map,
-            'date' => $nextDate,
-            'time' => $originalTask->time,
-            'duration_minutes' => $originalTask->duration_minutes,
-            'project_id' => $originalTask->project_id,
-            'parent_id' => null, // Recurring tasks are always root-level
-            'recurrence_pattern' => $originalTask->recurrence_pattern,
-            'recurrence_floating' => $originalTask->recurrence_floating,
-            'recurrence_end_date' => $originalTask->recurrence_end_date,
-            'creator_id' => $originalTask->creator_id,
-            'status' => 'incomplete',
-        ]);
-
-        $newTask->tags()->sync($originalTask->tags->pluck('id'));
-
-        foreach ($originalTask->assignments as $assignment) {
-            $newTask->assignments()->create([
-                'assignee_id' => $assignment->assignee_id,
-                'assigned_by_id' => $assignment->assigned_by_id,
-            ]);
-        }
-
-        foreach ($originalTask->attachments as $attachment) {
-            $newTask->attachments()->create([
-                'user_id' => $attachment->user_id,
-                'file_path' => $attachment->file_path,
-                'original_filename' => $attachment->original_filename,
-                'mime_type' => $attachment->mime_type,
-                'file_size' => $attachment->file_size,
-            ]);
-        }
-
-        // Recursively copy all subtasks
-        $this->copySubtasksToNewTask($originalTask, $newTask);
-
-        $newTask->changeLogs()->create([
-            'date' => now(),
-            'user_id' => Auth::id(),
-            'entity_type' => 'tasks',
-            'entity_id' => $newTask->id,
-            'description' => 'created recurring task',
-        ]);
-
-        return $newTask;
-    }
-
-    protected function archiveNextOccurrence(Task $originalTask): void
-    {
-        $dateParser = new DateParser();
-        $baseDate = $originalTask->recurrence_floating
-            ? Carbon::today()
-            : ($originalTask->date ? Carbon::parse($originalTask->date) : Carbon::today());
-        $nextOccurrence = $dateParser->getNextOccurrence($originalTask->recurrence_pattern, $baseDate);
-
-        if (!$nextOccurrence) {
-            return;
-        }
-
-        $today = Carbon::today();
-        while ($nextOccurrence->lt($today)) {
-            $advanced = $dateParser->getNextOccurrence($originalTask->recurrence_pattern, $nextOccurrence);
-            if (!$advanced) break;
-            $nextOccurrence = $advanced;
-        }
-
-        if ($originalTask->date) {
-            $scheduledDate = Carbon::parse($originalTask->date);
-            while ($nextOccurrence->lte($scheduledDate)) {
-                $advanced = $dateParser->getNextOccurrence($originalTask->recurrence_pattern, $nextOccurrence);
-                if (!$advanced) break;
-                $nextOccurrence = $advanced;
-            }
-        }
-
-        $nextTask = Task::where('creator_id', $originalTask->creator_id)
-            ->where('name', $originalTask->name)
-            ->where('recurrence_pattern', $originalTask->recurrence_pattern)
-            ->where('status', 'incomplete')
-            ->where('date', $nextOccurrence->format('Y-m-d'))
-            ->first();
-
-        if ($nextTask) {
-            $nextTask->status = 'archived';
-            $nextTask->completed_at = now();
-            $nextTask->save();
-            $this->logChange($nextTask, 'archived (next occurrence of re-opened recurring task)', 'archived', 'status', 'incomplete', 'archived');
-        }
-    }
-
-    /**
-     * Recursively copy all subtasks from original to new task
-     */
-    protected function copySubtasksToNewTask(Task $originalTask, Task $newTask): void
-    {
-        foreach ($originalTask->children as $originalSubtask) {
-            // Create new subtask
-            $newSubtask = Task::create([
-                'name' => $originalSubtask->name,
-                'description' => $originalSubtask->description,
-                'date' => $originalSubtask->date,
-                'time' => $originalSubtask->time,
-                'duration_minutes' => $originalSubtask->duration_minutes,
-                'project_id' => $originalSubtask->project_id,
-                'recurrence_pattern' => null, // Subtasks don't have their own recurrence
-                'parent_id' => $newTask->id,
-                'creator_id' => $originalSubtask->creator_id,
-                'status' => 'incomplete',
-            ]);
-
-            // Copy tags
-            $newSubtask->tags()->sync($originalSubtask->tags->pluck('id'));
-
-            // Copy assignments
-            foreach ($originalSubtask->assignments as $assignment) {
-                $newSubtask->assignments()->create([
-                    'assignee_id' => $assignment->assignee_id,
-                    'assigned_by_id' => $assignment->assigned_by_id,
-                ]);
-            }
-
-            // Copy attachments
-            foreach ($originalSubtask->attachments as $attachment) {
-                $newSubtask->attachments()->create([
-                    'user_id' => $attachment->user_id,
-                    'file_path' => $attachment->file_path,
-                    'original_filename' => $attachment->original_filename,
-                    'mime_type' => $attachment->mime_type,
-                    'file_size' => $attachment->file_size,
-                ]);
-            }
-
-            // Log creation
-            $newSubtask->changeLogs()->create([
-                'date' => now(),
-                'user_id' => Auth::id(),
-                'entity_type' => 'tasks',
-                'entity_id' => $newSubtask->id,
-                'description' => 'created subtask from recurring parent',
-            ]);
-
-            // Recursively copy this subtask's subtasks
-            $this->copySubtasksToNewTask($originalSubtask, $newSubtask);
-        }
     }
 
     /**
