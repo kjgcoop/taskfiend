@@ -17,12 +17,7 @@ class TagController extends Controller
         $userId = Auth::id();
 
         $tags = Tag::withCount(['tasks' => function ($query) use ($userId) {
-                $query->where(function ($q) use ($userId) {
-                    $q->where('creator_id', $userId)
-                      ->orWhereHas('assignees', function ($query) use ($userId) {
-                          $query->where('users.id', $userId);
-                      });
-                })
+                $query->visibleTo($userId)
                 ->where('status', '!=', 'archived')
                 ->where('status', '!=', 'done')
                 ->whereHas('project', fn($pq) => $pq->whereNotIn('status', ['archived', 'done']));
@@ -59,12 +54,7 @@ class TagController extends Controller
         $reversed = $request->boolean('reversed');
 
         $tasksQuery = $tag->tasks()
-            ->where(function ($q) {
-                $q->where('creator_id', Auth::id())
-                  ->orWhereHas('assignees', function ($query) {
-                      $query->where('users.id', Auth::id());
-                  });
-            })
+            ->visibleTo(Auth::id())
             ->where('status', '!=', 'archived')
             ->where('status', '!=', 'done')
             ->whereHas('project', fn($pq) => $pq->whereNotIn('status', ['archived', 'done']))
@@ -82,22 +72,12 @@ class TagController extends Controller
         $perPage = (int) config('taskfiend.pagination_per_page');
 
         $completedTasksTotal = $tag->tasks()
-            ->where(function ($q) {
-                $q->where('creator_id', Auth::id())
-                  ->orWhereHas('assignees', function ($query) {
-                      $query->where('users.id', Auth::id());
-                  });
-            })
+            ->visibleTo(Auth::id())
             ->where('status', 'done')
             ->count();
 
         $completedTasksRaw = $tag->tasks()
-            ->where(function ($q) {
-                $q->where('creator_id', Auth::id())
-                  ->orWhereHas('assignees', function ($query) {
-                      $query->where('users.id', Auth::id());
-                  });
-            })
+            ->visibleTo(Auth::id())
             ->where('status', 'done')
             ->with(['creator', 'project', 'assignees', 'attachments', 'comments', 'completionLog.user'])
             ->orderBy('datetime')
@@ -108,22 +88,12 @@ class TagController extends Controller
         $completedTasks = $completedTasksHasMore ? $completedTasksRaw->slice(0, $perPage) : $completedTasksRaw;
 
         $archivedTasksTotal = $tag->tasks()
-            ->where(function ($q) {
-                $q->where('creator_id', Auth::id())
-                  ->orWhereHas('assignees', function ($query) {
-                      $query->where('users.id', Auth::id());
-                  });
-            })
+            ->visibleTo(Auth::id())
             ->where('status', 'archived')
             ->count();
 
         $archivedTasksRaw = $tag->tasks()
-            ->where(function ($q) {
-                $q->where('creator_id', Auth::id())
-                  ->orWhereHas('assignees', function ($query) {
-                      $query->where('users.id', Auth::id());
-                  });
-            })
+            ->visibleTo(Auth::id())
             ->where('status', 'archived')
             ->with(['creator', 'project', 'assignees', 'attachments', 'comments', 'completionLog.user'])
             ->orderBy('datetime')
@@ -135,10 +105,7 @@ class TagController extends Controller
 
         $tag->load('changeLogs.user');
 
-        $projects = Project::where(function ($q) {
-                $q->where('user_id', Auth::id())
-                  ->orWhereHas('assignees', fn($q2) => $q2->where('users.id', Auth::id()));
-            })
+        $projects = Project::forMember(Auth::id())
             ->where('status', '!=', 'archived')
             ->orderByRaw('LOWER(name)')
             ->get(['id', 'name']);
@@ -152,12 +119,7 @@ class TagController extends Controller
         $locations = Task::where('status', 'incomplete')
             ->whereNotNull('location')
             ->where('location', '!=', '')
-            ->where(function ($q) {
-                $q->where('creator_id', Auth::id())
-                  ->orWhereHas('assignees', function ($subq) {
-                      $subq->where('users.id', Auth::id());
-                  });
-            })
+            ->visibleTo(Auth::id())
             ->distinct()
             ->orderByRaw('LOWER(location)')
             ->pluck('location');
@@ -184,12 +146,7 @@ class TagController extends Controller
         $offset  = ($page - 1) * $perPage;
 
         $tasks = $tag->tasks()
-            ->where(function ($q) {
-                $q->where('creator_id', Auth::id())
-                  ->orWhereHas('assignees', function ($query) {
-                      $query->where('users.id', Auth::id());
-                  });
-            })
+            ->visibleTo(Auth::id())
             ->where('status', 'done')
             ->with(['creator', 'project', 'assignees', 'attachments', 'comments', 'completionLog.user'])
             ->orderBy('datetime')
@@ -217,12 +174,7 @@ class TagController extends Controller
         $offset  = ($page - 1) * $perPage;
 
         $tasks = $tag->tasks()
-            ->where(function ($q) {
-                $q->where('creator_id', Auth::id())
-                  ->orWhereHas('assignees', function ($query) {
-                      $query->where('users.id', Auth::id());
-                  });
-            })
+            ->visibleTo(Auth::id())
             ->where('status', 'archived')
             ->with(['creator', 'project', 'assignees', 'attachments', 'comments', 'completionLog.user'])
             ->orderBy('datetime')
@@ -246,16 +198,9 @@ class TagController extends Controller
 
     public function exportMarkdown(Request $request, Tag $tag)
     {
-        $userConstraint = function ($q) {
-            $q->where('creator_id', Auth::id())
-              ->orWhereHas('assignees', function ($query) {
-                  $query->where('users.id', Auth::id());
-              });
-        };
-
-        $incomplete = $tag->tasks()->where($userConstraint)->where('status', 'incomplete')->orderByRaw('tasks.date IS NULL, tasks.date ASC, tasks.time IS NULL, tasks.time ASC')->get();
-        $done       = $tag->tasks()->where($userConstraint)->where('status', 'done')->orderByRaw('tasks.date IS NULL, tasks.date ASC')->get();
-        $archived   = $tag->tasks()->where($userConstraint)->where('status', 'archived')->orderByRaw('tasks.date IS NULL, tasks.date ASC')->get();
+        $incomplete = $tag->tasks()->visibleTo(Auth::id())->where('status', 'incomplete')->orderByRaw('tasks.date IS NULL, tasks.date ASC, tasks.time IS NULL, tasks.time ASC')->get();
+        $done       = $tag->tasks()->visibleTo(Auth::id())->where('status', 'done')->orderByRaw('tasks.date IS NULL, tasks.date ASC')->get();
+        $archived   = $tag->tasks()->visibleTo(Auth::id())->where('status', 'archived')->orderByRaw('tasks.date IS NULL, tasks.date ASC')->get();
 
         $lines = ['# ' . $tag->tag_name];
 
@@ -344,10 +289,7 @@ class TagController extends Controller
 
         // Only update pivot rows for tasks the user can access that belong to this tag
         $accessibleIds = Task::whereHas('tags', fn($q) => $q->where('tags.id', $tag->id))
-            ->where(function ($q) use ($userId) {
-                $q->where('creator_id', $userId)
-                  ->orWhereHas('assignees', fn($q2) => $q2->where('users.id', $userId));
-            })
+            ->visibleTo($userId)
             ->whereIn('id', $request->ids)
             ->pluck('id')
             ->flip();

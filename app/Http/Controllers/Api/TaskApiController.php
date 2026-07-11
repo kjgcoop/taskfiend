@@ -32,10 +32,7 @@ class TaskApiController extends Controller
         // Reject project IDs the user doesn't have access to (creator or assignee)
         if (!empty($validated['project_id'])) {
             $hasAccess = Project::where('id', $validated['project_id'])
-                ->where(function ($q) use ($user) {
-                    $q->where('user_id', $user->id)
-                      ->orWhereHas('assignees', fn ($q2) => $q2->where('users.id', $user->id));
-                })
+                ->forMember($user->id)
                 ->exists();
 
             if (!$hasAccess) {
@@ -151,13 +148,7 @@ class TaskApiController extends Controller
         $user = $request->user();
 
         $baseQuery = function ($status) use ($user, $carbonDate) {
-            return Task::query()
-                ->where(function ($q) use ($user) {
-                    $q->where('creator_id', $user->id)
-                      ->orWhereHas('assignees', function ($query) use ($user) {
-                          $query->where('users.id', $user->id);
-                      });
-                })
+            return Task::visibleTo($user->id)
                 ->where('status', $status)
                 ->whereDate('updated_at', $carbonDate)
                 ->with(['creator', 'project', 'tags', 'assignees', 'comments' => function ($q) {
@@ -188,13 +179,7 @@ class TaskApiController extends Controller
 
         $user = $request->user();
 
-        $tasks = Task::query()
-            ->where(function ($q) use ($user) {
-                $q->where('creator_id', $user->id)
-                  ->orWhereHas('assignees', function ($query) use ($user) {
-                      $query->where('users.id', $user->id);
-                  });
-            })
+        $tasks = Task::visibleTo($user->id)
             ->where('status', '!=', 'archived')
             ->where('date', $carbonDate->format('Y-m-d'))
             ->with(['creator', 'project', 'tags', 'assignees', 'comments' => function ($q) {

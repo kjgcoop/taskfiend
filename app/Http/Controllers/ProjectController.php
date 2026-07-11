@@ -19,13 +19,7 @@ class ProjectController extends Controller
 {
     public function index(Request $request)
     {
-        $all = Project::query()
-            ->where(function ($q) {
-                $q->where('user_id', Auth::id())
-                  ->orWhereHas('assignees', function ($query) {
-                      $query->where('users.id', Auth::id());
-                  });
-            })
+        $all = Project::forMember(Auth::id())
             ->withCount([
                 'tasks as open_tasks_count'      => fn ($q) => $q->where('status', 'incomplete')->whereNull('parent_id'),
                 'tasks as done_tasks_count'       => fn ($q) => $q->whereIn('status', ['done', 'archived'])->whereNull('parent_id'),
@@ -105,21 +99,9 @@ class ProjectController extends Controller
 
         $visibleToUser = function ($q) use ($isDirectMember) {
             if (!$isDirectMember) {
-                $q->where('creator_id', Auth::id())
-                    ->orWhereHas('assignees', function ($query) {
-                        $query->where('users.id', Auth::id());
-                    });
+                $q->visibleTo(Auth::id());
             }
         };
-
-
-        /*
-                $visibleToUser = function ($q) {
-                    $q->where('creator_id', Auth::id())
-                      ->orWhereHas('assignees', function ($query) {
-                          $query->where('users.id', Auth::id());
-                      });
-                };*/
 
         $taskEagerLoad = [
             'creator',
@@ -249,12 +231,7 @@ class ProjectController extends Controller
         $locations = Task::where('status', 'incomplete')
             ->whereNotNull('location')
             ->where('location', '!=', '')
-            ->where(function ($q) {
-                $q->where('creator_id', Auth::id())
-                  ->orWhereHas('assignees', function ($subq) {
-                      $subq->where('users.id', Auth::id());
-                  });
-            })
+            ->visibleTo(Auth::id())
             ->distinct()
             ->orderByRaw('LOWER(location)')
             ->pluck('location');
@@ -296,10 +273,7 @@ class ProjectController extends Controller
 
         $visibleToUser = function ($q) use ($isDirectMember) {
             if (!$isDirectMember) {
-                $q->where('creator_id', Auth::id())
-                    ->orWhereHas('assignees', function ($query) {
-                        $query->where('users.id', Auth::id());
-                    });
+                $q->visibleTo(Auth::id());
             }
         };
 
@@ -349,10 +323,7 @@ class ProjectController extends Controller
 
         $visibleToUser = function ($q) use ($isDirectMember) {
             if (!$isDirectMember) {
-                $q->where('creator_id', Auth::id())
-                    ->orWhereHas('assignees', function ($query) {
-                        $query->where('users.id', Auth::id());
-                    });
+                $q->visibleTo(Auth::id());
             }
         };
 
@@ -479,10 +450,7 @@ class ProjectController extends Controller
 
         // Only update tasks within this project that the user can access
         $accessibleIds = Task::where('project_id', $project->id)
-            ->where(function ($q) use ($userId) {
-                $q->where('creator_id', $userId)
-                  ->orWhereHas('assignees', fn($q2) => $q2->where('users.id', $userId));
-            })
+            ->visibleTo($userId)
             ->whereIn('id', $request->ids)
             ->pluck('id')
             ->flip();

@@ -53,12 +53,7 @@ class DashboardController extends Controller
         $locations = Task::where('status', 'incomplete')
             ->whereNotNull('location')
             ->where('location', '!=', '')
-            ->where(function ($q) {
-                $q->where('creator_id', Auth::id())
-                  ->orWhereHas('assignees', function ($subq) {
-                      $subq->where('users.id', Auth::id());
-                  });
-            })
+            ->visibleTo(Auth::id())
             ->distinct()
             ->orderByRaw('LOWER(location)')
             ->pluck('location');
@@ -82,12 +77,7 @@ class DashboardController extends Controller
         $offset   = ($page - 1) * $perPage;
 
         $tasksQuery = Task::query()
-            ->where(function ($q) {
-                $q->where('creator_id', Auth::id())
-                  ->orWhereHas('assignees', function ($query) {
-                      $query->where('users.id', Auth::id());
-                  });
-            })
+            ->visibleTo(Auth::id())
             ->where('status', '!=', 'archived')
             ->where('status', '!=', 'done')
             ->whereNotNull('date')
@@ -116,12 +106,7 @@ class DashboardController extends Controller
         $reversed = $request->boolean('reversed');
 
         $tasksQuery = Task::query()
-            ->where(function ($q) {
-                $q->where('creator_id', Auth::id())
-                  ->orWhereHas('assignees', function ($query) {
-                      $query->where('users.id', Auth::id());
-                  });
-            })
+            ->visibleTo(Auth::id())
             ->where('status', '!=', 'archived')
             ->where('status', '!=', 'done')
             ->whereNull('date')
@@ -142,12 +127,7 @@ class DashboardController extends Controller
         $reversed = $request->boolean('reversed');
 
         $tasksQuery = Task::query()
-            ->where(function ($q) {
-                $q->where('creator_id', Auth::id())
-                  ->orWhereHas('assignees', function ($query) {
-                      $query->where('users.id', Auth::id());
-                  });
-            })
+            ->visibleTo(Auth::id())
             ->where('status', '!=', 'archived')
             ->whereHas('project', fn($pq) => $pq->whereNotIn('status', ['archived', 'done']))
             ->with(['creator', 'project', 'tags', 'assignees', 'attachments', 'comments', 'completionLog.user'])
@@ -175,12 +155,7 @@ class DashboardController extends Controller
         $endDate = $startDate->copy()->endOfMonth();
 
         $tasks = Task::query()
-            ->where(function ($q) {
-                $q->where('creator_id', Auth::id())
-                  ->orWhereHas('assignees', function ($query) {
-                      $query->where('users.id', Auth::id());
-                  });
-            })
+            ->visibleTo(Auth::id())
             ->where('status', '!=', 'archived')
             ->where('status', '!=', 'done')
             ->whereNotNull('date')
@@ -194,12 +169,7 @@ class DashboardController extends Controller
             });
 
         $overdueCount = Task::query()
-            ->where(function ($q) {
-                $q->where('creator_id', Auth::id())
-                  ->orWhereHas('assignees', function ($query) {
-                      $query->where('users.id', Auth::id());
-                  });
-            })
+            ->visibleTo(Auth::id())
             ->where('status', '!=', 'archived')
             ->where('status', '!=', 'done')
             ->whereNotNull('date')
@@ -208,12 +178,7 @@ class DashboardController extends Controller
             ->count();
 
         $undatedCount = Task::query()
-            ->where(function ($q) {
-                $q->where('creator_id', Auth::id())
-                  ->orWhereHas('assignees', function ($query) {
-                      $query->where('users.id', Auth::id());
-                  });
-            })
+            ->visibleTo(Auth::id())
             ->where('status', '!=', 'archived')
             ->where('status', '!=', 'done')
             ->whereNull('date')
@@ -225,14 +190,7 @@ class DashboardController extends Controller
 
     public function exportOverdueMarkdown(Request $request)
     {
-        $userConstraint = function ($q) {
-            $q->where('creator_id', Auth::id())
-              ->orWhereHas('assignees', function ($query) {
-                  $query->where('users.id', Auth::id());
-              });
-        };
-
-        $tasks = Task::query()->where($userConstraint)
+$tasks = Task::visibleTo(Auth::id())
             ->where('status', '!=', 'archived')
             ->where('status', '!=', 'done')
             ->whereNotNull('date')
@@ -258,22 +216,15 @@ class DashboardController extends Controller
         $carbonDate = Carbon::parse($date);
         $dateStr = $carbonDate->format('Y-m-d');
 
-        $userConstraint = function ($q) {
-            $q->where('creator_id', Auth::id())
-              ->orWhereHas('assignees', function ($query) {
-                  $query->where('users.id', Auth::id());
-              });
-        };
-
-        $incomplete = Task::query()->where($userConstraint)
+$incomplete = Task::visibleTo(Auth::id())
             ->where('status', 'incomplete')->where('date', $dateStr)
             ->orderByRaw('time IS NULL, time ASC')->get();
 
-        $done = Task::query()->where($userConstraint)
+        $done = Task::visibleTo(Auth::id())
             ->where('status', 'done')->whereDate('completed_at', $dateStr)
             ->orderByRaw('time IS NULL, time ASC')->get();
 
-        $archived = Task::query()->where($userConstraint)
+        $archived = Task::visibleTo(Auth::id())
             ->where('status', 'archived')->where('date', $dateStr)
             ->orderByRaw('time IS NULL, time ASC')->get();
 
@@ -310,12 +261,7 @@ class DashboardController extends Controller
         $reversed = $request->boolean('reversed');
 
         $tasksQuery = Task::query()
-            ->where(function ($q) {
-                $q->where('creator_id', Auth::id())
-                  ->orWhereHas('assignees', function ($query) {
-                      $query->where('users.id', Auth::id());
-                  });
-            })
+            ->visibleTo(Auth::id())
             ->where('status', '!=', 'archived')
             ->where('status', '!=', 'done')
             ->where('date', $dateStr)
@@ -326,19 +272,14 @@ class DashboardController extends Controller
 
         $perPage = (int) config('taskfiend.pagination_per_page');
 
-        $userConstraint = function ($q) {
-            $q->where('creator_id', Auth::id())
-              ->orWhereHas('assignees', fn($q2) => $q2->where('users.id', Auth::id()));
-        };
+$dayWith = ['creator', 'project', 'tags', 'assignees', 'attachments', 'comments', 'completionLog.user'];
 
-        $dayWith = ['creator', 'project', 'tags', 'assignees', 'attachments', 'comments', 'completionLog.user'];
-
-        $completedTasksTotal = Task::query()->where($userConstraint)
+        $completedTasksTotal = Task::visibleTo(Auth::id())
             ->where('status', 'done')
             ->whereDate('completed_at', $dateStr)
             ->count();
 
-        $completedTasksRaw = Task::query()->where($userConstraint)
+        $completedTasksRaw = Task::visibleTo(Auth::id())
             ->where('status', 'done')
             ->whereDate('completed_at', $dateStr)
             ->with($dayWith)
@@ -351,7 +292,7 @@ class DashboardController extends Controller
 
         // Tasks archived on this day (by completed_at, status differentiates done vs archived),
         // OR tasks dated for this day that belong to an archived/done project.
-        $archivedTasksTotal = Task::query()->where($userConstraint)
+        $archivedTasksTotal = Task::visibleTo(Auth::id())
             ->where('status', 'archived')
             ->where(function ($q) use ($dateStr) {
                 $q->whereDate('completed_at', $dateStr)
@@ -362,7 +303,7 @@ class DashboardController extends Controller
             })
             ->count();
 
-        $archivedTasksRaw = Task::query()->where($userConstraint)
+        $archivedTasksRaw = Task::visibleTo(Auth::id())
             ->where('status', 'archived')
             ->where(function ($q) use ($dateStr) {
                 $q->whereDate('completed_at', $dateStr)
@@ -381,13 +322,7 @@ class DashboardController extends Controller
 
         $overdueCount = 0;
         if ($carbonDate->isToday()) {
-            $overdueCount = Task::query()
-                ->where(function ($q) {
-                    $q->where('creator_id', Auth::id())
-                      ->orWhereHas('assignees', function ($query) {
-                          $query->where('users.id', Auth::id());
-                      });
-                })
+            $overdueCount = Task::visibleTo(Auth::id())
                 ->where('status', '!=', 'archived')
                 ->where('status', '!=', 'done')
                 ->whereNotNull('date')
@@ -423,12 +358,7 @@ class DashboardController extends Controller
         $offset  = ($page - 1) * $perPage;
         $dateStr = $request->get('date', today()->format('Y-m-d'));
 
-        $userConstraint = function ($q) {
-            $q->where('creator_id', Auth::id())
-              ->orWhereHas('assignees', fn($q2) => $q2->where('users.id', Auth::id()));
-        };
-
-        $tasks = Task::query()->where($userConstraint)
+$tasks = Task::visibleTo(Auth::id())
             ->where('status', 'done')
             ->whereDate('completed_at', $dateStr)
             ->with(['creator', 'project', 'tags', 'assignees', 'attachments', 'comments', 'completionLog.user'])
@@ -456,12 +386,7 @@ class DashboardController extends Controller
         $offset  = ($page - 1) * $perPage;
         $dateStr = $request->get('date', today()->format('Y-m-d'));
 
-        $userConstraint = function ($q) {
-            $q->where('creator_id', Auth::id())
-              ->orWhereHas('assignees', fn($q2) => $q2->where('users.id', Auth::id()));
-        };
-
-        $tasks = Task::query()->where($userConstraint)
+$tasks = Task::visibleTo(Auth::id())
             ->where('status', 'archived')
             ->where(function ($q) use ($dateStr) {
                 $q->whereDate('completed_at', $dateStr)
@@ -496,11 +421,7 @@ class DashboardController extends Controller
         $taskWith = ['creator', 'project', 'tags', 'assignees', 'attachments', 'comments', 'completionLog.user'];
 
         // Tasks directly dated for this day where the user is creator or assignee
-        $datedTasks = Task::query()
-            ->where(function ($q) use ($userId) {
-                $q->where('creator_id', $userId)
-                  ->orWhereHas('assignees', fn($q2) => $q2->where('users.id', $userId));
-            })
+        $datedTasks = Task::visibleTo($userId)
             ->where('date', $dateStr)
             ->with($taskWith)
             ->orderByRaw('time IS NULL, time ASC')
@@ -521,10 +442,7 @@ class DashboardController extends Controller
         if (!empty($rescheduledTaskIds)) {
             $rescheduledTasks = Task::whereIn('id', $rescheduledTaskIds)
                 ->whereNotIn('id', $datedTasks->keys()->toArray())
-                ->where(function ($q) use ($userId) {
-                    $q->where('creator_id', $userId)
-                      ->orWhereHas('assignees', fn($q2) => $q2->where('users.id', $userId));
-                })
+                ->visibleTo($userId)
                 ->with($taskWith)
                 ->get()
                 ->keyBy('id');

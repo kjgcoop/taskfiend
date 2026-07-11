@@ -40,11 +40,7 @@ class DataExportController extends Controller
         ];
 
         // Get all tasks the user has access to (created by user OR assigned to user)
-        $tasks = Task::where('creator_id', $user->id)
-            ->orWhereHas('assignees', function($q) use ($user) {
-                $q->where('users.id', $user->id);
-            })
-            ->get();
+        $tasks = Task::visibleTo($user->id)->get();
 
         // Get all projects the user has access to (created by user OR has assigned tasks in)
         $projectIds = $tasks->pluck('project_id')->filter()->unique();

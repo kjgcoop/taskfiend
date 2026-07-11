@@ -125,6 +125,20 @@ class Project extends Model
         }
     }
 
+    /**
+     * Scope: projects where the given user is a member — the owner or a
+     * project-level assignee. This is the access rule for acting on a
+     * project (e.g. creating or moving tasks into it), which is stricter
+     * than activeForUser (that also grants visibility via assigned tasks).
+     */
+    public function scopeForMember(Builder $query, int $userId): Builder
+    {
+        return $query->where(function ($q) use ($userId) {
+            $q->where('user_id', $userId)
+              ->orWhereHas('assignees', fn ($q2) => $q2->where('users.id', $userId));
+        });
+    }
+
     public function scopeActiveForUser(Builder $query, int $userId): Builder
     {
         return $query->where('status', 'incomplete')

@@ -18,13 +18,7 @@ class TaskController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Task::query()
-            ->where(function ($q) {
-                $q->where('creator_id', Auth::id())
-                  ->orWhereHas('assignees', function ($query) {
-                      $query->where('users.id', Auth::id());
-                  });
-            });
+        $query = Task::visibleTo(Auth::id());
 
         if ($request->has('status')) {
             $query->where('status', $request->status);
@@ -86,12 +80,7 @@ class TaskController extends Controller
         }
 
         // Get available parent tasks (exclude archived)
-        $availableParents = Task::where(function ($q) {
-                $q->where('creator_id', Auth::id())
-                  ->orWhereHas('assignees', function ($query) {
-                      $query->where('users.id', Auth::id());
-                  });
-            })
+        $availableParents = Task::visibleTo(Auth::id())
             ->where('status', '=', 'incomplete')
             ->with('parent') // For depth calculation
             ->orderByRaw('LOWER(name)')
@@ -128,10 +117,7 @@ class TaskController extends Controller
         // Block task creation inside inaccessible or inactive projects
         if (!empty($validated['project_id'])) {
             $targetProject = Project::where('id', $validated['project_id'])
-                ->where(function ($q) {
-                    $q->where('user_id', Auth::id())
-                      ->orWhereHas('assignees', fn($q2) => $q2->where('users.id', Auth::id()));
-                })
+                ->forMember(Auth::id())
                 ->first();
             if (!$targetProject) {
                 return $this->storeError($request, ['project_id' => 'You do not have access to this project.']);
@@ -444,12 +430,7 @@ class TaskController extends Controller
         // Get available parent tasks (exclude self and descendants to prevent cycles)
         $excludeIds = $task->getAllDescendants()->pluck('id')->push($task->id);
 
-        $availableParents = Task::where(function ($q) {
-                $q->where('creator_id', Auth::id())
-                  ->orWhereHas('assignees', function ($query) {
-                      $query->where('users.id', Auth::id());
-                  });
-            })
+        $availableParents = Task::visibleTo(Auth::id())
             ->whereNotIn('id', $excludeIds)
             ->where('status', '!=', 'archived')
             ->with('parent') // For depth calculation
@@ -463,10 +444,7 @@ class TaskController extends Controller
         $userId = Auth::id();
         $referencingTasks = Task::where('id', '!=', $task->id)
             ->referencingTask($task->id)
-            ->where(function ($q) use ($userId) {
-                $q->where('creator_id', $userId)
-                  ->orWhereHas('assignees', fn ($aq) => $aq->where('users.id', $userId));
-            })
+            ->visibleTo($userId)
             ->with(['creator', 'project', 'tags'])
             ->orderByRaw('LOWER(name)')
             ->get();
@@ -503,10 +481,7 @@ class TaskController extends Controller
         $userId = Auth::id();
         $referencingTasks = Task::where('id', '!=', $task->id)
             ->referencingTask($task->id)
-            ->where(function ($q) use ($userId) {
-                $q->where('creator_id', $userId)
-                  ->orWhereHas('assignees', fn ($aq) => $aq->where('users.id', $userId));
-            })
+            ->visibleTo($userId)
             ->with(['creator', 'project', 'tags'])
             ->orderByRaw('LOWER(name)')
             ->get();
@@ -528,12 +503,7 @@ class TaskController extends Controller
         // Get available parent tasks (exclude self and descendants to prevent cycles)
         $excludeIds = $task->getAllDescendants()->pluck('id')->push($task->id);
 
-        $availableParents = Task::where(function ($q) {
-                $q->where('creator_id', Auth::id())
-                  ->orWhereHas('assignees', function ($query) {
-                      $query->where('users.id', Auth::id());
-                  });
-            })
+        $availableParents = Task::visibleTo(Auth::id())
             ->whereNotIn('id', $excludeIds)
             ->where('status', '!=', 'archived')
             ->with('parent') // For depth calculation
@@ -600,10 +570,7 @@ class TaskController extends Controller
         // Validate project access when project is being changed
         if (isset($validated['project_id']) && $validated['project_id'] != $task->project_id) {
             $targetProject = Project::where('id', $validated['project_id'])
-                ->where(function ($q) {
-                    $q->where('user_id', Auth::id())
-                      ->orWhereHas('assignees', fn($q2) => $q2->where('users.id', Auth::id()));
-                })
+                ->forMember(Auth::id())
                 ->first();
             if (!$targetProject) {
                 $msg = 'You do not have access to this project.';
@@ -1098,12 +1065,7 @@ class TaskController extends Controller
         if ($result) {
             $dateStr = $result->format('Y-m-d');
             $tasks = Task::with('project:id,name')
-                ->where(function ($q) {
-                    $q->where('creator_id', Auth::id())
-                      ->orWhereHas('assignees', function ($query) {
-                          $query->where('user_id', Auth::id());
-                      });
-                })
+                ->visibleTo(Auth::id())
                 ->where('date', $dateStr)
                 ->where('status', 'incomplete')
                 ->get(['id', 'name', 'project_id']);
@@ -1317,10 +1279,7 @@ class TaskController extends Controller
         $userId = Auth::id();
 
         // Only reorder tasks the user has access to (creator or assignee)
-        $accessibleIds = Task::where(function ($q) use ($userId) {
-                $q->where('creator_id', $userId)
-                  ->orWhereHas('assignees', fn($q2) => $q2->where('users.id', $userId));
-            })
+        $accessibleIds = Task::visibleTo($userId)
             ->whereIn('id', $request->ids)
             ->pluck('id')
             ->flip(); // id => index for O(1) lookup
@@ -1368,10 +1327,7 @@ class TaskController extends Controller
         // Validate project access
         if ($projectId) {
             $project = Project::where('id', $projectId)
-                ->where(function ($q) {
-                    $q->where('user_id', Auth::id())
-                      ->orWhereHas('assignees', fn($q2) => $q2->where('users.id', Auth::id()));
-                })
+                ->forMember(Auth::id())
                 ->first();
 
             if (!$project) {
@@ -1380,10 +1336,7 @@ class TaskController extends Controller
         }
 
         // Only update tasks the current user can access
-        $tasks = Task::where(function ($q) {
-                $q->where('creator_id', Auth::id())
-                  ->orWhereHas('assignees', fn($q2) => $q2->where('users.id', Auth::id()));
-            })
+        $tasks = Task::visibleTo(Auth::id())
             ->whereIn('id', $request->input('task_ids'))
             ->get();
 
@@ -1974,10 +1927,7 @@ class TaskController extends Controller
                       ->orWhereRaw("{$stripped} = ?", [$projectQuery])
                       ->orWhereRaw('LOWER(name) LIKE ?', [$projectQuery . '%']);
                 })
-                ->where(function ($q) {
-                    $q->where('user_id', Auth::id())
-                      ->orWhereHas('assignees', fn($q2) => $q2->where('users.id', Auth::id()));
-                })
+                ->forMember(Auth::id())
                 ->first();
 
             if ($project) {
