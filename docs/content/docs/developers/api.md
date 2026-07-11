@@ -68,7 +68,7 @@ All fields except `name` are optional. If `assignee_ids` is omitted, the task is
 
 ## GET /api/tasks/on/{date} — Tasks due on a date
 
-Returns all non-archived tasks dated `YYYY-MM-DD` visible to the key owner (created by or assigned to them).
+Returns all non-archived tasks dated `YYYY-MM-DD` visible to the key owner (created by or assigned to them), along with any not-dismissed project reminders due on or before that date for projects the key owner owns.
 
 ```
 GET /api/tasks/on/2026-02-24
@@ -80,9 +80,12 @@ GET /api/tasks/on/2026-02-24
 {
   "success": true,
   "date": "2026-02-24",
-  "tasks": [...]
+  "tasks": [...],
+  "project_reminders": [...]
 }
 ```
+
+`project_reminders` includes reminders on incomplete projects owned by the key owner where `dismissed` is `false` and `date <= the requested date`.
 
 ---
 

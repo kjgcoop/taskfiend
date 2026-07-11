@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\ApiKey;
 use App\Models\Project;
+use App\Models\ProjectReminder;
 use App\Models\Tag;
 use App\Models\Task;
 use App\Models\User;
@@ -464,6 +465,92 @@ class ApiTaskTest extends TestCase
 
         $response->assertStatus(400)
                  ->assertJson(['success' => false]);
+    }
+
+    public function test_on_day_includes_undismissed_reminders_due_on_or_before_date(): void
+    {
+        $project = Project::create([
+            'name'    => 'Reminder Project',
+            'user_id' => $this->user->id,
+            'status'  => 'incomplete',
+        ]);
+
+        $due = ProjectReminder::create([
+            'project_id' => $project->id,
+            'user_id'    => $this->user->id,
+            'date'       => '2026-06-14',
+            'dismissed'  => false,
+        ]);
+
+        $response = $this->apiOnDay('2026-06-15');
+
+        $response->assertOk()
+                 ->assertJsonCount(1, 'project_reminders')
+                 ->assertJsonPath('project_reminders.0.id', $due->id);
+    }
+
+    public function test_on_day_excludes_dismissed_reminders(): void
+    {
+        $project = Project::create([
+            'name'    => 'Reminder Project',
+            'user_id' => $this->user->id,
+            'status'  => 'incomplete',
+        ]);
+
+        ProjectReminder::create([
+            'project_id' => $project->id,
+            'user_id'    => $this->user->id,
+            'date'       => '2026-06-14',
+            'dismissed'  => true,
+        ]);
+
+        $response = $this->apiOnDay('2026-06-15');
+
+        $response->assertOk()
+                 ->assertJsonCount(0, 'project_reminders');
+    }
+
+    public function test_on_day_excludes_reminders_due_after_date(): void
+    {
+        $project = Project::create([
+            'name'    => 'Reminder Project',
+            'user_id' => $this->user->id,
+            'status'  => 'incomplete',
+        ]);
+
+        ProjectReminder::create([
+            'project_id' => $project->id,
+            'user_id'    => $this->user->id,
+            'date'       => '2026-06-20',
+            'dismissed'  => false,
+        ]);
+
+        $response = $this->apiOnDay('2026-06-15');
+
+        $response->assertOk()
+                 ->assertJsonCount(0, 'project_reminders');
+    }
+
+    public function test_on_day_excludes_reminders_for_other_users_projects(): void
+    {
+        $other = User::factory()->create();
+        $foreignProject = Project::create([
+            'name'    => 'Foreign Project',
+            'user_id' => $other->id,
+            'status'  => 'incomplete',
+        ]);
+
+        ProjectReminder::create([
+            'project_id' => $foreignProject->id,
+            'user_id'    => $other->id,
+            'date'       => '2026-06-14',
+            'dismissed'  => false,
+        ]);
+
+        $response = $this->apiOnDay('2026-06-15');
+
+        $response->assertOk()
+                 ->assertJsonCount(0, 'project_reminders');
     }
 
     // =========================================================================
