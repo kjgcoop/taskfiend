@@ -169,9 +169,12 @@ class TaskLifecycle
     /**
      * Create the next instance of a recurring task that was just completed
      * or archived. Copies name, description, schedule, project, recurrence,
-     * tags, assignments, attachments, and the subtask tree — not comments or
-     * completion state. Returns the existing instance instead of creating a
-     * duplicate, and null when the series has ended (or has no next date).
+     * tags, assignments, attachments, and the subtask tree (regardless of
+     * subtask status) — not comments or completion state. Ownership
+     * (creator, assignments, attachment uploader) is preserved from the
+     * original rather than reassigned to whoever completed this instance.
+     * Returns the existing instance instead of creating a duplicate, and
+     * null when the series has ended (or has no next date).
      */
     private function createNextOccurrence(Task $originalTask): ?Task
     {
@@ -196,44 +199,18 @@ class TaskLifecycle
             return $existingTask;
         }
 
-        $newTask = Task::create([
-            'name' => $originalTask->name,
-            'description' => $originalTask->description,
-            'location' => $originalTask->location,
-            'show_map' => $originalTask->show_map,
-            'date' => $nextDate,
-            'time' => $originalTask->time,
-            'duration_minutes' => $originalTask->duration_minutes,
-            'project_id' => $originalTask->project_id,
-            'parent_id' => null, // Recurring tasks are always root-level
-            'recurrence_pattern' => $originalTask->recurrence_pattern,
-            'recurrence_floating' => $originalTask->recurrence_floating,
-            'recurrence_end_date' => $originalTask->recurrence_end_date,
-            'creator_id' => $originalTask->creator_id,
-            'status' => 'incomplete',
-        ]);
-
-        $newTask->tags()->sync($originalTask->tags->pluck('id'));
-
-        foreach ($originalTask->assignments as $assignment) {
-            $newTask->assignments()->create([
-                'assignee_id' => $assignment->assignee_id,
-                'assigned_by_id' => $assignment->assigned_by_id,
-            ]);
-        }
-
-        foreach ($originalTask->attachments as $attachment) {
-            $newTask->attachments()->create([
-                'user_id' => $attachment->user_id,
-                'file_path' => $attachment->file_path,
-                'original_filename' => $attachment->original_filename,
-                'mime_type' => $attachment->mime_type,
-                'file_size' => $attachment->file_size,
-            ]);
-        }
-
-        // Recursively copy all subtasks
-        $this->copySubtasksToNewTask($originalTask, $newTask);
+        $newTask = $originalTask->duplicate(
+            overrides: ['date' => $nextDate, 'parent_id' => null], // recurring tasks are always root-level
+            withChildren: true,
+            preserveOwnership: true,
+            afterChildCreate: fn (Task $original, Task $new) => $new->changeLogs()->create([
+                'date' => now(),
+                'user_id' => Auth::id(),
+                'entity_type' => 'tasks',
+                'entity_id' => $new->id,
+                'description' => 'created subtask from recurring parent',
+            ]),
+        );
 
         $newTask->changeLogs()->create([
             'date' => now(),
@@ -263,56 +240,6 @@ class TaskLifecycle
             $nextTask->completed_at = now();
             $nextTask->save();
             $this->logChange($nextTask, 'archived (next occurrence of re-opened recurring task)', 'archived', 'status', 'incomplete', 'archived');
-        }
-    }
-
-    /**
-     * Recursively copy all subtasks from original to new task.
-     */
-    private function copySubtasksToNewTask(Task $originalTask, Task $newTask): void
-    {
-        foreach ($originalTask->children as $originalSubtask) {
-            $newSubtask = Task::create([
-                'name' => $originalSubtask->name,
-                'description' => $originalSubtask->description,
-                'date' => $originalSubtask->date,
-                'time' => $originalSubtask->time,
-                'duration_minutes' => $originalSubtask->duration_minutes,
-                'project_id' => $originalSubtask->project_id,
-                'recurrence_pattern' => null, // Subtasks don't have their own recurrence
-                'parent_id' => $newTask->id,
-                'creator_id' => $originalSubtask->creator_id,
-                'status' => 'incomplete',
-            ]);
-
-            $newSubtask->tags()->sync($originalSubtask->tags->pluck('id'));
-
-            foreach ($originalSubtask->assignments as $assignment) {
-                $newSubtask->assignments()->create([
-                    'assignee_id' => $assignment->assignee_id,
-                    'assigned_by_id' => $assignment->assigned_by_id,
-                ]);
-            }
-
-            foreach ($originalSubtask->attachments as $attachment) {
-                $newSubtask->attachments()->create([
-                    'user_id' => $attachment->user_id,
-                    'file_path' => $attachment->file_path,
-                    'original_filename' => $attachment->original_filename,
-                    'mime_type' => $attachment->mime_type,
-                    'file_size' => $attachment->file_size,
-                ]);
-            }
-
-            $newSubtask->changeLogs()->create([
-                'date' => now(),
-                'user_id' => Auth::id(),
-                'entity_type' => 'tasks',
-                'entity_id' => $newSubtask->id,
-                'description' => 'created subtask from recurring parent',
-            ]);
-
-            $this->copySubtasksToNewTask($originalSubtask, $newSubtask);
         }
     }
 
