@@ -103,26 +103,19 @@ class Project extends Model
         $this->tasks()
             ->where('status', 'incomplete')
             ->whereNull('parent_id')
-            ->with(['tags', 'assignees', 'attachments', 'children.tags', 'children.assignees', 'children.attachments'])
             ->get()
             ->each(function (Task $task) use ($new) {
-                $copy = $task->duplicate(['project_id' => $new->id]);
-                $this->duplicateChildren($task, $copy->id, $new->id);
+                // Every task (at every depth) moves into the new project, and
+                // only incomplete subtasks come along for the ride.
+                $task->duplicate(
+                    overrides: ['project_id' => $new->id],
+                    withChildren: true,
+                    childFilter: fn (Task $child) => $child->status === 'incomplete',
+                    childOverrides: ['project_id' => $new->id],
+                );
             });
 
         return $new;
-    }
-
-    private function duplicateChildren(Task $parent, int $newParentId, int $newProjectId): void
-    {
-        foreach ($parent->children as $child) {
-            if ($child->status !== 'incomplete') {
-                continue;
-            }
-            $child->loadMissing(['tags', 'assignees', 'attachments', 'children.tags', 'children.assignees', 'children.attachments']);
-            $copy = $child->duplicate(['project_id' => $newProjectId, 'parent_id' => $newParentId]);
-            $this->duplicateChildren($child, $copy->id, $newProjectId);
-        }
     }
 
     /**

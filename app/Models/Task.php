@@ -9,6 +9,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 class Task extends Model
 {
@@ -262,16 +264,48 @@ class Task extends Model
     }
 
     /**
-     * Format a duration in minutes as a human-readable string (e.g. "2h 20m").
-     * Returns null if $minutes is null or zero.
+     * Duplicate this task, optionally recursing into its subtask tree. The
+     * single implementation behind the user-initiated "Duplicate" button,
+     * project duplication, and recurring-task rollover — each supplies the
+     * overrides and flags that make sense for it.
+     *
+     * Every duplicated attachment gets its own physical file copy (never a
+     * second row pointing at the same path), so deleting an attachment from
+     * one copy can never remove the file out from under another copy that
+     * happens to reference the same upload.
+     *
+     * @param array         $overrides        Fields to override on this copy (e.g. name, date, project_id).
+     * @param bool          $withChildren     Recursively duplicate children too. Off by default — the
+     *                                        manual "Duplicate" button only ever copies the single task.
+     * @param \Closure|null $childFilter      fn(Task $child): bool — which children to include when
+     *                                        $withChildren is set. Defaults to including all children.
+     * @param array         $childOverrides   Extra field overrides applied to every duplicated child, in
+     *                                        addition to reparenting it under this copy.
+     * @param bool          $preserveOwnership When true, the copy keeps the original creator_id and each
+     *                                        assignment's original assignee/assigned_by/uploader — used for
+     *                                        automatic system copies (recurring rollover) where the task
+     *                                        shouldn't change hands just because someone else completed it.
+     *                                        When false (default — the user-initiated "Duplicate" action),
+     *                                        the copy is attributed to the current user, with assignees
+     *                                        falling back to the current user when the source has none.
+     * @param \Closure|null $afterChildCreate fn(Task $originalChild, Task $newChild): void — called after
+     *                                        each child (not the root) is created, e.g. to write a change log.
      */
-    public function duplicate(array $overrides = []): self
-    {
+    public function duplicate(
+        array $overrides = [],
+        bool $withChildren = false,
+        ?\Closure $childFilter = null,
+        array $childOverrides = [],
+        bool $preserveOwnership = false,
+        ?\Closure $afterChildCreate = null,
+    ): self {
         $this->loadMissing(['tags', 'assignees', 'attachments']);
 
         $new = self::create(array_merge([
             'name'                => $this->name,
             'description'         => $this->description,
+            'location'            => $this->location,
+            'show_map'            => $this->show_map,
             'date'                => $this->date,
             'time'                => $this->time,
             'duration_minutes'    => $this->duration_minutes,
@@ -279,27 +313,36 @@ class Task extends Model
             'parent_id'           => $this->parent_id,
             'recurrence_pattern'  => $this->recurrence_pattern,
             'recurrence_floating' => $this->recurrence_floating,
-            'creator_id'          => auth()->id(),
+            'recurrence_end_date' => $this->recurrence_end_date,
+            'creator_id'          => $preserveOwnership ? $this->creator_id : auth()->id(),
             'status'              => 'incomplete',
         ], $overrides));
 
         $new->tags()->sync($this->tags->pluck('id'));
 
-        $assigneeIds = $this->assignees->pluck('id')->toArray() ?: [auth()->id()];
-        foreach ($assigneeIds as $assigneeId) {
-            $new->assignments()->create([
-                'assignee_id'    => $assigneeId,
-                'assigned_by_id' => auth()->id(),
-            ]);
+        if ($preserveOwnership) {
+            foreach ($this->assignments as $assignment) {
+                $new->assignments()->create([
+                    'assignee_id'    => $assignment->assignee_id,
+                    'assigned_by_id' => $assignment->assigned_by_id,
+                ]);
+            }
+        } else {
+            $assigneeIds = $this->assignees->pluck('id')->toArray() ?: [auth()->id()];
+            foreach ($assigneeIds as $assigneeId) {
+                $new->assignments()->create([
+                    'assignee_id'    => $assigneeId,
+                    'assigned_by_id' => auth()->id(),
+                ]);
+            }
         }
 
         foreach ($this->attachments as $attachment) {
             $extension = pathinfo($attachment->file_path, PATHINFO_EXTENSION);
-            $newPath = 'task_attachments/' . \Illuminate\Support\Str::random(40) . ($extension ? '.' . $extension : '');
-            \Illuminate\Support\Facades\Storage::disk('private')->copy($attachment->file_path, $newPath);
+            $newPath = 'task_attachments/' . Str::random(40) . ($extension ? '.' . $extension : '');
+            Storage::disk('private')->copy($attachment->file_path, $newPath);
             $new->attachments()->create([
-                'user_id'           => auth()->id(),
-                'task_id'           => $new->id,
+                'user_id'           => $preserveOwnership ? $attachment->user_id : auth()->id(),
                 'file_path'         => $newPath,
                 'original_filename' => $attachment->original_filename,
                 'mime_type'         => $attachment->mime_type,
@@ -307,9 +350,30 @@ class Task extends Model
             ]);
         }
 
+        if ($withChildren) {
+            $children = $childFilter ? $this->children->filter($childFilter) : $this->children;
+            foreach ($children as $child) {
+                $newChild = $child->duplicate(
+                    overrides: array_merge($childOverrides, ['parent_id' => $new->id]),
+                    withChildren: true,
+                    childFilter: $childFilter,
+                    childOverrides: $childOverrides,
+                    preserveOwnership: $preserveOwnership,
+                    afterChildCreate: $afterChildCreate,
+                );
+                if ($afterChildCreate) {
+                    $afterChildCreate($child, $newChild);
+                }
+            }
+        }
+
         return $new;
     }
 
+    /**
+     * Format a duration in minutes as a human-readable string (e.g. "2h 20m").
+     * Returns null if $minutes is null or zero.
+     */
     public static function formatDuration(?int $minutes): ?string
     {
         if (!$minutes) {

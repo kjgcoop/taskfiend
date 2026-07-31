@@ -262,6 +262,29 @@ Test user already created with API key generated.
 - **Tests**: `tests/Unit/VisibilityScopeTest.php`, `tests/Unit/QuickAddParserTest.php`,
   `tests/Feature/ParseDatePreviewTest.php`
 
+### Session Summary (Jul 31, 2026) — Task tree duplication consolidation
+- **`Task::duplicate()`** (`app/Models/Task.php`) is now the single implementation behind all three
+  "copy a task tree" call sites: the manual "Duplicate" button, project duplication, and recurring-task
+  rollover. Supports recursive child copying (`withChildren`, `childFilter`, `childOverrides`) and an
+  ownership mode (`preserveOwnership`) — off for user-initiated duplication (copy is attributed to
+  whoever clicked Duplicate), on for automatic system copies like recurring rollover (copy keeps the
+  original creator/assignments so completing someone else's recurring task doesn't reassign it).
+- **Bug fix**: every duplicated attachment now gets its own physical file copy. Previously, recurring
+  rollover created new attachment rows pointing at the *same* file_path as the original — deleting an
+  attachment from one occurrence deleted the underlying file out from under every other occurrence
+  sharing that path. `TaskAttachmentController::destroy()` has no reference counting, so this was a
+  real data-loss bug, not just theoretical.
+- **`Project::duplicateChildren()` and `TaskLifecycle::copySubtasksToNewTask()` removed** — both now go
+  through `Task::duplicate(withChildren: true, ...)`.
+- **Tests**: `tests/Feature/TaskDuplicationTest.php` — characterizes the ownership/status-filter
+  semantics that differ by call site (manual duplicate always reassigns to the current user and skips
+  subtasks entirely; project duplicate copies only incomplete tasks at every depth; recurring rollover
+  copies all subtasks regardless of status and preserves original ownership) and verifies the
+  attachment-sharing fix.
+- **Known pre-existing failure, unrelated to this work**: `tests/Feature/ApiTaskTest.php` has one
+  failure (`ProjectReminder::format()` called with a null format string) introduced by an unrelated
+  change already on `main` before this session started.
+
 ### Session Summary (Mar 27, 2026)
 - **Drag-and-drop task ordering** implemented (was last remaining Alpine.js feature from spec)
 - **Multi-select mode** added to task list views
