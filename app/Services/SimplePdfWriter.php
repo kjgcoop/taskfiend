@@ -5,17 +5,27 @@ namespace App\Services;
 /**
  * A minimal, dependency-free PDF writer.
  *
- * Task Fiend's daily export is a single page of plain text (a date header
- * plus a two-column bulleted task list) — well within what the 14 standard
- * PDF fonts can render without embedding anything. Pulling in a full PDF
- * library (mpdf, dompdf, browsershot, ...) for that felt like the wrong
- * trade: extra dependency weight and, for the headless-Chrome options, an
- * external binary — to lay out text we can position ourselves.
+ * Task Fiend's daily export is a single page of text and thin ruled lines (a
+ * date header plus a two-column task list with divider lines) — well within
+ * what the 14 standard PDF fonts and a handful of stroked lines can render
+ * without embedding anything. Pulling in a full PDF library (mpdf, dompdf,
+ * browsershot, ...) for that felt like the wrong trade: extra dependency
+ * weight and, for the headless-Chrome options, an external binary — to lay
+ * out text and lines we can position ourselves.
  *
  * Supports exactly what the day export needs: multiple pages, absolutely
- * positioned text lines in Helvetica or Helvetica-Bold. Text is transcoded
- * to WinAnsiEncoding (Windows-1252); characters outside that range (emoji,
- * CJK, etc.) are dropped rather than embedding a unicode font.
+ * positioned text lines in Helvetica or Helvetica-Bold (optionally gray and/or
+ * letter-spaced), and straight stroked lines (for the column/row dividers).
+ * Text is transcoded to WinAnsiEncoding (Windows-1252); characters outside
+ * that range (emoji, CJK, etc.) are dropped rather than embedding a unicode
+ * font.
+ *
+ * Every operator each public method emits is fully self-contained (color,
+ * spacing, etc. are always stated explicitly, never left to whatever the
+ * previous call happened to set) — PDF graphics state persists across BT/ET
+ * text blocks and isn't reset automatically, so relying on "whatever's
+ * already set" is how you get a task title silently inheriting the previous
+ * line's gray fill color.
  */
 class SimplePdfWriter
 {
@@ -46,16 +56,38 @@ class SimplePdfWriter
     /**
      * Draw one line of text with its baseline at ($x, $y), measured in points
      * from the bottom-left corner of the page (standard PDF coordinates).
+     *
+     * @param  float  $gray  Fill color, 0 (black) to 1 (white).
+     * @param  float  $charSpacing  Extra space between characters, in points — for letter-spaced small caps.
      */
-    public function text(float $x, float $y, string $text, string $font = 'F1', float $size = 10.0): void
+    public function text(float $x, float $y, string $text, string $font = 'F1', float $size = 10.0, float $gray = 0.0, float $charSpacing = 0.0): void
     {
         $this->currentPageOps[] = sprintf(
-            'BT /%s %s Tf %s %s Td (%s) Tj ET',
+            'BT /%s %s Tf %s g %s Tc %s %s Td (%s) Tj ET',
             $font,
             $this->num($size),
+            $this->num($gray),
+            $this->num($charSpacing),
             $this->num($x),
             $this->num($y),
             $this->escape($text)
+        );
+    }
+
+    /**
+     * Draw a straight stroked line from ($x1, $y1) to ($x2, $y2) — used for
+     * the header rule and the row/column dividers.
+     */
+    public function line(float $x1, float $y1, float $x2, float $y2, float $width = 1.0, float $gray = 0.0): void
+    {
+        $this->currentPageOps[] = sprintf(
+            "q\n%s w\n%s G\n%s %s m\n%s %s l\nS\nQ",
+            $this->num($width),
+            $this->num($gray),
+            $this->num($x1),
+            $this->num($y1),
+            $this->num($x2),
+            $this->num($y2)
         );
     }
 

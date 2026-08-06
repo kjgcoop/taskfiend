@@ -41,10 +41,13 @@ instead of checking the app on your phone.
   the page as a plain reminder of how the list was narrowed.
 - **Always incomplete tasks only,** regardless of any status filter that happens to be active on
   screen — this export is a to-do list, not an archive.
-- **Layout**: a plain bulleted two-column list on a US Letter page, sized so that folding the sheet
-  in half twice gets it down to roughly pocket size. There are no checkboxes in the PDF — the idea
-  is to cross off or highlight items by hand and throw the sheet away at the end of the day, not to
-  bring it back into the app.
+- **Layout**: a two-column list on a US Letter page — task time (if it has one) in a narrow gutter
+  on the left, a divider line under each row instead of a bullet or checkbox — sized so that folding
+  the sheet in half twice gets it down to roughly pocket size. The idea is to cross off or highlight
+  items by hand and throw the sheet away at the end of the day, not to bring it back into the app.
+- **Fills column 1 completely before starting column 2.** If everything fits in one column, the
+  second column is intentionally left blank rather than splitting the list evenly across both —
+  this keeps the reading order predictable when you're working through the page top to bottom.
 - The button is disabled whenever there's nothing to export (an empty list, or a filter that
   matches nothing).
 
