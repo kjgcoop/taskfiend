@@ -64,16 +64,11 @@
                     Export .md
                 </a>
                 @if($carbonDate->isToday())
-                    <button type="button" x-data
+                    <button type="button" x-data="dayPdfExport"
                             title="Printable list of today's tasks — mirrors the current sort and on-page filter"
                             :disabled="$store.taskCount.ready && $store.taskCount.visible === 0"
                             :class="$store.taskCount.ready && $store.taskCount.visible === 0 ? 'opacity-40 cursor-not-allowed' : 'hover:bg-gray-600'"
-                            @click="
-                                const p = new URLSearchParams(window.location.search);
-                                p.delete('date');
-                                if ($store.taskCount.filterText) { p.set('filter', $store.taskCount.filterText); } else { p.delete('filter'); }
-                                window.location = '{{ route('day.export-pdf') }}?' + p.toString();
-                            "
+                            @click="go()"
                             class="hidden sm:inline-flex items-center px-4 py-2 bg-gray-700 border border-gray-600 rounded-md font-semibold text-xs text-gray-100 uppercase tracking-widest">
                         Export PDF
                     </button>
@@ -248,6 +243,21 @@
 
     @push('scripts')
     <script nonce="{{ csp_nonce() }}">
+        // ── Export PDF button: navigate preserving current sort/reversed (already
+        // in the URL) plus the on-page filter text (client-side only, read from
+        // the shared taskCount store — see task-list.blade.php's filterTasks()).
+        document.addEventListener('alpine:init', () => {
+            Alpine.data('dayPdfExport', () => ({
+                go() {
+                    const p = new URLSearchParams(window.location.search);
+                    p.delete('date');
+                    const filterText = Alpine.store('taskCount').filterText;
+                    if (filterText) { p.set('filter', filterText); } else { p.delete('filter'); }
+                    window.location.href = '{{ route('day.export-pdf') }}?' + p.toString();
+                }
+            }));
+        });
+
         // ── Stale-page banner ────────────────────────────────────────────────────
         document.addEventListener('alpine:init', () => {
             Alpine.data('staleBanner', function () { return {
