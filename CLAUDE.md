@@ -251,8 +251,9 @@ Test user already created with API key generated.
 ### Session Summary (Aug 6, 2026) — Daily PDF export
 - **Feature**: "Export PDF" button on the day view (today only, `dashboard/day.blade.php` header, next to
   "Export .md"). Downloads a printable, foldable checklist of the day's incomplete tasks —
-  `taskfiend-day-YYYY-MM-DD.pdf` — designed to reduce phone-checking: a plain bulleted two-column
-  list on a US Letter page sized to fold down to pocket size, meant to be marked up with a
+  `taskfiend-day-YYYY-MM-DD.pdf` — designed to reduce phone-checking: an editorial-style two-column
+  list (eyebrow "TODAY" label, bold date, rule, time gutter, divider line under each row instead of
+  a bullet) on a US Letter page sized to fold down to pocket size, meant to be marked up with a
   highlighter and thrown away at end of day (no checkboxes, no completion state in the PDF itself).
   Scoped to *today only* — supporting arbitrary days runs into recurring tasks anticipated for that
   date that don't exist as rows yet, which was explicitly deferred.
@@ -276,8 +277,8 @@ Test user already created with API key generated.
   names are dropped, not embedded — an accepted limitation of using only the standard 14 fonts.
 - **`App\Services\DayPdfExporter`** — lays out the two-column list itself (fills column 1
   top-to-bottom before spilling into column 2, matching how you'd read and highlight it after
-  folding) using real Helvetica glyph-width metrics for word-wrapping, rather than relying on a
-  renderer's CSS multi-column support.
+  folding — deliberately *not* CSS-style balanced columns) using real Helvetica glyph-width metrics
+  for word-wrapping, rather than relying on a renderer's CSS multi-column support.
 - **Verification**: `tests/Unit/TaskTextFilterTest.php` covers the filter port (name/project/tag/
   location/user tokens, `not:`, quoted phrases, combined tokens). No PHPUnit run could be confirmed
   in this sandbox (see above) — logic was instead exercised via a real Eloquent-backed script
@@ -289,6 +290,21 @@ Test user already created with API key generated.
   in the browser — Alpine's CSP-safe build (see "Key Patterns Used" above) can't parse JS statements
   in a directive. Fixed by moving the logic into a `dayPdfExport` Alpine component method, called via
   `@click="go()"`.
+- **Follow-up redesign**: reworked the PDF's visual layout to match a mockup the user had a design
+  tool produce — eyebrow "TODAY" label, big bold date, a dark header rule, a time gutter per row
+  (instead of the time being folded into the task text), a light divider line under every row
+  instead of a bullet, and a light vertical divider between the columns running the full column
+  height regardless of how much content is in either column. Required adding real drawing
+  primitives to `SimplePdfWriter` (`line()` for strokes, plus gray-fill and letter-spacing support on
+  `text()`) — every call now states its own color/spacing explicitly rather than relying on
+  whatever the previous call left in the PDF graphics state, since state persists across `BT`/`ET`
+  text blocks and isn't auto-reset. Confirmed the column-fill behavior is deliberately *not* what
+  the reference mockup did — the mockup balanced ~10/10 across two columns via what looks like
+  browser-default CSS column balancing, whereas Task Fiend's is supposed to fill column 1
+  completely before spilling into column 2 (see the earlier "not CSS-style balanced columns" note)
+  — confirmed visually with a 20-item sample (matches the mockup's content exactly, single column,
+  second column empty) and a 50-item sample (splits 35/15, i.e. column 1 filled to its real capacity
+  before column 2 got anything).
 
 ### Session Summary (Jul 11, 2026) — Deduplication refactor
 - **`Task::visibleTo($userId)` scope** (`app/Models/Task.php`) — the canonical creator-or-assignee

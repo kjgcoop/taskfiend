@@ -6,9 +6,11 @@ use Carbon\Carbon;
 use Illuminate\Support\Collection;
 
 /**
- * Builds the printable "today's task list" PDF: a date header, an optional
- * meta line describing any active filter/sort, and the incomplete tasks in
- * a two-column bulleted list sized to fold down to pocket size.
+ * Builds the printable "today's task list" PDF: an eyebrow label, a big bold
+ * date, an optional meta line describing any active filter/sort, a rule, and
+ * the incomplete tasks in a two-column list — a time gutter on the left of
+ * each column, a divider line under every row instead of a bullet, and a
+ * vertical divider between the columns running the full column height.
  *
  * Layout is hand-laid-out (via SimplePdfWriter) rather than left to a CSS
  * multi-column engine: it gives us the top-to-bottom-then-across fill order
@@ -19,12 +21,32 @@ class DayPdfExporter
 {
     private const PAGE_W = 612.0; // US Letter, points (72/inch)
     private const PAGE_H = 792.0;
-    private const MARGIN = 40.0;
-    private const COLUMN_GAP = 28.0;
-    private const FONT_SIZE = 10.5;
-    private const LINE_HEIGHT = 15.0;
-    private const HEADER_TITLE_SIZE = 13.0;
+    private const MARGIN = 48.0;
+    private const COLUMN_GAP = 32.0;
+
+    private const GUTTER_WIDTH = 46.0;      // reserved for the time label
+    private const GUTTER_TEXT_GAP = 14.0;   // space between the gutter and the task text
+
+    private const FONT_SIZE = 10.0;
+    private const LINE_HEIGHT = 14.0;
+
+    private const TIME_FONT_SIZE = 8.5;
+    private const TEXT_GRAY = 0.0;
+    private const META_GRAY = 0.42;
+    private const TIME_GRAY = 0.42;
+
+    private const ROW_GAP_BELOW_TEXT = 7.0;  // last text baseline -> row divider
+    private const ROW_GAP_ABOVE_NEXT = 11.0; // row divider -> next row's first baseline
+
+    private const ROW_DIVIDER_GRAY  = 0.82;
+    private const ROW_DIVIDER_WIDTH = 0.75;
+
+    private const HEADER_EYEBROW_SIZE = 8.0;
+    private const HEADER_EYEBROW_TRACKING = 1.4;
+    private const HEADER_TITLE_SIZE = 19.0;
     private const HEADER_META_SIZE = 8.5;
+    private const HEADER_RULE_GRAY  = 0.12;
+    private const HEADER_RULE_WIDTH = 1.3;
 
     /** Standard Helvetica glyph widths (per 1000 em units), ASCII 32–126. */
     private const HELVETICA_WIDTHS = [
@@ -51,68 +73,88 @@ class DayPdfExporter
         $pdf = new SimplePdfWriter(self::PAGE_W, self::PAGE_H);
 
         $columnWidth = (self::PAGE_W - 2 * self::MARGIN - self::COLUMN_GAP) / 2;
-        $bulletWidth = self::textWidth('-  ', self::FONT_SIZE);
+        $textWidth   = $columnWidth - self::GUTTER_WIDTH - self::GUTTER_TEXT_GAP;
+        $dividerX    = self::MARGIN + $columnWidth + self::COLUMN_GAP / 2;
+        $col1X       = self::MARGIN + $columnWidth + self::COLUMN_GAP;
+        $bottomY     = self::MARGIN;
 
-        $lines = [];
-        foreach ($tasks as $task) {
-            $label = $task->time
-                ? Carbon::parse($task->time)->format('g:i A') . '  ' . $task->name
-                : $task->name;
+        $contentTopFirstPage = self::drawHeader($pdf, $date, $filterQuery, $sort, $reversed);
+        $contentTopOtherPages = self::PAGE_H - self::MARGIN - 10.0;
 
-            $wrapped = self::wrap($label, $columnWidth - $bulletWidth, self::FONT_SIZE);
-            foreach ($wrapped as $i => $text) {
-                $lines[] = ['text' => $text, 'first' => $i === 0];
-            }
-        }
-
-        $metaLine  = self::metaLine($filterQuery, $sort, $reversed);
-        $headerRows = $metaLine ? 2 : 1;
-        $topFirstPage = self::PAGE_H - self::MARGIN - ($headerRows * self::LINE_HEIGHT) - 6;
-        $topOtherPages = self::PAGE_H - self::MARGIN;
-        $bottom = self::MARGIN;
-
-        $linesPerColumnFirst = max(1, (int) floor(($topFirstPage - $bottom) / self::LINE_HEIGHT) + 1);
-        $linesPerColumnOther = max(1, (int) floor(($topOtherPages - $bottom) / self::LINE_HEIGHT) + 1);
-
-        // Header (page 1 only).
-        $pdf->text(self::MARGIN, self::PAGE_H - self::MARGIN, $date->format('l, F j, Y'), 'F2', self::HEADER_TITLE_SIZE);
-        if ($metaLine) {
-            $pdf->text(self::MARGIN, self::PAGE_H - self::MARGIN - self::LINE_HEIGHT, $metaLine, 'F1', self::HEADER_META_SIZE);
-        }
-
-        if ($lines === []) {
-            $pdf->text(self::MARGIN, $topFirstPage, 'No tasks.', 'F1', self::FONT_SIZE);
+        if ($tasks->isEmpty()) {
+            $pdf->text(self::MARGIN, $contentTopFirstPage, 'No tasks.', 'F1', self::FONT_SIZE, self::TEXT_GRAY);
             return $pdf->output();
         }
 
-        $linesPerColumn = $linesPerColumnFirst;
-        $top = $topFirstPage;
-        $col = 0;
-        $row = 0;
-        $x = self::MARGIN;
-        $y = $top;
+        $rows = $tasks->map(function ($task) use ($textWidth) {
+            return [
+                'time'  => $task->time ? Carbon::parse($task->time)->format('g:i A') : null,
+                'lines' => self::wrap($task->name, $textWidth, self::FONT_SIZE),
+            ];
+        });
 
-        foreach ($lines as $line) {
-            if ($row >= $linesPerColumn) {
+        $col = 0;
+        $x = self::MARGIN;
+        $columnTop = $contentTopFirstPage;
+        $y = $columnTop;
+        $pdf->line($dividerX, $columnTop, $dividerX, $bottomY, self::ROW_DIVIDER_WIDTH, self::ROW_DIVIDER_GRAY);
+
+        foreach ($rows as $row) {
+            $numLines   = count($row['lines']);
+            $lastLineY  = $y - ($numLines - 1) * self::LINE_HEIGHT;
+            $fits       = ($lastLineY - self::ROW_GAP_BELOW_TEXT) >= $bottomY;
+            $atFreshTop = ($y === $columnTop);
+
+            if (!$fits && !$atFreshTop) {
                 $col++;
-                $row = 0;
                 if ($col > 1) {
                     $pdf->newPage();
-                    $linesPerColumn = $linesPerColumnOther;
-                    $top = $topOtherPages;
                     $col = 0;
+                    $columnTop = $contentTopOtherPages;
+                    $pdf->line($dividerX, $columnTop, $dividerX, $bottomY, self::ROW_DIVIDER_WIDTH, self::ROW_DIVIDER_GRAY);
                 }
-                $x = $col === 0 ? self::MARGIN : self::MARGIN + $columnWidth + self::COLUMN_GAP;
-                $y = $top;
+                $x = $col === 0 ? self::MARGIN : $col1X;
+                $y = $columnTop;
+                $lastLineY = $y - ($numLines - 1) * self::LINE_HEIGHT;
             }
 
-            $prefix = $line['first'] ? '-  ' : '   ';
-            $pdf->text($x, $y, $prefix . $line['text'], 'F1', self::FONT_SIZE);
-            $y -= self::LINE_HEIGHT;
-            $row++;
+            if ($row['time']) {
+                $pdf->text($x, $y, $row['time'], 'F1', self::TIME_FONT_SIZE, self::TIME_GRAY);
+            }
+            foreach ($row['lines'] as $i => $line) {
+                $pdf->text($x + self::GUTTER_WIDTH + self::GUTTER_TEXT_GAP, $y - $i * self::LINE_HEIGHT, $line, 'F1', self::FONT_SIZE, self::TEXT_GRAY);
+            }
+
+            $dividerY = $lastLineY - self::ROW_GAP_BELOW_TEXT;
+            $pdf->line($x, $dividerY, $x + $columnWidth, $dividerY, self::ROW_DIVIDER_WIDTH, self::ROW_DIVIDER_GRAY);
+
+            $y = $dividerY - self::ROW_GAP_ABOVE_NEXT;
         }
 
         return $pdf->output();
+    }
+
+    /** Draws the eyebrow/title/meta/rule block and returns the y where the task list should start. */
+    private static function drawHeader(SimplePdfWriter $pdf, Carbon $date, ?string $filterQuery, string $sort, bool $reversed): float
+    {
+        $eyebrowY = self::PAGE_H - self::MARGIN - self::HEADER_EYEBROW_SIZE;
+        $pdf->text(self::MARGIN, $eyebrowY, 'TODAY', 'F1', self::HEADER_EYEBROW_SIZE, self::META_GRAY, self::HEADER_EYEBROW_TRACKING);
+
+        $titleY = $eyebrowY - 24.0;
+        $pdf->text(self::MARGIN, $titleY, $date->format('l, F j, Y'), 'F2', self::HEADER_TITLE_SIZE, 0.0);
+
+        $lastY = $titleY;
+        $metaLine = self::metaLine($filterQuery, $sort, $reversed);
+        if ($metaLine) {
+            $metaY = $titleY - 20.0;
+            $pdf->text(self::MARGIN, $metaY, $metaLine, 'F1', self::HEADER_META_SIZE, self::META_GRAY);
+            $lastY = $metaY;
+        }
+
+        $ruleY = $lastY - 16.0;
+        $pdf->line(self::MARGIN, $ruleY, self::PAGE_W - self::MARGIN, $ruleY, self::HEADER_RULE_WIDTH, self::HEADER_RULE_GRAY);
+
+        return $ruleY - 24.0;
     }
 
     /** Raw filter/sort description — deliberately not humanized (same tokens the user typed). */
