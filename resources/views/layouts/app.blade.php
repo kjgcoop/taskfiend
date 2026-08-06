@@ -808,12 +808,13 @@
                     this.projectSearch = p ? p.name : '';
                     this.projectComboOpen = true;
                     this.projectComboActiveIndex = -1;
-                    this.$nextTick(() => {
+                    // See startEdit() above for why this waits for a paint, not just a microtask.
+                    this.$nextTick(() => requestAnimationFrame(() => {
                         if (this.$refs.project_idInput) {
                             this.$refs.project_idInput.focus();
                             this.$refs.project_idInput.select();
                         }
-                    });
+                    }));
                 },
 
                 cancelProjectEditOnEscape(event) {
@@ -842,7 +843,14 @@
 
                 startEdit(field) {
                     this.editing[field] = true;
-                    this.$nextTick(() => this.$refs[field + 'Input']?.focus());
+                    // $nextTick only waits for Alpine's DOM patch (a microtask), not for the
+                    // browser to actually lay out/paint the now-visible element. On Safari/iOS,
+                    // calling focus() before that layout pass silently fails to seat the caret
+                    // (the element focuses in a technical sense but shows no cursor/keyboard)
+                    // until a second, later tap gives it a realized box to focus into. Wrapping
+                    // in requestAnimationFrame after nextTick guarantees a layout/paint has
+                    // happened first, so the cursor lands on the first click everywhere.
+                    this.$nextTick(() => requestAnimationFrame(() => this.$refs[field + 'Input']?.focus()));
                 },
 
                 clearAndSave(field) { this.fields[field] = ''; this.saveField(field); },
@@ -853,12 +861,13 @@
                     this.datePreview = '';
                     this.dateError = '';
                     this.datePast = false;
-                    this.$nextTick(() => {
+                    // See startEdit() above for why this waits for a paint, not just a microtask.
+                    this.$nextTick(() => requestAnimationFrame(() => {
                         if (this.$refs.dateInput) {
                             this.$refs.dateInput.focus();
                             this.$refs.dateInput.select();
                         }
-                    });
+                    }));
                 },
 
                 cancelEdit(field) {
