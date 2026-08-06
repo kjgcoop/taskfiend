@@ -40,6 +40,8 @@ The `testing` connection is defined in `config/database.php` and always points t
 
 **Auth split** — Session-based auth for web routes, hashed-token auth for API routes. The `auth.api` middleware (`app/Http/Middleware/AuthenticateApiKey.php`) validates bearer tokens against bcrypt hashes in `api_keys` and checks the user's enabled status.
 
+**Alpine.js runs in CSP-safe mode** — directive expressions (`x-data`, `@click`, `:class`, ...) can only be a single JS expression, not statements like `const`/`if`. Multi-step logic needs to live in an `Alpine.data()` component method instead. See [Alpine.js & CSP](/docs/developers/frontend-csp/) for the failure mode and the fix pattern.
+
 ---
 
 ## Adding pages to Other Links

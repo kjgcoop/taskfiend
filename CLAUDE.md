@@ -205,6 +205,17 @@ Configured in `config/database.php`:
 - **Change Logging**: All CRUD operations log to change_logs table
 - **No Deletion**: Tasks/projects cannot be deleted, only archived (per spec)
 - **File Storage**: Uses `private` disk for task_attachments and comment_attachments
+- **Alpine.js is loaded in CSP-safe mode** (no `unsafe-eval` in the CSP — see `csp_nonce()` on every
+  `<script>` tag). Its directive expressions (`x-data`, `@click`, `:class`, etc.) go through Alpine's
+  restricted, non-`eval` parser, which only understands a single JS *expression* — member access,
+  comparisons, ternaries, function calls. It does **not** understand JS *statements*: no `const`/`let`,
+  no `if`, no semicolon-separated blocks. Putting a multi-statement handler directly in a directive
+  fails silently on click with a browser-console-only error (`Uncaught Error: CSP Parser Error:
+  Unexpected token: ...`) — nothing shows on the page itself. Fix: put the logic in a method on an
+  `Alpine.data()` component (registered on `alpine:init`) and call it with a bare expression, e.g.
+  `@click="go()"` — see `dayPdfExport` in `resources/views/dashboard/day.blade.php`, or the
+  established `sortBy()` / `staleBanner` pattern in the same file and `task-list.blade.php`. Full
+  writeup: [Alpine.js & CSP](docs/content/docs/developers/frontend-csp.md).
 
 ## Current State
 **Application is FULLY FUNCTIONAL and ready to use!**
@@ -273,6 +284,11 @@ Test user already created with API key generated.
   against an in-memory sqlite DB (services, controller action, and generated PDF's xref table were
   all validated directly). Whoever next has a working `composer install` should run the suite once
   to confirm.
+- **Follow-up fix**: the first version of the Export PDF button wrote its click handler as an inline
+  multi-statement block (`const p = ...; if (...) {...}`) directly in `@click`. That silently failed
+  in the browser — Alpine's CSP-safe build (see "Key Patterns Used" above) can't parse JS statements
+  in a directive. Fixed by moving the logic into a `dayPdfExport` Alpine component method, called via
+  `@click="go()"`.
 
 ### Session Summary (Jul 11, 2026) — Deduplication refactor
 - **`Task::visibleTo($userId)` scope** (`app/Models/Task.php`) — the canonical creator-or-assignee
