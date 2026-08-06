@@ -9,6 +9,8 @@ use App\Models\ProjectReminder;
 use App\Models\Tag;
 use App\Models\Task;
 use App\Models\User;
+use App\Services\DayPdfExporter;
+use App\Services\TaskTextFilter;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -37,6 +39,21 @@ class DashboardController extends Controller
             'duration' => $query->orderByRaw($reversed ? 'CASE WHEN duration_minutes IS NULL THEN 1 ELSE 0 END, duration_minutes DESC' : 'CASE WHEN duration_minutes IS NULL THEN 1 ELSE 0 END, duration_minutes ASC'),
             default    => $query->orderByRaw($reversed ? 'date IS NULL, date DESC, time IS NULL, time DESC, created_at DESC' : 'date IS NULL, date ASC, time IS NULL, time ASC, created_at ASC'),
         };
+    }
+
+    /** The incomplete-task query behind the day view for a given date (also used by the PDF export). */
+    private function incompleteTasksForDate(string $dateStr, string $sort, bool $reversed)
+    {
+        $query = Task::query()
+            ->visibleTo(Auth::id())
+            ->where('status', '!=', 'archived')
+            ->where('status', '!=', 'done')
+            ->where('date', $dateStr)
+            ->whereHas('project', fn($pq) => $pq->whereNotIn('status', ['archived', 'done']))
+            ->with(['creator', 'project', 'tags', 'assignees', 'attachments', 'comments', 'completionLog.user']);
+        $this->applySortOrder($query, $sort, $reversed);
+
+        return $query;
     }
 
     /** Projects, tags, users, and locations needed by the quick-add autocomplete. */
@@ -246,6 +263,41 @@ $incomplete = Task::visibleTo(Auth::id())
         ]);
     }
 
+    /**
+     * Printable PDF of today's incomplete task list, for keeping the day's
+     * tasks on paper instead of a phone. Always today only — extending this
+     * to arbitrary days runs into recurring tasks that are anticipated for
+     * that date but don't exist as rows yet.
+     *
+     * Mirrors whatever's currently on screen: same sort/reversed as the day
+     * view (already round-tripped through the URL), plus the on-page text
+     * filter, which is client-side only and so is passed explicitly via the
+     * `filter` param (see day.blade.php's Export PDF button).
+     */
+    public function exportDayPdf(Request $request)
+    {
+        $dateStr  = today()->format('Y-m-d');
+        $sort     = $request->input('sort', 'date');
+        $reversed = $request->boolean('reversed');
+        $filter   = $request->input('filter');
+
+        $tasks = TaskTextFilter::apply(
+            $this->incompleteTasksForDate($dateStr, $sort, $reversed)->get(),
+            $filter
+        );
+
+        if ($tasks->isEmpty()) {
+            return back()->with('error', 'No tasks to export.');
+        }
+
+        $pdf = DayPdfExporter::build(today(), $tasks, $filter, $sort, $reversed);
+
+        return response($pdf, 200, [
+            'Content-Type'        => 'application/pdf',
+            'Content-Disposition' => 'attachment; filename="taskfiend-day-' . $dateStr . '.pdf"',
+        ]);
+    }
+
     public function day(Request $request)
     {
         $date = $request->input('date', today()->format('Y-m-d'));
@@ -260,15 +312,7 @@ $incomplete = Task::visibleTo(Auth::id())
         $sort     = $request->input('sort', 'date');
         $reversed = $request->boolean('reversed');
 
-        $tasksQuery = Task::query()
-            ->visibleTo(Auth::id())
-            ->where('status', '!=', 'archived')
-            ->where('status', '!=', 'done')
-            ->where('date', $dateStr)
-            ->whereHas('project', fn($pq) => $pq->whereNotIn('status', ['archived', 'done']))
-            ->with(['creator', 'project', 'tags', 'assignees', 'attachments', 'comments', 'completionLog.user']);
-        $this->applySortOrder($tasksQuery, $sort, $reversed);
-        $tasks = $tasksQuery->get();
+        $tasks = $this->incompleteTasksForDate($dateStr, $sort, $reversed)->get();
 
         $perPage = (int) config('taskfiend.pagination_per_page');
 

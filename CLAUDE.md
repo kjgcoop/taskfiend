@@ -237,6 +237,43 @@ Test user already created with API key generated.
 
 ## Important Notes
 
+### Session Summary (Aug 6, 2026) — Daily PDF export
+- **Feature**: "Export PDF" button on the day view (today only, `dashboard/day.blade.php` header, next to
+  "Export .md"). Downloads a printable, foldable checklist of the day's incomplete tasks —
+  `taskfiend-day-YYYY-MM-DD.pdf` — designed to reduce phone-checking: a plain bulleted two-column
+  list on a US Letter page sized to fold down to pocket size, meant to be marked up with a
+  highlighter and thrown away at end of day (no checkboxes, no completion state in the PDF itself).
+  Scoped to *today only* — supporting arbitrary days runs into recurring tasks anticipated for that
+  date that don't exist as rows yet, which was explicitly deferred.
+- **Mirrors the on-page view exactly**: same sort/reversed as the day view (already in the URL) plus
+  the on-page text filter box. That filter is client-side-only (Alpine, never touches the URL — see
+  `task-list.blade.php`'s `filterTasks()`), so it's surfaced via `Alpine.store('taskCount').filterText`
+  and passed to the export as a `filter` query param. **`App\Services\TaskTextFilter`** is a
+  server-side line-for-line port of that same JS tokenizer/matcher (`#project`, `@tag`, `+location`,
+  `&user`, `not:` prefix, quoted phrases) — keep the two in sync if the filter syntax changes.
+  Always restricts to incomplete tasks regardless of any on-screen status filter (an intentional
+  fixed property of this export, not a bug — see `DashboardController::exportDayPdf()`).
+- **`App\Services\SimplePdfWriter`** — a small dependency-free PDF byte-writer (no mpdf/dompdf/
+  browsershot). This sandbox's `composer require` is blocked by egress policy (packagist.org is not
+  on the allowed-host list), so no new Composer package could be installed or verified here; a
+  hand-rolled writer avoids that dependency entirely rather than adding an unverified one. It
+  supports exactly what this export needs — multiple pages, absolutely-positioned text lines in the
+  standard Helvetica/Helvetica-Bold fonts (no embedding) — and was validated with a from-scratch
+  xref/object-offset consistency check plus content assertions (see below), since PHPUnit itself
+  isn't installed in this sandbox either (dev Composer deps aren't present, same root cause).
+  Text is transcoded to WinAnsiEncoding; characters outside that range (emoji, CJK, etc.) in task
+  names are dropped, not embedded — an accepted limitation of using only the standard 14 fonts.
+- **`App\Services\DayPdfExporter`** — lays out the two-column list itself (fills column 1
+  top-to-bottom before spilling into column 2, matching how you'd read and highlight it after
+  folding) using real Helvetica glyph-width metrics for word-wrapping, rather than relying on a
+  renderer's CSS multi-column support.
+- **Verification**: `tests/Unit/TaskTextFilterTest.php` covers the filter port (name/project/tag/
+  location/user tokens, `not:`, quoted phrases, combined tokens). No PHPUnit run could be confirmed
+  in this sandbox (see above) — logic was instead exercised via a real Eloquent-backed script
+  against an in-memory sqlite DB (services, controller action, and generated PDF's xref table were
+  all validated directly). Whoever next has a working `composer install` should run the suite once
+  to confirm.
+
 ### Session Summary (Jul 11, 2026) — Deduplication refactor
 - **`Task::visibleTo($userId)` scope** (`app/Models/Task.php`) — the canonical creator-or-assignee
   visibility rule. Replaced ~30 hand-copied query closures across 9 controllers. Always use this

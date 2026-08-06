@@ -31,6 +31,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/calendar', [DashboardController::class, 'calendar'])->name('calendar');
     Route::get('/day', [DashboardController::class, 'day'])->name('day');
     Route::get('/day/export-markdown', [DashboardController::class, 'exportDayMarkdown'])->name('day.export-markdown');
+    Route::get('/day/export-pdf', [DashboardController::class, 'exportDayPdf'])->name('day.export-pdf');
     Route::get('/day/completed-tasks', [DashboardController::class, 'dayCompletedTasks'])->name('day.completedTasks');
     Route::get('/day/archived-tasks', [DashboardController::class, 'dayArchivedTasks'])->name('day.archivedTasks');
 

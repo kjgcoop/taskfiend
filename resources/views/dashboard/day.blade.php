@@ -63,6 +63,21 @@
                 <a href="{{ route('day.export-markdown') }}?date={{ $carbonDate->format('Y-m-d') }}" class="hidden sm:inline-flex items-center px-4 py-2 bg-gray-700 border border-gray-600 rounded-md font-semibold text-xs text-gray-100 uppercase tracking-widest hover:bg-gray-600">
                     Export .md
                 </a>
+                @if($carbonDate->isToday())
+                    <button type="button" x-data
+                            title="Printable list of today's tasks — mirrors the current sort and on-page filter"
+                            :disabled="$store.taskCount.ready && $store.taskCount.visible === 0"
+                            :class="$store.taskCount.ready && $store.taskCount.visible === 0 ? 'opacity-40 cursor-not-allowed' : 'hover:bg-gray-600'"
+                            @click="
+                                const p = new URLSearchParams(window.location.search);
+                                p.delete('date');
+                                if ($store.taskCount.filterText) { p.set('filter', $store.taskCount.filterText); } else { p.delete('filter'); }
+                                window.location = '{{ route('day.export-pdf') }}?' + p.toString();
+                            "
+                            class="hidden sm:inline-flex items-center px-4 py-2 bg-gray-700 border border-gray-600 rounded-md font-semibold text-xs text-gray-100 uppercase tracking-widest">
+                        Export PDF
+                    </button>
+                @endif
             </div>
         </div>
     </x-slot>

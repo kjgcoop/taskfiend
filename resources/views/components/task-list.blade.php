@@ -15,7 +15,8 @@
             total: 0,
             visible: 0,
             filtered: false,
-            ready: false
+            ready: false,
+            filterText: '' // raw text from the on-page filter box; read by the Export PDF button
         });
 
         Alpine.store('bulkEdit', {
@@ -729,6 +730,7 @@
                     this.noResults = false;
                     Alpine.store('taskCount').visible  = container.querySelectorAll('[data-filterable]').length;
                     Alpine.store('taskCount').filtered = false;
+                    Alpine.store('taskCount').filterText = '';
                     window.dispatchEvent(new CustomEvent('filter-updated'));
                     return;
                 }
@@ -787,6 +789,7 @@
                 this.noResults = visibleCount === 0 && container.querySelectorAll('[data-filterable]').length > 0;
                 Alpine.store('taskCount').visible  = visibleCount;
                 Alpine.store('taskCount').filtered = true;
+                Alpine.store('taskCount').filterText = this.query.trim();
                 window.dispatchEvent(new CustomEvent('filter-updated'));
             }
         }
