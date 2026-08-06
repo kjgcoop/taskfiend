@@ -10,6 +10,7 @@ title: "Features"
     - Toggle between layouts with the buttons on the right extreme of the page, toward the top. 
         - **List view** - pretty much what it sounds like.
         - **Agenda view** - use the time-unit dropdown to control how finely the agenda is divided. 
+    - **Exports** - **Export .md** downloads a plain markdown checklist of the day being viewed; **Export PDF** downloads a printable, foldable checklist of *today's* incomplete tasks, mirroring the current sort and filter, meant for keeping a paper to-do list instead of checking your phone (see [Day Exports](/docs/features/day-export/))
 - **Natural language dates & recurrence** - type natural language in the quick-add bar and dates/recurrence are parsed automatically (see below for full syntax)
 - **Markdown** is supported in task descriptions and comments; `` `code` `` spans are also supported in task titles
 - **Links** - link to other tasks, projects, tags, or locations from any description or comment. 
