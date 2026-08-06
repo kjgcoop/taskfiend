@@ -204,6 +204,7 @@ $_panelTaskJson = json_encode([
                 <div class="flex gap-2 items-start">
                     <div class="flex-1">
                         <input type="text" x-model="dateText" x-ref="dateInput"
+                               @input="datePickedIso = null"
                                @input.debounce.300ms="previewDate()"
                                @keydown.enter.prevent="saveDateField()"
                                @keydown.escape.stop="cancelEdit('date')"

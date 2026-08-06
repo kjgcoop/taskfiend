@@ -748,13 +748,19 @@ class TaskController extends Controller
                     return response()->json(['success' => false, 'message' => 'Recurrence pattern is too long.'], 422);
                 }
 
-                // Parse natural language dates
+                // Parse natural language dates. Skip re-parsing when the value is already a
+                // plain ISO date (e.g. sent by the date-picker widget) — mirrors update()
+                // above. Re-parsing a human-formatted string like "Tuesday, August 11, 2026"
+                // is unsafe: the weekday-name pattern is checked before the full-date pattern,
+                // so it would resolve to "next Tuesday" and silently discard the real date.
                 if ($field === 'date' && $value) {
-                    $parsed = (new DateParser())->resolveDate($value);
-                    if (!$parsed) {
-                        return response()->json(['success' => false, 'message' => "Could not parse date: \"{$value}\". Try formats like: tomorrow, next friday, march 15, 3/15, 2026-03-15"], 400);
+                    if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $value)) {
+                        $parsed = (new DateParser())->resolveDate($value);
+                        if (!$parsed) {
+                            return response()->json(['success' => false, 'message' => "Could not parse date: \"{$value}\". Try formats like: tomorrow, next friday, march 15, 3/15, 2026-03-15"], 400);
+                        }
+                        $value = $parsed->format('Y-m-d');
                     }
-                    $value = $parsed->format('Y-m-d');
 
                     // Reject dates in the past (today is always valid), but only when the
                     // date is actually being changed — not when resaving a task that already

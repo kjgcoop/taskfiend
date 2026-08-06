@@ -740,6 +740,7 @@
                 },
                 original: {},
                 dateText: '',
+                datePickedIso: null,
                 datePreview: '',
                 dateError: '',
                 datePast: false,
@@ -867,6 +868,7 @@
                     }
                     if (field === 'date') {
                         this.dateText = this.original.dateText || '';
+                        this.datePickedIso = null;
                         this.datePreview = '';
                         this.dateError = '';
                         this.datePast = false;
@@ -976,6 +978,13 @@
                     }
                     const d = new Date(value + 'T12:00:00');
                     this.dateText = d.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+                    // Remember the exact ISO date the picker gave us. The display text above
+                    // includes a weekday name ("Tuesday, August 11, 2026"), and if that string
+                    // is later re-parsed by the free-text date parser, its weekday pattern is
+                    // checked before its full-date pattern — so it resolves to "next Tuesday"
+                    // and silently discards the actual picked date. Sending this ISO value
+                    // straight through on save avoids that re-parse entirely.
+                    this.datePickedIso = value;
                     this.fields.date = value; this.dateError = ''; this.projects = null;
                     try {
                         const response = await fetch('/tasks/parse-date', {
@@ -991,19 +1000,24 @@
 
                 async saveDateField() {
                     const input = this.dateText.trim();
-                    if (!input) { this.fields.date = ''; await this.saveField('date'); return; }
-                    this.fields.date = input;
+                    if (!input) { this.fields.date = ''; this.datePickedIso = null; await this.saveField('date'); return; }
+                    this.fields.date = this.datePickedIso || input;
                     await this.saveField('date');
                 },
 
                 async clearDate() {
-                    this.dateText = ''; this.fields.date = ''; this.datePreview = ''; this.dateError = ''; this.datePast = false; this.projects = null;
+                    this.dateText = ''; this.datePickedIso = null; this.fields.date = ''; this.datePreview = ''; this.dateError = ''; this.datePast = false; this.projects = null;
                     await this.saveField('date');
                 },
 
                 async _saveFieldRequest(field) {
                     if (field === 'name') this.fields.name = this.fields.name.replace(/[@#][\w-]+\s*/g, '').trim();
-                    if (field === 'date') { const input = this.dateText.trim(); this.fields.date = input || ''; }
+                    if (field === 'date') {
+                        // Prefer the exact ISO value from the date-picker widget over
+                        // re-parsing the human-readable display text — see pickDate().
+                        const input = this.dateText.trim();
+                        this.fields.date = this.datePickedIso || input || '';
+                    }
 
                     const formData = new FormData();
                     formData.append('_token', document.querySelector('meta[name="csrf-token"]').content);
