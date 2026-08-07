@@ -40,12 +40,17 @@ Alpine.data('templateNameEditor', function () {
         startEdit() {
             this.original = this.name;
             this.editing = true;
-            this.$nextTick(() => {
+            // $nextTick only waits for Alpine's DOM patch (a microtask), not for the browser to
+            // actually lay out/paint the now-visible element — focusing before that paint can
+            // silently fail to seat the cursor until a second, later tap. See
+            // taskPanelEditor.startEdit() in resources/views/layouts/app.blade.php for the fuller
+            // writeup; wrapping in requestAnimationFrame after nextTick fixes it here too.
+            this.$nextTick(() => requestAnimationFrame(() => {
                 if (this.$refs.nameInput) {
                     this.$refs.nameInput.focus();
                     this.$refs.nameInput.select();
                 }
-            });
+            }));
         },
 
         cancel() {

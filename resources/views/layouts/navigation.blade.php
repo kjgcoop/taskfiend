@@ -548,7 +548,9 @@ document.addEventListener('alpine:init', () => {
         toggle() {
             this.open = !this.open;
             if (this.open) {
-                this.$nextTick(() => this.$refs.searchInput.focus());
+                // See taskPanelEditor.startEdit() in layouts/app.blade.php for why this
+                // waits for a paint, not just a microtask.
+                this.$nextTick(() => requestAnimationFrame(() => this.$refs.searchInput.focus()));
             }
         },
         close() {

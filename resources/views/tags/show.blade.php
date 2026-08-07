@@ -236,12 +236,14 @@
                 startEdit() {
                     this.original = this.name;
                     this.editing = true;
-                    this.$nextTick(() => {
+                    // See taskPanelEditor.startEdit() in layouts/app.blade.php for why this
+                    // waits for a paint, not just a microtask.
+                    this.$nextTick(() => requestAnimationFrame(() => {
                         if (this.$refs.nameInput) {
                             this.$refs.nameInput.focus();
                             this.$refs.nameInput.select();
                         }
-                    });
+                    }));
                 },
 
                 cancel() {

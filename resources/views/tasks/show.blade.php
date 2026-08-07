@@ -130,7 +130,7 @@
                         </div>
                         @if(!$isInactive)
                         <div x-show="editing.status" class="mt-1">
-                            <select x-model="fields.status"
+                            <select x-model="fields.status" x-ref="statusInput"
                                     @keydown.enter="saveField('status')"
                                     @keydown.escape="cancelEdit('status')"
                                     class="w-full rounded-md bg-gray-700 border-gray-600 text-gray-100 placeholder-gray-500 shadow-sm focus:border-blue-500 focus:ring-blue-500">
@@ -250,7 +250,7 @@
                         </div>
                         @if(!$isInactive)
                         <div x-show="editing.time" class="mt-1">
-                            <input type="time" x-model="fields.time"
+                            <input type="time" x-model="fields.time" x-ref="timeInput"
                                    @keydown.enter="saveField('time')"
                                    @keydown.escape="cancelEdit('time')"
                                    class="w-full rounded-md bg-gray-700 border-gray-600 text-gray-100 placeholder-gray-500 shadow-sm focus:border-blue-500 focus:ring-blue-500">
@@ -286,7 +286,7 @@
                         </div>
                         @if(!$isInactive)
                         <div x-show="editing.duration_minutes" class="mt-1">
-                            <input type="text" x-model="fields.duration_minutes"
+                            <input type="text" x-model="fields.duration_minutes" x-ref="duration_minutesInput"
                                    @keydown.enter="saveField('duration_minutes')"
                                    @keydown.escape="cancelEdit('duration_minutes')"
                                    placeholder="e.g. 1h 30m, 90, 2h"
@@ -329,7 +329,7 @@
                         </div>
                         @if(!$isInactive)
                         <div x-show="editing.location" class="mt-1">
-                            <input type="text" x-model="fields.location"
+                            <input type="text" x-model="fields.location" x-ref="locationInput"
                                    @keydown.enter="saveField('location')"
                                    @keydown.escape="cancelEdit('location')"
                                    placeholder="e.g., Home, Conference Room B, 123 Main St"
@@ -424,7 +424,7 @@
                         <div x-show="editing.parent_id" class="mt-1" @click.outside="parentOpen = false">
                             <div class="relative">
                                 <input type="text"
-                                       x-model="parentSearch"
+                                       x-model="parentSearch" x-ref="parent_idInput"
                                        @input="fields.parent_id = ''; parentOpen = true"
                                        @focus="parentOpen = true"
                                        @keydown.escape="parentOpen = false"
@@ -480,7 +480,7 @@
                     </div>
                     @if(!$isInactive)
                     <div x-show="editing.description" class="mt-1">
-                        <textarea x-model="fields.description" rows="3"
+                        <textarea x-model="fields.description" rows="3" x-ref="descriptionInput"
                                   @keydown.enter.ctrl="saveField('description')"
                                   @keydown.escape="cancelEdit('description')"
                                   class="w-full rounded-md bg-gray-700 border-gray-600 text-gray-100 placeholder-gray-500 shadow-sm focus:border-blue-500 focus:ring-blue-500"></textarea>
@@ -525,7 +525,7 @@
                     </div>
                     @if(!$isInactive)
                     <div x-show="editing.recurrence_pattern" class="mt-1">
-                        <input type="text" x-model="fields.recurrence_pattern"
+                        <input type="text" x-model="fields.recurrence_pattern" x-ref="recurrence_patternInput"
                                placeholder="e.g., daily, every Monday, weekdays"
                                @keydown.enter="saveField('recurrence_pattern')"
                                @keydown.escape="cancelEdit('recurrence_pattern')"
@@ -574,7 +574,7 @@
                         @endif
                     </div>
                     @if(!$isInactive)
-                    <div x-show="editing.tag_ids" class="mt-1">
+                    <div x-show="editing.tag_ids" class="mt-1" x-ref="tag_idsInput" tabindex="-1">
                         <div class="space-y-2 mb-2 max-h-48 overflow-y-auto border border-gray-600 bg-[#101010] rounded p-3">
                             @forelse($tags as $tag)
                                 <label class="flex items-center">
@@ -612,7 +612,7 @@
                         </div>
                     </div>
                     @if(!$isInactive)
-                    <div x-show="editing.assignee_ids" class="mt-1">
+                    <div x-show="editing.assignee_ids" class="mt-1" x-ref="assignee_idsInput" tabindex="-1">
                         <div class="space-y-2 mb-2 max-h-48 overflow-y-auto border border-gray-600 bg-[#101010] rounded p-3">
                             @foreach($users as $user)
                                 <label class="flex items-center {{ $user->id === Auth::id() ? 'cursor-not-allowed opacity-60' : '' }}">
@@ -930,9 +930,11 @@
                     cancel() { this.name = this.original; this.editing = false; },
                     startEditName() {
                         this.editing = true;
-                        this.$nextTick(() => {
+                        // See taskPanelEditor.startEdit() in layouts/app.blade.php for why this
+                        // waits for a paint, not just a microtask.
+                        this.$nextTick(() => requestAnimationFrame(() => {
                             if (this.$refs.nameInput) this.$refs.nameInput.focus();
-                        });
+                        }));
                     }
                 };
             });
@@ -1009,12 +1011,14 @@
                     this.projectSearch = p ? p.name : '';
                     this.projectComboOpen = true;
                     this.projectComboActiveIndex = -1;
-                    this.$nextTick(() => {
+                    // See taskPanelEditor.startEdit() in layouts/app.blade.php for why this
+                    // waits for a paint, not just a microtask.
+                    this.$nextTick(() => requestAnimationFrame(() => {
                         if (this.$refs.project_idInput) {
                             this.$refs.project_idInput.focus();
                             this.$refs.project_idInput.select();
                         }
-                    });
+                    }));
                 },
 
                 cancelProjectEditOnEscape(event) {
@@ -1088,6 +1092,9 @@
 
                 startEdit(field) {
                     this.editing[field] = true;
+                    // See taskPanelEditor.startEdit() in layouts/app.blade.php for why this
+                    // waits for a paint, not just a microtask.
+                    this.$nextTick(() => requestAnimationFrame(() => this.$refs[field + 'Input']?.focus()));
                 },
 
                 clearAndSave(field) { this.fields[field] = ''; this.saveField(field); },
@@ -1097,12 +1104,14 @@
                     this.datePreview = '';
                     this.dateError = '';
                     this.datePast = false;
-                    this.$nextTick(() => {
+                    // See taskPanelEditor.startEdit() in layouts/app.blade.php for why this
+                    // waits for a paint, not just a microtask.
+                    this.$nextTick(() => requestAnimationFrame(() => {
                         if (this.$refs.dateInput) {
                             this.$refs.dateInput.focus();
                             this.$refs.dateInput.select();
                         }
-                    });
+                    }));
                 },
 
                 cancelEdit(field) {

@@ -401,7 +401,9 @@
                             this.input = this.currentDate;
                             this.error = false;
                             this.editing = true;
-                            this.$nextTick(() => { this.$refs.dateInput.focus(); this.$refs.dateInput.select(); });
+                            // See taskPanelEditor.startEdit() below for why this waits for a
+                            // paint, not just a microtask.
+                            this.$nextTick(() => requestAnimationFrame(() => { this.$refs.dateInput.focus(); this.$refs.dateInput.select(); }));
                         },
                         cancel() {
                             this.editing = false;

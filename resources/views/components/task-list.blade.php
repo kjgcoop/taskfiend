@@ -684,7 +684,9 @@
                 this.showAutocomplete = false;
                 clearTimeout(this.previewTimer);
                 this.preview = null;
-                this.$nextTick(() => this.$refs.filterInput && this.$refs.filterInput.focus());
+                // See taskPanelEditor.startEdit() in layouts/app.blade.php for why this waits
+                // for a paint, not just a microtask.
+                this.$nextTick(() => requestAnimationFrame(() => this.$refs.filterInput && this.$refs.filterInput.focus()));
             },
             switchToCreate() {
                 this.mode = 'create';
@@ -692,7 +694,9 @@
                     this.query = '';
                     this.filterTasks();
                 }
-                this.$nextTick(() => this.$refs.createInput && this.$refs.createInput.focus());
+                // See taskPanelEditor.startEdit() in layouts/app.blade.php for why this waits
+                // for a paint, not just a microtask.
+                this.$nextTick(() => requestAnimationFrame(() => this.$refs.createInput && this.$refs.createInput.focus()));
             },
             clearCreateInput() {
                 const el = this.$refs.createInput;
