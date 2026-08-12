@@ -191,6 +191,64 @@ class BulkUpdateTest extends TestCase
     }
 
     // -------------------------------------------------------------------------
+    // Status side effects (completed_at, recurrence rollover)
+    // -------------------------------------------------------------------------
+
+    public function test_bulk_marking_done_stamps_completed_at(): void
+    {
+        $task = $this->createOwnedTask();
+
+        $this->actingAs($this->user)
+            ->postJson('/tasks/bulk-update', [
+                'task_ids' => [$task->id],
+                'status'   => 'done',
+            ])
+            ->assertOk();
+
+        $task->refresh();
+        $this->assertSame('done', $task->status);
+        $this->assertNotNull($task->completed_at);
+    }
+
+    public function test_bulk_archiving_stamps_completed_at(): void
+    {
+        $task = $this->createOwnedTask();
+
+        $this->actingAs($this->user)
+            ->postJson('/tasks/bulk-update', [
+                'task_ids' => [$task->id],
+                'status'   => 'archived',
+            ])
+            ->assertOk();
+
+        $task->refresh();
+        $this->assertSame('archived', $task->status);
+        $this->assertNotNull($task->completed_at);
+    }
+
+    public function test_bulk_marking_done_creates_next_recurring_occurrence(): void
+    {
+        $task = $this->createOwnedTask([
+            'name'               => 'Water the plants',
+            'date'               => now()->subDay()->format('Y-m-d'),
+            'recurrence_pattern' => 'daily',
+        ]);
+
+        $this->actingAs($this->user)
+            ->postJson('/tasks/bulk-update', [
+                'task_ids' => [$task->id],
+                'status'   => 'done',
+            ])
+            ->assertOk();
+
+        $this->assertDatabaseHas('tasks', [
+            'name'               => 'Water the plants',
+            'recurrence_pattern' => 'daily',
+            'status'             => 'incomplete',
+        ]);
+    }
+
+    // -------------------------------------------------------------------------
     // Ownership / access control
     // -------------------------------------------------------------------------
 

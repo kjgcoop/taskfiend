@@ -1107,6 +1107,10 @@ class TaskController extends Controller
             ->whereIn('id', $request->input('task_ids'))
             ->get();
 
+        // Status is intentionally excluded here and applied separately via
+        // TaskLifecycle::changeStatus() below, so it gets the same side effects
+        // (completed_at stamping, descendant cascades, recurring rollover) as
+        // every other status-changing code path in the app.
         $changes = [];
         if ($clearDate)          $changes['date']            = null;
         elseif ($date !== null)  $changes['date']            = $date;
@@ -1114,7 +1118,6 @@ class TaskController extends Controller
             $changes['project_id'] = $projectId;
             $changes['project_sort_order'] = null;
         }
-        if ($status !== null)    $changes['status']          = $status;
         if ($clearLocation)      $changes['location']        = null;
         elseif ($location !== null) $changes['location']     = $location;
         if ($clearDuration)      $changes['duration_minutes'] = null;
@@ -1125,8 +1128,10 @@ class TaskController extends Controller
         if ($clearLocation) $changeFields = array_map(fn($f) => $f === 'location' ? 'location (cleared)' : $f, $changeFields);
         if ($clearDuration) $changeFields = array_map(fn($f) => $f === 'duration_minutes' ? 'duration (cleared)' : $f, $changeFields);
         $changeFields = array_map(fn($f) => $f === 'duration_minutes' ? 'duration' : $f, $changeFields);
+        if ($status !== null) $changeFields[] = 'status';
         if (!empty($tagIds)) $changeFields[] = 'tags';
 
+        $lifecycle = new TaskLifecycle();
         $updatedCount = 0;
         foreach ($tasks as $task) {
             if (!empty($changes)) {
@@ -1135,7 +1140,14 @@ class TaskController extends Controller
             if (!empty($tagIds)) {
                 $task->tags()->syncWithoutDetaching($tagIds);
             }
-            $this->logChange($task, 'bulk updated: ' . implode(', ', $changeFields), 'edited');
+            if (!empty($changeFields)) {
+                $this->logChange($task, 'bulk updated: ' . implode(', ', $changeFields), 'edited');
+            }
+            if ($status !== null) {
+                // Applies completed_at, descendant cascades, and recurring
+                // rollover consistently with the single-task update paths.
+                $lifecycle->changeStatus($task, $status);
+            }
             $updatedCount++;
         }
 

@@ -248,6 +248,37 @@ Test user already created with API key generated.
 
 ## Important Notes
 
+### Session Summary (Aug 12, 2026) — Bulk-update status bug (missing completed_at, broken recurrence)
+- **Bug**: `TaskController::bulkUpdate()` (`POST /tasks/bulk-update`, the multi-select "Archive"/"Mark
+  done" action) set `status` via a raw `$task->update($changes)` mass assignment instead of going
+  through `TaskLifecycle::changeStatus()` like every other status-changing code path (single-task
+  edit form, inline field editor, quick-complete). Consequence: two things `changeStatus()` normally
+  guarantees were silently skipped — stamping `completed_at`, and (for recurring tasks) creating the
+  next occurrence. Root cause of user-reported reports of `completed_at IS NULL` rows on done/archived
+  tasks, and of specific recurring tasks whose series stopped rolling forward after being bulk-archived
+  or bulk-completed via multi-select.
+- **Fix**: `bulkUpdate()` now applies non-status field changes via `update()` as before, then calls
+  `TaskLifecycle::changeStatus()` per task for the status change — same `completed_at`/cascade/
+  recurrence-rollover side effects as the single-task paths. `TaskLifecycle::createNextOccurrence()`
+  changed from `private` to `public` so it can also be called directly for backfill purposes.
+- **Backfill**: `php artisan tasks:backfill-completed-at [--dry-run]`
+  (`app/Console/Commands/BackfillMissingCompletedAt.php`) finds existing done/archived tasks with a
+  null `completed_at`, stamps it from `updated_at` (best available signal for when the buggy bulk
+  update actually ran), and for any of those that are still recurring, calls
+  `createNextOccurrence()` to catch the series up to its next occurrence. Since it runs outside a
+  web request there's no `Auth::id()` for change-log attribution — it logs in as the task's creator
+  for the duration of that call (`Auth::login($task->creator)` / `Auth::logout()`), the same
+  attribution convention `BackfillTaskLogs` uses. Verified against a from-scratch reproduction of the
+  bug (task force-completed via raw `update()`, bypassing `TaskLifecycle`) since PHPUnit isn't
+  installed in this sandbox (see prior sessions' notes on this) — confirmed `completed_at` gets
+  backfilled and the missing next occurrence gets created with correct change-log attribution.
+- **Tests**: added `test_bulk_marking_done_stamps_completed_at`,
+  `test_bulk_archiving_stamps_completed_at`, and `test_bulk_marking_done_creates_next_recurring_occurrence`
+  to `tests/Feature/BulkUpdateTest.php`. Also manually verified the descendant-cascade behavior now
+  applies correctly to bulk status changes (a parent task with an incomplete subtask, marked done via
+  bulk update, now completes the subtask too — previously bulk update never touched descendants at
+  all, another side effect of bypassing `TaskLifecycle`).
+
 ### Session Summary (Aug 6, 2026) — Daily PDF export
 - **Feature**: "Export PDF" button on the day view (today only, `dashboard/day.blade.php` header, next to
   "Export .md"). Downloads a printable, foldable checklist of the day's incomplete tasks —

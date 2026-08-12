@@ -175,8 +175,13 @@ class TaskLifecycle
      * original rather than reassigned to whoever completed this instance.
      * Returns the existing instance instead of creating a duplicate, and
      * null when the series has ended (or has no next date).
+     *
+     * Public (rather than an internal step of changeStatus() alone) so the
+     * `recurrence:backfill` command can also call it directly to catch up
+     * series whose rollover was missed by a status change that bypassed
+     * TaskLifecycle (see that command for context).
      */
-    private function createNextOccurrence(Task $originalTask): ?Task
+    public function createNextOccurrence(Task $originalTask): ?Task
     {
         if (!$originalTask->recurrence_pattern) {
             return null;
