@@ -61,7 +61,7 @@
                     </a>
                 @endif
                 <a href="{{ route('day.export-markdown') }}?date={{ $carbonDate->format('Y-m-d') }}" class="hidden sm:inline-flex items-center px-4 py-2 bg-gray-700 border border-gray-600 rounded-md font-semibold text-xs text-gray-100 uppercase tracking-widest hover:bg-gray-600">
-                    Export .md
+                    Export MD
                 </a>
                 @if($carbonDate->isToday())
                     <button type="button" x-data="dayPdfExport"

@@ -6,7 +6,7 @@
                 <x-task-count-badge :count="$totalCount" :breakdown="$breakdown" />
             </h2>
             <a href="{{ route('overdue.export-markdown') }}" class="hidden sm:inline-flex items-center px-4 py-2 bg-gray-700 border border-gray-600 rounded-md font-semibold text-xs text-gray-100 uppercase tracking-widest hover:bg-gray-600">
-                Export .md
+                Export MD
             </a>
         </div>
     </x-slot>

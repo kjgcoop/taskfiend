@@ -335,7 +335,7 @@
                     @if($tasksTotal > 0 || $completedTasksTotal > 0 || $archivedTasksTotal > 0)
                     <div class="flex justify-end items-center gap-3 mb-4">
                         <a href="{{ request()->fullUrlWithQuery(['export' => 'markdown']) }}" class="px-3 py-1.5 bg-gray-700 border border-gray-600 text-xs text-gray-100 rounded hover:bg-gray-600">
-                            Export .md
+                            Export MD
                         </a>
                         <div class="flex items-center gap-2">
                             <label for="sort-results" class="text-sm text-gray-400">Sort:</label>
