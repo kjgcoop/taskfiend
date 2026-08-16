@@ -48,15 +48,19 @@ ever needs to contain a bare function call:
 document.addEventListener('alpine:init', () => {
     Alpine.data('dayPdfExport', () => ({
         go() {
+            // As much real, unrestricted JS as this needs — building a URL, reading the
+            // DOM, whatever. The directive above never sees any of it, just the go() call.
             const p = new URLSearchParams(window.location.search);
-            p.delete('date');
             const filterText = Alpine.store('taskCount').filterText;
-            if (filterText) { p.set('filter', filterText); } else { p.delete('filter'); }
+            if (filterText) { p.set('filter', filterText); }
             window.location.href = '/day/export-pdf?' + p.toString();
         }
     }));
 });
 ```
+
+(Simplified for illustration — see the file below for what `go()` actually does today, which has
+grown more logic since this was first written; the CSP-relevant shape hasn't changed.)
 
 The `Alpine.data()` callback and the methods it returns run as normal, unrestricted JavaScript —
 the CSP parser only ever sees the bare `go()` call sitting in the `@click` attribute. This is the
