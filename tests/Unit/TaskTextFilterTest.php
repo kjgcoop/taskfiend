@@ -45,7 +45,7 @@ class TaskTextFilterTest extends TestCase
         ]);
 
         foreach ($tags as $tagName) {
-            $tag = Tag::firstOrCreate(['tag_name' => $tagName], ['color' => '#3B82F6']);
+            $tag = Tag::firstOrCreate(['tag_name' => $tagName]);
             $task->tags()->attach($tag->id);
         }
 

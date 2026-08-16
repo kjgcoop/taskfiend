@@ -291,12 +291,11 @@ Test user already created with API key generated.
   (see that entry) — the recurring-tasks concern itself is unaddressed, just knowingly accepted.
 - **Mirrors the on-page view exactly**: same sort/reversed as the day view (already in the URL) plus
   the on-page text filter box. That filter is client-side-only (Alpine, never touches the URL — see
-  `task-list.blade.php`'s `filterTasks()`), so it's surfaced via `Alpine.store('taskCount').filterText`
-  and passed to the export as a `filter` query param. **`App\Services\TaskTextFilter`** is a
-  server-side line-for-line port of that same JS tokenizer/matcher (`#project`, `@tag`, `+location`,
-  `&user`, `not:` prefix, quoted phrases) — keep the two in sync if the filter syntax changes.
-  Always restricts to incomplete tasks regardless of any on-screen status filter (an intentional
-  fixed property of this export, not a bug — see `DashboardController::exportDayPdf()`).
+  `task-list.blade.php`'s `filterTasks()`). Originally mirrored server-side via a `filter` query
+  param re-parsed by a PHP port of the JS tokenizer (`App\Services\TaskTextFilter`); **replaced
+  Aug 16, 2026** with an ID-based approach — see that entry. Always restricts to incomplete tasks
+  regardless of any on-screen status filter (an intentional fixed property of this export, not a
+  bug — see `DashboardController::exportDayPdf()`).
 - **`App\Services\SimplePdfWriter`** — a small dependency-free PDF byte-writer (no mpdf/dompdf/
   browsershot). This sandbox's `composer require` is blocked by egress policy (packagist.org is not
   on the allowed-host list), so no new Composer package could be installed or verified here; a
@@ -316,7 +315,8 @@ Test user already created with API key generated.
   in this sandbox (see above) — logic was instead exercised via a real Eloquent-backed script
   against an in-memory sqlite DB (services, controller action, and generated PDF's xref table were
   all validated directly). Whoever next has a working `composer install` should run the suite once
-  to confirm.
+  to confirm. **This file was deleted Aug 16, 2026** along with `TaskTextFilter` itself — see that
+  entry below.
 - **Follow-up fix**: the first version of the Export PDF button wrote its click handler as an inline
   multi-statement block (`const p = ...; if (...) {...}`) directly in `@click`. That silently failed
   in the browser — Alpine's CSP-safe build (see "Key Patterns Used" above) can't parse JS statements
@@ -366,6 +366,41 @@ Test user already created with API key generated.
   fresh Composer packages available in this sandbox): a task dated 8 days out exports correctly
   under `?date=`, today's own tasks are correctly excluded from that export, the "TODAY" eyebrow is
   correctly absent for the future date and correctly present for today's own export.
+
+### Session Summary (Aug 16, 2026) — PDF export: filter via task IDs, not re-parsed text
+- **What changed**: the user reported the Export PDF button appearing disabled whenever the on-page
+  filter box had anything in it. Live browser reproduction wasn't possible in this sandbox either
+  (npm's registry.npmjs.org is *also* blocked by the egress policy here, same as packagist.org — no
+  `playwright-core` install, no `php artisan serve` + real click-through to confirm root cause).
+  Careful code review of `filterTasks()` / the `taskCount` store / the `:disabled` binding didn't
+  turn up a clear defect either. Rather than keep guessing at a fix for a not-fully-confirmed bug, replaced the
+  whole mechanism with what the user proposed: the client now sends the exact set of currently-visible
+  task IDs (`ids[]`) instead of raw filter text for the server to re-interpret.
+- **Why this is a strict improvement, independent of whatever the original bug was**: it deletes an
+  entire class of risk — a hand-ported PHP reimplementation of the JS filter tokenizer
+  (`App\Services\TaskTextFilter`) permanently at risk of drifting from the real one in
+  `task-list.blade.php`. The client already knows precisely which rows are visible (it just set
+  their `style.display`); there's no reason to make the server re-derive that from scratch via a
+  second parser. **`App\Services\TaskTextFilter` and `tests/Unit/TaskTextFilterTest.php` were
+  deleted.**
+- **How it works now**: `dayPdfExport`'s `go()` (`dashboard/day.blade.php`) reads
+  `document.querySelector('[x-ref="taskContainer"]')` directly (works across the `x-data` boundary
+  since `x-ref` stays as a plain, query-able attribute in the rendered DOM), collects
+  `[data-filterable]` descendants whose `style.display !== 'none'`, resolves each to its task ID via
+  `.closest('[data-task-group]').dataset.taskGroupId`, and sends them as `ids[]` — only when a
+  filter is actually active (`Alpine.store('taskCount').filterText` is non-empty); an inactive
+  filter sends no `ids[]` at all and exports everything for the date, same as before.
+  `DashboardController::exportDayPdf()` applies `whereIn('id', $ids)` **on top of** the same
+  already-authorized/scoped `incompleteTasksForDate()` query — an ID can only ever narrow the
+  result (wrong date, wrong status, another user's task, etc. all still exclude it), never widen it.
+  `filter` (the raw query text) is still accepted and still lands in the PDF's header meta line —
+  it's now purely a display string, never re-interpreted server-side.
+- **Verified** via the Eloquent-backed smoke script: exporting with `ids=[]` unset still exports
+  everything; `ids=[<one task>]` exports only that task while the `filter` text still shows in the
+  meta line; an `ids[]` list containing another user's task and a task dated for a different day
+  correctly excludes both (security check — an ID can't be used to see something the base query
+  wouldn't already allow); an `ids[]` matching nothing still redirects back with the "No tasks to
+  export" flash rather than erroring.
 
 ### Session Summary (Jul 11, 2026) — Deduplication refactor
 - **`Task::visibleTo($userId)` scope** (`app/Models/Task.php`) — the canonical creator-or-assignee

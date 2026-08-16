@@ -242,16 +242,36 @@
     @push('scripts')
     <script nonce="{{ csp_nonce() }}">
         // ── Export PDF button: navigate preserving current sort/reversed (already
-        // in the URL) plus the on-page filter text (client-side only, read from
-        // the shared taskCount store — see task-list.blade.php's filterTasks()).
+        // in the URL). If the on-page filter is active, snapshot exactly which
+        // tasks are currently visible by ID (rather than re-deriving the filter
+        // server-side from its raw text) — the server just narrows its own
+        // already-authorized/scoped query to that ID set, so there's no second
+        // implementation of the filter syntax to keep in sync with the JS one in
+        // task-list.blade.php's filterTasks(). The raw filter text still gets
+        // sent along, but only for display in the PDF's header meta line.
         document.addEventListener('alpine:init', () => {
             Alpine.data('dayPdfExport', () => ({
                 go() {
                     // Keeps 'date' (if present) so exporting from a future day's page exports
                     // that day, not today — see DashboardController::exportDayPdf().
                     const p = new URLSearchParams(window.location.search);
+                    p.delete('ids[]');
+
                     const filterText = Alpine.store('taskCount').filterText;
-                    if (filterText) { p.set('filter', filterText); } else { p.delete('filter'); }
+                    if (filterText) {
+                        p.set('filter', filterText);
+                        const container = document.querySelector('[x-ref="taskContainer"]');
+                        const ids = container
+                            ? Array.from(container.querySelectorAll('[data-filterable]'))
+                                .filter(el => el.style.display !== 'none')
+                                .map(el => el.closest('[data-task-group]')?.dataset.taskGroupId)
+                                .filter(Boolean)
+                            : [];
+                        ids.forEach(id => p.append('ids[]', id));
+                    } else {
+                        p.delete('filter');
+                    }
+
                     window.location.href = '{{ route('day.export-pdf') }}?' + p.toString();
                 }
             }));
