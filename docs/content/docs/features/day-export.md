@@ -36,8 +36,11 @@ instead of checking the app on your phone.
   Past dates aren't supported, since past days use a different page.
 - **Mirrors what's on screen.** Unlike Export .md, this respects the day view's current sort order
   and its on-page text filter box — filter the list down to `#errands` first, and the PDF only
-  contains those tasks. The filter/sort in effect (if not the defaults) is printed at the top of
-  the page as a plain reminder of how the list was narrowed.
+  contains those tasks. It's a snapshot of exactly what was visible the moment you clicked the
+  button (rather than the filter being freshly re-evaluated against the database at export time),
+  so it stays faithful to what you were actually looking at even if something changes in the
+  seconds between filtering and clicking. The filter/sort in effect (if not the defaults) is
+  printed at the top of the page as a plain reminder of how the list was narrowed.
 - **Always incomplete tasks only,** regardless of any status filter that happens to be active on
   screen — this export is a to-do list, not an archive.
 - **Layout**: a two-column list on a US Letter page — task time (if it has one) in a narrow gutter
