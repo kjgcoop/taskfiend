@@ -63,16 +63,14 @@
                 <a href="{{ route('day.export-markdown') }}?date={{ $carbonDate->format('Y-m-d') }}" class="hidden sm:inline-flex items-center px-4 py-2 bg-gray-700 border border-gray-600 rounded-md font-semibold text-xs text-gray-100 uppercase tracking-widest hover:bg-gray-600">
                     Export .md
                 </a>
-                @if($carbonDate->isToday())
-                    <button type="button" x-data="dayPdfExport"
-                            title="Printable list of today's tasks — mirrors the current sort and on-page filter"
-                            :disabled="$store.taskCount.ready && $store.taskCount.visible === 0"
-                            :class="$store.taskCount.ready && $store.taskCount.visible === 0 ? 'opacity-40 cursor-not-allowed' : 'hover:bg-gray-600'"
-                            @click="go()"
-                            class="hidden sm:inline-flex items-center px-4 py-2 bg-gray-700 border border-gray-600 rounded-md font-semibold text-xs text-gray-100 uppercase tracking-widest">
-                        Export PDF
-                    </button>
-                @endif
+                <button type="button" x-data="dayPdfExport"
+                        title="Printable list of this day's tasks — mirrors the current sort and on-page filter"
+                        :disabled="$store.taskCount.ready && $store.taskCount.visible === 0"
+                        :class="$store.taskCount.ready && $store.taskCount.visible === 0 ? 'opacity-40 cursor-not-allowed' : 'hover:bg-gray-600'"
+                        @click="go()"
+                        class="hidden sm:inline-flex items-center px-4 py-2 bg-gray-700 border border-gray-600 rounded-md font-semibold text-xs text-gray-100 uppercase tracking-widest">
+                    Export PDF
+                </button>
             </div>
         </div>
     </x-slot>
@@ -249,8 +247,9 @@
         document.addEventListener('alpine:init', () => {
             Alpine.data('dayPdfExport', () => ({
                 go() {
+                    // Keeps 'date' (if present) so exporting from a future day's page exports
+                    // that day, not today — see DashboardController::exportDayPdf().
                     const p = new URLSearchParams(window.location.search);
-                    p.delete('date');
                     const filterText = Alpine.store('taskCount').filterText;
                     if (filterText) { p.set('filter', filterText); } else { p.delete('filter'); }
                     window.location.href = '{{ route('day.export-pdf') }}?' + p.toString();

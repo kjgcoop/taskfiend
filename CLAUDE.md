@@ -255,8 +255,9 @@ Test user already created with API key generated.
   list (eyebrow "TODAY" label, bold date, rule, time gutter, divider line under each row instead of
   a bullet) on a US Letter page sized to fold down to pocket size, meant to be marked up with a
   highlighter and thrown away at end of day (no checkboxes, no completion state in the PDF itself).
-  Scoped to *today only* — supporting arbitrary days runs into recurring tasks anticipated for that
-  date that don't exist as rows yet, which was explicitly deferred.
+  Originally scoped to *today only* — the recurring-tasks-not-yet-created concern below made that
+  the safe default at the time. **Superseded Aug 16, 2026**: the today-only restriction was lifted
+  (see that entry) — the recurring-tasks concern itself is unaddressed, just knowingly accepted.
 - **Mirrors the on-page view exactly**: same sort/reversed as the day view (already in the URL) plus
   the on-page text filter box. That filter is client-side-only (Alpine, never touches the URL — see
   `task-list.blade.php`'s `filterTasks()`), so it's surfaced via `Alpine.store('taskCount').filterText`
@@ -305,6 +306,35 @@ Test user already created with API key generated.
   — confirmed visually with a 20-item sample (matches the mockup's content exactly, single column,
   second column empty) and a 50-item sample (splits 35/15, i.e. column 1 filled to its real capacity
   before column 2 got anything).
+
+### Session Summary (Aug 16, 2026) — PDF export: any day, not just today
+- The Export PDF button (see the Aug 6, 2026 entry above) no longer restricts to today. It now
+  accepts the same `date` query param the day view itself uses, so it works for any date the day
+  view supports — today and future dates. Past dates render through the separate `dayReview()`
+  view/template, which never had this button, so they're still out of scope; nothing needed to
+  change there. `DashboardController::exportDayPdf()` parses `date` (defaulting to today, same as
+  `day()`) instead of hardcoding `today()`.
+- The button itself is no longer gated by `$carbonDate->isToday()` in `dashboard/day.blade.php` —
+  it always renders now. Its click handler used to strip the `date` param before navigating (a
+  leftover from the today-only restriction); now it's left in place so exporting from a future
+  day's page exports that day, not today.
+- `DayPdfExporter`'s "TODAY" eyebrow is now conditional on `$date->isToday()`, matching how the day
+  view's own header only prefixes "Today - " for the current date (`day.blade.php`) — other dates
+  get the plain weekday/date title with no label above it.
+- **Known limitation, explicitly not addressed here** (raised by the user, deferred on purpose): a
+  future day's recurring tasks that haven't been generated yet (the prior occurrence hasn't been
+  completed, so `TaskLifecycle::createNextOccurrence()` hasn't run) won't appear in that day's
+  export — it only exports task rows that already exist. Projecting anticipated-but-not-yet-created
+  recurring occurrences onto a future date would be a distinct, materially larger feature: it needs
+  read-only "what would `getNextOccurrence()` chain forward to by date X" logic that never touches
+  the database, kept carefully separate from the real completion-triggered rollover in
+  `TaskLifecycle`, since the two must never be conflated (a projected/virtual task must never be
+  mistaken for or promoted into a real one by anything else in the app). See `RECURRING_TASKS.md`
+  and `DateParser::getNextOccurrence()` as the starting points if this gets picked up.
+- Verified via the existing Eloquent-backed smoke script (same constraints as Aug 6 — no PHPUnit or
+  fresh Composer packages available in this sandbox): a task dated 8 days out exports correctly
+  under `?date=`, today's own tasks are correctly excluded from that export, the "TODAY" eyebrow is
+  correctly absent for the future date and correctly present for today's own export.
 
 ### Session Summary (Jul 11, 2026) — Deduplication refactor
 - **`Task::visibleTo($userId)` scope** (`app/Models/Task.php`) — the canonical creator-or-assignee

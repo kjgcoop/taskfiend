@@ -134,13 +134,24 @@ class DayPdfExporter
         return $pdf->output();
     }
 
-    /** Draws the eyebrow/title/meta/rule block and returns the y where the task list should start. */
+    /**
+     * Draws the eyebrow/title/meta/rule block and returns the y where the task list should start.
+     * The "TODAY" eyebrow only appears when $date actually is today, matching how the day view
+     * itself only prefixes "Today - " onto its own header for the current date (day.blade.php) —
+     * other dates just get the plain weekday/date title, no label above it.
+     */
     private static function drawHeader(SimplePdfWriter $pdf, Carbon $date, ?string $filterQuery, string $sort, bool $reversed): float
     {
-        $eyebrowY = self::PAGE_H - self::MARGIN - self::HEADER_EYEBROW_SIZE;
-        $pdf->text(self::MARGIN, $eyebrowY, 'TODAY', 'F1', self::HEADER_EYEBROW_SIZE, self::META_GRAY, self::HEADER_EYEBROW_TRACKING);
+        $top = self::PAGE_H - self::MARGIN;
 
-        $titleY = $eyebrowY - 24.0;
+        if ($date->isToday()) {
+            $eyebrowY = $top - self::HEADER_EYEBROW_SIZE;
+            $pdf->text(self::MARGIN, $eyebrowY, 'TODAY', 'F1', self::HEADER_EYEBROW_SIZE, self::META_GRAY, self::HEADER_EYEBROW_TRACKING);
+            $titleY = $eyebrowY - 24.0;
+        } else {
+            $titleY = $top - self::HEADER_TITLE_SIZE;
+        }
+
         $pdf->text(self::MARGIN, $titleY, $date->format('l, F j, Y'), 'F2', self::HEADER_TITLE_SIZE, 0.0);
 
         $lastY = $titleY;

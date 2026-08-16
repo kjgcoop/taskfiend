@@ -264,10 +264,18 @@ $incomplete = Task::visibleTo(Auth::id())
     }
 
     /**
-     * Printable PDF of today's incomplete task list, for keeping the day's
-     * tasks on paper instead of a phone. Always today only — extending this
-     * to arbitrary days runs into recurring tasks that are anticipated for
-     * that date but don't exist as rows yet.
+     * Printable PDF of a day's incomplete task list, for keeping the day's
+     * tasks on paper instead of a phone. Defaults to today; any date the day
+     * view itself supports works (today and future dates — past dates render
+     * through the separate dayReview() view/template, which doesn't carry
+     * this button at all, so they're out of scope here).
+     *
+     * Known limitation, unchanged by allowing arbitrary dates: a future
+     * day's recurring tasks that haven't been generated yet (the previous
+     * occurrence hasn't been completed) won't appear, since this only
+     * exports task rows that already exist. Projecting anticipated-but-not-
+     * yet-created recurring occurrences is a distinct, not-yet-built
+     * feature — see CLAUDE.md.
      *
      * Mirrors whatever's currently on screen: same sort/reversed as the day
      * view (already round-tripped through the URL), plus the on-page text
@@ -276,10 +284,12 @@ $incomplete = Task::visibleTo(Auth::id())
      */
     public function exportDayPdf(Request $request)
     {
-        $dateStr  = today()->format('Y-m-d');
-        $sort     = $request->input('sort', 'date');
-        $reversed = $request->boolean('reversed');
-        $filter   = $request->input('filter');
+        $date       = $request->input('date', today()->format('Y-m-d'));
+        $carbonDate = Carbon::parse($date);
+        $dateStr    = $carbonDate->format('Y-m-d');
+        $sort       = $request->input('sort', 'date');
+        $reversed   = $request->boolean('reversed');
+        $filter     = $request->input('filter');
 
         $tasks = TaskTextFilter::apply(
             $this->incompleteTasksForDate($dateStr, $sort, $reversed)->get(),
@@ -290,7 +300,7 @@ $incomplete = Task::visibleTo(Auth::id())
             return back()->with('error', 'No tasks to export.');
         }
 
-        $pdf = DayPdfExporter::build(today(), $tasks, $filter, $sort, $reversed);
+        $pdf = DayPdfExporter::build($carbonDate, $tasks, $filter, $sort, $reversed);
 
         return response($pdf, 200, [
             'Content-Type'        => 'application/pdf',
