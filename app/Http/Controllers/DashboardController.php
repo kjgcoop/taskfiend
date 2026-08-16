@@ -10,7 +10,6 @@ use App\Models\Tag;
 use App\Models\Task;
 use App\Models\User;
 use App\Services\DayPdfExporter;
-use App\Services\TaskTextFilter;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -279,8 +278,15 @@ $incomplete = Task::visibleTo(Auth::id())
      *
      * Mirrors whatever's currently on screen: same sort/reversed as the day
      * view (already round-tripped through the URL), plus the on-page text
-     * filter, which is client-side only and so is passed explicitly via the
-     * `filter` param (see day.blade.php's Export PDF button).
+     * filter — client-side only, so day.blade.php's Export PDF button sends
+     * the exact set of currently-visible task IDs (`ids[]`) rather than the
+     * raw filter text. We just narrow the same already-authorized/scoped
+     * query to that ID set, so an ID can only ever be excluded (wrong date,
+     * wrong status, not visible to this user, ...), never add a task the
+     * query wouldn't otherwise have included — there's no second
+     * implementation of the filter syntax to keep in sync with the JS one
+     * in task-list.blade.php's filterTasks(). `filter` (the raw text) is
+     * still accepted, but purely for display in the PDF's header meta line.
      */
     public function exportDayPdf(Request $request)
     {
@@ -290,11 +296,13 @@ $incomplete = Task::visibleTo(Auth::id())
         $sort       = $request->input('sort', 'date');
         $reversed   = $request->boolean('reversed');
         $filter     = $request->input('filter');
+        $ids        = $request->input('ids', []);
 
-        $tasks = TaskTextFilter::apply(
-            $this->incompleteTasksForDate($dateStr, $sort, $reversed)->get(),
-            $filter
-        );
+        $query = $this->incompleteTasksForDate($dateStr, $sort, $reversed);
+        if (is_array($ids) && $ids !== []) {
+            $query->whereIn('id', array_map('intval', $ids));
+        }
+        $tasks = $query->get();
 
         if ($tasks->isEmpty()) {
             return back()->with('error', 'No tasks to export.');
