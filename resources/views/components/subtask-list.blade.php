@@ -2,7 +2,7 @@
 
 @pushOnce('scripts')
 <script nonce="{{ csp_nonce() }}">
-    // listQuickComplete is registered via Alpine.data() in task-list's @pushOnce
+    // listQuickComplete is registered via Alpine.data() in task-list's @@pushOnce
     // No re-registration needed here.
 </script>
 @endPushOnce
