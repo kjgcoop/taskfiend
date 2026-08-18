@@ -558,9 +558,9 @@
                 <div class="mt-4">
                     <span class="text-sm font-medium text-gray-500">Tags</span>
                     <div @if(!$isInactive) @click="startEdit('tag_ids')" @endif x-show="!editing.tag_ids" class="mt-1 p-2 rounded min-h-[40px] {{ !$isInactive ? 'cursor-pointer hover:bg-gray-700' : '' }}">
-                        @if($task->tags->count() > 0)
+                        @if($task->visibleTags()->count() > 0)
                             <div class="flex gap-2 flex-wrap">
-                                @foreach($task->tags as $tag)
+                                @foreach($task->visibleTags() as $tag)
                                     <a href="{{ route('tags.show', $tag) }}"
                                        @click.stop
                                        class="inline-block px-2 py-1 text-xs rounded hover:opacity-75"

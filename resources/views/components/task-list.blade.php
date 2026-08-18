@@ -966,7 +966,7 @@
              data-filterable
              data-task-name="{{ strtolower($task->name) }}"
              data-project="{{ preg_replace('/[^a-z0-9 ]/', '', strtolower($task->project?->name ?? '')) }}"
-             data-tags="{{ preg_replace('/[^a-z0-9 |]/', '', strtolower($task->tags->pluck('tag_name')->join('|'))) }}"
+             data-tags="{{ preg_replace('/[^a-z0-9 |]/', '', strtolower($task->visibleTags()->pluck('tag_name')->join('|'))) }}"
              data-location="{{ strtolower($task->location ?? '') }}"
              data-assignees="{{ $task->assignees->map(fn($a) => preg_replace('/[^a-z0-9]/', '', strtolower($a->name)))->join('|') }}"
              style="margin-left: {{ $marginLeft }}px;"
@@ -1233,8 +1233,8 @@
                         @endif
                     </div>
                     <div class="flex gap-1 mt-2 flex-wrap" data-task-tags-display
-                         @if($task->tags->count() === 0) style="display:none" @endif>
-                        @foreach($task->tags as $tag)
+                         @if($task->visibleTags()->count() === 0) style="display:none" @endif>
+                        @foreach($task->visibleTags() as $tag)
                             <a href="{{ route('tags.show', $tag) }}"
                                @click.stop
                                class="inline-block px-2 py-1 text-xs rounded hover:opacity-75"

@@ -248,6 +248,74 @@ Test user already created with API key generated.
 
 ## Important Notes
 
+### Session Summary (Aug 18, 2026) — Tag archiving
+- **Feature**: tags can now be archived. `tags` table gained a nullable `archived_at` timestamp
+  (`Tag::$fillable`, matching the `email_enabled_at`-style "null = active" convention already used
+  by `User`); `Tag::scopeActive()`/`Tag::scopeArchived()` partition on it.
+- **Archive/unarchive UI**: a three-dot-menu action on the tag show page (`tags/show.blade.php`),
+  plus an "Unarchive" link on a banner shown when viewing an archived tag. New routes/controller
+  actions `TagController::archive()`/`unarchive()` (`POST /tags/{tag}/archive`,
+  `/tags/{tag}/unarchive`), both change-logged like every other tag mutation.
+- **Tag index** (`tags.index`) now returns two collections — `tags` (active) and `archivedTags` —
+  and the view renders archived tags in a dimmed "Archived Tags" section below the active grid,
+  mirroring how `projects.index` already lists inactive projects.
+- **Every tag *picker*** (create/edit/show/panel task forms, search filters, the nav "browse by
+  tag" list, the quick-add `@tag` autocomplete data) now queries `Tag::active()->...` instead of
+  `Tag::orderByRaw(...)`. `QuickAddParser::parseTagTokens()` (the `@tag` inline-token matcher used
+  by quick-add, bulk multi-line add, and the live preview) also scopes its lookup to
+  `Tag::active()`, so typing `@` followed by an archived tag's name just leaves the literal text
+  in the task name instead of attaching the tag — same behavior as an unrecognized tag name.
+  `ChangeLogController`'s tag filter dropdown was deliberately left unfiltered — that's a history
+  view, not a tagging action, and being able to look up an archived tag's changelog (e.g. to see
+  when it was archived) is desirable, not a bug.
+- **Task-facing display of tags is archived-aware, but the underlying task↔tag association is
+  not touched by archiving** — added `Task::visibleTags()`, a plain method (not a relation) that
+  filters the already-loaded `tags` collection to non-archived ones. Every place a task's tags
+  render as chips (`task-list.blade.php`, `subtask-list.blade.php`, `tasks/show.blade.php`,
+  `tasks/_panel.blade.php`, `review-task-row.blade.php`, plus the on-page text-filter's
+  `data-tags` attribute) now iterates `$task->visibleTags()` instead of `$task->tags`.
+  **Deliberately did NOT touch every `$task->tags` usage** — several places build hidden
+  `tag_ids[]` form inputs from `$task->tags` specifically so a quick-complete/agenda-complete
+  submit resubmits the task's *full* current tag set (see `task-list.blade.php`'s quick-complete
+  form, `agenda.blade.php`, `review-task-row.blade.php`'s completable form,
+  `subtask-list.blade.php`'s quick-complete form) — those were left unfiltered on purpose, since
+  filtering them would make quick-completing a task silently detach any archived tag it had.
+- **Data-loss guard**: since tag pickers only ever render active tags as checkboxes, a task that
+  already carries an archived tag would have that tag stripped by a plain `sync()` the moment any
+  edit-form save resubmits only the tags the box showed. Added
+  `TaskController::syncTagsPreservingArchived()` — queries the task's currently-attached archived
+  tag ids first, unions them into whatever the client submitted, then syncs — and wired it into
+  every *existing-task* tag sync site (`update()`, `updateField()`'s `tag_ids` branch, and the
+  `tag_ids`-alongside-`name` branch). Left plain `sync()`/`syncWithoutDetaching()` untouched at
+  every *new-task-creation* site (`store()`, the API's `create()`, bulk quick-add, and
+  `Task::duplicate()`'s pivot copy) since there's nothing pre-existing to lose there — and
+  `Task::duplicate()` intentionally copies the full unfiltered tag set (archived tags included),
+  consistent with it being a full copy rather than a form resubmission.
+- **Tag's own show page unaffected**: an archived tag's page still lists all its tasks (existing
+  incomplete/completed/archived task sections) exactly as before — nothing there was gated on the
+  tag's own archived state, since visibility of *that page* was never in question, only whether the
+  tag renders elsewhere.
+- **Verified**: `php artisan migrate --env=testing`, `php artisan view:cache` (compiles every
+  edited Blade template), and an Eloquent-backed smoke script against the test sqlite DB (same
+  method prior sessions used — PHPUnit isn't installed in this sandbox, see below) confirming:
+  `Tag::active()`/`Tag::archived()` correctly partition; `$task->tags` stays at its full count while
+  `$task->visibleTags()` drops the archived one; `syncTagsPreservingArchived()` preserves an
+  already-attached archived tag when only the active tag is resubmitted; unarchiving makes a tag
+  reappear in `Tag::active()` immediately. **Caught a real bug this way**: `archived_at` wasn't
+  originally in `Tag::$fillable`, so `$tag->update(['archived_at' => now()])` was silently
+  discarding the field (Laravel's default mass-assignment behavior is to silently drop
+  non-fillable attributes, not throw) — the archive button would have looked like it worked (redirect
+  + flash message) while doing nothing. Added `archived_at` to `$fillable`; safe to do since it's
+  never part of any request-validated array (`store()`/`quickStore()` only validate `tag_name`/
+  `color`), so a user can't smuggle it in through the create form.
+- **Added `tests/Feature/TagArchivingTest.php`** covering the archive/unarchive actions, the
+  active/archived scopes, tag pickers excluding archived tags, `visibleTags()` vs the raw
+  relation, the sync-preservation guard (including that it still lets an *active* tag be
+  explicitly removed), and the quick-add `@tag` matcher skipping archived tags. Not run against a
+  real PHPUnit invocation (not installed in this sandbox, same constraint as every prior session
+  noted below) — written and `php -l`-checked, and its assertions match what the standalone smoke
+  script above already exercised. Whoever next has a working `composer install` should run it once.
+
 ### Session Summary (Aug 18, 2026) — Subtask reordering
 - **Feature**: subtasks can now be manually reordered (drag handle + move-to-top/up/down/bottom
   arrow buttons), same interaction as the main task list. Lives on the task show page and the

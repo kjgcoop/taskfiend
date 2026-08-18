@@ -16,16 +16,24 @@ class TagController extends Controller
     {
         $userId = Auth::id();
 
-        $tags = Tag::withCount(['tasks' => function ($query) use ($userId) {
-                $query->visibleTo($userId)
+        $openTaskCount = function ($query) use ($userId) {
+            $query->visibleTo($userId)
                 ->where('status', '!=', 'archived')
                 ->where('status', '!=', 'done')
                 ->whereHas('project', fn($pq) => $pq->whereNotIn('status', ['archived', 'done']));
-            }])
+        };
+
+        $tags = Tag::active()
+            ->withCount(['tasks' => $openTaskCount])
             ->orderByRaw('LOWER(tag_name)')
             ->get();
 
-        return view('tags.index', compact('tags'));
+        $archivedTags = Tag::archived()
+            ->withCount(['tasks' => fn ($query) => $query->visibleTo($userId)])
+            ->orderByRaw('LOWER(tag_name)')
+            ->get();
+
+        return view('tags.index', compact('tags', 'archivedTags'));
     }
 
     public function create()
@@ -110,7 +118,7 @@ class TagController extends Controller
             ->orderByRaw('LOWER(name)')
             ->get(['id', 'name']);
 
-        $allTags = Tag::orderByRaw('LOWER(tag_name)')->get(['id', 'tag_name', 'color']);
+        $allTags = Tag::active()->orderByRaw('LOWER(tag_name)')->get(['id', 'tag_name', 'color']);
 
         $users = User::whereNull('email_enabled_at')
             ->orderByRaw('LOWER(name)')
@@ -304,6 +312,28 @@ class TagController extends Controller
         }
 
         return response()->json(['ok' => true]);
+    }
+
+    public function archive(Tag $tag)
+    {
+        if (!$tag->is_archived) {
+            $tag->update(['archived_at' => now()]);
+            $this->logChange($tag, 'archived tag');
+        }
+
+        return redirect()->route('tags.show', $tag)
+            ->with('success', 'Tag archived.');
+    }
+
+    public function unarchive(Tag $tag)
+    {
+        if ($tag->is_archived) {
+            $tag->update(['archived_at' => null]);
+            $this->logChange($tag, 'unarchived tag');
+        }
+
+        return redirect()->route('tags.show', $tag)
+            ->with('success', 'Tag unarchived.');
     }
 
     public function destroy(Tag $tag)

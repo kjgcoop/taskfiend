@@ -28,6 +28,25 @@
                     </div>
                 @endforelse
             </div>
+
+            @if($archivedTags->count() > 0)
+                <div class="mt-8">
+                    <h3 class="text-sm font-semibold text-gray-500 uppercase tracking-widest mb-3">
+                        Archived Tags
+                    </h3>
+                    <div class="grid gap-4 md:grid-cols-3 lg:grid-cols-4">
+                        @foreach($archivedTags as $tag)
+                            <div class="bg-[#161616] border border-gray-700/50 p-4 rounded-lg opacity-60 hover:opacity-80 transition cursor-pointer"
+                                 x-data="clickableCard" data-href="{{ route('tags.show', $tag) }}" @click="go($event)">
+                                <h3 class="font-semibold text-lg text-gray-400 line-through">
+                                    {{ $tag->tag_name }}
+                                </h3>
+                                <p class="text-sm text-gray-600 mt-2">{{ $tag->tasks_count }} tasks</p>
+                            </div>
+                        @endforeach
+                    </div>
+                </div>
+            @endif
         </div>
     </div>
 </x-app-layout>

@@ -60,6 +60,21 @@
                        class="block px-4 py-2 text-gray-200 hover:bg-gray-700">
                         Export MD
                     </a>
+                    @if($tag->is_archived)
+                        <form method="POST" action="{{ route('tags.unarchive', $tag) }}">
+                            @csrf
+                            <button type="submit" class="w-full text-left px-4 py-2 text-gray-200 hover:bg-gray-700">
+                                Unarchive Tag
+                            </button>
+                        </form>
+                    @else
+                        <form method="POST" action="{{ route('tags.archive', $tag) }}">
+                            @csrf
+                            <button type="submit" class="w-full text-left px-4 py-2 text-gray-200 hover:bg-gray-700">
+                                Archive Tag
+                            </button>
+                        </form>
+                    @endif
                 </div>
             </div>
         </div>
@@ -68,6 +83,18 @@
     <div class="py-12" x-data="tagEditor" data-tag-id="{{ $tag->id }}"
          @open-tag-details.window="showDetails = true">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-6">
+
+            @if($tag->is_archived)
+                <div class="bg-gray-800 border border-gray-600 text-gray-400 px-4 py-3 rounded flex items-center justify-between gap-4">
+                    <span>This tag is archived — it's hidden from task views and the tag picker, but the tasks tagged with it are still listed below.</span>
+                    <form method="POST" action="{{ route('tags.unarchive', $tag) }}" class="shrink-0">
+                        @csrf
+                        <button type="submit" class="text-sm text-blue-400 hover:text-blue-300 hover:underline">
+                            Unarchive
+                        </button>
+                    </form>
+                </div>
+            @endif
 
             {{-- Details Modal --}}
             <div x-show="showDetails" x-cloak

@@ -64,6 +64,8 @@ Route::middleware('auth')->group(function () {
     Route::delete('/projects/{project}/background', [ProjectController::class, 'removeBackground'])->name('projects.background.remove');
     Route::resource('tags', TagController::class)->except(['edit', 'update']);
     Route::post('/tags/{tag}/update-field', [TagController::class, 'updateField'])->name('tags.updateField');
+    Route::post('/tags/{tag}/archive', [TagController::class, 'archive'])->name('tags.archive');
+    Route::post('/tags/{tag}/unarchive', [TagController::class, 'unarchive'])->name('tags.unarchive');
     Route::post('/tags/{tag}/reorder-tasks', [TagController::class, 'reorderTasks'])->name('tags.reorderTasks');
     Route::get('/tags/{tag}/completed-tasks', [TagController::class, 'completedTasks'])->name('tags.completedTasks');
     Route::get('/tags/{tag}/archived-tasks', [TagController::class, 'archivedTasks'])->name('tags.archivedTasks');

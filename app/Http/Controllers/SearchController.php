@@ -165,7 +165,7 @@ class SearchController extends Controller
 
         $projects = Project::activeForUser(Auth::id())->get()->sort(fn ($a, $b) => strnatcasecmp($a->name, $b->name))->values();
 
-        $tags  = Tag::orderByRaw('LOWER(tag_name)')->get();
+        $tags  = Tag::active()->orderByRaw('LOWER(tag_name)')->get();
         $users = User::whereNull('email_enabled_at')->orderByRaw('LOWER(name)')->get(['id', 'name']);
 
         $locations = Task::where('status', 'incomplete')

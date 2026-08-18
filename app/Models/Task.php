@@ -100,6 +100,18 @@ class Task extends Model
         return $this->belongsToMany(Tag::class, 'tag_task');
     }
 
+    /**
+     * The task's tags, excluding archived ones — use this for any user-facing display of a
+     * task's tags (list rows, the task page, the sidebar panel, etc). Archived tags stay
+     * attached in the database (so re-submitting a form's hidden tag_ids fields never drops
+     * them) but should never render outside the archived tag's own show page. Operates on the
+     * already-loaded `tags` relation rather than issuing a new query.
+     */
+    public function visibleTags()
+    {
+        return $this->tags->whereNull('archived_at');
+    }
+
     public function assignments(): HasMany
     {
         return $this->hasMany(Assignment::class);

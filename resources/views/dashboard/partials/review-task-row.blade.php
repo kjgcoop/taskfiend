@@ -95,7 +95,7 @@
                 </span>
             @endif
 
-            @foreach($task->tags as $tag)
+            @foreach($task->visibleTags() as $tag)
                 <span class="px-1.5 py-0.5 rounded text-xs"
                       style="background-color:{{ $tag->color }}22; color:{{ $tag->color }}">
                     {{ $tag->tag_name }}

@@ -63,7 +63,7 @@ class TaskController extends Controller
     {
         $projects = Project::activeForUser(Auth::id())->get()->sort(fn ($a, $b) => strnatcasecmp($a->name, $b->name))->values();
 
-        $tags = Tag::orderByRaw('LOWER(tag_name)')->get();
+        $tags = Tag::active()->orderByRaw('LOWER(tag_name)')->get();
         $users = User::whereNull('email_enabled_at')->get();
 
         $preselectedProjectId = $request->query('project_id')
@@ -338,7 +338,7 @@ class TaskController extends Controller
 
         $projects = Project::activeForUser(Auth::id())->get()->sort(fn ($a, $b) => strnatcasecmp($a->name, $b->name))->values();
 
-        $tags = Tag::orderByRaw('LOWER(tag_name)')->get();
+        $tags = Tag::active()->orderByRaw('LOWER(tag_name)')->get();
         $users = User::whereNull('email_enabled_at')->get();
         $defaultProjectId = Auth::user()->defaultProject()->id;
 
@@ -387,7 +387,7 @@ class TaskController extends Controller
 
         $projects = Project::activeForUser(Auth::id())->get()->sort(fn ($a, $b) => strnatcasecmp($a->name, $b->name))->values();
 
-        $tags = Tag::orderByRaw('LOWER(tag_name)')->get();
+        $tags = Tag::active()->orderByRaw('LOWER(tag_name)')->get();
         $users = User::whereNull('email_enabled_at')->get();
         $defaultProjectId = Auth::user()->defaultProject()->id;
 
@@ -422,7 +422,7 @@ class TaskController extends Controller
 
         $projects = Project::activeForUser(Auth::id())->get()->sort(fn ($a, $b) => strnatcasecmp($a->name, $b->name))->values();
 
-        $tags = Tag::orderByRaw('LOWER(tag_name)')->get();
+        $tags = Tag::active()->orderByRaw('LOWER(tag_name)')->get();
         $users = User::whereNull('email_enabled_at')->get();
         $defaultProjectId = Auth::user()->defaultProject()->id;
 
@@ -605,7 +605,7 @@ class TaskController extends Controller
         $task->save();
 
         if (isset($validated['tag_ids'])) {
-            $task->tags()->sync($validated['tag_ids']);
+            $this->syncTagsPreservingArchived($task, $validated['tag_ids']);
         }
 
         if (isset($validated['assignee_ids']) && $task->creator_id === Auth::id()) {
@@ -696,7 +696,7 @@ class TaskController extends Controller
                 $this->logChange($task, "updated parent task");
             } elseif ($field === 'tag_ids') {
                 $tagIds = $request->input('tag_ids', []);
-                $task->tags()->sync($tagIds);
+                $this->syncTagsPreservingArchived($task, $tagIds);
                 $this->logChange($task, 'updated tags');
             } elseif ($field === 'assignee_ids') {
                 if ($task->creator_id !== Auth::id()) {
@@ -838,7 +838,7 @@ class TaskController extends Controller
 
                 if ($field === 'name') {
                     if ($request->has('tag_ids')) {
-                        $task->tags()->sync($request->input('tag_ids', []));
+                        $this->syncTagsPreservingArchived($task, $request->input('tag_ids', []));
                         $this->logChange($task, 'updated tags');
                     }
                     if ($request->filled('new_project_id')) {
@@ -1231,6 +1231,18 @@ class TaskController extends Controller
             'tags'      => $task->tags->map(fn($t) => ['id' => $t->id, 'name' => $t->tag_name, 'color' => $t->color])->all(),
             'assignees' => $task->assignees->map(fn($a) => ['name' => $a->name])->all(),
         ];
+    }
+
+    /**
+     * Sync a task's tags from a form-submitted tag_ids list, without dropping any archived
+     * tag the task already carries. Archived tags are excluded from every tag picker (see
+     * Tag::scopeActive()), so a submitted list can never include one on purpose — but a plain
+     * sync() would otherwise silently detach it just because it wasn't offered as a checkbox.
+     */
+    protected function syncTagsPreservingArchived(Task $task, array $tagIds): void
+    {
+        $archivedAttachedIds = $task->tags()->whereNotNull('tags.archived_at')->pluck('tags.id')->toArray();
+        $task->tags()->sync(array_unique(array_merge($tagIds, $archivedAttachedIds)));
     }
 
     protected function logChange(Task $task, string $description, string $verb = 'edited', ?string $field = null, mixed $oldValue = null, mixed $newValue = null)

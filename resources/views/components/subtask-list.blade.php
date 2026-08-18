@@ -145,9 +145,9 @@
                         @if($task->date)
                             <span>{{ \Carbon\Carbon::parse($task->date)->format('M j') }}</span>
                         @endif
-                        @if($task->tags->count() > 0)
+                        @if($task->visibleTags()->count() > 0)
                             <div class="flex gap-1">
-                                @foreach($task->tags as $tag)
+                                @foreach($task->visibleTags() as $tag)
                                     <span class="inline-block px-1 py-0.5 text-xs rounded"
                                           style="background-color: {{ $tag->color }}22; color: {{ $tag->color }}">
                                         {{ $tag->tag_name }}

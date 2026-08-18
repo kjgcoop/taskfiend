@@ -105,7 +105,8 @@ class QuickAddParser
 
         $matchedSlugs = [];
         foreach ($matches[1] as $tagSlug) {
-            $tag = Tag::where(function ($q) use ($tagSlug) {
+            $tag = Tag::active()
+                ->where(function ($q) use ($tagSlug) {
                     // Exact match, hyphen-slug match (handles "Long Tag" → "@long-tag"),
                     // space-stripped match (handles "5 minutes" → "@5minutes"),
                     // and prefix match as a last resort.

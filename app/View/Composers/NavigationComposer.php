@@ -45,7 +45,7 @@ class NavigationComposer
                 ->values();
         }
 
-        $navTags = Tag::orderByRaw('LOWER(tag_name)')->get(['id', 'tag_name', 'color']);
+        $navTags = Tag::active()->orderByRaw('LOWER(tag_name)')->get(['id', 'tag_name', 'color']);
 
         $view->with('otherLinksFiles', $otherLinksFiles);
         $view->with('navProjects', $navProjects);

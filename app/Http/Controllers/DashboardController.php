@@ -60,7 +60,7 @@ class DashboardController extends Controller
     {
         $projects = Project::activeForUser(Auth::id())->get(['id', 'name'])->sort(fn ($a, $b) => strnatcasecmp($a->name, $b->name))->values();
 
-        $tags = Tag::orderByRaw('LOWER(tag_name)')->get(['id', 'tag_name', 'color']);
+        $tags = Tag::active()->orderByRaw('LOWER(tag_name)')->get(['id', 'tag_name', 'color']);
 
         $users = User::whereNull('email_enabled_at')
             ->orderByRaw('LOWER(name)')
