@@ -228,7 +228,14 @@ $_panelTaskJson = json_encode([
                                class="absolute inset-0 opacity-0 w-full h-full cursor-pointer">
                     </div>
                 </div>
-                <div x-show="datePreview" :class="datePast ? 'text-red-400' : 'text-green-400'" class="mt-1 text-xs flex flex-wrap items-baseline gap-x-1">
+                <div class="flex gap-2 mt-2">
+                    <button @click="saveDateField()" class="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700">Save</button>
+                    <button @click="cancelEdit('date')" class="px-3 py-1 bg-gray-700 text-gray-300 text-sm rounded hover:bg-gray-600">Cancel</button>
+                    @if($task->date)
+                    <button @click="clearDate()" class="px-3 py-1 bg-gray-700 text-red-400 text-sm rounded hover:bg-gray-600">Clear</button>
+                    @endif
+                </div>
+                <div x-show="datePreview" :class="datePast ? 'text-red-400' : 'text-green-400'" class="mt-2 text-xs flex flex-wrap items-baseline gap-x-1">
                     <span x-text="datePreview"></span>
                     <span x-show="projects && projects.length > 0" class="flex flex-wrap items-baseline gap-x-1">
                         <span class="text-gray-500">&mdash;</span>
@@ -250,14 +257,7 @@ $_panelTaskJson = json_encode([
                         </template>
                     </span>
                 </div>
-                <div x-show="dateError" class="mt-1 text-xs text-red-400" x-text="dateError"></div>
-                <div class="flex gap-2 mt-2">
-                    <button @click="saveDateField()" class="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700">Save</button>
-                    <button @click="cancelEdit('date')" class="px-3 py-1 bg-gray-700 text-gray-300 text-sm rounded hover:bg-gray-600">Cancel</button>
-                    @if($task->date)
-                    <button @click="clearDate()" class="px-3 py-1 bg-gray-700 text-red-400 text-sm rounded hover:bg-gray-600">Clear</button>
-                    @endif
-                </div>
+                <div x-show="dateError" class="mt-2 text-xs text-red-400" x-text="dateError"></div>
             </div>
             @endif
         </div>
