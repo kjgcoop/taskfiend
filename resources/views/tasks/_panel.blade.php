@@ -691,6 +691,8 @@ $_panelTaskJson = json_encode([
             <div x-show="tab === 'subtasks'">
                 @if($task->children->count() > 0)
                     <div class="space-y-2 mb-3">
+                        <p>You can go to the <a href="/tasks/{{$task->id}}" class="text-blue-400 hover:underline">full task page</a> to be able to sort the subtasks.</p>
+
                         @foreach($task->children as $child)
                             <div class="flex items-center gap-3 p-2 bg-gray-800 rounded border border-gray-700">
                                 <div class="flex-shrink-0 w-4 h-4 rounded-full border-2 {{ $child->status === 'done' ? 'bg-green-600 border-green-600' : 'border-gray-500' }}"></div>
