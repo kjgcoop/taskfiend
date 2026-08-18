@@ -291,6 +291,40 @@ Test user already created with API key generated.
   and via the arrow buttons on both the full task page and the sidebar panel, confirm the order
   persists on reload, and confirm a done/archived task's subtasks show no sort controls.
 
+### Session Summary (Aug 18, 2026) — Configurable PDF export column count
+- **Feature**: the day-view PDF export's column count (previously hardcoded to 2, see the Aug 6/16
+  entries below) is now configurable via `DAY_EXPORT_COLUMNS` in `.env` — `config/taskfiend.php`'s
+  `day_export_columns` key, clamped to 1-4 there (`max(1, min(4, ...))`) so a bad/extreme `.env`
+  value can't produce a negative-width or unreadably-narrow layout. `DashboardController::exportDayPdf()`
+  reads the config value and passes it into `DayPdfExporter::build()` as an explicit new `$columns`
+  parameter (default 2) — kept explicit rather than having the service reach into `config()` itself,
+  matching how `sort`/`reversed`/`filter` are already passed in rather than pulled from globals.
+  `DayPdfExporter::build()` also clamps its own `$columns` parameter independently, so a direct/test
+  caller can't produce a broken layout either.
+- **What generalized from a fixed 2 to N**: column width (`(PAGE_W - 2*MARGIN - (N-1)*GAP) / N`),
+  an array of N column x-positions (was two named variables), a loop drawing N-1 vertical dividers
+  per page (was one hardcoded divider line — factored into `drawColumnDividers()` since it's now
+  called from two places: initial page and each new page), and the page-break check (was `if ($col
+  > 1)`, now `if ($col >= $columns)`). Nothing outside `DayPdfExporter.php` needed to change —
+  `SimplePdfWriter`, the route, the controller's request handling, and the Export PDF button's JS
+  are all column-count-agnostic.
+- **Investigated before implementing** (separate chat turn, no code changes made then): confirmed
+  via careful reading that nothing else in the codebase assumes 2 columns, sized the change as
+  small/contained, and flagged the clamp-range decision (1-4) for the user rather than picking
+  unilaterally — they confirmed 4 as the ceiling.
+- **Verified**: `DayPdfExporter::build()` at columns=1/2/3/4 all produce structurally valid PDFs
+  (from-scratch xref/object-offset check, same method as prior sessions) with correct page counts —
+  1 column with 50 short tasks needs 2 pages, 2-4 columns fit the same 50 tasks on 1; passing
+  out-of-range raw values (0, -1, 5, 10) directly to `build()` doesn't break layout, confirming the
+  independent clamp there; `config/taskfiend.php`'s clamp verified directly against `DAY_EXPORT_COLUMNS`
+  values 0, -3, 2, 4, 7, and a non-numeric string, all landing in range. Also rendered a 3-column PDF
+  with realistic (non-filler) task text and visually confirmed correct divider placement and the
+  expected extra word-wrapping from narrower columns (a tradeoff already flagged to the user).
+- **Also fixed while pulling in `main`**: a merge conflict resolution on `main` (from before this
+  session) had kept `tests/Unit/TaskTextFilterTest.php` while dropping the `App\Services\TaskTextFilter`
+  class it tests (deleted in the Aug 16 "filter via task IDs" work below) — a dangling `use` of a
+  nonexistent class that would fatal on any test run touching that file. Deleted the stale test.
+
 ### Session Summary (Aug 12, 2026) — Bulk-update status bug (missing completed_at, broken recurrence)
 - **Bug**: `TaskController::bulkUpdate()` (`POST /tasks/bulk-update`, the multi-select "Archive"/"Mark
   done" action) set `status` via a raw `$task->update($changes)` mass assignment instead of going

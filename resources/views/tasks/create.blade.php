@@ -281,6 +281,19 @@
                         </div>
 
                         <!-- Parent Task (Subtask) -->
+                        @php
+                            $_oldParentId = old('parent_id', '');
+                            $_oldParentName = '';
+                            if ($_oldParentId) {
+                                $_found = $availableParents->firstWhere('id', $_oldParentId);
+                                $_oldParentName = $_found ? $_found->name : '';
+                            }
+                            $_parentsForCombo = $availableParents->map(fn($t) => [
+                                'id' => $t->id,
+                                'name' => str_repeat('→ ', $t->getDepth()) . $t->name,
+                                'rawName' => $t->name,
+                            ])->values()->all();
+                        @endphp
                         @if(isset($preselectedParentId) && $preselectedParentId)
                         <div class="mb-4">
                             <label for="parent_id" class="block text-sm font-medium text-gray-300 mb-2">
@@ -302,24 +315,16 @@
                             <input type="hidden" name="parent_id" value="{{ $preselectedParentId }}">
                         </div>
                         @else
-                        @php
-                            $_oldParentId = old('parent_id', '');
-                            $_oldParentName = '';
-                            if ($_oldParentId) {
-                                $_found = $availableParents->firstWhere('id', $_oldParentId);
-                                $_oldParentName = $_found ? $_found->name : '';
-                            }
-                            $_parentsForCombo = $availableParents->map(fn($t) => [
-                                'id' => $t->id,
-                                'name' => str_repeat('→ ', $t->getDepth()) . $t->name,
-                                'rawName' => $t->name,
-                            ])->values()->all();
-                        @endphp
                         <div class="mb-4"
                              x-data="parentTaskCombo" @click.outside="open = false">
                             <label class="block text-sm font-medium text-gray-300 mb-2">
                                 Parent Task <span class="font-normal text-gray-500">(Optional – type to search)</span>
                             </label>
+                            @if($missingParentId)
+                            <p class="mb-2 text-sm text-amber-400">
+                                Requested parent task #{{ $missingParentId }} doesn't exist — select a parent task from the dropdown manually if one is desired.
+                            </p>
+                            @endif
                             <div class="relative">
                                 <input type="text"
                                        x-model="search"

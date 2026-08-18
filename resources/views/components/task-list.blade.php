@@ -1265,7 +1265,7 @@
                             @endif
                         @endif
                         @if($task->duration_minutes)
-                            <span class="text-purple-900" data-duration-display>{{ \App\Models\Task::formatDuration($task->duration_minutes) }}</span>
+                            <span class="text-purple-500" data-duration-display>{{ \App\Models\Task::formatDuration($task->duration_minutes) }}</span>
                         @endif
                         @if($task->location)
                             @php
