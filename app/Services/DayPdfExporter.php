@@ -169,13 +169,7 @@ class DayPdfExporter
     {
         $top = self::PAGE_H - self::MARGIN;
 
-        if ($date->isToday()) {
-            $eyebrowY = $top - self::HEADER_EYEBROW_SIZE;
-            $pdf->text(self::MARGIN, $eyebrowY, 'TODAY', 'F1', self::HEADER_EYEBROW_SIZE, self::META_GRAY, self::HEADER_EYEBROW_TRACKING);
-            $titleY = $eyebrowY - 24.0;
-        } else {
-            $titleY = $top - self::HEADER_TITLE_SIZE;
-        }
+        $titleY = $top - self::HEADER_TITLE_SIZE;
 
         $pdf->text(self::MARGIN, $titleY, $date->format('l, F j, Y'), 'F2', self::HEADER_TITLE_SIZE, 0.0);
 
