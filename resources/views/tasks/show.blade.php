@@ -977,7 +977,7 @@
                 _datePreviewTimeout: null,
                 parentSearch: @js($task->parent ? $task->parent->name : ''),
                 parentOpen: false,
-                parentTasks: @js($availableParents->map(fn($t) => ['id' => $t->id, 'name' => str_repeat('→ ', $t->getDepth()) . $t->name, 'rawName' => $t->name])->values()->all()),
+                parentTasks: @js($availableParents->map(fn($t) => ['id' => $t->id, 'name' => str_repeat('→ ', $t->getDepth()) . ($t->project ? $t->project->name . ': ' : '') . $t->name, 'rawName' => $t->name])->values()->all()),
                 get parentFiltered() {
                     const q = this.parentSearch.toLowerCase().trim();
                     if (!q) return this.parentTasks.slice(0, 10);
