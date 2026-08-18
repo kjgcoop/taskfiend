@@ -60,21 +60,6 @@
                        class="block px-4 py-2 text-gray-200 hover:bg-gray-700">
                         Export MD
                     </a>
-                    @if($tag->is_archived)
-                        <form method="POST" action="{{ route('tags.unarchive', $tag) }}">
-                            @csrf
-                            <button type="submit" class="w-full text-left px-4 py-2 text-gray-200 hover:bg-gray-700">
-                                Unarchive Tag
-                            </button>
-                        </form>
-                    @else
-                        <form method="POST" action="{{ route('tags.archive', $tag) }}">
-                            @csrf
-                            <button type="submit" class="w-full text-left px-4 py-2 text-gray-200 hover:bg-gray-700">
-                                Archive Tag
-                            </button>
-                        </form>
-                    @endif
                 </div>
             </div>
         </div>
@@ -152,6 +137,37 @@
                                 class="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700">
                             Save Color
                         </button>
+                    </div>
+
+                    {{-- Archive --}}
+                    <div class="mb-5 pt-4 border-t border-gray-700">
+                        <div class="flex items-center justify-between gap-3">
+                            <div class="min-w-0">
+                                <p class="text-sm font-medium text-gray-300">
+                                    {{ $tag->is_archived ? 'Archived' : 'Archive this tag' }}
+                                </p>
+                                <p class="text-xs text-gray-500 mt-0.5">
+                                    {{ $tag->is_archived
+                                        ? 'Hidden from task views and the tag picker. Tagged tasks are unaffected.'
+                                        : 'Hides it from task views and the tag picker. Tagged tasks keep the tag.' }}
+                                </p>
+                            </div>
+                            @if($tag->is_archived)
+                                <form method="POST" action="{{ route('tags.unarchive', $tag) }}" class="shrink-0">
+                                    @csrf
+                                    <button type="submit" class="px-3 py-1 bg-gray-700 hover:bg-gray-600 text-gray-200 text-sm rounded whitespace-nowrap">
+                                        Unarchive
+                                    </button>
+                                </form>
+                            @else
+                                <form method="POST" action="{{ route('tags.archive', $tag) }}" class="shrink-0">
+                                    @csrf
+                                    <button type="submit" class="px-3 py-1 bg-gray-700 hover:bg-gray-600 text-gray-200 text-sm rounded whitespace-nowrap">
+                                        Archive
+                                    </button>
+                                </form>
+                            @endif
+                        </div>
                     </div>
 
                     <div class="flex justify-between items-center pt-4 border-t border-gray-700">

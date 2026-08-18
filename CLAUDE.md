@@ -315,6 +315,15 @@ Test user already created with API key generated.
   real PHPUnit invocation (not installed in this sandbox, same constraint as every prior session
   noted below) — written and `php -l`-checked, and its assertions match what the standalone smoke
   script above already exercised. Whoever next has a working `composer install` should run it once.
+- **Follow-up (user testing feedback)**: `test_task_create_and_edit_forms_only_offer_active_tags`
+  failed on a real PHPUnit run — `TaskController::create()` calls `Auth::user()->defaultProject()`,
+  which throws if the user has no project flagged `is_default` (a real app invariant), and the
+  test's `setUp()` created a project without that flag. Fixed in the test, not the app. Also moved
+  the Archive/Unarchive action from the tag show page's three-dot menu into the Details modal (its
+  own bordered section, separated from Delete by another border) per user request, so the two
+  aren't adjacent and can't be misclicked into each other — confirmed the modal's task list still
+  scopes to `visibleTo(Auth::id())` everywhere (see the `TagController` methods above), i.e. viewing
+  an archived tag never surfaces another user's tasks.
 
 ### Session Summary (Aug 18, 2026) — Subtask reordering
 - **Feature**: subtasks can now be manually reordered (drag handle + move-to-top/up/down/bottom
