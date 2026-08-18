@@ -281,6 +281,19 @@
                         </div>
 
                         <!-- Parent Task (Subtask) -->
+                        @php
+                            $_oldParentId = old('parent_id', '');
+                            $_oldParentName = '';
+                            if ($_oldParentId) {
+                                $_found = $availableParents->firstWhere('id', $_oldParentId);
+                                $_oldParentName = $_found ? $_found->name : '';
+                            }
+                            $_parentsForCombo = $availableParents->map(fn($t) => [
+                                'id' => $t->id,
+                                'name' => str_repeat('→ ', $t->getDepth()) . $t->name,
+                                'rawName' => $t->name,
+                            ])->values()->all();
+                        @endphp
                         @if(isset($preselectedParentId) && $preselectedParentId)
                         <div class="mb-4">
                             <label for="parent_id" class="block text-sm font-medium text-gray-300 mb-2">
@@ -302,19 +315,6 @@
                             <input type="hidden" name="parent_id" value="{{ $preselectedParentId }}">
                         </div>
                         @else
-                        @php
-                            $_oldParentId = old('parent_id', '');
-                            $_oldParentName = '';
-                            if ($_oldParentId) {
-                                $_found = $availableParents->firstWhere('id', $_oldParentId);
-                                $_oldParentName = $_found ? $_found->name : '';
-                            }
-                            $_parentsForCombo = $availableParents->map(fn($t) => [
-                                'id' => $t->id,
-                                'name' => str_repeat('→ ', $t->getDepth()) . $t->name,
-                                'rawName' => $t->name,
-                            ])->values()->all();
-                        @endphp
                         <div class="mb-4"
                              x-data="parentTaskCombo" @click.outside="open = false">
                             <label class="block text-sm font-medium text-gray-300 mb-2">
