@@ -32,9 +32,10 @@ class TagArchivingTest extends TestCase
 
         $this->user    = User::factory()->create();
         $this->project = Project::create([
-            'name'    => 'Test Project',
-            'user_id' => $this->user->id,
-            'status'  => 'incomplete',
+            'name'       => 'Test Project',
+            'user_id'    => $this->user->id,
+            'status'     => 'incomplete',
+            'is_default' => true, // User::defaultProject() requires one; tasks.create() calls it.
         ]);
 
         $this->activeTag   = Tag::create(['tag_name' => 'active-tag', 'color' => '#3B82F6']);
