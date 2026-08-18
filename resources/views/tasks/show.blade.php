@@ -792,7 +792,7 @@
 
                         @if($task->children->count() > 0)
                             <div class="space-y-2">
-                                <x-subtask-list :tasks="$task->children" :parent="$task" />
+                                <x-subtask-list :tasks="$task->children" :parent="$task" :sortable="!$isInactive" />
                             </div>
                         @endif
                     </div>

@@ -1,17 +1,73 @@
-@props(['tasks', 'parent'])
+@props(['tasks', 'parent', 'sortable' => false, 'depth' => 0])
 
 @pushOnce('scripts')
 <script nonce="{{ csp_nonce() }}">
     // listQuickComplete is registered via Alpine.data() in task-list's @@pushOnce
-    // No re-registration needed here.
+    // taskSortableList is registered globally in app.js so this component doesn't
+    // depend on task-list.blade.php also being present on the page.
 </script>
 @endPushOnce
 
-<div class="space-y-2">
+@php
+    // Only the top level of subtasks is made sortable — a nested sortable container at every
+    // depth would register its own drag listener on the same DOM subtree as its ancestor's
+    // container (both listeners firing on one pointerdown), so this mirrors task-list.blade.php's
+    // depth === 0 restriction rather than trying to make every level of the tree draggable.
+    $canSort = $sortable && $depth === 0 && $tasks->count() > 1;
+@endphp
+<div class="space-y-2" @if($canSort) x-data="taskSortableList" @endif>
     @foreach($tasks as $task)
-        <div data-task-group x-data="subtaskGroup">
+        <div data-task-group data-task-group-id="{{ $task->id }}" x-data="subtaskGroup">
         <div class="bg-gray-700 border border-gray-600 p-3 rounded-lg hover:bg-gray-650 transition">
             <div class="flex items-start gap-3">
+                @if($canSort)
+                <!-- Sort controls (drag handle + arrow buttons) -->
+                <div class="self-stretch flex items-center flex-shrink-0 gap-1 mt-1" @click.stop>
+                    <div class="flex flex-col justify-center gap-0.5">
+                        <button data-sort-top type="button"
+                                @click.stop="taskMoveInList($el, 'top')"
+                                title="Move to top"
+                                class="text-gray-500 hover:text-gray-200 transition-colors rounded p-0.5 focus:outline-none">
+                            <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <polyline points="5,12 12,5 19,12"/>
+                                <polyline points="5,18 12,11 19,18"/>
+                            </svg>
+                        </button>
+                        <button data-sort-up type="button"
+                                @click.stop="taskMoveInList($el, 'up')"
+                                title="Move up"
+                                class="text-gray-500 hover:text-gray-200 transition-colors rounded p-0.5 focus:outline-none">
+                            <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <polyline points="5,15 12,8 19,15"/>
+                            </svg>
+                        </button>
+                        <button data-sort-down type="button"
+                                @click.stop="taskMoveInList($el, 'down')"
+                                title="Move down"
+                                class="text-gray-500 hover:text-gray-200 transition-colors rounded p-0.5 focus:outline-none">
+                            <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <polyline points="5,9 12,16 19,9"/>
+                            </svg>
+                        </button>
+                        <button data-sort-bottom type="button"
+                                @click.stop="taskMoveInList($el, 'bottom')"
+                                title="Move to bottom"
+                                class="text-gray-500 hover:text-gray-200 transition-colors rounded p-0.5 focus:outline-none">
+                            <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <polyline points="5,6 12,13 19,6"/>
+                                <polyline points="5,12 12,19 19,12"/>
+                            </svg>
+                        </button>
+                    </div>
+                    <div class="drag-handle touch-none flex items-center self-stretch" style="cursor: grab" title="Drag to reorder">
+                        <svg class="w-4 h-4 text-gray-600" viewBox="0 0 16 24" fill="currentColor" aria-hidden="true">
+                            <circle cx="5" cy="6" r="1.5"/><circle cx="11" cy="6" r="1.5"/>
+                            <circle cx="5" cy="12" r="1.5"/><circle cx="11" cy="12" r="1.5"/>
+                            <circle cx="5" cy="18" r="1.5"/><circle cx="11" cy="18" r="1.5"/>
+                        </svg>
+                    </div>
+                </div>
+                @endif
                 <!-- Status Indicator -->
                 <div class="flex-shrink-0 mt-1">
                     @if($task->status === 'done')
@@ -130,7 +186,7 @@
             @if($task->children->count() > 0)
                 <div x-show="subtasksOpen" x-transition:leave="transition-opacity duration-150" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0"
                      class="ml-8 mt-3 space-y-2">
-                    <x-subtask-list :tasks="$task->children" :parent="$task" />
+                    <x-subtask-list :tasks="$task->children" :parent="$task" :sortable="$sortable" :depth="$depth + 1" />
                 </div>
             @endif
         </div>

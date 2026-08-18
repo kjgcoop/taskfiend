@@ -248,6 +248,49 @@ Test user already created with API key generated.
 
 ## Important Notes
 
+### Session Summary (Aug 18, 2026) — Subtask reordering
+- **Feature**: subtasks can now be manually reordered (drag handle + move-to-top/up/down/bottom
+  arrow buttons), same interaction as the main task list. Lives on the task show page and the
+  sidebar task panel — both render `resources/views/tasks/show.blade.php`, which is the only
+  place `<x-subtask-list>` is used, so one component change covers both.
+- **No backend changes needed**: `Task::children()` already orders by `sort_order` (see the
+  Jul 11, 2026 dedup entry's era of schema), and `TaskController::reorder()`
+  (`POST /tasks/reorder`, existing route) already accepts an arbitrary `ids[]` array, checks
+  `Task::visibleTo()` per id, and stamps `sort_order` by position in that array — it isn't scoped
+  to top-level tasks, so submitting a parent's subtask ids reorders just that sibling group without
+  touching anything else. This was purely a frontend wiring task: reuse the existing drag/arrow
+  machinery (`window.initTaskSortable`/`saveTaskOrder`/`taskMoveInList`/`updateSortButtonStates` in
+  `layouts/app.blade.php`) against `resources/views/components/subtask-list.blade.php`.
+- **Only the top level of subtasks under the task you're viewing is sortable, not every nested
+  depth** — deliberate, not a shortcut. `subtask-list.blade.php` is recursive (nested children
+  render via a nested `<x-subtask-list>`); wrapping every recursion depth in its own
+  `x-data="taskSortableList"` container would register a separate `pointerdown` listener on each
+  container, and since deeper containers sit inside shallower ones' DOM subtrees, one drag-handle
+  pointerdown would bubble into *multiple* listeners at once (each maintaining its own drag-ghost
+  state), corrupting the drag. `task-list.blade.php` already sidesteps this exact problem by only
+  enabling its sortable container at `$depth === 0`; `subtask-list.blade.php` now takes a matching
+  `depth` prop and does the same (`$canSort = $sortable && $depth === 0 && ...`). Consistent with
+  the user's own framing of the request ("not ideal... but better than the inability to do so at
+  all") — reordering grandchild-level subtasks still isn't possible, only direct children of
+  whatever task page/panel you're on.
+- Sort controls are gated behind the same `$isInactive` check that already hides "+ Add Subtask"
+  (done/archived tasks, or tasks in a done/archived project, are read-only) — passed down as a new
+  `sortable` prop on `<x-subtask-list>`. Also hidden when a level has only one subtask (nothing to
+  reorder).
+- `Alpine.data('taskSortableList', ...)` moved from being registered only inside
+  `task-list.blade.php`'s local `@pushOnce('scripts')` to also being registered globally in
+  `resources/js/app.js`, since `subtask-list.blade.php` needed it available without depending on
+  `task-list.blade.php` being on the same page. The two registrations are identical, so this is a
+  harmless redundant overwrite wherever both happen to load, not a behavior change.
+- **Not verified against a running app**: `npm run build` fails in this sandbox (`vite: not
+  found` — `node_modules` isn't fully installed, same npm-registry blocker prior sessions hit).
+  Checked instead via `node --check resources/js/app.js` (no syntax errors), a manual
+  `@if`/`@endif`/`@foreach`/`@endforeach`/`<div>` balance check on the edited Blade file, and
+  `php artisan view:cache` (compiles every Blade template in the app, including this one, without
+  error). Whoever next has a working `npm install` should click through: reorder subtasks via drag
+  and via the arrow buttons on both the full task page and the sidebar panel, confirm the order
+  persists on reload, and confirm a done/archived task's subtasks show no sort controls.
+
 ### Session Summary (Aug 12, 2026) — Bulk-update status bug (missing completed_at, broken recurrence)
 - **Bug**: `TaskController::bulkUpdate()` (`POST /tasks/bulk-update`, the multi-select "Archive"/"Mark
   done" action) set `status` via a raw `$task->update($changes)` mass assignment instead of going

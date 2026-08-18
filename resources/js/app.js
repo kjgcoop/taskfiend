@@ -8,6 +8,11 @@ Alpine.data('dropdown', () => ({ open: false }));
 Alpine.data('copyButton', () => ({ copied: false }));
 Alpine.data('flashMessage', () => ({ show: true }));
 Alpine.data('subtaskGroup', () => ({ subtasksOpen: true }));
+// Drag/arrow reordering for a sibling list of task cards. Registered globally (rather than
+// locally in task-list.blade.php's @pushOnce) so subtask-list.blade.php can use it too without
+// depending on task-list.blade.php also being on the page. window.initTaskSortable lives in
+// layouts/app.blade.php, loaded on every page.
+Alpine.data('taskSortableList', () => ({ init() { window.initTaskSortable(this.$el); } }));
 Alpine.data('tabSwitcher', () => ({ tab: 'comments' }));
 Alpine.data('uploadToggle', () => ({
     showUpload: false,
