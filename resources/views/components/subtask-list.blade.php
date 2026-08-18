@@ -1,12 +1,8 @@
 @props(['tasks', 'parent', 'sortable' => false, 'depth' => 0])
 
-@pushOnce('scripts')
-<script nonce="{{ csp_nonce() }}">
-    // listQuickComplete is registered via Alpine.data() in task-list's @@pushOnce
-    // taskSortableList is registered globally in app.js so this component doesn't
-    // depend on task-list.blade.php also being present on the page.
-</script>
-@endPushOnce
+{{-- listQuickComplete and taskSortableList are both registered globally in app.js so this
+     component doesn't depend on task-list.blade.php also being present on the page (it wasn't,
+     on the task show page / sidebar panel — that was a real bug, now fixed at the source). --}}
 
 @php
     // Only the top level of subtasks is made sortable — a nested sortable container at every

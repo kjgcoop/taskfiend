@@ -4,11 +4,9 @@
 <script nonce="{{ csp_nonce() }}">
     window.taskPreviewUrl = '{{ route('tasks.previewQuickAdd') }}';
 
-    document.addEventListener('alpine:init', () => {
-        Alpine.data('taskSortableList', () => ({
-            init() { initTaskSortable(this.$el); },
-        }));
-    });
+    // taskSortableList and listQuickComplete are registered globally in app.js (not here) so
+    // that subtask-list.blade.php can use them without depending on this component also being
+    // on the page — see the comments above their registrations in app.js for why that matters.
 
     document.addEventListener('alpine:init', () => {
         Alpine.store('taskCount', {
@@ -48,57 +46,6 @@
             deselectAll() { this.selected = []; },
             get count() { return this.selected.length; }
         });
-    });
-
-    document.addEventListener('alpine:init', () => {
-    Alpine.data('listQuickComplete', function () {
-        return {
-            done: false,
-            loading: false,
-            error: null,
-            async submit() {
-                this.loading = true;
-                this.error = null;
-                const form = this.$el;
-                try {
-                    const res = await fetch(form.action, {
-                        method: 'POST',
-                        headers: { 'X-Requested-With': 'XMLHttpRequest' },
-                        body: new FormData(form),
-                    });
-                    const data = await res.json().catch(() => ({}));
-                    if (res.ok && data.ok !== false && data.success !== false) {
-                        this.done = true;
-                        // Brief pause to show filled dot, then disappear and hand off to the undo toast
-                        await new Promise(r => setTimeout(r, 400));
-                        const group = form.closest('[data-task-group]');
-                        if (group) {
-                            group.style.transition = 'opacity 0.2s';
-                            group.style.opacity = '0';
-                            setTimeout(() => { group.style.display = 'none'; }, 200);
-                        }
-                        window.dispatchEvent(new CustomEvent('task-completed', {
-                            detail: {
-                                taskId:     form.dataset.taskId,
-                                taskName:   form.dataset.taskName,
-                                undoUrl:    form.dataset.undoUrl,
-                                recurring:  form.dataset.recurring === 'true',
-                                nextTaskId: data.next_task_id ?? null,
-                                group,
-                                form,
-                            }
-                        }));
-                    } else {
-                        this.error = data.message || 'Could not complete task. Please try again.';
-                    }
-                } catch {
-                    form.submit(); // network failure – fall back to full reload
-                } finally {
-                    this.loading = false;
-                }
-            }
-        };
-    });
     });
 
     document.addEventListener('alpine:init', () => {
