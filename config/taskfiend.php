@@ -66,4 +66,15 @@ return [
     | --todoist-api-key is not passed explicitly.
     */
     'todoist_key' => env('TODOIST_KEY'),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Day PDF Export
+    |--------------------------------------------------------------------------
+    | Number of columns in the printable day-view PDF (the "Export PDF" button
+    | on the day page). Clamped to 1-4 — below 1 is nonsensical, and the page
+    | margins/gutter this layout uses were tuned by eye for up to 4 columns on
+    | a portrait US Letter page; more than that gets too cramped to read.
+    */
+    'day_export_columns' => max(1, min(4, (int) env('DAY_EXPORT_COLUMNS', 2))),
 ];

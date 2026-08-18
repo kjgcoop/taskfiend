@@ -8,14 +8,17 @@ use Illuminate\Support\Collection;
 /**
  * Builds the printable "today's task list" PDF: an eyebrow label, a big bold
  * date, an optional meta line describing any active filter/sort, a rule, and
- * the incomplete tasks in a two-column list — a time gutter on the left of
- * each column, a divider line under every row instead of a bullet, and a
- * vertical divider between the columns running the full column height.
+ * the incomplete tasks in a multi-column list (column count configurable via
+ * DAY_EXPORT_COLUMNS, see config/taskfiend.php — 1 to 4) — a time gutter on
+ * the left of each column, a divider line under every row instead of a
+ * bullet, and vertical dividers between columns running the full column
+ * height.
  *
  * Layout is hand-laid-out (via SimplePdfWriter) rather than left to a CSS
  * multi-column engine: it gives us the top-to-bottom-then-across fill order
- * a foldable checklist wants, without depending on a renderer's column
- * support being reliable.
+ * a foldable checklist wants (column 1 fills completely before column 2
+ * starts, and so on), without depending on a renderer's column support
+ * being reliable.
  */
 class DayPdfExporter
 {
@@ -67,16 +70,30 @@ class DayPdfExporter
 
     /**
      * @param  Collection<int, \App\Models\Task>  $tasks  Already filtered/sorted, in display order.
+     * @param  int  $columns  1-4; values outside that range are clamped (see config/taskfiend.php,
+     *                        which is the normal way this gets set — clamping here too means a
+     *                        caller passing a raw value directly can't produce a broken layout).
      */
-    public static function build(Carbon $date, Collection $tasks, ?string $filterQuery, string $sort, bool $reversed): string
+    public static function build(Carbon $date, Collection $tasks, ?string $filterQuery, string $sort, bool $reversed, int $columns = 2): string
     {
+        $columns = max(1, min(4, $columns));
+
         $pdf = new SimplePdfWriter(self::PAGE_W, self::PAGE_H);
 
-        $columnWidth = (self::PAGE_W - 2 * self::MARGIN - self::COLUMN_GAP) / 2;
+        $columnWidth = (self::PAGE_W - 2 * self::MARGIN - ($columns - 1) * self::COLUMN_GAP) / $columns;
         $textWidth   = $columnWidth - self::GUTTER_WIDTH - self::GUTTER_TEXT_GAP;
-        $dividerX    = self::MARGIN + $columnWidth + self::COLUMN_GAP / 2;
-        $col1X       = self::MARGIN + $columnWidth + self::COLUMN_GAP;
         $bottomY     = self::MARGIN;
+
+        // x position of each column's left edge, and of each divider line sitting
+        // in the gap between one column and the next (columns - 1 of them).
+        $columnX = [];
+        for ($i = 0; $i < $columns; $i++) {
+            $columnX[$i] = self::MARGIN + $i * ($columnWidth + self::COLUMN_GAP);
+        }
+        $dividerXs = [];
+        for ($i = 0; $i < $columns - 1; $i++) {
+            $dividerXs[] = $columnX[$i] + $columnWidth + self::COLUMN_GAP / 2;
+        }
 
         $contentTopFirstPage = self::drawHeader($pdf, $date, $filterQuery, $sort, $reversed);
         $contentTopOtherPages = self::PAGE_H - self::MARGIN - 10.0;
@@ -94,10 +111,10 @@ class DayPdfExporter
         });
 
         $col = 0;
-        $x = self::MARGIN;
         $columnTop = $contentTopFirstPage;
+        $x = $columnX[0];
         $y = $columnTop;
-        $pdf->line($dividerX, $columnTop, $dividerX, $bottomY, self::ROW_DIVIDER_WIDTH, self::ROW_DIVIDER_GRAY);
+        self::drawColumnDividers($pdf, $dividerXs, $columnTop, $bottomY);
 
         foreach ($rows as $row) {
             $numLines   = count($row['lines']);
@@ -107,13 +124,13 @@ class DayPdfExporter
 
             if (!$fits && !$atFreshTop) {
                 $col++;
-                if ($col > 1) {
+                if ($col >= $columns) {
                     $pdf->newPage();
                     $col = 0;
                     $columnTop = $contentTopOtherPages;
-                    $pdf->line($dividerX, $columnTop, $dividerX, $bottomY, self::ROW_DIVIDER_WIDTH, self::ROW_DIVIDER_GRAY);
+                    self::drawColumnDividers($pdf, $dividerXs, $columnTop, $bottomY);
                 }
-                $x = $col === 0 ? self::MARGIN : $col1X;
+                $x = $columnX[$col];
                 $y = $columnTop;
                 $lastLineY = $y - ($numLines - 1) * self::LINE_HEIGHT;
             }
@@ -132,6 +149,14 @@ class DayPdfExporter
         }
 
         return $pdf->output();
+    }
+
+    /** Draws one vertical divider line in each gap between adjacent columns, for one page. */
+    private static function drawColumnDividers(SimplePdfWriter $pdf, array $dividerXs, float $top, float $bottom): void
+    {
+        foreach ($dividerXs as $dividerX) {
+            $pdf->line($dividerX, $top, $dividerX, $bottom, self::ROW_DIVIDER_WIDTH, self::ROW_DIVIDER_GRAY);
+        }
     }
 
     /**
