@@ -592,29 +592,11 @@
                     });
                 });
             },
-            taskMoveInList(btn, direction) {
-                const group = btn.closest('[data-task-group]');
-                if (!group) return;
-                const container = group.parentElement;
-                const groups = [...container.querySelectorAll(':scope > [data-task-group]')];
-                const idx = groups.indexOf(group);
-                const btnYBefore = btn.getBoundingClientRect().top;
-                if (direction === 'top' && idx > 0) {
-                    container.insertBefore(group, groups[0]);
-                } else if (direction === 'up' && idx > 0) {
-                    container.insertBefore(group, groups[idx - 1]);
-                } else if (direction === 'down' && idx < groups.length - 1) {
-                    container.insertBefore(groups[idx + 1], group);
-                } else if (direction === 'bottom' && idx < groups.length - 1) {
-                    container.appendChild(group);
-                } else {
-                    return;
-                }
-                const delta = btn.getBoundingClientRect().top - btnYBefore;
-                if (delta !== 0) window.scrollBy(0, delta);
-                window.saveTaskOrder(container);
-                window.updateSortButtonStates(container);
-            },
+            // taskMoveInList used to be duplicated here — removed. The arrow buttons that call
+            // it only ever render inside a container with x-data="taskSortableList" (same
+            // $sortable && !$readOnly && $depth === 0 condition as the buttons themselves), and
+            // that component now exposes taskMoveInList itself (see app.js) — no need for this
+            // component to also provide it as an ancestor fallback.
             sortBy(val, saveLocal) {
                 const p = new URLSearchParams(window.location.search);
                 p.set('sort', val);

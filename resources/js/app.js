@@ -10,9 +10,25 @@ Alpine.data('flashMessage', () => ({ show: true }));
 Alpine.data('subtaskGroup', () => ({ subtasksOpen: true }));
 // Drag/arrow reordering for a sibling list of task cards. Registered globally (rather than
 // locally in task-list.blade.php's @pushOnce) so subtask-list.blade.php can use it too without
-// depending on task-list.blade.php also being on the page. window.initTaskSortable lives in
-// layouts/app.blade.php, loaded on every page.
-Alpine.data('taskSortableList', () => ({ init() { window.initTaskSortable(this.$el); } }));
+// depending on task-list.blade.php also being on the page. window.initTaskSortable/taskMoveInList
+// live in layouts/app.blade.php, loaded on every page.
+//
+// taskMoveInList is exposed here (delegating to the window one) rather than left as a bare
+// window global, because Alpine's CSP-safe evaluator does NOT fall back to window/globalThis for
+// an identifier a directive references — unlike normal Alpine (which evaluates expressions with
+// `new Function` + `with`, where an unresolved identifier naturally falls through to the global
+// scope), the CSP build's hand-rolled expression interpreter only resolves identifiers found in
+// the Alpine scope stack (magics + x-data components, walking up through ancestors) and throws
+// "Undefined variable: X" for anything else. Every @click="taskMoveInList($el, ...)" needs a
+// real ancestor x-data exposing that name, not just a same-named window function — the arrow
+// buttons on the main task list happened to work only because they sit inside taskFilter's
+// x-data, which (redundantly) defined its own copy of this same method; subtask-list.blade.php's
+// arrow buttons have no such ancestor, so they threw. Defining it here means any container using
+// x-data="taskSortableList" gets working arrow buttons regardless of what else wraps it.
+Alpine.data('taskSortableList', () => ({
+    init() { window.initTaskSortable(this.$el); },
+    taskMoveInList(el, direction) { window.taskMoveInList(el, direction); },
+}));
 // Quick-complete circle button on a task-list row. Same story as taskSortableList above: this
 // used to live only in task-list.blade.php's @pushOnce, which subtask-list.blade.php relied on
 // without actually including — so the quick-complete button on subtask rows silently threw
