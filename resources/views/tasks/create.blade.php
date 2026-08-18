@@ -320,6 +320,11 @@
                             <label class="block text-sm font-medium text-gray-300 mb-2">
                                 Parent Task <span class="font-normal text-gray-500">(Optional – type to search)</span>
                             </label>
+                            @if($missingParentId)
+                            <p class="mb-2 text-sm text-amber-400">
+                                Requested parent task #{{ $missingParentId }} doesn't exist — select a parent task from the dropdown manually if one is desired.
+                            </p>
+                            @endif
                             <div class="relative">
                                 <input type="text"
                                        x-model="search"

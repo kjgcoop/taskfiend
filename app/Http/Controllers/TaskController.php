@@ -73,6 +73,7 @@ class TaskController extends Controller
         // Handle parent task preselection
         $preselectedParentId = $request->query('parent_id');
         $preselectedParentTask = null;
+        $missingParentId = null;
 
         if ($preselectedParentId) {
             $preselectedParentTask = Task::find($preselectedParentId);
@@ -81,7 +82,9 @@ class TaskController extends Controller
             } else {
                 // Parent task no longer exists (deleted/never existed, stale link, etc.) —
                 // fall back to the normal "no preselection" create form instead of carrying
-                // around an id with nothing to point at.
+                // around an id with nothing to point at. Remember the requested id so the
+                // view can tell the user why nothing got preselected.
+                $missingParentId = $preselectedParentId;
                 $preselectedParentId = null;
             }
         }
@@ -94,7 +97,7 @@ class TaskController extends Controller
             ->get();
 
         return view('tasks.create', compact(
-            'projects', 'tags', 'users',
+            'projects', 'tags', 'users', 'missingParentId',
             'preselectedProjectId', 'preselectedDate',
             'preselectedParentId', 'preselectedParentTask', 'availableParents'
         ));
