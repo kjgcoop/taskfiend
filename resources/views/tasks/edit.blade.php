@@ -210,7 +210,7 @@
                             }
                             $_parentsForCombo = $availableParents->map(fn($t) => [
                                 'id' => $t->id,
-                                'name' => str_repeat('→ ', $t->getDepth()) . $t->name,
+                                'name' => str_repeat('→ ', $t->getDepth()) . ($t->project ? $t->project->name . ': ' : '') . $t->name,
                                 'rawName' => $t->name,
                             ])->values()->all();
                         @endphp

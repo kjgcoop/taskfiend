@@ -92,7 +92,7 @@ class TaskController extends Controller
         // Get available parent tasks (exclude archived)
         $availableParents = Task::visibleTo(Auth::id())
             ->where('status', '=', 'incomplete')
-            ->with('parent') // For depth calculation
+            ->with('parent', 'project') // For depth calculation and project name display
             ->orderByRaw('LOWER(name)')
             ->get();
 
@@ -358,8 +358,8 @@ class TaskController extends Controller
 
         $availableParents = Task::visibleTo(Auth::id())
             ->whereNotIn('id', $excludeIds)
-            ->where('status', '!=', 'archived')
-            ->with('parent') // For depth calculation
+            ->where('status', '=', 'incomplete')
+            ->with('parent', 'project') // For depth calculation and project name display
             ->orderByRaw('LOWER(name)')
             ->get();
 
@@ -431,8 +431,8 @@ class TaskController extends Controller
 
         $availableParents = Task::visibleTo(Auth::id())
             ->whereNotIn('id', $excludeIds)
-            ->where('status', '!=', 'archived')
-            ->with('parent') // For depth calculation
+            ->where('status', '=', 'incomplete')
+            ->with('parent', 'project') // For depth calculation and project name display
             ->orderByRaw('LOWER(name)')
             ->get();
 
