@@ -291,6 +291,38 @@ Test user already created with API key generated.
   and via the arrow buttons on both the full task page and the sidebar panel, confirm the order
   persists on reload, and confirm a done/archived task's subtasks show no sort controls.
 
+### Session Summary (Aug 18, 2026) — Task sidebar: "Select All" popup drifting on mobile
+- **Bug report**: on the mobile task sidebar (the slide-in panel opened by tapping a task —
+  `#task-panel-overlay` in `layouts/app.blade.php`, content fetched from `tasks/_panel.blade.php`),
+  selecting text and then tapping the native "Select All" callout caused the callout to visibly
+  slide/drift away instead of snapping to the newly-expanded selection.
+- **Root cause theory**: the panel's DOM had a `position: sticky` header living *inside* the
+  scrollable drawer (`overflow-y-auto`), which itself sits inside a `position: fixed` full-screen
+  overlay. Sticky-inside-scroll-inside-fixed is a known trigger for mobile Safari/WebKit bugs where
+  the browser's auto-scroll-into-view (triggered by "Select All" expanding the selection) fights
+  with reconciling the sticky element's position, and the native selection callout visibly lags/
+  drifts while that gets sorted out. Not fully verified against a real device/browser in this
+  sandbox (no working `npm install` / no mobile device available here — see prior sessions' notes on
+  this recurring sandbox limitation) — this was the most concrete, plausible lead from reading the
+  DOM structure, not a confirmed root cause.
+- **Fix**: removed `position: sticky` from the panel header entirely. The drawer (`app.blade.php`)
+  is now a flex column with three parts: a `#task-panel-header` slot (`flex-shrink-0`, pinned by flex
+  layout, not sticky), and a `flex-1 min-h-0 overflow-y-auto` scrollable body holding the loading/
+  error states and `#task-panel-content`. Since the header and body are fetched together as one
+  partial (`tasks/_panel.blade.php`) but now need to land in two different DOM slots, the header is
+  marked with `[data-panel-header]` in the partial and `_loadContent()` moves that node into
+  `#task-panel-header` via `replaceChildren()` after injecting the fetched HTML — a plain DOM move,
+  not a second fetch or a second server response. `Alpine.initTree()`/`destroyTree()` calls were
+  extended to also cover `#task-panel-header` (both on load and on `_closeWithoutHistory()`'s cleanup)
+  since it now holds its own Alpine-bound content (the close button, copy-link button) that no longer
+  lives inside `#task-panel-content`'s subtree.
+- **Verified**: `php -l` and `php artisan view:cache` (compiles every Blade template including this
+  one) both pass clean. Not click-tested against a running mobile browser — same sandbox constraint
+  as above. Whoever next has a phone/working dev server handy should confirm: selecting text in the
+  panel body and tapping "Select All" no longer drifts, the header's close/copy-link/duplicate/
+  "open full page" buttons still work after a fetch, and closing+reopening the panel for a different
+  task doesn't leak old header content or duplicate Alpine bindings.
+
 ### Session Summary (Aug 18, 2026) — Configurable PDF export column count
 - **Feature**: the day-view PDF export's column count (previously hardcoded to 2, see the Aug 6/16
   entries below) is now configurable via `DAY_EXPORT_COLUMNS` in `.env` — `config/taskfiend.php`'s
