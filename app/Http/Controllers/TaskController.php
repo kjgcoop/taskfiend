@@ -78,6 +78,11 @@ class TaskController extends Controller
             $preselectedParentTask = Task::find($preselectedParentId);
             if ($preselectedParentTask) {
                 $this->authorizeTaskAccess($preselectedParentTask);
+            } else {
+                // Parent task no longer exists (deleted/never existed, stale link, etc.) —
+                // fall back to the normal "no preselection" create form instead of carrying
+                // around an id with nothing to point at.
+                $preselectedParentId = null;
             }
         }
 
