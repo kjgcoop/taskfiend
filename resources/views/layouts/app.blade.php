@@ -1111,7 +1111,7 @@
             </div>
 
             <!-- Panel drawer -->
-            <div class="relative z-10 flex flex-col w-[90vw] max-w-[90vw] h-full bg-gray-900 border-l border-gray-700 shadow-2xl overflow-y-auto"
+            <div class="relative z-10 flex flex-col w-[90vw] max-w-[90vw] h-full bg-gray-900 border-l border-gray-700 shadow-2xl"
                  x-transition:enter="transition-transform ease-out duration-200"
                  x-transition:enter-start="translate-x-full"
                  x-transition:enter-end="translate-x-0"
@@ -1120,19 +1120,30 @@
                  x-transition:leave-end="translate-x-full"
                  @keydown.escape.window="close()">
 
-                <!-- Loading spinner -->
-                <div x-show="loading" class="flex items-center justify-center flex-1 min-h-32">
-                    <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
-                </div>
+                <!-- Panel header slot. Kept OUTSIDE the scrollable body below and pinned via flex
+                     layout (flex-shrink-0), not `position: sticky`. The header used to be a sticky
+                     child inside the scrolling body — sticky-inside-a-scroll-container-inside-a-
+                     `position: fixed` ancestor is a known trigger for mobile Safari's text-selection
+                     "Select All" callout drifting/sliding away from the actual selection. _loadContent()
+                     below moves the fetched header (marked with [data-panel-header]) in here. -->
+                <div id="task-panel-header" class="flex-shrink-0"></div>
 
-                <!-- Error state -->
-                <div x-show="error" x-cloak class="p-6 text-red-400 text-sm">
-                    Failed to load task. <button @click="close()" class="underline">Close</button>
-                </div>
+                <!-- Scrollable body -->
+                <div class="flex-1 min-h-0 overflow-y-auto">
+                    <!-- Loading spinner -->
+                    <div x-show="loading" class="flex items-center justify-center py-12">
+                        <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+                    </div>
 
-                <!-- Injected panel content -->
-                <div x-show="!loading && !error">
-                    <div id="task-panel-content"></div>
+                    <!-- Error state -->
+                    <div x-show="error" x-cloak class="p-6 text-red-400 text-sm">
+                        Failed to load task. <button @click="close()" class="underline">Close</button>
+                    </div>
+
+                    <!-- Injected panel content -->
+                    <div x-show="!loading && !error">
+                        <div id="task-panel-content"></div>
+                    </div>
                 </div>
 
             </div>
@@ -1222,11 +1233,21 @@
                             if (!res.ok) throw new Error('HTTP ' + res.status);
                             const html = await res.text();
 
+                            const headerSlot = document.getElementById('task-panel-header');
                             const content = document.getElementById('task-panel-content');
                             if (window.Alpine && typeof Alpine.destroyTree === 'function') {
                                 Alpine.destroyTree(content);
+                                Alpine.destroyTree(headerSlot);
                             }
                             content.innerHTML = html;
+
+                            // Lift the panel header out of the scrollable body into its own
+                            // flex-pinned slot — see the comment on #task-panel-header above.
+                            const header = content.querySelector('[data-panel-header]');
+                            if (header) {
+                                headerSlot.replaceChildren(header);
+                            }
+
                             content.querySelectorAll('script').forEach(oldScript => {
                                 const newScript = document.createElement('script');
                                 Array.from(oldScript.attributes).forEach(attr => {
@@ -1236,6 +1257,7 @@
                                 oldScript.replaceWith(newScript);
                             });
                             if (window.Alpine) {
+                                Alpine.initTree(headerSlot);
                                 Alpine.initTree(content);
                             }
                         } catch (e) {
@@ -1262,12 +1284,15 @@
                         this.currentTaskId = null;
                         this._pushedEntry = false;
                         setTimeout(() => {
+                            const headerSlot = document.getElementById('task-panel-header');
                             const content = document.getElementById('task-panel-content');
                             if (content) {
                                 if (window.Alpine && typeof Alpine.destroyTree === 'function') {
                                     Alpine.destroyTree(content);
+                                    Alpine.destroyTree(headerSlot);
                                 }
                                 content.innerHTML = '';
+                                if (headerSlot) headerSlot.innerHTML = '';
                             }
                             this.error = false;
                         }, 200);

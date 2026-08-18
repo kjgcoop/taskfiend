@@ -2,10 +2,15 @@
     Task Side Panel Partial
     Served at GET /tasks/{task}/panel — injected into the panel overlay via fetch().
     No layout wrapper. Script tags are executed by the panel overlay after injection.
+
+    The header below is marked [data-panel-header] so the overlay's _loadContent() can lift it
+    out into the static #task-panel-header slot (see app.blade.php) — it's pinned there via flex
+    layout rather than `position: sticky`, to avoid a sticky-inside-scroll-inside-fixed nesting
+    that can make mobile Safari's text-selection "Select All" callout drift away from the selection.
 --}}
 
 <!-- Panel Header -->
-<div class="sticky top-0 z-10 flex items-center justify-between px-4 py-3 bg-gray-900 border-b border-gray-700">
+<div data-panel-header class="flex items-center justify-between px-4 py-3 bg-gray-900 border-b border-gray-700">
     <div class="flex items-center gap-2 min-w-0">
         <button @click="$dispatch('close-task-panel')"
                 class="flex-shrink-0 p-1.5 text-gray-400 hover:text-gray-100 rounded hover:bg-gray-700 transition"
