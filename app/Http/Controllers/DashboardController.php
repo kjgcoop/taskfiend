@@ -308,7 +308,7 @@ $incomplete = Task::visibleTo(Auth::id())
             return back()->with('error', 'No tasks to export.');
         }
 
-        $pdf = DayPdfExporter::build($carbonDate, $tasks, $filter, $sort, $reversed);
+        $pdf = DayPdfExporter::build($carbonDate, $tasks, $filter, $sort, $reversed, (int) config('taskfiend.day_export_columns'));
 
         return response($pdf, 200, [
             'Content-Type'        => 'application/pdf',
