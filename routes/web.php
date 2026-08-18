@@ -98,6 +98,7 @@ Route::middleware('auth')->group(function () {
 
     Route::get('/templates', [ProjectTemplateController::class, 'index'])->name('templates.index');
     Route::post('/projects/{project}/save-as-template', [ProjectTemplateController::class, 'store'])->name('templates.store');
+    Route::post('/templates/import-zip', [ProjectTemplateController::class, 'importZip'])->name('templates.importZip');
     Route::post('/templates/{template}/create-project', [ProjectTemplateController::class, 'createFromTemplate'])->name('templates.createFromTemplate');
     Route::patch('/templates/{template}', [ProjectTemplateController::class, 'updateName'])->name('templates.update');
     Route::delete('/templates/{template}', [ProjectTemplateController::class, 'destroy'])->name('templates.destroy');

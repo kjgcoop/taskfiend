@@ -137,6 +137,60 @@ class ProjectTemplateController extends Controller
     }
 
     /**
+     * Save an uploaded project template zip directly as a stored template,
+     * without going through the intermediate "import as project, then save
+     * as template" round trip. The zip must be in the same format produced
+     * by exportProjectTemplate()/buildTemplateZip() (a template.json with
+     * template_type "project").
+     */
+    public function importZip(Request $request)
+    {
+        $request->validate([
+            'template_file'         => 'required|file|mimes:zip|max:10240',
+            'template_name'         => 'required|string|max:255',
+            'template_description'  => 'nullable|string|max:1000',
+            'is_public'             => 'nullable|boolean',
+        ]);
+
+        $user = $request->user();
+
+        $tempDir = storage_path('app/temp/template_zip_check_' . $user->id . '_' . time());
+        $zipPath = $request->file('template_file')->path();
+
+        if (!SafeZipExtractor::extract($zipPath, $tempDir)) {
+            $this->deleteDirectory($tempDir);
+            return back()->with('error', 'Failed to extract template file.');
+        }
+
+        $jsonPath = $tempDir . '/template.json';
+        if (!file_exists($jsonPath)) {
+            $this->deleteDirectory($tempDir);
+            return back()->with('error', 'Invalid template file: template.json not found.');
+        }
+
+        $data = json_decode(file_get_contents($jsonPath), true);
+        $this->deleteDirectory($tempDir);
+
+        if (!isset($data['template_type']) || $data['template_type'] !== 'project') {
+            return back()->with('error', 'Invalid template file: not a project template.');
+        }
+
+        // The uploaded zip is already in the right format — store it as-is.
+        $storedFilename = 'project-templates/' . uniqid('tpl_') . '.zip';
+        Storage::disk('private')->put($storedFilename, file_get_contents($zipPath));
+
+        ProjectTemplate::create([
+            'name'        => $request->template_name,
+            'description' => $request->template_description,
+            'filename'    => $storedFilename,
+            'created_by'  => $user->id,
+            'is_public'   => $request->boolean('is_public', false),
+        ]);
+
+        return back()->with('status', 'Template "' . $request->template_name . '" imported successfully.');
+    }
+
+    /**
      * Rename a stored template. Only the creator may rename.
      */
     public function updateName(Request $request, ProjectTemplate $template)
@@ -191,9 +245,8 @@ class ProjectTemplateController extends Controller
             'exported_at'   => now()->toIso8601String(),
             'template_type' => 'project',
             'project'       => [
-                'name'             => $project->name,
-                'description'      => $project->description,
-                'background_image' => $project->background_image,
+                'name'        => $project->name,
+                'description' => $project->description,
             ],
             'tasks'            => [],
             'tags'             => [],
@@ -275,15 +328,6 @@ class ProjectTemplateController extends Controller
 
                 copy(Storage::disk('private')->path($path), $destPath);
             }
-        }
-
-        if ($project->background_image && Storage::disk('private')->exists($project->background_image)) {
-            $bgDir = $tempDir . '/project-backgrounds';
-            mkdir($bgDir, 0755, true);
-            copy(
-                Storage::disk('private')->path($project->background_image),
-                $bgDir . '/' . basename($project->background_image)
-            );
         }
 
         $zipPath    = storage_path('app/temp/tpl_save_' . $project->id . '_' . time() . '.zip');

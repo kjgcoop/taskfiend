@@ -6,7 +6,7 @@
     </x-slot>
 
     <div class="py-12">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-8">
+        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-8" x-data="{ showImportZip: false }">
 
             @if(session('status'))
                 <div class="bg-green-900/40 border border-green-700 text-green-300 px-4 py-3 rounded">
@@ -19,6 +19,58 @@
                     {{ session('error') }}
                 </div>
             @endif
+
+            <div class="flex justify-end">
+                <button @click="showImportZip = !showImportZip"
+                        class="px-4 py-2 bg-gray-700 hover:bg-gray-600 border border-gray-600 text-gray-100 rounded text-sm">
+                    Import Template from Zip
+                </button>
+            </div>
+
+            <!-- Import Template Zip Form -->
+            <div x-show="showImportZip" x-cloak class="bg-[#202020] border border-gray-700 p-6 rounded-lg shadow">
+                <h3 class="text-lg font-semibold text-gray-100 mb-4">Import Template from Zip</h3>
+                <p class="text-xs text-gray-500 mb-4">
+                    Add a template zip (one downloaded via "Download Template" on a project, or saved from
+                    another Task Fiend instance) directly to your template list &mdash; no need to import it
+                    as a project first.
+                </p>
+                <form action="{{ route('templates.importZip') }}" method="POST" enctype="multipart/form-data">
+                    @csrf
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-300 mb-2">Template File</label>
+                            <input type="file" name="template_file" accept=".zip" required
+                                   class="block w-full text-sm text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-gray-700 file:text-gray-100 hover:file:bg-gray-600 bg-[#101010] border border-gray-600 rounded-md">
+                        </div>
+                        <div>
+                            <label class="block text-sm text-gray-300 mb-1" for="import_zip_name">Template Name</label>
+                            <input id="import_zip_name" type="text" name="template_name" required maxlength="255"
+                                   class="w-full bg-gray-700 border border-gray-600 text-gray-100 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-gray-500"
+                                   placeholder="Enter template name">
+                        </div>
+                        <div>
+                            <label class="block text-sm text-gray-300 mb-1" for="import_zip_description">Description <span class="text-gray-500">(optional)</span></label>
+                            <textarea id="import_zip_description" name="template_description" rows="2"
+                                      class="w-full bg-gray-700 border border-gray-600 text-gray-100 rounded px-3 py-2 text-sm focus:outline-none focus:border-blue-500 placeholder-gray-500"
+                                      placeholder="What is this template for?"></textarea>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <input id="import_zip_public" type="checkbox" name="is_public" value="1"
+                                   class="rounded border-gray-600 bg-gray-700 text-blue-600 focus:ring-blue-500">
+                            <label for="import_zip_public" class="text-sm text-gray-300">Make public (visible to all users)</label>
+                        </div>
+                        <div class="flex gap-2">
+                            <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
+                                Import
+                            </button>
+                            <button type="button" @click="showImportZip = false" class="px-4 py-2 bg-gray-700 border border-gray-600 text-gray-100 rounded hover:bg-gray-600">
+                                Cancel
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
 
             <!-- My Templates -->
             <div>

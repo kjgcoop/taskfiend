@@ -566,7 +566,6 @@ class DataExportController extends Controller
             'project' => [
                 'name' => $project->name,
                 'description' => $project->description,
-                'background_image' => $project->background_image,
             ],
             'tasks' => [],
             'tags' => [],
@@ -663,16 +662,6 @@ class DataExportController extends Controller
 
                 copy(Storage::disk('private')->path($path), $destPath);
             }
-        }
-
-        // Copy project background image if it exists
-        $projectBackgroundsDir = $tempDir . '/project-backgrounds';
-        if ($project->background_image && Storage::disk('private')->exists($project->background_image)) {
-            if (!file_exists($projectBackgroundsDir)) {
-                mkdir($projectBackgroundsDir, 0755, true);
-            }
-            $bgFilename = basename($project->background_image);
-            copy(Storage::disk('private')->path($project->background_image), $projectBackgroundsDir . '/' . $bgFilename);
         }
 
         // Create zip file using the system zip binary (no php-zip extension required)
