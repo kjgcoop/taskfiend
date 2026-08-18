@@ -165,8 +165,29 @@
             </div>
 
             {{-- Agenda view --}}
-            <div x-data x-cloak x-show="$store.dayView.current === 'agenda'">
+            <div x-cloak x-show="$store.dayView.current === 'agenda'"
+                 x-data="taskFilter"
+                 data-projects="{{ json_encode($projects) }}"
+                 data-tags="{{ json_encode($tags) }}"
+                 data-users="{{ json_encode($users) }}"
+                 data-locations="{{ json_encode($locations) }}">
+                <x-task-input-bar :date="$carbonDate->format('Y-m-d')" :show-filter-and-bulk="false" />
                 @include('dashboard.partials.agenda')
+                <x-completed-tasks-section
+                    :tasks="$completedTasks"
+                    :hide-date="true"
+                    :total-count="$completedTasksTotal"
+                    :has-more="$completedTasksHasMore"
+                    :ajax-url="$completedTasksHasMore ? route('day.completedTasks') . '?date=' . $date : null" />
+                <x-completed-tasks-section
+                    :tasks="$archivedTasks"
+                    label="Archived tasks"
+                    :hide-date="true"
+                    :read-only="true"
+                    :show-as-archived="true"
+                    :total-count="$archivedTasksTotal"
+                    :has-more="$archivedTasksHasMore"
+                    :ajax-url="$archivedTasksHasMore ? route('day.archivedTasks') . '?date=' . $date : null" />
             </div>
 
             {{-- List view --}}

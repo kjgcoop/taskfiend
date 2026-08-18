@@ -313,13 +313,18 @@
                     {{-- Clickable area --}}
                     <a href="{{ route('tasks.show', $task) }}"
                        @click.prevent="($event.ctrlKey || $event.metaKey) ? window.open('{{ route('tasks.show', $task) }}', '_blank') : $dispatch('open-task-panel', { taskId: {{ $task->id }} })"
-                       class="block h-full px-2 py-1 pr-6 cursor-pointer"
+                       class="block h-full px-2 pt-0.5 pr-6 cursor-pointer"
                        title="{{ $task->name }} ({{ $timeLabel }})">
+                        {{-- justify-start (not center) pins content to the top of the block, so a
+                             short block clips the bottom of the stack (time/description) rather
+                             than the task name — leading-none on every line keeps each line's own
+                             half-leading from eating into that top-aligned space, which is what let
+                             a too-short block clip the top *and* bottom of a line simultaneously. --}}
                         <div class="flex flex-col justify-start overflow-hidden h-full">
-                            <div class="text-xs font-semibold leading-tight truncate task-title">{!! render_title($task->name) !!}</div>
-                            <div class="text-xs opacity-75 leading-tight truncate mt-0.5">{{ $timeLabel }}</div>
+                            <div class="text-xs font-semibold leading-none truncate task-title">{!! render_title($task->name) !!}</div>
+                            <div class="text-xs opacity-75 leading-none truncate mt-0.5">{{ $timeLabel }}</div>
                             @if($task->description)
-                            <div class="text-xs opacity-60 leading-tight truncate mt-0.5">{{ $task->description }}</div>
+                            <div class="text-xs opacity-60 leading-none truncate mt-0.5">{{ $task->description }}</div>
                             @endif
                         </div>
                     </a>

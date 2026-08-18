@@ -1,4 +1,4 @@
-@props(['date' => null, 'projectId' => null, 'tagId' => null, 'filterPlaceholder' => 'Filter… #project @tag +location &user · prefix not: to exclude'])
+@props(['date' => null, 'projectId' => null, 'tagId' => null, 'filterPlaceholder' => 'Filter… #project @tag +location &user · prefix not: to exclude', 'showFilterAndBulk' => true])
 
 <div class="mb-4">
     {{-- Create mode (default, hidden in bulk mode) --}}
@@ -208,6 +208,7 @@
                 </template>
             </div>
         </form>
+        @if($showFilterAndBulk)
         <button @click="switchToFilter()"
                 title="Filter tasks"
                 class="flex-shrink-0 p-2 text-gray-500 hover:text-gray-300 rounded-md hover:bg-gray-700 transition">
@@ -223,8 +224,10 @@
                 <path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
             </svg>
         </button>
+        @endif
     </div>
 
+    @if($showFilterAndBulk)
     {{-- Filter mode (hidden in bulk mode) --}}
     <div x-show="mode === 'filter' && !$store.bulkEdit.active" x-cloak class="flex gap-2 items-center">
         <button @click="switchToCreate()"
@@ -373,4 +376,5 @@
             Deselect all
         </button>
     </div>
+    @endif
 </div>
