@@ -15,7 +15,8 @@ namespace App\Services;
  *
  * Supports exactly what the day export needs: multiple pages, absolutely
  * positioned text lines in Helvetica or Helvetica-Bold (optionally gray and/or
- * letter-spaced), and straight stroked lines (for the column/row dividers).
+ * letter-spaced), straight stroked lines (for the column/row dividers), and
+ * filled rectangles (for the shaded backdrop behind an in-list section label).
  * Text is transcoded to WinAnsiEncoding (Windows-1252); characters outside
  * that range (emoji, CJK, etc.) are dropped rather than embedding a unicode
  * font.
@@ -88,6 +89,25 @@ class SimplePdfWriter
             $this->num($y1),
             $this->num($x2),
             $this->num($y2)
+        );
+    }
+
+    /**
+     * Draw a filled, unstroked rectangle with its bottom-left corner at ($x, $y) —
+     * used for the shaded backdrop behind an in-list section label. Sharp corners
+     * only (no rounding): a rounded rect needs Bezier curve operators, which this
+     * writer doesn't otherwise need anywhere, for a difference that's barely
+     * visible at this size.
+     */
+    public function filledRect(float $x, float $y, float $width, float $height, float $gray = 0.9): void
+    {
+        $this->currentPageOps[] = sprintf(
+            "q\n%s g\n%s %s %s %s re\nf\nQ",
+            $this->num($gray),
+            $this->num($x),
+            $this->num($y),
+            $this->num($width),
+            $this->num($height)
         );
     }
 

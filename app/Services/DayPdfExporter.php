@@ -53,12 +53,16 @@ class DayPdfExporter
 
     // In-list status labels ("INCOMPLETE"/"DONE"/"ARCHIVED") — only drawn when $tasks mixes
     // more than one status (see build()); a single-status export looks exactly as it always
-    // has, no label. Same tracked-small-caps treatment as the "TODAY" eyebrow above, just
-    // dimmer, since here it's a running section marker rather than the page's one headline.
+    // has, no label. Same tracked-small-caps treatment as the "TODAY" eyebrow above, on a
+    // shaded chip spanning the full column width (design pass via Claude Design).
     private const SECTION_LABEL_SIZE = 8.0;
     private const SECTION_LABEL_TRACKING = 1.3;
-    private const SECTION_LABEL_GRAY = 0.4;
-    private const SECTION_LABEL_HEIGHT = 20.0; // label baseline -> first row's baseline, below it
+    private const SECTION_LABEL_GRAY = 0.25;
+    private const SECTION_LABEL_TEXT_INSET = 10.0; // column left edge -> label text's left edge
+    private const SECTION_LABEL_BOX_GRAY = 0.90;
+    private const SECTION_LABEL_BOX_PAD_ABOVE = 8.0;  // baseline -> box top
+    private const SECTION_LABEL_BOX_PAD_BELOW = 6.0;  // baseline -> box bottom
+    private const SECTION_LABEL_HEIGHT = 24.0; // label baseline -> first row's baseline, below it
 
     private const STATUS_LABELS = [
         'incomplete' => 'Incomplete',
@@ -170,8 +174,11 @@ class DayPdfExporter
             }
 
             if ($needsLabel) {
-                $label = strtoupper(self::STATUS_LABELS[$row['status']] ?? $row['status']);
-                $pdf->text($x, $y, $label, 'F2', self::SECTION_LABEL_SIZE, self::SECTION_LABEL_GRAY, self::SECTION_LABEL_TRACKING);
+                $label   = strtoupper(self::STATUS_LABELS[$row['status']] ?? $row['status']);
+                $boxTop  = $y + self::SECTION_LABEL_BOX_PAD_ABOVE;
+                $boxBottom = $y - self::SECTION_LABEL_BOX_PAD_BELOW;
+                $pdf->filledRect($x, $boxBottom, $columnWidth, $boxTop - $boxBottom, self::SECTION_LABEL_BOX_GRAY);
+                $pdf->text($x + self::SECTION_LABEL_TEXT_INSET, $y, $label, 'F2', self::SECTION_LABEL_SIZE, self::SECTION_LABEL_GRAY, self::SECTION_LABEL_TRACKING);
                 $y -= $labelHeight;
                 $lastLineY = $y - ($numLines - 1) * self::LINE_HEIGHT;
             }
