@@ -55,6 +55,73 @@ class DashboardController extends Controller
         return $query;
     }
 
+    /** Tasks completed (status = done) on the given date, in the day view's display order. */
+    private function completedTasksForDate(string $dateStr)
+    {
+        return Task::query()
+            ->visibleTo(Auth::id())
+            ->where('status', 'done')
+            ->whereDate('completed_at', $dateStr)
+            ->orderByRaw('time IS NULL, time ASC');
+    }
+
+    /**
+     * Tasks archived on the given date — either archived that day (by completed_at),
+     * or dated for that day and belonging to a project that's since been
+     * archived/marked done — in the day view's display order.
+     */
+    private function archivedTasksForDate(string $dateStr)
+    {
+        return Task::query()
+            ->visibleTo(Auth::id())
+            ->where('status', 'archived')
+            ->where(function ($q) use ($dateStr) {
+                $q->whereDate('completed_at', $dateStr)
+                  ->orWhere(function ($q2) use ($dateStr) {
+                      $q2->where('date', $dateStr)
+                         ->whereHas('project', fn($pq) => $pq->whereIn('status', ['archived', 'done']));
+                  });
+            })
+            ->orderByRaw('time IS NULL, time ASC');
+    }
+
+    /**
+     * The three status groups (Incomplete/Done/Archived) for a day export — shared by
+     * exportDayMarkdown() and exportDayPdf() so they define "this day's tasks" the same
+     * way as each other, and the same way day() itself does.
+     *
+     * When the request carries an 'ids' param — even an empty one; day.blade.php's export
+     * buttons always send it now, snapshotting exactly which tasks are currently rendered
+     * visible on the page (on-page filter, plus whether Done/Archived are expanded) — every
+     * group is narrowed to that ID set on top of its own already-authorized/scoped query,
+     * so an id can only ever be excluded (wrong date, wrong status, not visible to this
+     * user, ...), never included beyond what the query would already allow.
+     *
+     * No 'ids' param at all (a manually-typed/bookmarked URL, bypassing the page's JS)
+     * falls back to the full unfiltered day: every incomplete task, Done/Archived empty —
+     * each export's original behavior before either could be filtered.
+     *
+     * @return array{0: \Illuminate\Support\Collection, 1: \Illuminate\Support\Collection, 2: \Illuminate\Support\Collection}
+     */
+    private function dayExportTaskGroups(string $dateStr, Request $request, string $sort = 'date', bool $reversed = false): array
+    {
+        $incompleteQuery = $this->incompleteTasksForDate($dateStr, $sort, $reversed);
+
+        if (!$request->has('ids')) {
+            return [$incompleteQuery->get(), collect(), collect()];
+        }
+
+        $ids = array_map('intval', (array) $request->input('ids', []));
+        $doneQuery     = $this->completedTasksForDate($dateStr);
+        $archivedQuery = $this->archivedTasksForDate($dateStr);
+
+        foreach ([$incompleteQuery, $doneQuery, $archivedQuery] as $query) {
+            $query->whereIn('id', $ids);
+        }
+
+        return [$incompleteQuery->get(), $doneQuery->get(), $archivedQuery->get()];
+    }
+
     /** Projects, tags, users, and locations needed by the quick-add autocomplete. */
     private function quickAddData(): array
     {
@@ -226,23 +293,24 @@ $tasks = Task::visibleTo(Auth::id())
         ]);
     }
 
+    /**
+     * Mirrors whatever's currently on screen, same as exportDayPdf() below: the
+     * day view's sort/reversed (round-tripped through the URL) and the on-page
+     * filter/fold state, via the same 'ids[]' snapshot mechanism — see
+     * dayExportTaskGroups() and day.blade.php's exportParams(). No 'ids' param
+     * at all (a manually-typed/bookmarked URL, bypassing the page's JS) falls
+     * back to the full unfiltered day: every incomplete task, Done/Archived
+     * omitted — this export's original behavior before it could be filtered.
+     */
     public function exportDayMarkdown(Request $request)
     {
         $date = $request->input('date', today()->format('Y-m-d'));
         $carbonDate = Carbon::parse($date);
         $dateStr = $carbonDate->format('Y-m-d');
+        $sort = $request->input('sort', 'date');
+        $reversed = $request->boolean('reversed');
 
-$incomplete = Task::visibleTo(Auth::id())
-            ->where('status', 'incomplete')->where('date', $dateStr)
-            ->orderByRaw('time IS NULL, time ASC')->get();
-
-        $done = Task::visibleTo(Auth::id())
-            ->where('status', 'done')->whereDate('completed_at', $dateStr)
-            ->orderByRaw('time IS NULL, time ASC')->get();
-
-        $archived = Task::visibleTo(Auth::id())
-            ->where('status', 'archived')->where('date', $dateStr)
-            ->orderByRaw('time IS NULL, time ASC')->get();
+        [$incomplete, $done, $archived] = $this->dayExportTaskGroups($dateStr, $request, $sort, $reversed);
 
         $lines = ['# ' . $carbonDate->format('l, F j, Y')];
 
@@ -277,16 +345,13 @@ $incomplete = Task::visibleTo(Auth::id())
      * feature — see CLAUDE.md.
      *
      * Mirrors whatever's currently on screen: same sort/reversed as the day
-     * view (already round-tripped through the URL), plus the on-page text
-     * filter — client-side only, so day.blade.php's Export PDF button sends
-     * the exact set of currently-visible task IDs (`ids[]`) rather than the
-     * raw filter text. We just narrow the same already-authorized/scoped
-     * query to that ID set, so an ID can only ever be excluded (wrong date,
-     * wrong status, not visible to this user, ...), never add a task the
-     * query wouldn't otherwise have included — there's no second
-     * implementation of the filter syntax to keep in sync with the JS one
-     * in task-list.blade.php's filterTasks(). `filter` (the raw text) is
-     * still accepted, but purely for display in the PDF's header meta line.
+     * view (already round-tripped through the URL), plus the on-page filter
+     * and Done/Archived fold state — client-side only, so day.blade.php's
+     * export buttons send the exact set of currently-visible task IDs
+     * (`ids[]`) rather than the raw filter text. See dayExportTaskGroups()
+     * for how that ID set narrows each status group; `filter` (the raw
+     * text) is still accepted, but purely for display in the PDF's header
+     * meta line.
      */
     public function exportDayPdf(Request $request)
     {
@@ -296,13 +361,9 @@ $incomplete = Task::visibleTo(Auth::id())
         $sort       = $request->input('sort', 'date');
         $reversed   = $request->boolean('reversed');
         $filter     = $request->input('filter');
-        $ids        = $request->input('ids', []);
 
-        $query = $this->incompleteTasksForDate($dateStr, $sort, $reversed);
-        if (is_array($ids) && $ids !== []) {
-            $query->whereIn('id', array_map('intval', $ids));
-        }
-        $tasks = $query->get();
+        [$incomplete, $done, $archived] = $this->dayExportTaskGroups($dateStr, $request, $sort, $reversed);
+        $tasks = $incomplete->concat($done)->concat($archived);
 
         if ($tasks->isEmpty()) {
             return back()->with('error', 'No tasks to export.');
@@ -336,16 +397,10 @@ $incomplete = Task::visibleTo(Auth::id())
 
 $dayWith = ['creator', 'project', 'tags', 'assignees', 'attachments', 'comments', 'completionLog.user'];
 
-        $completedTasksTotal = Task::visibleTo(Auth::id())
-            ->where('status', 'done')
-            ->whereDate('completed_at', $dateStr)
-            ->count();
+        $completedTasksTotal = $this->completedTasksForDate($dateStr)->count();
 
-        $completedTasksRaw = Task::visibleTo(Auth::id())
-            ->where('status', 'done')
-            ->whereDate('completed_at', $dateStr)
+        $completedTasksRaw = $this->completedTasksForDate($dateStr)
             ->with($dayWith)
-            ->orderByRaw('time IS NULL, time ASC')
             ->take($perPage + 1)
             ->get();
 
@@ -354,28 +409,10 @@ $dayWith = ['creator', 'project', 'tags', 'assignees', 'attachments', 'comments'
 
         // Tasks archived on this day (by completed_at, status differentiates done vs archived),
         // OR tasks dated for this day that belong to an archived/done project.
-        $archivedTasksTotal = Task::visibleTo(Auth::id())
-            ->where('status', 'archived')
-            ->where(function ($q) use ($dateStr) {
-                $q->whereDate('completed_at', $dateStr)
-                  ->orWhere(function ($q2) use ($dateStr) {
-                      $q2->where('date', $dateStr)
-                         ->whereHas('project', fn($pq) => $pq->whereIn('status', ['archived', 'done']));
-                  });
-            })
-            ->count();
+        $archivedTasksTotal = $this->archivedTasksForDate($dateStr)->count();
 
-        $archivedTasksRaw = Task::visibleTo(Auth::id())
-            ->where('status', 'archived')
-            ->where(function ($q) use ($dateStr) {
-                $q->whereDate('completed_at', $dateStr)
-                  ->orWhere(function ($q2) use ($dateStr) {
-                      $q2->where('date', $dateStr)
-                         ->whereHas('project', fn($pq) => $pq->whereIn('status', ['archived', 'done']));
-                  });
-            })
+        $archivedTasksRaw = $this->archivedTasksForDate($dateStr)
             ->with($dayWith)
-            ->orderByRaw('time IS NULL, time ASC')
             ->take($perPage + 1)
             ->get();
 

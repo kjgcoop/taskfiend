@@ -60,27 +60,28 @@
                         {{ $overdueCount }}
                     </a>
                 @endif
-                <a href="{{ route('day.export-markdown') }}?date={{ $carbonDate->format('Y-m-d') }}" class="hidden sm:inline-flex items-center px-4 py-2 bg-gray-700 border border-gray-600 rounded-md font-semibold text-xs text-gray-100 uppercase tracking-widest hover:bg-gray-600">
+                <button type="button" x-data="dayExport" @click="goMarkdown()"
+                        class="hidden sm:inline-flex items-center px-4 py-2 bg-gray-700 border border-gray-600 rounded-md font-semibold text-xs text-gray-100 uppercase tracking-widest hover:bg-gray-600">
                     Export MD
-                </a>
-                <button type="button" x-data="dayPdfExport"
-                        title="Printable list of this day's tasks — mirrors the current sort and on-page filter"
+                </button>
+                <button type="button" x-data="dayExport"
+                        title="Printable list of this day's tasks — mirrors what's currently visible on the page (on-page filter, plus any expanded Done/Archived sections)"
                         :disabled="$store.taskCount.ready && $store.taskCount.visible === 0"
                         :class="$store.taskCount.ready && $store.taskCount.visible === 0 ? 'opacity-40 cursor-not-allowed' : 'hover:bg-gray-600'"
-                        @click="go()"
+                        @click="goPdf()"
                         class="hidden sm:inline-flex items-center px-4 py-2 bg-gray-700 border border-gray-600 rounded-md font-semibold text-xs text-gray-100 uppercase tracking-widest">
                     Export PDF
                 </button>
 
                 {{-- Mobile export menu: same two actions, collapsed behind a three-dot
                      menu since the buttons above don't fit next to the date controls
-                     in portrait mode on a phone. Menu open/close state and the PDF
-                     export live in the same dayPdfExport component instance so
-                     selectPdf() can call go() and close the menu in one bare
-                     expression (see docs/content/docs/developers/frontend-csp.md —
-                     Alpine's CSP-safe parser can't handle "go(); open = false"
-                     as a multi-statement @click). --}}
-                <div class="relative shrink-0 sm:hidden" x-data="dayPdfExport" @click.outside="close()">
+                     in portrait mode on a phone. Menu open/close state and both exports
+                     live in the same dayExport component instance so e.g. selectPdf()
+                     can call goPdf() and close the menu in one bare expression (see
+                     docs/content/docs/developers/frontend-csp.md — Alpine's CSP-safe
+                     parser can't handle "goPdf(); open = false" as a multi-statement
+                     @click). --}}
+                <div class="relative shrink-0 sm:hidden" x-data="dayExport" @click.outside="close()">
                     <button type="button" @click="toggle()"
                             class="p-2 text-gray-400 hover:text-gray-100 hover:bg-gray-700 rounded transition-colors"
                             title="Export options">
@@ -90,10 +91,10 @@
                     </button>
                     <div x-show="open" x-cloak
                          class="absolute right-0 mt-1 w-40 bg-gray-800 border border-gray-600 rounded shadow-lg z-10">
-                        <a href="{{ route('day.export-markdown') }}?date={{ $carbonDate->format('Y-m-d') }}"
-                           class="block px-4 py-2 text-gray-200 hover:bg-gray-700">
+                        <button type="button" @click="selectMarkdown()"
+                                class="block w-full text-left px-4 py-2 text-gray-200 hover:bg-gray-700">
                             Export MD
-                        </a>
+                        </button>
                         <button type="button"
                                 :disabled="$store.taskCount.ready && $store.taskCount.visible === 0"
                                 :class="$store.taskCount.ready && $store.taskCount.visible === 0 ? 'opacity-40 cursor-not-allowed' : 'hover:bg-gray-700'"
@@ -294,46 +295,65 @@
 
     @push('scripts')
     <script nonce="{{ csp_nonce() }}">
-        // ── Export PDF button: navigate preserving current sort/reversed (already
-        // in the URL). If the on-page filter is active, snapshot exactly which
-        // tasks are currently visible by ID (rather than re-deriving the filter
-        // server-side from its raw text) — the server just narrows its own
-        // already-authorized/scoped query to that ID set, so there's no second
-        // implementation of the filter syntax to keep in sync with the JS one in
-        // task-list.blade.php's filterTasks(). The raw filter text still gets
-        // sent along, but only for display in the PDF's header meta line.
+        // ── Export MD / Export PDF buttons: both mirror exactly what's currently
+        // visible on the page — the on-page text filter, AND whether the Done/
+        // Archived sections are expanded (they start folded, so by default only
+        // Incomplete exports, same as before this existed) — rather than each
+        // going its own way (previously PDF respected the filter and MD always
+        // exported everything, folded or not).
         document.addEventListener('alpine:init', () => {
-            Alpine.data('dayPdfExport', () => ({
+            // A task counts as "visible" if it passed the on-page filter (own
+            // data-filterable display isn't 'none') AND isn't hidden inside a
+            // folded Done/Archived section or unloaded "Load more" page
+            // (offsetParent is null for anything hidden by an ancestor, which
+            // covers both in one check).
+            function collectVisibleDayTaskIds() {
+                const ids = [];
+                document.querySelectorAll('[data-task-group]').forEach(group => {
+                    const filterable = group.querySelector('[data-filterable]');
+                    if (filterable && filterable.style.display !== 'none' && group.offsetParent !== null) {
+                        ids.push(group.dataset.taskGroupId);
+                    }
+                });
+                return ids;
+            }
+
+            // Shared querystring builder: keeps 'date' (if present, so exporting
+            // from a future day's page exports that day, not today — see
+            // DashboardController), replaces 'ids[]'/'filter' with a live
+            // snapshot. The server only ever narrows its own already-authorized/
+            // scoped queries to this ID set — never widens them — so there's no
+            // second implementation of the filter syntax to keep in sync with
+            // task-list.blade.php's filterTasks(). The raw filter text is sent
+            // too, but only for display (PDF's header meta line).
+            function exportParams() {
+                const p = new URLSearchParams(window.location.search);
+                p.delete('ids[]');
+                p.delete('filter');
+
+                const filterText = Alpine.store('taskCount').filterText;
+                if (filterText) p.set('filter', filterText);
+
+                collectVisibleDayTaskIds().forEach(id => p.append('ids[]', id));
+
+                return p;
+            }
+
+            Alpine.data('dayExport', () => ({
                 // 'open' etc. are only used by the mobile three-dot menu instance
-                // (the desktop button doesn't reference them) — harmless unused
-                // state on that instance.
+                // (the desktop buttons don't reference them) — harmless unused
+                // state on those instances.
                 open: false,
                 toggle() { this.open = !this.open; },
                 close() { this.open = false; },
-                selectPdf() { this.go(); this.close(); },
-                go() {
-                    // Keeps 'date' (if present) so exporting from a future day's page exports
-                    // that day, not today — see DashboardController::exportDayPdf().
-                    const p = new URLSearchParams(window.location.search);
-                    p.delete('ids[]');
-
-                    const filterText = Alpine.store('taskCount').filterText;
-                    if (filterText) {
-                        p.set('filter', filterText);
-                        const container = document.querySelector('[x-ref="taskContainer"]');
-                        const ids = container
-                            ? Array.from(container.querySelectorAll('[data-filterable]'))
-                                .filter(el => el.style.display !== 'none')
-                                .map(el => el.closest('[data-task-group]')?.dataset.taskGroupId)
-                                .filter(Boolean)
-                            : [];
-                        ids.forEach(id => p.append('ids[]', id));
-                    } else {
-                        p.delete('filter');
-                    }
-
-                    window.location.href = '{{ route('day.export-pdf') }}?' + p.toString();
-                }
+                goPdf() {
+                    window.location.href = '{{ route('day.export-pdf') }}?' + exportParams().toString();
+                },
+                goMarkdown() {
+                    window.location.href = '{{ route('day.export-markdown') }}?' + exportParams().toString();
+                },
+                selectPdf() { this.goPdf(); this.close(); },
+                selectMarkdown() { this.goMarkdown(); this.close(); },
             }));
         });
 

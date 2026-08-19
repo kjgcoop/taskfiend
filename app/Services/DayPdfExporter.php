@@ -51,6 +51,21 @@ class DayPdfExporter
     private const HEADER_RULE_GRAY  = 0.12;
     private const HEADER_RULE_WIDTH = 1.3;
 
+    // In-list status labels ("INCOMPLETE"/"DONE"/"ARCHIVED") — only drawn when $tasks mixes
+    // more than one status (see build()); a single-status export looks exactly as it always
+    // has, no label. Same tracked-small-caps treatment as the "TODAY" eyebrow above, just
+    // dimmer, since here it's a running section marker rather than the page's one headline.
+    private const SECTION_LABEL_SIZE = 8.0;
+    private const SECTION_LABEL_TRACKING = 1.3;
+    private const SECTION_LABEL_GRAY = 0.4;
+    private const SECTION_LABEL_HEIGHT = 20.0; // label baseline -> first row's baseline, below it
+
+    private const STATUS_LABELS = [
+        'incomplete' => 'Incomplete',
+        'done'       => 'Done',
+        'archived'   => 'Archived',
+    ];
+
     /** Standard Helvetica glyph widths (per 1000 em units), ASCII 32–126. */
     private const HELVETICA_WIDTHS = [
         32 => 278, 33 => 278, 34 => 355, 35 => 556, 36 => 556, 37 => 889, 38 => 667, 39 => 191,
@@ -70,6 +85,15 @@ class DayPdfExporter
 
     /**
      * @param  Collection<int, \App\Models\Task>  $tasks  Already filtered/sorted, in display order.
+     *                        May mix statuses (Incomplete/Done/Archived tasks for the day, in
+     *                        that order) — see DashboardController::dayExportTaskGroups(). When
+     *                        it does, an "INCOMPLETE"/"DONE"/"ARCHIVED" label is inserted into the
+     *                        column flow at each status change, and repeated at the top of any
+     *                        column/page a status group happens to spill into, so a reader
+     *                        flipping to column 2 (or page 2) always knows what they're looking
+     *                        at. A single-status export (still the common case — Done/Archived
+     *                        start folded on the day page, so exporting without expanding them
+     *                        stays Incomplete-only) gets no labels at all, unchanged from before.
      * @param  int  $columns  1-4; values outside that range are clamped (see config/taskfiend.php,
      *                        which is the normal way this gets set — clamping here too means a
      *                        caller passing a raw value directly can't produce a broken layout).
@@ -105,22 +129,28 @@ class DayPdfExporter
 
         $rows = $tasks->map(function ($task) use ($textWidth) {
             return [
-                'time'  => $task->time ? Carbon::parse($task->time)->format('g:i A') : null,
-                'lines' => self::wrap($task->name, $textWidth, self::FONT_SIZE),
+                'status' => $task->status,
+                'time'   => $task->time ? Carbon::parse($task->time)->format('g:i A') : null,
+                'lines'  => self::wrap($task->name, $textWidth, self::FONT_SIZE),
             ];
         });
+
+        $multiStatus = $rows->pluck('status')->unique()->count() > 1;
 
         $col = 0;
         $columnTop = $contentTopFirstPage;
         $x = $columnX[0];
         $y = $columnTop;
+        $currentStatus = null;
         self::drawColumnDividers($pdf, $dividerXs, $columnTop, $bottomY);
 
         foreach ($rows as $row) {
-            $numLines   = count($row['lines']);
-            $lastLineY  = $y - ($numLines - 1) * self::LINE_HEIGHT;
-            $fits       = ($lastLineY - self::ROW_GAP_BELOW_TEXT) >= $bottomY;
-            $atFreshTop = ($y === $columnTop);
+            $numLines    = count($row['lines']);
+            $atFreshTop  = ($y === $columnTop);
+            $needsLabel  = $multiStatus && ($atFreshTop || $row['status'] !== $currentStatus);
+            $labelHeight = $needsLabel ? self::SECTION_LABEL_HEIGHT : 0.0;
+            $lastLineY   = $y - $labelHeight - ($numLines - 1) * self::LINE_HEIGHT;
+            $fits        = ($lastLineY - self::ROW_GAP_BELOW_TEXT) >= $bottomY;
 
             if (!$fits && !$atFreshTop) {
                 $col++;
@@ -132,8 +162,20 @@ class DayPdfExporter
                 }
                 $x = $columnX[$col];
                 $y = $columnTop;
+                // A fresh column always gets a (re)drawn label in multi-status exports, even
+                // mid-group, so a reader flipping here still knows what status they're looking at.
+                $needsLabel  = $multiStatus;
+                $labelHeight = $needsLabel ? self::SECTION_LABEL_HEIGHT : 0.0;
+                $lastLineY   = $y - $labelHeight - ($numLines - 1) * self::LINE_HEIGHT;
+            }
+
+            if ($needsLabel) {
+                $label = strtoupper(self::STATUS_LABELS[$row['status']] ?? $row['status']);
+                $pdf->text($x, $y, $label, 'F2', self::SECTION_LABEL_SIZE, self::SECTION_LABEL_GRAY, self::SECTION_LABEL_TRACKING);
+                $y -= $labelHeight;
                 $lastLineY = $y - ($numLines - 1) * self::LINE_HEIGHT;
             }
+            $currentStatus = $row['status'];
 
             if ($row['time']) {
                 $pdf->text($x, $y, $row['time'], 'F1', self::TIME_FONT_SIZE, self::TIME_GRAY);
