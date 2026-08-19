@@ -66,8 +66,6 @@ class TaskController extends Controller
         $tags = Tag::active()->orderByRaw('LOWER(tag_name)')->get();
         $users = User::whereNull('email_enabled_at')->get();
 
-        $preselectedProjectId = $request->query('project_id')
-            ?? Auth::user()->defaultProject()->id;
         $preselectedDate = $request->query('date');
 
         // Handle parent task preselection
@@ -88,6 +86,15 @@ class TaskController extends Controller
                 $preselectedParentId = null;
             }
         }
+
+        // A subtask should default into its parent's project, not the user's default
+        // project — otherwise "+ Add Subtask" silently creates a task that belongs to a
+        // different project than the one it's visually nested under (it still renders under
+        // the parent via the parent_id relation, but stops counting toward that project's
+        // task totals since those are scoped by project_id).
+        $preselectedProjectId = $request->query('project_id')
+            ?? optional($preselectedParentTask)->project_id
+            ?? Auth::user()->defaultProject()->id;
 
         // Get available parent tasks (exclude archived)
         $availableParents = Task::visibleTo(Auth::id())
