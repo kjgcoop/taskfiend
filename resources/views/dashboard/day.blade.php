@@ -71,6 +71,38 @@
                         class="hidden sm:inline-flex items-center px-4 py-2 bg-gray-700 border border-gray-600 rounded-md font-semibold text-xs text-gray-100 uppercase tracking-widest">
                     Export PDF
                 </button>
+
+                {{-- Mobile export menu: same two actions, collapsed behind a three-dot
+                     menu since the buttons above don't fit next to the date controls
+                     in portrait mode on a phone. Menu open/close state and the PDF
+                     export live in the same dayPdfExport component instance so
+                     selectPdf() can call go() and close the menu in one bare
+                     expression (see docs/content/docs/developers/frontend-csp.md —
+                     Alpine's CSP-safe parser can't handle "go(); open = false"
+                     as a multi-statement @click). --}}
+                <div class="relative shrink-0 sm:hidden" x-data="dayPdfExport" @click.outside="close()">
+                    <button type="button" @click="toggle()"
+                            class="p-2 text-gray-400 hover:text-gray-100 hover:bg-gray-700 rounded transition-colors"
+                            title="Export options">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M10 6a2 2 0 110-4 2 2 0 010 4zm0 6a2 2 0 110-4 2 2 0 010 4zm0 6a2 2 0 110-4 2 2 0 010 4z" />
+                        </svg>
+                    </button>
+                    <div x-show="open" x-cloak
+                         class="absolute right-0 mt-1 w-40 bg-gray-800 border border-gray-600 rounded shadow-lg z-10">
+                        <a href="{{ route('day.export-markdown') }}?date={{ $carbonDate->format('Y-m-d') }}"
+                           class="block px-4 py-2 text-gray-200 hover:bg-gray-700">
+                            Export MD
+                        </a>
+                        <button type="button"
+                                :disabled="$store.taskCount.ready && $store.taskCount.visible === 0"
+                                :class="$store.taskCount.ready && $store.taskCount.visible === 0 ? 'opacity-40 cursor-not-allowed' : 'hover:bg-gray-700'"
+                                @click="selectPdf()"
+                                class="w-full text-left px-4 py-2 text-gray-200">
+                            Export PDF
+                        </button>
+                    </div>
+                </div>
             </div>
         </div>
     </x-slot>
@@ -272,6 +304,13 @@
         // sent along, but only for display in the PDF's header meta line.
         document.addEventListener('alpine:init', () => {
             Alpine.data('dayPdfExport', () => ({
+                // 'open' etc. are only used by the mobile three-dot menu instance
+                // (the desktop button doesn't reference them) — harmless unused
+                // state on that instance.
+                open: false,
+                toggle() { this.open = !this.open; },
+                close() { this.open = false; },
+                selectPdf() { this.go(); this.close(); },
                 go() {
                     // Keeps 'date' (if present) so exporting from a future day's page exports
                     // that day, not today — see DashboardController::exportDayPdf().
