@@ -71,6 +71,33 @@
                         class="hidden sm:inline-flex items-center px-4 py-2 bg-gray-700 border border-gray-600 rounded-md font-semibold text-xs text-gray-100 uppercase tracking-widest">
                     Export PDF
                 </button>
+
+                {{-- Mobile export menu: same two actions, collapsed behind a three-dot
+                     menu since the buttons above don't fit next to the date controls
+                     in portrait mode on a phone. --}}
+                <div class="relative shrink-0 sm:hidden" @click.outside="open = false" x-data="{ open: false }">
+                    <button type="button" @click="open = !open"
+                            class="p-2 text-gray-400 hover:text-gray-100 hover:bg-gray-700 rounded transition-colors"
+                            title="Export options">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M10 6a2 2 0 110-4 2 2 0 010 4zm0 6a2 2 0 110-4 2 2 0 010 4zm0 6a2 2 0 110-4 2 2 0 010 4z" />
+                        </svg>
+                    </button>
+                    <div x-show="open" x-cloak
+                         class="absolute right-0 mt-1 w-40 bg-gray-800 border border-gray-600 rounded shadow-lg z-10">
+                        <a href="{{ route('day.export-markdown') }}?date={{ $carbonDate->format('Y-m-d') }}"
+                           class="block px-4 py-2 text-gray-200 hover:bg-gray-700">
+                            Export MD
+                        </a>
+                        <button type="button" x-data="dayPdfExport"
+                                :disabled="$store.taskCount.ready && $store.taskCount.visible === 0"
+                                :class="$store.taskCount.ready && $store.taskCount.visible === 0 ? 'opacity-40 cursor-not-allowed' : 'hover:bg-gray-700'"
+                                @click="go(); open = false"
+                                class="w-full text-left px-4 py-2 text-gray-200">
+                            Export PDF
+                        </button>
+                    </div>
+                </div>
             </div>
         </div>
     </x-slot>
