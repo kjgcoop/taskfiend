@@ -270,10 +270,18 @@
 
             @if($inactiveProjects->count() > 0)
                 <div>
-                    <h3 class="text-sm font-semibold text-gray-500 uppercase tracking-widest mb-3">
-                        Inactive Projects
-                    </h3>
-                    <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                    <button type="button"
+                            @click="showInactive = !showInactive"
+                            class="inline-flex items-center gap-1.5 text-sm font-semibold text-gray-500 uppercase tracking-widest hover:text-gray-300 transition-colors select-none mb-3">
+                        <svg xmlns="http://www.w3.org/2000/svg"
+                             class="h-3.5 w-3.5 transition-transform duration-150 flex-shrink-0"
+                             :class="showInactive ? 'rotate-90' : ''"
+                             fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
+                        </svg>
+                        <span>Inactive Projects <span class="text-gray-600 normal-case tracking-normal">({{ $inactiveProjects->count() }})</span></span>
+                    </button>
+                    <div x-show="showInactive" x-cloak class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                         @foreach($inactiveProjects as $project)
                             <div class="bg-[#161616] border border-gray-700/50 p-6 rounded-lg opacity-60 hover:opacity-80 transition cursor-pointer"
                                  x-data="clickableCard" data-href="{{ route('projects.show', $project) }}" @click="go($event)">
@@ -326,6 +334,7 @@ document.addEventListener('alpine:init', () => {
         templateFile: null,
         projectName: '',
         favoritesOnly: false,
+        showInactive: false,
         handleFileChange(event) {
             this.templateFile = event.target.files[0];
             if (!this.projectName && this.templateFile) {

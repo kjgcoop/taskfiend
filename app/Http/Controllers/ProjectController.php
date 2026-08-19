@@ -21,8 +21,8 @@ class ProjectController extends Controller
     {
         $all = Project::forMember(Auth::id())
             ->withCount([
-                'tasks as open_tasks_count'      => fn ($q) => $q->where('status', 'incomplete')->whereNull('parent_id'),
-                'tasks as done_tasks_count'       => fn ($q) => $q->whereIn('status', ['done', 'archived'])->whereNull('parent_id'),
+                'tasks as open_tasks_count'      => fn ($q) => $q->where('status', 'incomplete'),
+                'tasks as done_tasks_count'       => fn ($q) => $q->whereIn('status', ['done', 'archived']),
             ])
             ->with([
                 'creator',
