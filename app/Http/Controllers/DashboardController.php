@@ -10,6 +10,7 @@ use App\Models\Tag;
 use App\Models\Task;
 use App\Models\User;
 use App\Services\DayPdfExporter;
+use App\Services\DayPngExporter;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -374,6 +375,37 @@ $tasks = Task::visibleTo(Auth::id())
         return response($pdf, 200, [
             'Content-Type'        => 'application/pdf',
             'Content-Disposition' => 'attachment; filename="taskfiend-day-' . $dateStr . '.pdf"',
+        ]);
+    }
+
+    /**
+     * A single tall PNG of the day's task list — for printing on a receipt/
+     * thermal printer, where DayPdfExporter's multi-column layout means cutting
+     * and taping strips together to avoid a blank gap between columns. Same
+     * "mirrors whatever's currently on screen" behavior as exportDayPdf() —
+     * same dayExportTaskGroups(), see its docblock and exportDayPdf()'s above.
+     */
+    public function exportDayPng(Request $request)
+    {
+        $date       = $request->input('date', today()->format('Y-m-d'));
+        $carbonDate = Carbon::parse($date);
+        $dateStr    = $carbonDate->format('Y-m-d');
+        $sort       = $request->input('sort', 'date');
+        $reversed   = $request->boolean('reversed');
+        $filter     = $request->input('filter');
+
+        [$incomplete, $done, $archived] = $this->dayExportTaskGroups($dateStr, $request, $sort, $reversed);
+        $tasks = $incomplete->concat($done)->concat($archived);
+
+        if ($tasks->isEmpty()) {
+            return back()->with('error', 'No tasks to export.');
+        }
+
+        $png = DayPngExporter::build($carbonDate, $tasks, $filter, $sort, $reversed, (int) config('taskfiend.day_export_png_width'));
+
+        return response($png, 200, [
+            'Content-Type'        => 'image/png',
+            'Content-Disposition' => 'attachment; filename="taskfiend-day-' . $dateStr . '.png"',
         ]);
     }
 

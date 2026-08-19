@@ -77,4 +77,28 @@ return [
     | a portrait US Letter page; more than that gets too cramped to read.
     */
     'day_export_columns' => max(1, min(4, (int) env('DAY_EXPORT_COLUMNS', 2))),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Day PNG Export
+    |--------------------------------------------------------------------------
+    | A single tall image of the day's task list (no columns, no page breaks) —
+    | for printing on a receipt/thermal printer, where a multi-column PDF just
+    | means cutting and taping strips together. DAY_EXPORT_PNG_WIDTH is the
+    | image width in pixels; text scales to it, so narrowing it in .env
+    | reflows rather than shrinking into unreadability. 600px lands at the
+    | wide end of what a typical 58-80mm thermal printer prints (~384-600px
+    | at their usual 203dpi) — tune it to your printer via .env, no code
+    | change needed. Clamped to 200-4000: below 200 can't fit a time gutter
+    | next to wrapped text, above 4000 is well past any receipt printer and
+    | risks an enormous image for no benefit.
+    |
+    | PNG_EXPORT_FONT_REGULAR / PNG_EXPORT_FONT_BOLD override the TrueType
+    | font files used to draw text (DayPngExporter falls back through a short
+    | list of common system font paths, then to GD's built-in bitmap font as
+    | a last resort, if neither is set — see DayPngExporter::resolveFont()).
+    */
+    'day_export_png_width' => max(200, min(4000, (int) env('DAY_EXPORT_PNG_WIDTH', 600))),
+    'day_export_png_font_regular' => env('PNG_EXPORT_FONT_REGULAR'),
+    'day_export_png_font_bold' => env('PNG_EXPORT_FONT_BOLD'),
 ];
