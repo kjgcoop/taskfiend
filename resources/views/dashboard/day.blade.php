@@ -279,8 +279,11 @@
                         @endif
                     </div>
                 </div>
+                <x-task-input-bar :date="$carbonDate->format('Y-m-d')" />
+                <div x-show="!showIncomplete" x-cloak class="text-sm text-gray-500 italic mb-2">
+                    Task list collapsed &mdash; click the arrow above to show it again.
+                </div>
                 <div x-show="showIncomplete">
-                    <x-task-input-bar :date="$carbonDate->format('Y-m-d')" />
                     <div x-ref="taskContainer">
                         <x-task-list :tasks="$tasks" :hide-date="true" :view-date="$carbonDate->format('Y-m-d')" :sortable="$sort === 'custom'" />
                     </div>

@@ -248,6 +248,64 @@ Test user already created with API key generated.
 
 ## Important Notes
 
+### Session Summary (Aug 21, 2026) — Cowork UX/docs review fixes
+- **Source**: a UX + docs pass from Claude Cowork (`taskfiend_ux_docs_review.md`, click-through of
+  `localhost:8000` plus `taskfiend.online` docs) surfaced 8 findings. Went through each with the
+  user rather than blind-applying all of them — two turned out to be false positives / needed a
+  product decision first.
+- **Fixed, verified against a real running instance** (`php artisan serve` + Playwright/Chromium,
+  since neither `chromium-cli` nor a project `npm install` was available in this sandbox — used the
+  globally-installed `playwright` package at `/opt/node22/lib/node_modules/playwright` with
+  `executablePath: '/opt/pw-browsers/chromium-1194/chrome-linux/chrome'` instead):
+  - **Docs Requirements section**: `docs/content/docs/getting-started/_index.md` now states PHP
+    8.2+ and its required extensions (incl. `pdo_sqlite`/`sqlite3` for the default DB), Composer 2,
+    Node 18+, and that SQLite/MySQL/Postgres are all supported — closes the "composer setup fails
+    silently with no guidance" gap.
+  - **"1 tasks" grammar** (`tags/index.blade.php`, both the active and archived tag card partials):
+    now `Str::plural('task', $tag->tasks_count)`. Verified live: a tag with exactly one task now
+    reads "1 task". (Note: `task-list.blade.php`/`subtask-list.blade.php` have a similar unpluralized
+    "N subtasks" label — not reported, left alone to stay in scope.)
+  - **Day view collapse hiding the add-task bar** (`dashboard/day.blade.php`, list view): the fold
+    chevron used to gate `<x-task-input-bar>` and the task list behind the same
+    `x-show="showIncomplete"`, so collapsing the list also hid the only way to quickly add a task.
+    The input bar is now always rendered outside that gate; collapsing shows an explicit
+    "Task list collapsed — click the arrow above to show it again." line instead of just a bare
+    chevron with no cue. Verified via screenshot before/after toggling.
+  - **Browser-based data import — removed from view, not deleted**: per user decision, all visible
+    references to the disabled zip-based "Import Data" feature are gone
+    (`profile/partials/export-import-data.blade.php` — section retitled "Export Data", the
+    "Data import is temporarily unavailable" block removed entirely). The route/controller/action
+    (`DataExportController::importAll`, still `abort(503, ...)`'d) is untouched so it's a one-line
+    revert if the feature ever gets ID-remapping and comes back. Confirmed via repo-wide grep this
+    was the only view referencing it.
+  - **Todoist import docs clarified, not changed**: the reviewer's finding here was actually a false
+    positive — `php artisan todoist:import` (documented at
+    `docs/content/docs/getting-started/todoist-import.md`) is a real, working CLI command, entirely
+    separate from the disabled web "Import Data" button they saw the unavailable-message on. Added a
+    one-line callout at the top of that doc page clarifying it's a CLI-only import, unrelated to the
+    web UI, so a self-hoster reading both doesn't assume the CLI command is broken too.
+- **Investigated, not fixed — didn't reproduce**:
+  - **"Large empty black band above content"** on Day/Projects/Create Task/Profile: measured actual
+    `getBoundingClientRect()` gaps between the page header and first content via Playwright rather
+    than eyeballing screenshots. Calendar (reported clean) = 57px, Projects = 48px, Create Task =
+    76px, Profile = 81px, Day = ~90px — Day is the largest but nowhere near the "100-150px,
+    broken-looking" the report described, and the other three flagged pages are in the same range as
+    Calendar. Did not change any layout CSS on a guess.
+  - **Hint text clipped under the Task Name textarea** on Create Task: typed a second line to trigger
+    the multi-line hint (`"Each line becomes a separate task..."`) at both a 1280×900 desktop
+    viewport and a 390×844 mobile viewport (fresh Chromium, no cache) — text rendered fully visible,
+    not clipped or overlapping, in both.
+  - **"Today" one day behind**: per user, this was the reviewer testing from a different timezone
+    than the app/server — not a bug. User confirmed they're fine hard-coding the app to Pacific
+    (`APP_TIMEZONE`), consistent with the spec's existing PST assumption; no code change requested
+    or made.
+  - **Seed/fixture data on fresh install**: per user, the repo doesn't ship or seed any such data —
+    confirmed false positive, no action taken.
+- Whoever next has a real user to point at the running app (or a way to match the reviewer's exact
+  browser/viewport) should take another look at the black-band and hint-clipping items with that in
+  mind — they may be viewport-, zoom-, or browser-specific (Cowork's review didn't say what it used)
+  rather than nonexistent.
+
 ### Session Summary (Aug 18, 2026) — Tag archiving
 - **Feature**: tags can now be archived. `tags` table gained a nullable `archived_at` timestamp
   (`Tag::$fillable`, matching the `email_enabled_at`-style "null = active" convention already used

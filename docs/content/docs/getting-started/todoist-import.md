@@ -4,6 +4,9 @@ title: "Migrating from Todoist"
 
 Task Fiend includes a one-time import command that pulls your active tasks, projects, labels, comments, and attachments from Todoist.
 
+> This is a command-line import, run once from the server. It's unrelated to (and unaffected by) any
+> data import options you may see — or not see — in the web UI.
+
 ## Before you start
 
 You'll need:

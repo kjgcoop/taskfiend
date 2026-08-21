@@ -20,7 +20,7 @@
                         <h3 class="font-semibold text-lg" style="color: {{ $tag->color }}">
                             {{ $tag->tag_name }}
                         </h3>
-                        <p class="text-sm text-gray-500 mt-2">{{ $tag->tasks_count }} tasks</p>
+                        <p class="text-sm text-gray-500 mt-2">{{ $tag->tasks_count }} {{ Str::plural('task', $tag->tasks_count) }}</p>
                     </div>
                 @empty
                     <div class="col-span-full bg-[#202020] border border-gray-700 p-8 rounded-lg text-center text-gray-500">
@@ -41,7 +41,7 @@
                                 <h3 class="font-semibold text-lg text-gray-400 line-through">
                                     {{ $tag->tag_name }}
                                 </h3>
-                                <p class="text-sm text-gray-600 mt-2">{{ $tag->tasks_count }} tasks</p>
+                                <p class="text-sm text-gray-600 mt-2">{{ $tag->tasks_count }} {{ Str::plural('task', $tag->tasks_count) }}</p>
                             </div>
                         @endforeach
                     </div>

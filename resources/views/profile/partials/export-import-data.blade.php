@@ -1,7 +1,7 @@
 <section>
     <header>
         <h2 class="text-lg font-medium text-gray-100">
-            {{ __('Export & Import Data') }}
+            {{ __('Export Data') }}
         </h2>
 
         <p class="mt-1 text-sm text-gray-400">
@@ -19,13 +19,10 @@
             </p>
         </div>
 
-        {{-- Import disabled: the importer matches records by ID with no ownership checks,
-             which can silently overwrite other users' data on a shared server.
-             Needs ID remapping before it can be safely re-enabled. --}}
-        <div>
-            <p class="text-sm text-gray-500 italic">
-                {{ __('Data import is temporarily unavailable.') }}
-            </p>
-        </div>
+        {{-- The browser-based bulk import (importAll) is intentionally not exposed here: the
+             importer matches records by ID with no ownership checks, which can silently
+             overwrite other users' data on a shared server. Route/controller/action are left
+             in place (DataExportController::importAll) in case ID remapping makes it safe to
+             re-enable later — this view just no longer advertises it. --}}
     </div>
 </section>
