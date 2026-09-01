@@ -19,7 +19,7 @@ title: "Features"
 - **Import from a markdown file** - create a brand-new project by uploading a `.md` file, or export an existing project, rearrange tasks in any text editor, and re-upload to sync changes back; new tasks are created, statuses updated, and incomplete task order reset to match the file (see [Import from .md](/docs/features/import-from-md))
 - **Multi-select** - activate with the clipboard icon next to the quick-add bar to select multiple tasks and perform bulk operations including status, project (combo box), location, and duration. Only tasks on the current page are affected; if the list is paginated, navigate to each page to act on those tasks.
 - **Search** - find tasks by title, description, tags, projects, assignees, duration, and date presence; title and description can be targeted independently
-- **Inline comment images** - image attachments on comments are displayed inline alongside the download link
+- **Comment-specific attachments** - attachments on comments are displayed next to the comment they relate to, as opposed to up associated with the whole task.
 - **Changelogs** - every create/edit is logged and browsable by task, project, tag, or user
 - **API** - create and query tasks via bearer token (see [Admin-Like Functions](/docs/features/admin-functionality/) for key management)
 
@@ -30,7 +30,10 @@ title: "Features"
   - Toggle between layouts with the buttons on the right extreme of the page, toward the top. 
       - **List view** - pretty much what it sounds like.
       - **Agenda view** - use the time-unit dropdown to control how finely the agenda is divided. 
-  - **Exports** - **Export .md** downloads a plain markdown checklist of the day being viewed; **Export PDF** downloads a printable, foldable checklist of *today's* incomplete tasks, mirroring the current sort and filter, meant for keeping a paper to-do list instead of checking your phone (see [Day Exports](/docs/features/day-export/))
+  - **Exports** 
+      - **Export <D** downloads a plain markdown checklist of the day being viewed; 
+      - **Export PDF** downloads a printable, foldable checklist of *today's* incomplete tasks, mirroring the current sort and filter, meant for keeping a paper to-do list instead of checking your phone (see [Day Exports](/docs/features/day-export/))
+      - **Export PNG** is in many respects the same as the PDF export, except it's one long image so it can be sent to a receipt printer.
 
 ## Projects
 - **Project/tag navigation** - the header nav includes dropdowns listing all your projects and tags
