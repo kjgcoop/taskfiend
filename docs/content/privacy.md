@@ -1,5 +1,6 @@
 ---
 title: "Privacy Policy"
+url: /privacy
 ---
 
 This site doesn't collect user information, although the webserver notes your IP address. Your IP address can give general information about where you're probably from, but doesn't reveal your identity.
