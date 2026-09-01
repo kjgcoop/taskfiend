@@ -31,6 +31,8 @@ A sample export:
 
 
 ## Limitations
+- It only exports tasks on the page. If the list is paginated (see `PAGINATION_PER_PAGE` in .env), you won't see the complete list of tasks.
+
 - Regarding recurring tasks on a future date you haven't reached yet - This export only includes tasks
   that already exist as real rows. A recurring task's *next* occurrence isn't created until you
   mark the *current* occurrence done (see [Recurring tasks](/docs/features/recurring-tasks/)), so

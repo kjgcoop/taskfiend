@@ -3,6 +3,7 @@ title: "Features"
 ---
 
 ## Features Found in Many Places
+- **Two completed statuses** - statuses done vs archived allow you to see what got completed vs what was intentionally discarded.
 - **[Recurring tasks](/docs/features/recurring-tasks/)** - set a recurrence pattern on any task; completing it automatically creates the next occurrence.
 - **Quick-add bar** on task list views - type a task name with natural language dates and inline shortcuts (`#project`, `@tag`, `+location`, `&user`, `nodate`) to autofill fields; autocomplete suggestions appear as you type. Paste multiple lines to create multiple tasks at once, or use Shift-Enter to add them in sequence.
 - **Natural language dates & recurrence** - type natural language in the quick-add bar and dates/recurrence are parsed automatically (see below for full syntax)

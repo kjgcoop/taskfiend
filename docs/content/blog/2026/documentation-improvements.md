@@ -2,7 +2,7 @@
 date: '2026-09-01T00:01:37-07:00'
 draft: false
 title: 'Random Documentation Improvements'
-url: '2026/08/31/docu-improvments'
+url: '2026/09/01/docu-improvments'
 summary: I improved the documentation - it was occasioned by additional description of export functionality, but involved other cleanup.
 ---
 
