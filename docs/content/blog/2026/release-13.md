@@ -1,8 +1,9 @@
 ---
-date: '2026-08-31T18:30:37-07:00'
+date: '2026-08-31T18:00:37-07:00'
 draft: false
 title: 'Release 13'
 url: '2026/08/31/release-13'
+summary: Release 13 is here.
 ---
 
 [Release 13](https://github.com/kjgcoop/taskfiend/releases#release-v13.0.0) is here.
