@@ -2,16 +2,22 @@
 title: "Day Exports"
 ---
 
-The day view (`/day`) has two export buttons in its header, next to the date. Both produce a
-one-way, read-only snapshot of the day — neither is meant to be edited and re-imported (compare
-[Import from Markdown](/docs/features/import-from-md/), which is a project-level, round-trip
-feature).
+The day view (`/day`) has a three dot menu in its header, next to the date. All the menu items are different types of exports. All reflect any filtering done on the page. Statuses (incomplete, done, archived) not unfolded are not represented in these exports:
 
-## Export .md
+## Export PDF
+This page displays tasks in one to four columns (value set in .env with `DAY_EXPORT_COLUMNS`; max and min are hard-coded; defaults to 2). I did this so I could print it, but that was an extravagant waste of paper. This is kind of awkward and minimally useful as-is. To me, anyway. Your use case may be different. I didn't take it out because it's not hurting anything.
 
-Downloads a plain markdown checklist of the day currently being viewed (works on any date, not
-just today), split into Incomplete / Done / Archived sections:
+Downloads a printable checklist of a day's incomplete tasks — `taskfiend-day-YYYY-MM-DD.pdf` —
+meant to be printed, folded down to pocket size, and marked up with a highlighter through the day
+instead of checking the app on your phone.
 
+## Export PNG
+This is designed to be a narrow and, if necessary, quite long image. I have a receipt reader to print my day's tasks so I'm not in my browser during the work day. I found I was just taking screenshots of the PDF export. That was no fun.
+
+## Export MD
+Export Markdown - this is a little different from the above. Sometimes I need a full text editor to think, as opposed to several lines. To that end, you can export to markdown, monkey with the tasks, then import it again - see [Import from Markdown](/docs/features/import-from-md/).
+
+A sample export:
 ```
 # Monday, November 10, 2025
 
@@ -23,49 +29,16 @@ just today), split into Incomplete / Done / Archived sections:
 * Morning workout
 ```
 
-This is a fixed snapshot: it doesn't reflect the on-page sort order or the text filter box, and it
-always includes all three sections regardless of what's expanded on screen.
 
-## Export PDF
-
-Downloads a printable checklist of a day's incomplete tasks — `taskfiend-day-YYYY-MM-DD.pdf` —
-meant to be printed, folded down to pocket size, and marked up with a highlighter through the day
-instead of checking the app on your phone.
-
-- **Works for today or any future date** — whatever date you're currently viewing on the day page.
-  Past dates aren't supported, since past days use a different page.
-- **Mirrors what's on screen.** Unlike Export .md, this respects the day view's current sort order
-  and its on-page text filter box — filter the list down to `#errands` first, and the PDF only
-  contains those tasks. It's a snapshot of exactly what was visible the moment you clicked the
-  button (rather than the filter being freshly re-evaluated against the database at export time),
-  so it stays faithful to what you were actually looking at even if something changes in the
-  seconds between filtering and clicking. The filter/sort in effect (if not the defaults) is
-  printed at the top of the page as a plain reminder of how the list was narrowed.
-- **Always incomplete tasks only,** regardless of any status filter that happens to be active on
-  screen — this export is a to-do list, not an archive.
-- **Layout**: a multi-column list on a US Letter page — task time (if it has one) in a narrow gutter
-  on the left, a divider line under each row instead of a bullet or checkbox — sized so that folding
-  the sheet in half twice gets it down to roughly pocket size. The idea is to cross off or highlight
-  items by hand and throw the sheet away at the end of the day, not to bring it back into the app.
-- **Column count is configurable.** Defaults to 2; set `DAY_EXPORT_COLUMNS` in `.env` to 1-4 (values
-  outside that range are clamped). More columns fit more on one page but leave less room per line,
-  so longer task titles wrap more — 3 or 4 columns suits short, single-line-ish task names better
-  than long ones.
-- **Fills each column completely before starting the next.** If everything fits in fewer columns
-  than you've configured, the remaining ones are intentionally left blank rather than splitting the
-  list evenly across all of them — this keeps the reading order predictable when you're working
-  through the page top to bottom.
-- The button is disabled whenever there's nothing to export (an empty list, or a filter that
-  matches nothing).
-
-### Limitations
-
-- **Task names** are rendered in a standard PDF font (Helvetica) with no embedded fonts, so
-  characters outside basic Latin — emoji, CJK, and similar — won't render correctly in the PDF.
-  Plain-text task titles are unaffected.
-- **Recurring tasks on a future date you haven't reached yet.** This export only includes tasks
+## Limitations
+- Regarding recurring tasks on a future date you haven't reached yet - This export only includes tasks
   that already exist as real rows. A recurring task's *next* occurrence isn't created until you
   mark the *current* occurrence done (see [Recurring tasks](/docs/features/recurring-tasks/)), so
   exporting a future date won't include a recurring task that hasn't been generated for that date
   yet — even if it "should" logically be due by then. There's currently no way to preview what a
-  recurring series would project onto a future date.
+  recurring series would project onto a future date. It would be nice though.
+
+- For the PDF and PNG exports, task names are rendered in a standard PDF font (Helvetica) with no embedded fonts, so
+  characters outside basic Latin — emoji, CJK, and similar — won't render correctly in the PDF or PNG. Plain-text task titles are unaffected.
+
+- Apparently if you have your server set up in a way that pleases Claude, you'll get pretty fonts or something in your PDF/PNG export. My server did not spark joy, so my text looks like [Courier](https://en.wikipedia.org/wiki/Courier_(typeface)).

@@ -34,14 +34,7 @@ See [Dates & Recurrence](/docs/features/dates) for the complete syntax.
 
 ## Stopping the series
 
-**Option 1 — remove the pattern before completing:**
-Edit the task, clear the Recurrence field, save, then mark it done. No new instance is created.
-
-**Option 2 — archive instead of complete:**
-Change the status to Archived. The series stops immediately.
-
-**Option 3 — remove the pattern from the next instance:**
-Mark the current task done (creates one more instance), then open that new instance and clear its recurrence pattern.
+**Remove the pattern before completing** - edit the task, clear the Recurrence field, save, then mark it done. No new instance is created.
 
 ## End dates
 
@@ -64,18 +57,23 @@ Prefix your recurrence pattern with `every!` (with an exclamation mark) to make 
 
 Useful for habits where slipping a day shouldn't cause permanent catch-up.
 
-## Undoing an accidental completion
+## Undoing an Accidental Completion
 
-If you complete a recurring task by mistake, the original instance is now marked done and a new one has been created for the next occurrence. To undo:
+### Non-recurring Tasks 
+1. Open up the done or archived section that houses it.
+2. Click the name so the sidebar opens.
+3. Click the status (done or archived) to turn it into a dropdown
+4. Select "incomplete" as the new status. Save.
 
-1. Move the newly created instance's date back to the original due date
-2. Mark the completed instance as incomplete again
+### Recurring Tasks
+If you complete a recurring task by mistake, the original instance is now marked done and a new one has been created for the next occurrence.
 
-The next time you complete the task, a new instance will be created at the correct future date — the series doesn't drift just because you manually adjusted one instance's date.
+It is inadvisable to mark the completed instance as incomplete because there is already a next instance. You'll essentially wind up with two parallel series.
+
+To undo without creating a duplicate series, move the newly created instance's date back to the original due date and complete as desired.
 
 ## Tips and edge cases
 
-- If you complete a recurring task and a next instance already exists for that date, a duplicate won't be created
 - Overdue recurring tasks stay in the overdue pile — no automatic rescheduling
 - Attachments are copied to each instance; remove or replace them if each occurrence needs different files
 - Assignees are persistent across instances
