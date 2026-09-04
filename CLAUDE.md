@@ -790,3 +790,6 @@ php artisan serve
 - Migrations: `database/migrations/`
 - Views: `resources/views/`
 - Routes: `routes/web.php`, `routes/api.php`
+
+## Linguistic Norms
+Headlines should be in title case: almost every word should be capitalized. Exceptions (according to this[](https://sellertoolkit.org/is-is-capitalized-in-a-title/what-words-are-not-capitalized-in-a-title)) include articles (a, an, the), coordinating conjunctions (and, but, or, nor, for, so, yet), and short prepositions. It is insufficient to capitalize just the first word. 

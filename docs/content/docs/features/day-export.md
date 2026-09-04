@@ -12,13 +12,13 @@ meant to be printed, folded down to pocket size, and marked up with a highlighte
 instead of checking the app on your phone.
 
 ## Export PNG
-This is designed to be a narrow and, if necessary, quite long image. I have a receipt reader to print my day's tasks so I'm not in my browser during the work day. I found I was just taking screenshots of the PDF export. That was no fun.
+This is designed to be a narrow document that gets, if necessary, quite long. I have a receipt reader to print my day's tasks so I'm not in my browser during the work day. I found I was just taking screenshots of the PDF export. That was no fun.
 
 ## Export MD
 Export Markdown - this is a little different from the above. Sometimes I need a full text editor to think, as opposed to several lines. To that end, you can export to markdown, monkey with the tasks, then import it again - see [Import from Markdown](/docs/features/import-from-md/).
 
 A sample export:
-```
+```markdown
 # Monday, November 10, 2025
 
 ## Incomplete

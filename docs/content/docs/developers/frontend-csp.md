@@ -2,7 +2,7 @@
 title: "Alpine.js & CSP"
 ---
 
-## Why this exists
+## Why this Exists
 
 Task Fiend serves a nonce-based Content-Security-Policy with no `'unsafe-eval'` (every `<script>`
 tag carries a per-request nonce via the `csp_nonce()` helper). Alpine.js normally evaluates
@@ -11,7 +11,7 @@ requires `unsafe-eval` — incompatible with that policy. To avoid loosening the
 Alpine's [CSP-safe build](https://alpinejs.dev/advanced/csp) instead, which parses directive
 expressions with its own restricted, non-`eval` interpreter.
 
-## What that restricts
+## What that Restricts
 
 The CSP build's expression parser only understands a single JS **expression** — member access,
 comparisons, ternaries, logical operators, and function calls. It does **not** understand JS
@@ -34,7 +34,7 @@ Uncaught Error: CSP Parser Error: Unexpected token: p
 There's no error on the page itself, which makes this easy to mistake for a routing or backend bug
 instead of a frontend one.
 
-## The fix: put logic in a named method
+## The Fix: Put Logic in a Named Method
 
 Anything beyond a trivial expression belongs in an `Alpine.data()` component, registered on
 `alpine:init`, with the real logic written as an ordinary method. The directive itself then only
@@ -68,7 +68,7 @@ same pattern already used throughout the codebase: `sortBy()` / `toggleSortRever
 `taskFilter` component in `task-list.blade.php`, the `staleBanner` and `dayDateEditor` components in
 `dashboard/day.blade.php`, and so on.
 
-## What's safe to write inline
+## What's Safe to Write Inline
 
 Single expressions are fine directly in a directive — no need to reach for a named method just to
 read a value or make one call:
