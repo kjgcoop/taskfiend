@@ -30,16 +30,24 @@ class TaskApiController extends Controller
 
         $user = $request->user();
 
-        // Reject project IDs the user doesn't have access to (creator or assignee)
+        // Reject project IDs the user doesn't have access to (creator or assignee),
+        // and inactive (done/archived) projects — mirrors the web store() check.
         if (!empty($validated['project_id'])) {
-            $hasAccess = Project::where('id', $validated['project_id'])
+            $targetProject = Project::where('id', $validated['project_id'])
                 ->forMember($user->id)
-                ->exists();
+                ->first();
 
-            if (!$hasAccess) {
+            if (!$targetProject) {
                 return response()->json([
                     'success' => false,
                     'message' => 'You do not have access to this project.',
+                ], 422);
+            }
+
+            if (in_array($targetProject->status, ['done', 'archived'])) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Cannot create tasks in an inactive project.',
                 ], 422);
             }
         }

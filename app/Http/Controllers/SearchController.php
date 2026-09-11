@@ -6,12 +6,77 @@ use App\Models\Project;
 use App\Models\Tag;
 use App\Models\Task;
 use App\Models\User;
+use App\Services\QuickAddParser;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 class SearchController extends Controller
 {
+    /**
+     * Resolve #project/@tag tokens out of the Search page's free-text input,
+     * the same way the quick-add bar does — via QuickAddParser, the app's
+     * single source of truth for this kind of inline token matching. The
+     * Search page's own JS used to re-implement this matching by hand
+     * (see the implementation-plan entry that added this endpoint); that
+     * duplicate parser is gone, and the client now just applies whatever
+     * this endpoint resolves. Only the as-you-type autocomplete *suggestion*
+     * dropdown stays client-side — that's a UI affordance, not a matching
+     * decision.
+     *
+     * "#inbox" is a search-only sentinel (filter to tasks with no project)
+     * that QuickAddParser has no concept of, so it's stripped up front
+     * before anything is handed to the canonical parser.
+     */
+    public function parseTokens(Request $request)
+    {
+        $request->validate([
+            'input' => 'nullable|string|max:255',
+        ]);
+
+        $input = trim((string) $request->input('input', ''));
+
+        if ($input === '') {
+            return response()->json([
+                'query'        => '',
+                'project_id'   => 'none',
+                'project_name' => null,
+                'tag_ids'      => [],
+                'tags'         => [],
+            ]);
+        }
+
+        $projectId = 'none';
+
+        $input = preg_replace_callback('/#inbox\b/i', function ($m) use (&$projectId) {
+            if ($projectId !== 'none') {
+                return $m[0]; // already resolved — leave any further #tokens as plain text
+            }
+            $projectId = 'inbox';
+            return '';
+        }, $input, 1);
+        $input = trim(preg_replace('/\s{2,}/', ' ', $input));
+
+        $tokens = (new QuickAddParser(Auth::id()))->parse(
+            $input,
+            projectPreResolved: false,
+            parseLocation: false,
+            parseAssignees: false,
+        );
+
+        if ($projectId === 'none' && $tokens->project) {
+            $projectId = (string) $tokens->project->id;
+        }
+
+        return response()->json([
+            'query'        => $tokens->name,
+            'project_id'   => $projectId,
+            'project_name' => $tokens->project?->name,
+            'tag_ids'      => $tokens->tagIds,
+            'tags'         => $tokens->tagNames,
+        ]);
+    }
+
     private function validateSearchRequest(Request $request): void
     {
         $request->validate([

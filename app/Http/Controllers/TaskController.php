@@ -131,6 +131,23 @@ class TaskController extends Controller
             'assignee_ids.*' => 'exists:users,id',
         ]);
 
+        // Authorization check for parent task
+        if (isset($validated['parent_id'])) {
+            $parentTask = Task::findOrFail($validated['parent_id']);
+            $this->authorizeTaskAccess($parentTask);
+
+            // Prevent creating subtask under archived parent
+            if ($parentTask->status === 'archived') {
+                return $this->storeError($request, ['parent_id' => 'Cannot create subtask under an archived task.']);
+            }
+
+            // A subtask always belongs to its parent's project, regardless of what the
+            // create form's project combo box submitted — otherwise "+ Add Subtask" could
+            // silently create a task that belongs to a different project than the one
+            // it's visually nested under (see the matching note in create() above).
+            $validated['project_id'] = $parentTask->project_id;
+        }
+
         // Block task creation inside inaccessible or inactive projects
         if (!empty($validated['project_id'])) {
             $targetProject = Project::where('id', $validated['project_id'])
@@ -141,17 +158,6 @@ class TaskController extends Controller
             }
             if (in_array($targetProject->status, ['done', 'archived'])) {
                 return $this->storeError($request, ['project_id' => 'Cannot create tasks in an inactive project.']);
-            }
-        }
-
-        // Authorization check for parent task
-        if (isset($validated['parent_id'])) {
-            $parentTask = Task::findOrFail($validated['parent_id']);
-            $this->authorizeTaskAccess($parentTask);
-
-            // Prevent creating subtask under archived parent
-            if ($parentTask->status === 'archived') {
-                return $this->storeError($request, ['parent_id' => 'Cannot create subtask under an archived task.']);
             }
         }
 
@@ -200,6 +206,12 @@ class TaskController extends Controller
         $taskName = $tokens->name;
         if ($tokens->project) {
             $validated['project_id'] = $tokens->project->id;
+        }
+        // A subtask's project is never negotiable, even via an inline #project token
+        // typed into the name — it always matches its parent's project (see the
+        // parent_id authorization block above, which set this once already).
+        if (isset($parentTask)) {
+            $validated['project_id'] = $parentTask->project_id;
         }
         if (!empty($tokens->tagIds)) {
             $validated['tag_ids'] = array_unique(array_merge($validated['tag_ids'] ?? [], $tokens->tagIds));
@@ -509,6 +521,13 @@ class TaskController extends Controller
                 $msg = 'You do not have access to this project.';
                 if ($request->ajax()) {
                     return response()->json(['success' => false, 'message' => $msg], 403);
+                }
+                return back()->withErrors(['project_id' => $msg])->withInput();
+            }
+            if (in_array($targetProject->status, ['done', 'archived'])) {
+                $msg = 'Cannot move tasks into an inactive project.';
+                if ($request->ajax()) {
+                    return response()->json(['success' => false, 'message' => $msg], 422);
                 }
                 return back()->withErrors(['project_id' => $msg])->withInput();
             }
@@ -828,6 +847,22 @@ class TaskController extends Controller
                     $value = $normalized;
                 }
 
+                // Moving to a different project: must be a member of the target
+                // project, and it must not be inactive (done/archived) — mirrors
+                // the same check in store()/update() (see the "Audit project
+                // pickers" plan item; updateField() previously had none at all).
+                if ($field === 'project_id' && $value && $value != $task->project_id) {
+                    $targetProject = Project::where('id', $value)
+                        ->forMember(Auth::id())
+                        ->first();
+                    if (!$targetProject) {
+                        return response()->json(['success' => false, 'message' => 'You do not have access to this project.'], 422);
+                    }
+                    if (in_array($targetProject->status, ['done', 'archived'])) {
+                        return response()->json(['success' => false, 'message' => 'Cannot move tasks into an inactive project.'], 422);
+                    }
+                }
+
                 $previousValue = $task->$field;
                 $task->$field = $value;
 
@@ -1114,6 +1149,10 @@ class TaskController extends Controller
 
             if (!$project) {
                 return response()->json(['success' => false, 'message' => 'Invalid project.'], 403);
+            }
+
+            if (in_array($project->status, ['done', 'archived'])) {
+                return response()->json(['success' => false, 'message' => 'Cannot move tasks into an inactive project.'], 422);
             }
         }
 

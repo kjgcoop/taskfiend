@@ -113,8 +113,15 @@ class TagController extends Controller
 
         $tag->load('changeLogs.user');
 
-        $projects = Project::forMember(Auth::id())
-            ->where('status', '!=', 'archived')
+        // Feeds the quick-add bar's #project matching and the bulk-edit "move to
+        // project" dropdown on this page (both are pickers, not just a filter —
+        // see the "Audit project pickers" plan item). activeForUser() matches
+        // every sibling page that shares this same taskFilter/bulkEdit component
+        // (dashboard day/overdue/undated/all, search); the tag's own incomplete
+        // task list already excludes tasks in done/archived projects (see the
+        // whereHas('project', ...) above), so an active-only project list here
+        // loses no legitimate filtering ability.
+        $projects = Project::activeForUser(Auth::id())
             ->orderByRaw('LOWER(name)')
             ->get(['id', 'name']);
 

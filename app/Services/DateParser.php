@@ -24,6 +24,11 @@ class DateParser
             return null;
         }
 
+        $relative = $this->parseRelativeDuration($input);
+        if ($relative) {
+            return $relative;
+        }
+
         try {
             $result = $this->parseTaskInput($input);
         } catch (\Exception $e) {
@@ -35,6 +40,39 @@ class DateParser
         }
 
         return Carbon::createFromFormat('Y-m-d', $result['date'])->startOfDay();
+    }
+
+    /**
+     * Parse a relative duration in the exact form "[integer] [interval]" — e.g. "3 days",
+     * "1 week", "2 months", "1 year" — always relative to today. Task DATE FIELD only:
+     * intentionally not part of parseTaskInput()'s pattern table, so the quick-add bar /
+     * task name parser never picks this up.
+     *
+     * The whole trimmed input must match a single bare integer + unit, so this naturally
+     * rejects (returns null for) zero, negative numbers, fractional numbers, and compound
+     * durations ("1 week 2 days") — none of those match the anchored \d+ pattern, so they
+     * never silently resolve to an unintended date.
+     */
+    private function parseRelativeDuration(string $input): ?Carbon
+    {
+        if (!preg_match('/^(\d+)\s+(day|days|week|weeks|month|months|year|years)$/i', $input, $matches)) {
+            return null;
+        }
+
+        $count = (int) $matches[1];
+        if ($count < 1) {
+            return null;
+        }
+
+        $today = Carbon::today();
+        $unit = strtolower($matches[2]);
+
+        return match (true) {
+            str_starts_with($unit, 'day') => $today->addDays($count),
+            str_starts_with($unit, 'week') => $today->addWeeks($count),
+            str_starts_with($unit, 'month') => $today->addMonths($count),
+            default => $today->addYears($count),
+        };
     }
 
     public function parseTaskInput(string $input): array

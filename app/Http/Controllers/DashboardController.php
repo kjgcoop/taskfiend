@@ -272,16 +272,30 @@ class DashboardController extends Controller
         return view('dashboard.calendar', compact('tasks', 'month', 'year', 'startDate', 'overdueCount', 'undatedCount'));
     }
 
+    /**
+     * Mirrors the Today page's exports: the client sends a live snapshot of which task rows are
+     * currently visible under the on-page text filter as 'ids[]' (see overdue.blade.php's
+     * overdueExport component), and it's applied here as a whereIn() on top of this method's own
+     * already-authorized/scoped query — so an id can only ever narrow the result, never widen it.
+     * No 'ids' param at all (a manually-typed/bookmarked URL) falls back to every overdue task,
+     * same as this export's original behavior before it could be filtered.
+     */
     public function exportOverdueMarkdown(Request $request)
     {
-$tasks = Task::visibleTo(Auth::id())
+        $tasksQuery = Task::visibleTo(Auth::id())
             ->where('status', '!=', 'archived')
             ->where('status', '!=', 'done')
             ->whereNotNull('date')
             ->where('date', '<', today()->format('Y-m-d'))
             ->whereHas('project', fn($pq) => $pq->whereNotIn('status', ['archived', 'done']))
-            ->orderByRaw('date ASC, time IS NULL, time ASC')
-            ->get();
+            ->orderByRaw('date ASC, time IS NULL, time ASC');
+
+        if ($request->has('ids')) {
+            $ids = array_map('intval', (array) $request->input('ids', []));
+            $tasksQuery->whereIn('id', $ids);
+        }
+
+        $tasks = $tasksQuery->get();
 
         $lines = ['# Overdue Tasks'];
         foreach ($tasks as $task) {
