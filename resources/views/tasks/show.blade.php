@@ -233,7 +233,7 @@
                                 </span>
                             </div>
                             <div x-show="dateError" class="mt-1 text-xs text-red-400" x-text="dateError"></div>
-                            <p class="mt-1 text-xs text-gray-500">Type a date or click the calendar icon. Accepts: tomorrow, next friday, march 15, 3/15, 2026-03-15</p>
+                            <p class="mt-1 text-xs text-gray-500">Type a date or click the calendar icon. Accepts: tomorrow, next friday, march 15, 3/15, 2026-03-15, or a relative duration like "3 days" / "2 weeks" / "1 month" / "1 year"</p>
                         </div>
                         @endif
                     </div>

@@ -259,6 +259,40 @@ class ApiTaskTest extends TestCase
         $response->assertUnprocessable();
     }
 
+    public function test_create_rejects_project_id_that_is_done(): void
+    {
+        $doneProject = Project::create([
+            'name'    => 'Done Project',
+            'user_id' => $this->user->id,
+            'status'  => 'done',
+        ]);
+
+        $response = $this->apiPost(['name' => 'Task', 'project_id' => $doneProject->id]);
+
+        $response->assertStatus(422)
+                 ->assertJson(['success' => false])
+                 ->assertJsonPath('message', 'Cannot create tasks in an inactive project.');
+
+        $this->assertDatabaseMissing('tasks', ['name' => 'Task']);
+    }
+
+    public function test_create_rejects_project_id_that_is_archived(): void
+    {
+        $archivedProject = Project::create([
+            'name'    => 'Archived Project',
+            'user_id' => $this->user->id,
+            'status'  => 'archived',
+        ]);
+
+        $response = $this->apiPost(['name' => 'Task', 'project_id' => $archivedProject->id]);
+
+        $response->assertStatus(422)
+                 ->assertJson(['success' => false])
+                 ->assertJsonPath('message', 'Cannot create tasks in an inactive project.');
+
+        $this->assertDatabaseMissing('tasks', ['name' => 'Task']);
+    }
+
     public function test_create_allows_project_id_where_user_is_an_assignee(): void
     {
         $owner = User::factory()->create();

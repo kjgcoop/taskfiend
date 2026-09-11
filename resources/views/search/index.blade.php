@@ -63,7 +63,7 @@
                                     <div class="px-3 py-2 text-xs font-semibold text-gray-400 bg-[#202020] border-b border-gray-600">Projects</div>
                                     <template x-for="(project, index) in filteredProjects" :key="project.id">
                                         <div class="px-2 py-1 hover:bg-gray-600 cursor-pointer text-sm text-gray-300"
-                                             @click.prevent="selectAutocomplete(project.name)"
+                                             @click.prevent="selectAutocomplete(project.name, project.id)"
                                              :class="{ 'bg-gray-600': autocompleteIndex === index + 1 }">
                                             <span x-text="project.name"></span>
                                         </div>
@@ -79,7 +79,7 @@
                                     <div class="px-3 py-2 text-xs font-semibold text-gray-400 bg-[#202020] border-b border-gray-600">Tags</div>
                                     <template x-for="(tag, index) in filteredTags" :key="tag.id">
                                         <div class="px-2 py-1 hover:bg-gray-600 cursor-pointer text-sm flex items-center"
-                                             @click.prevent="selectAutocomplete(tag.tag_name)"
+                                             @click.prevent="selectAutocomplete(tag.tag_name, tag.id)"
                                              :class="{ 'bg-gray-600': autocompleteIndex === index }">
                                             <span :style="'color: ' + tag.color" x-text="tag.tag_name"></span>
                                         </div>
@@ -565,13 +565,15 @@
                         event.preventDefault();
 
                         if (this.autocompleteType === 'project') {
-                            const selected = this.autocompleteIndex === 0
-                                ? 'inbox'
-                                : this.filteredProjects[this.autocompleteIndex - 1]?.name;
-                            if (selected) this.selectAutocomplete(selected);
+                            if (this.autocompleteIndex === 0) {
+                                this.selectAutocomplete('inbox');
+                            } else {
+                                const p = this.filteredProjects[this.autocompleteIndex - 1];
+                                if (p) this.selectAutocomplete(p.name, p.id);
+                            }
                         } else if (this.autocompleteType === 'tag') {
-                            const selected = this.filteredTags[this.autocompleteIndex]?.tag_name;
-                            if (selected) this.selectAutocomplete(selected);
+                            const t = this.filteredTags[this.autocompleteIndex];
+                            if (t) this.selectAutocomplete(t.tag_name, t.id);
                         }
                     } else if (event.key === 'Escape') {
                         event.preventDefault();
@@ -579,7 +581,7 @@
                     }
                 },
 
-                selectAutocomplete(name) {
+                selectAutocomplete(name, id = null) {
                     const input = this.searchInput;
                     const inputEl = this.$refs.searchInput;
                     const cursorPos = inputEl.selectionStart;
@@ -591,16 +593,29 @@
                     if (this.autocompleteType === 'project') {
                         const slug = slugify(name);
                         newBefore = beforeCursor.replace(/#[\w-]*$/, '#' + slug + ' ');
+
+                        // We already know exactly which project this is (the dropdown only
+                        // lists real projects, plus the fixed "inbox" entry) — set the filter
+                        // directly rather than re-deriving it by re-parsing the text. Token
+                        // *matching* still only happens in one place (the server, via
+                        // parseTokens/QuickAddParser) — this is just applying a choice the
+                        // user already made from that list, the "UI affordance" the plan
+                        // explicitly allows to stay client-side.
+                        this.selectedProjectId = name === 'inbox'
+                            ? 'inbox'
+                            : (id ?? this.projects.find(p => p.name === name)?.id ?? 'none');
                     } else {
                         const slug = slugify(name);
                         newBefore = beforeCursor.replace(/@[\w-]*$/, '@' + slug + ' ');
+
+                        const tagId = id ?? this.tags.find(t => t.tag_name === name)?.id;
+                        if (tagId && !this.selectedTagIds.includes(tagId)) {
+                            this.selectedTagIds.push(tagId);
+                        }
                     }
 
                     this.searchInput = newBefore + afterCursor;
                     this.showAutocomplete = false;
-
-                    // Parse and update filters
-                    this.parseSearchInput();
 
                     // Refocus input
                     this.$nextTick(() => {
@@ -616,48 +631,34 @@
                     }, 200);
                 },
 
-                parseSearchInput() {
-                    let input = this.searchInput;
+                // Resolve #project/@tag tokens in the raw searchInput text by asking the
+                // server — the single place (SearchController::parseTokens, backed by
+                // QuickAddParser) that decides whether a completed token actually matches
+                // something. Replaces the old hand-rolled JS regex tokenizer, which drifted
+                // from the canonical matcher and, unlike it, couldn't resolve multi-word
+                // project/tag names typed as a hyphenated slug (e.g. "Home Renovation"
+                // typed as "#home-renovation").
+                async resolveTokensFromServer() {
+                    if (!this.searchInput.trim()) {
+                        this.queryText = '';
+                        this.selectedProjectId = 'none';
+                        this.selectedTagIds = [];
+                        return;
+                    }
 
-                    this.selectedProjectId = 'none';
-                    this.selectedTagIds = [];
-
-                    // Process #project tokens — strip only those that match a known project;
-                    // unmatched tokens (e.g. #notaproject) are kept in the text query.
-                    let projectFound = false;
-                    let plainText = input.replace(/#([\w-]+)/g, (match, token) => {
-                        if (projectFound) return match;
-                        const name = token.toLowerCase();
-                        if (name === 'inbox') {
-                            this.selectedProjectId = 'inbox';
-                            projectFound = true;
-                            return '';
+                    try {
+                        const url = @js(route('search.parseTokens')) + '?input=' + encodeURIComponent(this.searchInput);
+                        const res = await fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
+                        if (res.ok) {
+                            const data = await res.json();
+                            this.queryText = data.query ?? '';
+                            this.selectedProjectId = data.project_id ?? 'none';
+                            this.selectedTagIds = data.tag_ids ?? [];
                         }
-                        const project = this.projects.find(p =>
-                            slugify(p.name) === name
-                        );
-                        if (project) {
-                            this.selectedProjectId = project.id;
-                            projectFound = true;
-                            return '';
-                        }
-                        return match; // no match — keep in text
-                    });
-
-                    // Process @tag tokens — same logic: only strip matched tags.
-                    plainText = plainText.replace(/@([\w-]+)/g, (match, token) => {
-                        const name = token.toLowerCase();
-                        const tag = this.tags.find(t =>
-                            slugify(t.tag_name) === name
-                        );
-                        if (tag && !this.selectedTagIds.includes(tag.id)) {
-                            this.selectedTagIds.push(tag.id);
-                            return '';
-                        }
-                        return match; // no match — keep in text
-                    });
-
-                    this.queryText = plainText.trim().replace(/\s+/g, ' ');
+                    } catch (e) {
+                        // Network hiccup — fall back to submitting with whatever filter
+                        // state is already set rather than blocking the search entirely.
+                    }
                 },
 
                 updateSearchFromFilters() {
@@ -732,9 +733,16 @@
                     this.$nextTick(() => this.$refs.searchInput && this.$refs.searchInput.focus());
                 },
 
-                prepareSubmit(e) {
-                    // Make sure hidden fields are up to date before submitting
-                    this.parseSearchInput();
+                async prepareSubmit(e) {
+                    // Make sure hidden fields are up to date before submitting. Token
+                    // resolution is async (server round-trip), so hold the actual submit
+                    // until it resolves, then submit for real. Calling .submit() directly
+                    // (rather than clicking the submit button) bypasses the 'submit' event
+                    // entirely, so this doesn't re-enter prepareSubmit.
+                    e.preventDefault();
+                    const form = e.target;
+                    await this.resolveTokensFromServer();
+                    form.submit();
                 }
                 };
             });

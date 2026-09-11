@@ -29,6 +29,22 @@ Alpine.data('taskSortableList', () => ({
     init() { window.initTaskSortable(this.$el); },
     taskMoveInList(el, direction) { window.taskMoveInList(el, direction); },
 }));
+// Shared by the Today page's Export MD/PDF/PNG buttons (day.blade.php) and the Overdue page's
+// Export MD button (overdue.blade.php): collects the ids of every currently-visible task row —
+// passed the on-page text filter (its [data-filterable] descendant isn't display:none) and not
+// hidden inside a folded section or unloaded "Load more" page (offsetParent is null for anything
+// hidden by an ancestor, which covers both in one check) — so an export can narrow its query to a
+// live snapshot of "what's on screen" instead of a server-side re-implementation of the filter.
+window.collectVisibleFilterableTaskIds = function () {
+    const ids = [];
+    document.querySelectorAll('[data-task-group]').forEach(group => {
+        const filterable = group.querySelector('[data-filterable]');
+        if (filterable && filterable.style.display !== 'none' && group.offsetParent !== null) {
+            ids.push(group.dataset.taskGroupId);
+        }
+    });
+    return ids;
+};
 // Quick-complete circle button on a task-list row. Same story as taskSortableList above: this
 // used to live only in task-list.blade.php's @pushOnce, which subtask-list.blade.php relied on
 // without actually including — so the quick-complete button on subtask rows silently threw

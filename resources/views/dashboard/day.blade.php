@@ -320,22 +320,6 @@
         // going its own way (previously PDF respected the filter and MD always
         // exported everything, folded or not).
         document.addEventListener('alpine:init', () => {
-            // A task counts as "visible" if it passed the on-page filter (own
-            // data-filterable display isn't 'none') AND isn't hidden inside a
-            // folded Done/Archived section or unloaded "Load more" page
-            // (offsetParent is null for anything hidden by an ancestor, which
-            // covers both in one check).
-            function collectVisibleDayTaskIds() {
-                const ids = [];
-                document.querySelectorAll('[data-task-group]').forEach(group => {
-                    const filterable = group.querySelector('[data-filterable]');
-                    if (filterable && filterable.style.display !== 'none' && group.offsetParent !== null) {
-                        ids.push(group.dataset.taskGroupId);
-                    }
-                });
-                return ids;
-            }
-
             // Shared querystring builder: keeps 'date' (if present, so exporting
             // from a future day's page exports that day, not today — see
             // DashboardController), replaces 'ids[]'/'filter' with a live
@@ -352,7 +336,7 @@
                 const filterText = Alpine.store('taskCount').filterText;
                 if (filterText) p.set('filter', filterText);
 
-                collectVisibleDayTaskIds().forEach(id => p.append('ids[]', id));
+                window.collectVisibleFilterableTaskIds().forEach(id => p.append('ids[]', id));
 
                 return p;
             }

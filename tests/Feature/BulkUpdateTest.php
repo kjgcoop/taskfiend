@@ -341,6 +341,52 @@ class BulkUpdateTest extends TestCase
         ]);
     }
 
+    public function test_cannot_bulk_update_project_to_a_done_project(): void
+    {
+        $task = $this->createOwnedTask();
+        $doneProject = Project::create([
+            'name'    => 'Done Project',
+            'user_id' => $this->user->id,
+            'status'  => 'done',
+        ]);
+
+        $response = $this->actingAs($this->user)
+            ->postJson('/tasks/bulk-update', [
+                'task_ids'   => [$task->id],
+                'project_id' => $doneProject->id,
+            ]);
+
+        $response->assertStatus(422);
+
+        $this->assertDatabaseHas('tasks', [
+            'id'         => $task->id,
+            'project_id' => $this->project->id,
+        ]);
+    }
+
+    public function test_cannot_bulk_update_project_to_an_archived_project(): void
+    {
+        $task = $this->createOwnedTask();
+        $archivedProject = Project::create([
+            'name'    => 'Archived Project',
+            'user_id' => $this->user->id,
+            'status'  => 'archived',
+        ]);
+
+        $response = $this->actingAs($this->user)
+            ->postJson('/tasks/bulk-update', [
+                'task_ids'   => [$task->id],
+                'project_id' => $archivedProject->id,
+            ]);
+
+        $response->assertStatus(422);
+
+        $this->assertDatabaseHas('tasks', [
+            'id'         => $task->id,
+            'project_id' => $this->project->id,
+        ]);
+    }
+
     // -------------------------------------------------------------------------
     // Validation
     // -------------------------------------------------------------------------

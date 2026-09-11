@@ -193,7 +193,7 @@
                                     </span>
                                 </div>
                                 <div x-show="dateError" class="mt-1 text-xs text-red-400" x-text="dateError"></div>
-                                <p class="mt-1 text-xs text-gray-500">Accepts: tomorrow, next friday, march 15, 3/15, 2026-03-15</p>
+                                <p class="mt-1 text-xs text-gray-500">Accepts: tomorrow, next friday, march 15, 3/15, 2026-03-15, or a relative duration like "3 days" / "2 weeks" / "1 month" / "1 year"</p>
                                 @error('date')<p class="mt-1 text-sm text-red-600">{{ $message }}</p>@enderror
                             </div>
                             <div>

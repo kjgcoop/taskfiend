@@ -85,6 +85,7 @@ Route::middleware('auth')->group(function () {
 
     Route::get('/search', [SearchController::class, 'index'])->name('search');
     Route::get('/search/more', [SearchController::class, 'more'])->name('search.more');
+    Route::get('/search/parse-tokens', [SearchController::class, 'parseTokens'])->name('search.parseTokens');
 
     Route::get('/changelogs/task/{task}', [ChangeLogController::class, 'task'])->name('changelogs.task');
     Route::get('/changelogs/project/{project}', [ChangeLogController::class, 'project'])->name('changelogs.project');

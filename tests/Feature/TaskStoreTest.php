@@ -283,6 +283,45 @@ class TaskStoreTest extends TestCase
         ]);
     }
 
+    /**
+     * A subtask must always belong to its parent's project, even if the create
+     * form (project combo box) submitted a different, otherwise-valid project_id —
+     * e.g. the preselect silently failed, a stale form was resubmitted, or the
+     * combo box selection was manually changed. The subtask should never end up
+     * counted toward a different project's task totals than its parent.
+     */
+    public function test_subtask_project_id_always_matches_parent_project_id(): void
+    {
+        $otherProject = Project::create([
+            'name'    => 'Other Project',
+            'user_id' => $this->user->id,
+            'status'  => 'incomplete',
+        ]);
+
+        $parent = Task::create([
+            'name'       => 'Parent',
+            'creator_id' => $this->user->id,
+            'project_id' => $this->project->id,
+            'status'     => 'incomplete',
+        ]);
+
+        $this->storeTask([
+            'name'       => 'Child',
+            'parent_id'  => $parent->id,
+            'project_id' => $otherProject->id,
+        ]);
+
+        $this->assertDatabaseHas('tasks', [
+            'name'       => 'Child',
+            'parent_id'  => $parent->id,
+            'project_id' => $this->project->id,
+        ]);
+        $this->assertDatabaseMissing('tasks', [
+            'name'       => 'Child',
+            'project_id' => $otherProject->id,
+        ]);
+    }
+
     public function test_subtask_inherits_parent_assignees_when_none_specified(): void
     {
         $other = $this->createOtherUser();
@@ -429,6 +468,32 @@ class TaskStoreTest extends TestCase
         $task = Task::where('creator_id', $this->user->id)->latest()->first();
         $this->assertSame('Fix bug', $task->name);
         $this->assertSame($project->id, $task->project_id);
+    }
+
+    /**
+     * Quick-adding from a project's page (the x-task-input-bar's hidden project_id
+     * field) always creates the task in that project — an inline #token in the typed
+     * text is stripped like normal but must not resolve to and override the project
+     * already fixed by the page the quick-add bar is on.
+     */
+    public function test_quick_add_hidden_project_id_wins_over_hash_token_in_name(): void
+    {
+        $otherProject = Project::create([
+            'name'    => 'work',
+            'user_id' => $this->user->id,
+            'status'  => 'incomplete',
+        ]);
+
+        $response = $this->actingAs($this->user)->post('/tasks', [
+            'name'       => 'Fix bug #work',
+            'project_id' => $this->project->id,
+            'quick_add'  => true,
+        ]);
+
+        $response->assertRedirect();
+        $task = Task::where('creator_id', $this->user->id)->latest()->first();
+        $this->assertSame($this->project->id, $task->project_id);
+        $this->assertNotSame($otherProject->id, $task->project_id);
     }
 
     public function test_at_tag_token_assigns_tag_and_strips_token(): void

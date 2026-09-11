@@ -1307,4 +1307,86 @@ class DateParserTest extends TestCase
     {
         $this->assertNull($this->parser->resolveDate('nonsense zzz'));
     }
+
+    // =========================================================================
+    // resolveDate() — relative durations ("[integer] [interval]"), task DATE
+    // FIELD ONLY. Always relative to today; forward-only; exactly one interval.
+    // =========================================================================
+
+    public function test_resolve_date_relative_day_singular(): void
+    {
+        $this->assertSame('2026-03-27', $this->parser->resolveDate('1 day')->format('Y-m-d'));
+    }
+
+    public function test_resolve_date_relative_day_plural(): void
+    {
+        $this->assertSame('2026-03-29', $this->parser->resolveDate('3 days')->format('Y-m-d'));
+    }
+
+    public function test_resolve_date_relative_week_singular(): void
+    {
+        $this->assertSame('2026-04-02', $this->parser->resolveDate('1 week')->format('Y-m-d'));
+    }
+
+    public function test_resolve_date_relative_week_plural(): void
+    {
+        $this->assertSame('2026-04-09', $this->parser->resolveDate('2 weeks')->format('Y-m-d'));
+    }
+
+    public function test_resolve_date_relative_month_singular(): void
+    {
+        $this->assertSame('2026-04-26', $this->parser->resolveDate('1 month')->format('Y-m-d'));
+    }
+
+    public function test_resolve_date_relative_month_plural(): void
+    {
+        $this->assertSame('2026-06-26', $this->parser->resolveDate('3 months')->format('Y-m-d'));
+    }
+
+    public function test_resolve_date_relative_year_singular(): void
+    {
+        $this->assertSame('2027-03-26', $this->parser->resolveDate('1 year')->format('Y-m-d'));
+    }
+
+    public function test_resolve_date_relative_year_plural(): void
+    {
+        $this->assertSame('2028-03-26', $this->parser->resolveDate('2 years')->format('Y-m-d'));
+    }
+
+    public function test_resolve_date_relative_zero_is_invalid(): void
+    {
+        $this->assertNull($this->parser->resolveDate('0 days'));
+    }
+
+    public function test_resolve_date_relative_negative_is_invalid(): void
+    {
+        $this->assertNull($this->parser->resolveDate('-3 days'));
+    }
+
+    public function test_resolve_date_relative_fractional_is_invalid(): void
+    {
+        $this->assertNull($this->parser->resolveDate('1.5 weeks'));
+    }
+
+    public function test_resolve_date_relative_compound_is_invalid(): void
+    {
+        $this->assertNull($this->parser->resolveDate('1 week 2 days'));
+    }
+
+    public function test_resolve_date_relative_extra_text_is_invalid(): void
+    {
+        $this->assertNull($this->parser->resolveDate('in 3 days'));
+    }
+
+    /**
+     * Relative durations are a task DATE FIELD feature only — parseTaskInput() backs the
+     * quick-add bar / task name parsing and must not pick this up as a date.
+     */
+    public function test_relative_duration_is_not_recognized_by_quick_add_parsing(): void
+    {
+        $result = $this->parser->parseTaskInput('Renew passport 3 days');
+
+        $this->assertNull($result['date']);
+        $this->assertSame('Renew passport 3 days', $result['name']);
+    }
 }

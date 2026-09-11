@@ -64,4 +64,30 @@ class ParseDatePreviewTest extends TestCase
         $projects = collect($response->json('projects'));
         $this->assertSame(1, $projects->sum('count'), 'Only the assigned task should be counted.');
     }
+
+    public function test_parse_date_resolves_relative_duration_to_formatted_date(): void
+    {
+        $user = User::factory()->create();
+
+        $response = $this->actingAs($user)->post(route('tasks.parseDate'), [
+            'input' => '3 days',
+        ]);
+
+        $response->assertOk()->assertJson([
+            'success'   => true,
+            'date'      => now()->addDays(3)->format('Y-m-d'),
+            'formatted' => now()->addDays(3)->format('l, F j, Y'),
+        ]);
+    }
+
+    public function test_parse_date_rejects_invalid_relative_duration(): void
+    {
+        $user = User::factory()->create();
+
+        $response = $this->actingAs($user)->post(route('tasks.parseDate'), [
+            'input' => '-3 days',
+        ]);
+
+        $response->assertOk()->assertJson(['success' => false]);
+    }
 }

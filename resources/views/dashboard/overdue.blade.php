@@ -5,9 +5,9 @@
                 {{ __('Overdue') }}
                 <x-task-count-badge :count="$totalCount" :breakdown="$breakdown" />
             </h2>
-            <a href="{{ route('overdue.export-markdown') }}" class="hidden sm:inline-flex items-center px-4 py-2 bg-gray-700 border border-gray-600 rounded-md font-semibold text-xs text-gray-100 uppercase tracking-widest hover:bg-gray-600">
+            <button type="button" x-data="overdueExport" @click="goMarkdown()" class="hidden sm:inline-flex items-center px-4 py-2 bg-gray-700 border border-gray-600 rounded-md font-semibold text-xs text-gray-100 uppercase tracking-widest hover:bg-gray-600">
                 Export MD
-            </a>
+            </button>
         </div>
     </x-slot>
 
@@ -70,4 +70,27 @@
             @endif
         </div>
     </div>
+
+    @push('scripts')
+    <script nonce="{{ csp_nonce() }}">
+        // Export MD mirrors what's currently on screen, same mechanism as the Today page's
+        // exports (see day.blade.php and DashboardController::exportOverdueMarkdown()): only
+        // when the on-page text filter is active do we send a live snapshot of the currently-
+        // visible task ids as 'ids[]' — an inactive filter exports every overdue task, same as
+        // before this existed. The Overdue page has no Done/Archived folding to account for
+        // (everything on it is incomplete by definition), so unlike dayExport there's nothing
+        // else to snapshot.
+        document.addEventListener('alpine:init', () => {
+            Alpine.data('overdueExport', () => ({
+                goMarkdown() {
+                    const p = new URLSearchParams();
+                    if (Alpine.store('taskCount').filterText) {
+                        window.collectVisibleFilterableTaskIds().forEach(id => p.append('ids[]', id));
+                    }
+                    window.location.href = '{{ route('overdue.export-markdown') }}?' + p.toString();
+                },
+            }));
+        });
+    </script>
+    @endpush
 </x-app-layout>
