@@ -248,6 +248,76 @@ Test user already created with API key generated.
 
 ## Important Notes
 
+### Session Summary (Sep 11, 2026) — Search token unification, project-picker audit, subtask inheritance, relative dates, Overdue export
+- **Source**: `implementation-plan.md`, a five-item checklist (all items now checked off in that
+  file). Landed as two commits — `b5a10ca` ("Mostly bug fixes") and a same-day follow-up,
+  `94114a8` ("Files that got missed the last time"), which covers the controller/service-layer
+  half of the same five items after the first commit turned out to be view/test-only for some of
+  them.
+- **Search page `#project`/`@tag` now goes through the canonical server-side parser**
+  (`SearchController::parseTokens`, `POST`/`GET /search/parse-tokens`) instead of a hand-rolled JS
+  regex tokenizer (`parseSearchInput()`, now deleted from `search/index.blade.php`). Same shape as
+  the quick-add bar's own live-preview AJAX call: client sends raw text, `QuickAddParser` (see the
+  Jul 11, 2026 entry below — this is another consumer of that single-source-of-truth service, not
+  a new parser) resolves `#project`/`@tag` tokens server-side, client applies the result. `#inbox`
+  is a search-only sentinel `QuickAddParser` has no concept of, so `parseTokens()` strips it before
+  handing the rest to the parser. The autocomplete *dropdown* (suggestions while a token is still
+  being typed) stays client-side, as planned — it's a UI affordance, not a matching decision; when
+  a suggestion is clicked, its known project/tag id is passed straight through
+  (`selectAutocomplete(name, id)`) instead of re-derived by re-parsing text. **Fixes multi-word
+  project/tag names** (e.g. a project named "Home Renovation" typed as `#home-renovation`) — the
+  old JS tokenizer's `slugify()`-and-compare approach worked fine for this case too in isolation,
+  but the point of the change was collapsing two independently-maintained matchers into one; the
+  multi-word case is what the plan asked to be confirmed and covered by test. See
+  `tests/Feature/SearchParseTokensTest.php`.
+- **Project pickers audited for archived/done projects.** Every place a task can be pointed at a
+  project now goes through `Project::forMember()`/`activeForUser()` (see the Jul 11, 2026 entry) and
+  rejects a `done`/`archived` target project with a 422/flash error rather than silently accepting
+  it: `TaskController::store()` (already correct), `update()`, `updateField()`'s `project_id`
+  branch (previously had **no** inactive-project check at all), `bulkUpdate()`'s bulk move-to-project
+  action, and the API's `TaskApiController::create()`. Also fixed `TagController::show()`'s project
+  dropdown (used by the quick-add bar and bulk-edit "move to project" picker on a tag's page) —
+  it was filtering out only `archived` projects via a raw `where('status', '!=', 'archived')`,
+  missing `done`; switched to `Project::activeForUser()` to match every sibling page using the same
+  picker component. `tests/Feature/TaskMoveProjectTest.php` and
+  `tests/Feature/TagShowProjectPickerTest.php` cover this.
+- **Task/subtask project inheritance verified and fixed.** Creating a task while viewing a project
+  already correctly set `project_id` (no bug there). Creating a subtask via the subtask tab did
+  not: `TaskController::store()` set `parent_id`'s authorization check *after* the general
+  `project_id` validation block, and separately, an inline `#project` token typed into the subtask's
+  name (via `QuickAddParser`) could overwrite `project_id` after the parent-inheritance assignment
+  ran. Fixed by moving the parent-authorization/inheritance block earlier (so a subtask's
+  `project_id` is forced to match its parent's before the general project-access check runs) and by
+  re-forcing `project_id` back to the parent's after `QuickAddParser` tokens are applied — a subtask's
+  project is never negotiable via any input path, always the parent's. See
+  `tests/Feature/TaskStoreTest.php`.
+- **Relative date scheduling added to the task date field** (create/edit forms only, *not* the
+  quick-add bar — deliberately kept as a second, narrower pattern rather than folded into
+  `parseTaskInput()`'s date-token table, so quick-add/task-name parsing never picks it up).
+  `DateParser::parseRelativeDuration()` (called from `resolveDate()`, which backs the existing
+  `POST /tasks/parse-date` live-preview endpoint) matches the *entire* trimmed input against
+  `^(\d+)\s+(day|days|week|weeks|month|months|year|years)$` — anchored on both ends, so `0`,
+  negative numbers, fractional values (`1.5 weeks`), and compound input (`1 week 2 days`, "one
+  month, three days") all simply fail to match and fall through to the existing "invalid date"
+  error path, rather than needing separate rejection logic for each invalid shape. Always relative
+  to `Carbon::today()`, never to whatever's already in the field. Resolved date renders through the
+  same live-preview `<span>` as any other parsed date. See `tests/Unit/DateParserTest.php`.
+- **Overdue list gained a markdown export**, matching the Today/Day page's existing export exactly:
+  a new `overdueExport` Alpine component (`dashboard/overdue.blade.php`) sends the currently-visible
+  `[data-filterable]` task ids as `ids[]` when the on-page text filter is active (reusing
+  `window.collectVisibleFilterableTaskIds()`, already shared by the day-export component in
+  `resources/js/app.js`), or no `ids[]` at all — meaning "export everything overdue" — when the
+  filter is empty. `DashboardController::exportOverdueMarkdown()` applies `whereIn('id', $ids)` on
+  top of its own already-authorized/scoped overdue query, same narrowing-only pattern as the Aug 16,
+  2026 day-export entry below. No done/archived folding to account for — the Overdue page shows only
+  incomplete tasks by definition. See `tests/Feature/OverdueExportMarkdownTest.php`.
+- **Docs updated**: `docs/content/docs/features/dates.md` (new "Relative Dates in the Task Date
+  Field" section) and `docs/content/docs/features/_index.md` (Search page's token matching now
+  called out explicitly; new "Overdue Page" subsection documenting the export). Not verified against
+  a running app in this doc-only follow-up session — see prior sessions' recurring notes on this
+  sandbox's `npm`/`composer`/PHPUnit install constraints; the code and test changes described above
+  were made in the session that produced `implementation-plan.md`'s commits, not this one.
+
 ### Session Summary (Aug 21, 2026) — Cowork UX/docs review fixes
 - **Source**: a UX + docs pass from Claude Cowork (`taskfiend_ux_docs_review.md`, click-through of
   `localhost:8000` plus `taskfiend.online` docs) surfaced 8 findings. Went through each with the

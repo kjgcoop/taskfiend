@@ -38,6 +38,11 @@ Link to other tasks, projects, tags, or locations from any description or commen
 ### Search Page
 - There's a magnifying glass in the header that, when clicked, will provide a search input. Submitting a search takes you to the dedicated search page.
 - There's also a dedicated search page. It can, as you might expect, find tasks by title, description, tags, projects, assignees, duration, and date presence; title and description can be targeted independently
+- The search box itself understands `#project` and `@tag` the same way the quick-add bar does, hyphenated multi-word names included (e.g. `#home-renovation` matches a project named "Home Renovation") — it's the same matching logic under the hood, not a lookalike.
+
+### Overdue Page
+- Everything here is incomplete by definition, so there's no done/archived folding to think about.
+- **Export MD** works the same as it does on the Day page: it reflects whatever's currently visible under the on-page text filter, or everything overdue if no filter is active.
 
 ### Day Page
 - Tasks can be marked done inline without a page reload, but to mark a task archived, you need to open it up and update the dropdown.

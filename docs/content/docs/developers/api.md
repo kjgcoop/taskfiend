@@ -32,7 +32,7 @@ Natural language is parsed from the `name` field if `date` or `recurrence_patter
 }
 ```
 
-All fields except `name` are optional. If `assignee_ids` is omitted, the task is assigned to the key owner. If `project_id` is omitted, the task goes into the key owner's inbox.
+All fields except `name` are optional. If `assignee_ids` is omitted, the task is assigned to the key owner. If `project_id` is omitted, the task goes into the key owner's inbox. `project_id` is rejected with a 422 if it's a project the key owner isn't a member of, or a project that's `done`/`archived` — same rule the web UI's project pickers enforce.
 
 **Response (201):**
 

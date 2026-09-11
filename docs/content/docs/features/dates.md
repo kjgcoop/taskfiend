@@ -14,6 +14,10 @@ You can assign a date in any of the following formats:
 
 If you'd like to refer to a specific day without using it as the due date, add a second date or use `nodate`. The last date wins. For example, "Reply to the letter that came on Sunday Tuesday" becomes a task due Tuesday with the title "Reply to the letter that came on Sunday".
 
+## Relative Dates in the Task Date Field
+
+The task edit/create form's date field (not the quick-add bar) also accepts a relative duration: an integer, a space, then `day(s)`, `week(s)`, `month(s)`, or `year(s)` — e.g. `3 days`, `1 week`, `2 months`, `1 year`. It's always relative to today, forward-only (no "3 days ago"), and only a single interval is accepted — no compounding (`1 week 2 days` is invalid, as is `1.5 weeks` or `0 days`). Anything outside that exact shape is rejected with an error rather than silently doing something unexpected.
+
 ## Recurrences
 
 To make a task recurring, set a recurrence pattern using `every [interval]` or `every! [interval]`. The exclamation mark after `every` indicates [floating recurrence](#floating-recurrence).
