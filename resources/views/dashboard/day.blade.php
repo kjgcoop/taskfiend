@@ -60,36 +60,14 @@
                         {{ $overdueCount }}
                     </a>
                 @endif
-                <button type="button" x-data="dayExport" @click="goMarkdown()"
-                        class="hidden sm:inline-flex items-center px-4 py-2 bg-gray-700 border border-gray-600 rounded-md font-semibold text-xs text-gray-100 uppercase tracking-widest hover:bg-gray-600">
-                    Export MD
-                </button>
-                <button type="button" x-data="dayExport"
-                        title="Printable list of this day's tasks — mirrors what's currently visible on the page (on-page filter, plus any expanded Done/Archived sections)"
-                        :disabled="$store.taskCount.ready && $store.taskCount.visible === 0"
-                        :class="$store.taskCount.ready && $store.taskCount.visible === 0 ? 'opacity-40 cursor-not-allowed' : 'hover:bg-gray-600'"
-                        @click="goPdf()"
-                        class="hidden sm:inline-flex items-center px-4 py-2 bg-gray-700 border border-gray-600 rounded-md font-semibold text-xs text-gray-100 uppercase tracking-widest">
-                    Export PDF
-                </button>
-                <button type="button" x-data="dayExport"
-                        title="Single-column image of this day's tasks — for printing on a receipt/thermal printer. Mirrors what's currently visible on the page, same as Export PDF"
-                        :disabled="$store.taskCount.ready && $store.taskCount.visible === 0"
-                        :class="$store.taskCount.ready && $store.taskCount.visible === 0 ? 'opacity-40 cursor-not-allowed' : 'hover:bg-gray-600'"
-                        @click="goPng()"
-                        class="hidden sm:inline-flex items-center px-4 py-2 bg-gray-700 border border-gray-600 rounded-md font-semibold text-xs text-gray-100 uppercase tracking-widest">
-                    Export PNG
-                </button>
-
-                {{-- Mobile export menu: same three actions, collapsed behind a three-dot
-                     menu since the buttons above don't fit next to the date controls
-                     in portrait mode on a phone. Menu open/close state and all three
-                     exports live in the same dayExport component instance so e.g.
-                     selectPdf() can call goPdf() and close the menu in one bare
+                {{-- Export menu: all three actions collapsed behind a three-dot menu
+                     at every screen size, not just mobile. Menu open/close state and
+                     all three exports live in the same dayExport component instance so
+                     e.g. selectPdf() can call goPdf() and close the menu in one bare
                      expression (see docs/content/docs/developers/frontend-csp.md —
                      Alpine's CSP-safe parser can't handle "goPdf(); open = false" as a
                      multi-statement @click). --}}
-                <div class="relative shrink-0 sm:hidden" x-data="dayExport" @click.outside="close()">
+                <div class="relative shrink-0" x-data="dayExport" @click.outside="close()">
                     <button type="button" @click="toggle()"
                             class="p-2 text-gray-400 hover:text-gray-100 hover:bg-gray-700 rounded transition-colors"
                             title="Export options">
@@ -342,9 +320,6 @@
             }
 
             Alpine.data('dayExport', () => ({
-                // 'open' etc. are only used by the mobile three-dot menu instance
-                // (the desktop buttons don't reference them) — harmless unused
-                // state on those instances.
                 open: false,
                 toggle() { this.open = !this.open; },
                 close() { this.open = false; },
