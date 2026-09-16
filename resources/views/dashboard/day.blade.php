@@ -77,8 +77,11 @@
                     </button>
                     <div x-show="open" x-cloak
                          class="absolute right-0 mt-1 w-40 bg-gray-800 border border-gray-600 rounded shadow-lg z-10">
-                        <button type="button" @click="selectMarkdown()"
-                                class="block w-full text-left px-4 py-2 text-gray-200 hover:bg-gray-700">
+                        <button type="button"
+                                :disabled="$store.taskCount.ready && $store.taskCount.visible === 0"
+                                :class="$store.taskCount.ready && $store.taskCount.visible === 0 ? 'opacity-40 cursor-not-allowed' : 'hover:bg-gray-700'"
+                                @click="selectMarkdown()"
+                                class="block w-full text-left px-4 py-2 text-gray-200">
                             Export MD
                         </button>
                         <button type="button"
