@@ -101,6 +101,49 @@ In `app/Console/Commands/`:
 - **Does NOT copy**: comments, completion status
 - **Location**: `TaskLifecycle::changeStatus()` handles the full status state machine (descendant cascades, completed_at, change logging, recurring rollover); TaskController's update() and updateField() both delegate to it
 
+### Project Templates (✓)
+- **Model**: `ProjectTemplate` (`app/Models/ProjectTemplate.php`), table `project_templates`
+  (migration `2026_03_27_000002_create_project_templates_table.php`). Fields: `name`,
+  `description` (nullable), `filename` (path to the template's stored zip on the `private`
+  disk), `created_by` (FK to `users`), `is_public` (bool). Relations: `creator()`, `projects()`
+  (all `Project` rows created from this template, via `projects.template_id`), and a computed
+  `last_used_at` accessor (max `created_at` across those projects).
+- **`projects.template_id`** — nullable FK on `Project` → `ProjectTemplate`, `nullOnDelete()`
+  (migration `2026_03_27_000003_add_template_id_to_projects_table.php`). Set once, at
+  creation time, on any project created from a template.
+- **Controller**: `ProjectTemplateController` (`app/Http/Controllers/`). Routes all under
+  `routes/web.php` (`templates.index`, `templates.store`, `templates.importZip`,
+  `templates.createFromTemplate`, `templates.update`, `templates.destroy`).
+  - `index()` — lists the current user's own templates plus other users' public ones.
+  - `store()` — **"save project as template"**: only the project's creator may do this;
+    builds a real zip (via the private `buildTemplateZip()` helper, which shells out to the
+    `zip` binary) and always creates a **new** `ProjectTemplate` row. There is currently no
+    "update this template in place" mode — every save is a new template.
+  - `createFromTemplate()` — **"create project from template"**: extracts the template's zip
+    and, in one call, creates the `Project` row *and* its full `Task` tree (tasks, tags,
+    assignments, attachments, parent/child structure). If given a future `start_date`, defers
+    via a `ScheduledProject` row instead of creating immediately (see below).
+  - `importZip()` — stores an uploaded zip file directly as a new `ProjectTemplate`, bypassing
+    the "import as project, then save as template" round trip.
+  - `updateName()` / `destroy()` — rename/delete an existing template (creator-only).
+- **What a template's zip contains** (`buildTemplateZip()`): a `template.json` with the
+  project's name/description, and only **incomplete** tasks (done/archived tasks are dropped).
+  Each task's `date`/`time` are stripped to `null` — templates are deliberately date/time-less.
+  Assignees are **not** captured (always written as an empty array), even though the read side
+  (`createFromTemplate()`) does know how to restore an `assignees` array if present. Attachment
+  files are physically copied into the zip.
+- **`ScheduledProject`** (`app/Models/ScheduledProject.php`, table `scheduled_projects`) — when
+  `createFromTemplate()` is given a future start date, it creates one of these instead of a
+  `Project` immediately. The `CreateScheduledProjects` console command
+  (`app/Console/Commands/`) later turns due ones into real projects.
+- **Separate, unrelated template-shaped path**: `DataExportController::exportProjectTemplate()`
+  / `importProjectTemplate()` let a user download/upload a project as a template zip file with
+  **no** `ProjectTemplate` DB row involved at all — a parallel, file-only mechanism, distinct
+  from everything above. Don't conflate the two when working in this area.
+- **In progress**: "template drafts" (edit a template's contents as a live, editable project,
+  then save changes back into the template or discard them) — see `implementation-plan.md` /
+  `spec.md` for that work as it lands.
+
 ### Frontend Views (✓)
 **All views completed in `resources/views/`:**
 - **Layout** - Updated navigation.blade.php with all menu items (Today, Inbox, Calendar, Search, Projects, Tags)
