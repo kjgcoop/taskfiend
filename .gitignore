@@ -38,3 +38,4 @@ resources/links/Read-Me.md
 site
 docs/public/*
 .hugo_build.lock
+/spec.md
