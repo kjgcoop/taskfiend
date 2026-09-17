@@ -78,22 +78,22 @@
                     <div x-show="open" x-cloak
                          class="absolute right-0 mt-1 w-40 bg-gray-800 border border-gray-600 rounded shadow-lg z-10">
                         <button type="button"
-                                :disabled="$store.taskCount.ready && $store.taskCount.visible === 0"
-                                :class="$store.taskCount.ready && $store.taskCount.visible === 0 ? 'opacity-40 cursor-not-allowed' : 'hover:bg-gray-700'"
+                                :disabled="$store.taskCount.ready && noTasksToExport()"
+                                :class="$store.taskCount.ready && noTasksToExport() ? 'opacity-40 cursor-not-allowed' : 'hover:bg-gray-700'"
                                 @click="selectMarkdown()"
                                 class="block w-full text-left px-4 py-2 text-gray-200">
                             Export MD
                         </button>
                         <button type="button"
-                                :disabled="$store.taskCount.ready && $store.taskCount.visible === 0"
-                                :class="$store.taskCount.ready && $store.taskCount.visible === 0 ? 'opacity-40 cursor-not-allowed' : 'hover:bg-gray-700'"
+                                :disabled="$store.taskCount.ready && noTasksToExport()"
+                                :class="$store.taskCount.ready && noTasksToExport() ? 'opacity-40 cursor-not-allowed' : 'hover:bg-gray-700'"
                                 @click="selectPdf()"
                                 class="w-full text-left px-4 py-2 text-gray-200">
                             Export PDF
                         </button>
                         <button type="button"
-                                :disabled="$store.taskCount.ready && $store.taskCount.visible === 0"
-                                :class="$store.taskCount.ready && $store.taskCount.visible === 0 ? 'opacity-40 cursor-not-allowed' : 'hover:bg-gray-700'"
+                                :disabled="$store.taskCount.ready && noTasksToExport()"
+                                :class="$store.taskCount.ready && noTasksToExport() ? 'opacity-40 cursor-not-allowed' : 'hover:bg-gray-700'"
                                 @click="selectPng()"
                                 class="w-full text-left px-4 py-2 text-gray-200">
                             Export PNG
@@ -326,6 +326,18 @@
                 open: false,
                 toggle() { this.open = !this.open; },
                 close() { this.open = false; },
+                // $store.taskCount only tracks the incomplete-task container (x-ref="taskContainer"
+                // above) — it never sees the Done/Archived sections, which live in their own
+                // completedTasksLoader components. A day with zero incomplete tasks but some
+                // done/archived ones would otherwise show as "no tasks to export" even though
+                // there's real content. Each Done/Archived section always renders its true
+                // server-side count in data-total-count regardless of whether it's expanded, so
+                // check that too before disabling the export buttons.
+                noTasksToExport() {
+                    if (Alpine.store('taskCount').visible > 0) return false;
+                    return !Array.from(document.querySelectorAll('[data-status-section]'))
+                        .some(el => parseInt(el.dataset.totalCount || '0', 10) > 0);
+                },
                 goPdf() {
                     window.location.href = '{{ route('day.export-pdf') }}?' + exportParams().toString();
                 },
