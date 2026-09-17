@@ -140,8 +140,9 @@ In `app/Console/Commands/`:
   / `importProjectTemplate()` let a user download/upload a project as a template zip file with
   **no** `ProjectTemplate` DB row involved at all — a parallel, file-only mechanism, distinct
   from everything above. Don't conflate the two when working in this area.
-- **In progress**: "template drafts" (edit a template's contents as a live, editable project,
-  then save changes back into the template or discard them) — see `implementation-plan.md` /
+- **In progress**: templates are being reworked to be a `Project` row directly
+  (`project_type = 'template'`, editable live, no separate draft/save/discard
+  step and no separate `ProjectTemplate` model) — see `implementation-plan.md` /
   `spec.md` for that work as it lands.
 
 ### Frontend Views (✓)
