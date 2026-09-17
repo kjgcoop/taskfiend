@@ -454,8 +454,11 @@
                     this.current = v;
                     localStorage.setItem('day_view', v);
                     // Switching between list/agenda swaps which subtree is actually
-                    // visible in the DOM — recompute what the export buttons would export.
-                    window.dispatchEvent(new CustomEvent('filter-updated'));
+                    // visible in the DOM (via x-show) — recompute what the export buttons
+                    // would export. Alpine.nextTick (not a plain setTimeout/microtask) matters:
+                    // x-show's own DOM update is itself deferred to Alpine's render queue, so
+                    // dispatching immediately would let listeners read stale, still-hidden DOM.
+                    Alpine.nextTick(() => window.dispatchEvent(new CustomEvent('filter-updated')));
                 },
             });
 

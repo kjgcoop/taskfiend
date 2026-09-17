@@ -83,7 +83,10 @@ document.addEventListener('alpine:init', () => {
             this.showCompleted = !this.showCompleted;
             // Expanding/collapsing changes which task rows are actually visible on the
             // page — the day view's export buttons mirror that, so let them recompute.
-            window.dispatchEvent(new CustomEvent('filter-updated'));
+            // $nextTick matters here: showCompleted drives x-show, and Alpine applies that
+            // DOM change asynchronously, so dispatching before it would let anything
+            // listening (offsetParent-based visibility checks) read stale, still-hidden DOM.
+            this.$nextTick(() => window.dispatchEvent(new CustomEvent('filter-updated')));
         },
 
         updateCount() {
