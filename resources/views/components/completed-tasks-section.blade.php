@@ -27,7 +27,7 @@
      data-ajax-url="{{ $ajaxUrl }}"
      data-total-count="{{ $displayCount }}">
     <button type="button"
-            @click="showCompleted = !showCompleted"
+            @click="toggleShow()"
             class="inline-flex items-center gap-1.5 text-sm text-gray-400 hover:text-gray-200 transition-colors select-none">
         <svg xmlns="http://www.w3.org/2000/svg"
              class="h-3.5 w-3.5 transition-transform duration-150 flex-shrink-0"
@@ -77,6 +77,13 @@ document.addEventListener('alpine:init', () => {
             this.totalCount = parseInt(el.dataset.totalCount) || 0;
             this._ajaxUrl = el.dataset.ajaxUrl || null;
             window.addEventListener('filter-updated', () => this.updateCount());
+        },
+
+        toggleShow() {
+            this.showCompleted = !this.showCompleted;
+            // Expanding/collapsing changes which task rows are actually visible on the
+            // page — the day view's export buttons mirror that, so let them recompute.
+            window.dispatchEvent(new CustomEvent('filter-updated'));
         },
 
         updateCount() {

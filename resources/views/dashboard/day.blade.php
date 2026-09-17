@@ -78,22 +78,22 @@
                     <div x-show="open" x-cloak
                          class="absolute right-0 mt-1 w-40 bg-gray-800 border border-gray-600 rounded shadow-lg z-10">
                         <button type="button"
-                                :disabled="$store.taskCount.ready && noTasksToExport()"
-                                :class="$store.taskCount.ready && noTasksToExport() ? 'opacity-40 cursor-not-allowed' : 'hover:bg-gray-700'"
+                                :disabled="noTasksToExport()"
+                                :class="noTasksToExport() ? 'opacity-40 cursor-not-allowed' : 'hover:bg-gray-700'"
                                 @click="selectMarkdown()"
                                 class="block w-full text-left px-4 py-2 text-gray-200">
                             Export MD
                         </button>
                         <button type="button"
-                                :disabled="$store.taskCount.ready && noTasksToExport()"
-                                :class="$store.taskCount.ready && noTasksToExport() ? 'opacity-40 cursor-not-allowed' : 'hover:bg-gray-700'"
+                                :disabled="noTasksToExport()"
+                                :class="noTasksToExport() ? 'opacity-40 cursor-not-allowed' : 'hover:bg-gray-700'"
                                 @click="selectPdf()"
                                 class="w-full text-left px-4 py-2 text-gray-200">
                             Export PDF
                         </button>
                         <button type="button"
-                                :disabled="$store.taskCount.ready && noTasksToExport()"
-                                :class="$store.taskCount.ready && noTasksToExport() ? 'opacity-40 cursor-not-allowed' : 'hover:bg-gray-700'"
+                                :disabled="noTasksToExport()"
+                                :class="noTasksToExport() ? 'opacity-40 cursor-not-allowed' : 'hover:bg-gray-700'"
                                 @click="selectPng()"
                                 class="w-full text-left px-4 py-2 text-gray-200">
                             Export PNG
@@ -324,19 +324,36 @@
 
             Alpine.data('dayExport', () => ({
                 open: false,
+                // The exact count of task rows the export would actually include —
+                // window.collectVisibleFilterableTaskIds() is the same helper exportParams()
+                // uses to build 'ids[]', so this is "how many rows would this export actually
+                // contain", not just "does the incomplete list have anything in it". That
+                // means it's 0 when everything's filtered out by the on-page search, and 0
+                // when the only tasks that exist are inside a collapsed Done/Archived section
+                // — both cases where clicking Export would otherwise silently produce nothing.
+                exportableCount: 0,
                 toggle() { this.open = !this.open; },
                 close() { this.open = false; },
-                // $store.taskCount only tracks the incomplete-task container (x-ref="taskContainer"
-                // above) — it never sees the Done/Archived sections, which live in their own
-                // completedTasksLoader components. A day with zero incomplete tasks but some
-                // done/archived ones would otherwise show as "no tasks to export" even though
-                // there's real content. Each Done/Archived section always renders its true
-                // server-side count in data-total-count regardless of whether it's expanded, so
-                // check that too before disabling the export buttons.
+                init() {
+                    // Deferred: at the moment this component's own init() runs, later
+                    // elements in the DOM (the Done/Archived sections further down the page)
+                    // may not have finished applying their x-show bindings yet, so their
+                    // collapsed/expanded state wouldn't be accurate. $nextTick waits for
+                    // Alpine's initial render pass to fully settle first.
+                    this.$nextTick(() => this._recount());
+                    // Recompute whenever what's actually visible on the page could have
+                    // changed: the on-page filter (task-list.blade.php's filterTasks()), a
+                    // Done/Archived section being expanded/collapsed (completed-tasks-section
+                    // .blade.php's toggleShow()), more done/archived tasks being lazy-loaded,
+                    // or switching between the list/agenda view.
+                    window.addEventListener('filter-updated', () => this._recount());
+                    window.addEventListener('completed-tasks-loaded', () => this._recount());
+                },
+                _recount() {
+                    this.exportableCount = window.collectVisibleFilterableTaskIds().length;
+                },
                 noTasksToExport() {
-                    if (Alpine.store('taskCount').visible > 0) return false;
-                    return !Array.from(document.querySelectorAll('[data-status-section]'))
-                        .some(el => parseInt(el.dataset.totalCount || '0', 10) > 0);
+                    return this.exportableCount === 0;
                 },
                 goPdf() {
                     window.location.href = '{{ route('day.export-pdf') }}?' + exportParams().toString();
@@ -436,6 +453,9 @@
                 set(v) {
                     this.current = v;
                     localStorage.setItem('day_view', v);
+                    // Switching between list/agenda swaps which subtree is actually
+                    // visible in the DOM — recompute what the export buttons would export.
+                    window.dispatchEvent(new CustomEvent('filter-updated'));
                 },
             });
 
