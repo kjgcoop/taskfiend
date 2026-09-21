@@ -296,7 +296,10 @@ test.describe('Bulk Editing', () => {
     await clickBulkToggle(page);
     await taskGroupLocator(page, name).locator('button[title="Select task"]').click();
 
-    await page.locator('.fixed.bottom-0 input[type="date"]').fill('2026-09-01');
+    // The bulk-edit date field rejects past dates, so compute a date that's
+    // always in the future relative to whenever this test actually runs.
+    const futureDate = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+    await page.locator('.fixed.bottom-0 input[type="date"]').fill(futureDate);
     await page.locator('.fixed.bottom-0 select[x-model="status"]').selectOption('archived');
     await clickApply(page);
 
