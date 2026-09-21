@@ -41,15 +41,20 @@ test.describe('Daily digest seed data', () => {
     await page.waitForURL(/\/tasks\/\d+/);
 
     // User 2's Day view shows their own task, not User 1's.
+    // Scoped to [data-task-name-display] (the list-view row's name span) rather
+    // than a bare text= locator: the Day page keeps both its list-view and
+    // agenda-view markup in the DOM at once (toggled via x-show, not removed),
+    // so a plain text= match resolves to both copies and trips Playwright's
+    // strict mode even though only one is actually visible.
     await page.goto('/day');
-    await expect(page.locator('text=Digest Seed Task for User Two')).toBeVisible();
-    await expect(page.locator('text=Digest Seed Task for User One')).not.toBeVisible();
+    await expect(page.locator('[data-task-name-display]:has-text("Digest Seed Task for User Two")')).toBeVisible();
+    await expect(page.locator('[data-task-name-display]:has-text("Digest Seed Task for User One")')).not.toBeVisible();
     await logout(page);
 
     // User 1's Day view shows their own task, not User 2's.
     await login(page, testUsers.user1.email);
     await page.goto('/day');
-    await expect(page.locator('text=Digest Seed Task for User One')).toBeVisible();
-    await expect(page.locator('text=Digest Seed Task for User Two')).not.toBeVisible();
+    await expect(page.locator('[data-task-name-display]:has-text("Digest Seed Task for User One")')).toBeVisible();
+    await expect(page.locator('[data-task-name-display]:has-text("Digest Seed Task for User Two")')).not.toBeVisible();
   });
 });
