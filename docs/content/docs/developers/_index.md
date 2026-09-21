@@ -45,22 +45,28 @@ DigitalOcean) block outgoing SMTP, so `MAIL_MAILER=smtp`/PHP's `mail()` aren't u
 `App\Services\Mailgun\MailgunClient` calls Mailgun's HTTP API directly via Laravel's `Http` facade
 (Guzzle, already a framework dependency) rather than requiring the `mailgun/mailgun-php` SDK or
 Symfony's `mailgun-mailer` transport — neither is installable in every environment this app runs in.
-Configure `MAILGUN_API_KEY`, `MAILGUN_BASE`, and `MAILGUN_FROM_DOMAIN` in `.env`. `MAILGUN_BASE` is
-the domain used to authenticate and build the API URL (`https://api.mailgun.net/v3/<MAILGUN_BASE>/messages`)
-— for a free/trial Mailgun account this is the auto-generated `sandboxXXXX.mailgun.org` domain shown
-on the account dashboard. `MAILGUN_FROM_DOMAIN` is the domain the "from" address is built with
-(`MailgunClient::defaultFrom()`) and is **not necessarily the same value** — Mailgun sandbox domains
-can only send to recipients you've explicitly added to the account's authorized-recipients list
-(see the account dashboard), so sending to anyone else fails with a 403 ("Free accounts are for test
-purposes only...") regardless of which domain the mail claims to be from. In practice both env vars
-are usually the same domain, until a verified custom domain replaces the sandbox one. All three map
-to `config('services.mailgun.*')`; `domain`/`secret`/`endpoint` use the same key names Laravel's own
-built-in `mailgun` mail transport expects, so switching to `MAIL_MAILER=mailgun` later (if
-`symfony/mailgun-mailer` ever becomes installable) only needs `from_domain`'s effect reproduced via
-`MAIL_FROM_ADDRESS` instead — that config key has no Laravel-native equivalent.
-`App\Services\TaskDigestMailer` builds a user's "tasks for the day" digest (used today by
-`php artisan email:task-digest`) without touching `Auth::id()` or `request()`, so it can be called
-the same way from a queued/scheduled job later.
+Configure `MAILGUN_API_KEY` and `MAILGUN_BASE` in `.env`. `MAILGUN_BASE` is the **domain name**
+Mailgun gave you for the account — for a free/trial account, the auto-generated
+`sandboxXXXX.mailgun.org` shown on the dashboard; for a paid account, whatever custom domain you
+verified there. Not a URL — just the domain, no `https://` and no path. It's used for two things at
+once: building the API request (`https://api.mailgun.net/v3/<MAILGUN_BASE>/messages`), and as the
+domain of the emails' "from" address (`MailgunClient::defaultFrom()`, which keeps
+`MAIL_FROM_NAME`'s display name and `MAIL_FROM_ADDRESS`'s local part but forces the domain to
+`MAILGUN_BASE`). These two roles are deliberately not split into separate env vars — in every setup
+this account can have, the domain you authenticate as and the domain you're allowed to send *as* are
+the same one, so a second knob would only be one more way to get it wrong. `MailgunClient::configurationErrors()`
+catches the mistake of pasting a full URL into `MAILGUN_BASE` (which otherwise fails opaquely, as a
+404 from Mailgun's API on the mangled path) with a message that says what's actually wrong instead.
+Separately: a *free/trial* account's sandbox domain can only send to recipients you've explicitly
+added to the account's authorized-recipients list (see the dashboard) — sending to anyone else 403s
+with "Free accounts are for test purposes only...", regardless of `MAILGUN_BASE` being otherwise
+correct. `domain`/`secret`/`endpoint` (`config('services.mailgun.*')`) use the same key names
+Laravel's own built-in `mailgun` mail transport expects, so switching to `MAIL_MAILER=mailgun` later
+is a drop-in if `symfony/mailgun-mailer` ever becomes installable — except that transport doesn't
+force the "from" domain the way `defaultFrom()` does, so `MAIL_FROM_ADDRESS` would need to already
+be on `MAILGUN_BASE`'s domain at that point. `App\Services\TaskDigestMailer` builds a user's "tasks
+for the day" digest (used today by `php artisan email:task-digest`) without touching `Auth::id()` or
+`request()`, so it can be called the same way from a queued/scheduled job later.
 
 **Alpine.js runs in CSP-safe mode** — directive expressions (`x-data`, `@click`, `:class`, ...) can only be a single JS expression, not statements like `const`/`if`. Multi-step logic needs to live in an `Alpine.data()` component method instead. See [Alpine.js & CSP](/docs/developers/frontend-csp/) for the failure mode and the fix pattern.
 
