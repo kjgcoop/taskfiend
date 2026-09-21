@@ -40,6 +40,18 @@ The `testing` connection is defined in `config/database.php` and always points t
 
 **Auth split** — Session-based auth for web routes, hashed-token auth for API routes. The `auth.api` middleware (`app/Http/Middleware/AuthenticateApiKey.php`) validates bearer tokens against bcrypt hashes in `api_keys` and checks the user's enabled status.
 
+**Outbound email goes through Mailgun's HTTP API, not SMTP** — many VPS providers (including
+DigitalOcean) block outgoing SMTP, so `MAIL_MAILER=smtp`/PHP's `mail()` aren't usable in production.
+`App\Services\Mailgun\MailgunClient` calls Mailgun's HTTP API directly via Laravel's `Http` facade
+(Guzzle, already a framework dependency) rather than requiring the `mailgun/mailgun-php` SDK or
+Symfony's `mailgun-mailer` transport — neither is installable in every environment this app runs in.
+Configure `MAILGUN_API_KEY` and `MAILGUN_BASE` (the sending domain) in `.env`; both map to
+`config('services.mailgun.*')`, using the same key names (`domain`/`secret`/`endpoint`) Laravel's own
+built-in `mailgun` mail transport expects, so switching to `MAIL_MAILER=mailgun` later is a drop-in
+if `symfony/mailgun-mailer` ever becomes installable. `App\Services\TaskDigestMailer` builds a
+user's "tasks for the day" digest (used today by `php artisan email:task-digest`) without touching
+`Auth::id()` or `request()`, so it can be called the same way from a queued/scheduled job later.
+
 **Alpine.js runs in CSP-safe mode** — directive expressions (`x-data`, `@click`, `:class`, ...) can only be a single JS expression, not statements like `const`/`if`. Multi-step logic needs to live in an `Alpine.data()` component method instead. See [Alpine.js & CSP](/docs/developers/frontend-csp/) for the failure mode and the fix pattern.
 
 ---
