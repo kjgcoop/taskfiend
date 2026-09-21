@@ -3,6 +3,7 @@
 namespace App\Console\Commands;
 
 use App\Models\User;
+use App\Services\Mailgun\MailgunClient;
 use App\Services\TaskDigestMailer;
 use Carbon\Carbon;
 use Illuminate\Console\Command;
@@ -13,8 +14,13 @@ class SendTaskDigestEmail extends Command
 
     protected $description = "Email a user their tasks for the day, via Mailgun";
 
-    public function handle(TaskDigestMailer $mailer): int
+    public function handle(TaskDigestMailer $mailer, MailgunClient $mailgun): int
     {
+        if (!$mailgun->isConfigured()) {
+            $this->error('Mailgun is not configured — set MAILGUN_API_KEY and MAILGUN_BASE in .env.');
+            return 1;
+        }
+
         $date = $this->option('date') ? Carbon::parse($this->option('date')) : Carbon::today();
 
         $email = $this->argument('email');

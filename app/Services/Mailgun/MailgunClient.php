@@ -29,6 +29,19 @@ class MailgunClient
     }
 
     /**
+     * Whether both MAILGUN_API_KEY and MAILGUN_BASE are set. Check this before
+     * attempting to send, rather than relying on send() to throw — a caller
+     * looping over many recipients (the digest command, and later a scheduled
+     * job) wants one clear "not configured" message, not one per recipient.
+     */
+    public function isConfigured(): bool
+    {
+        [$domain, $secret] = $this->credentials();
+
+        return !empty($domain) && !empty($secret);
+    }
+
+    /**
      * Send a single email through Mailgun.
      *
      * @param array{from: string, to: string, subject: string, html?: string, text?: string} $message
@@ -38,9 +51,7 @@ class MailgunClient
      */
     public function send(array $message): array
     {
-        $domain = $this->domain ?? config('services.mailgun.domain');
-        $secret = $this->secret ?? config('services.mailgun.secret');
-        $endpoint = $this->endpoint ?? config('services.mailgun.endpoint', 'api.mailgun.net');
+        [$domain, $secret, $endpoint] = $this->credentials();
 
         if (empty($domain) || empty($secret)) {
             throw new RuntimeException(
@@ -65,5 +76,15 @@ class MailgunClient
         }
 
         return $response->json();
+    }
+
+    /** @return array{0: ?string, 1: ?string, 2: string} [domain, secret, endpoint] */
+    private function credentials(): array
+    {
+        return [
+            $this->domain ?? config('services.mailgun.domain'),
+            $this->secret ?? config('services.mailgun.secret'),
+            $this->endpoint ?? config('services.mailgun.endpoint', 'api.mailgun.net'),
+        ];
     }
 }

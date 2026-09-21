@@ -43,6 +43,20 @@ Tests that verify tags are globally accessible:
 - ✅ Tag changes are visible to all users
 - ✅ **BUT** users still cannot see tasks tagged with tags if not authorized
 
+### Daily Digest Seed Test (`daily-digest-seed.spec.js`)
+Gives `user1@test.com` and `user2@test.com` each an incomplete task due today, while
+verifying each user's Day view still only shows their own:
+
+- ✅ User 1's today-task is visible only to User 1
+- ✅ User 2's today-task is visible only to User 2
+
+Since the app never deletes tasks, both tasks are still in the test database once the full
+suite finishes. That's the point — it lets you try the daily digest email
+(`php artisan email:task-digest --env=testing <email>`) against a real "has a task due today"
+user right after a test run, without a separate manual seeding step. Change `user1@test.com`/
+`user2@test.com`'s email addresses in the test database afterwards if you want to receive the
+emails yourself.
+
 ## Setup
 
 ### Prerequisites
