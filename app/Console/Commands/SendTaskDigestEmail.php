@@ -11,7 +11,7 @@ use Illuminate\Console\Command;
 
 class SendTaskDigestEmail extends Command
 {
-    protected $signature = 'email:task-digest {email? : Only send to this one user, by email} {--date= : Date to summarize, Y-m-d (defaults to today)}';
+    protected $signature = 'email:task-digest {email? : Only send to this one user, by email} {--date= : Date to summarize, Y-m-d (defaults to today)} {--all : Send to every user subscribed to the daily digest. Required when no email is given.}';
 
     protected $description = "Email a user their tasks for the day, via Mailgun";
 
@@ -39,10 +39,13 @@ class SendTaskDigestEmail extends Command
             }
 
             $users = collect([$user]);
-        } else {
+        } elseif ($this->option('all')) {
             $users = User::whereNull('email_enabled_at')
                 ->subscribedToEmail(EmailSubscription::DAILY_DIGEST)
                 ->get();
+        } else {
+            $this->error('Pass an email address to send to one user, or --all to send to every subscribed user.');
+            return 1;
         }
 
         $sent = 0;
