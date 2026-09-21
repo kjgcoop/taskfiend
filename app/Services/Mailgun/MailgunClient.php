@@ -14,10 +14,17 @@ use RuntimeException;
  * here). Only Guzzle/Laravel's own Http client — already a framework dependency
  * — is needed.
  *
- * Config keys (config/services.php, `services.mailgun.*`) match the shape
- * Laravel's own built-in mailgun mail transport expects, so nothing here needs
- * to change if `symfony/mailgun-mailer` ever becomes installable and the app
- * switches to `MAIL_MAILER=mailgun` instead.
+ * Config keys `domain`/`secret`/`endpoint` (config/services.php,
+ * `services.mailgun.*`) match the shape Laravel's own built-in mailgun mail
+ * transport expects, so nothing here needs to change if
+ * `symfony/mailgun-mailer` ever becomes installable and the app switches to
+ * `MAIL_MAILER=mailgun` instead. `from_domain` is this class's own addition,
+ * with no Laravel-native equivalent: the domain Mailgun lets an account send
+ * *as* (a verified custom domain, or a free/trial account's
+ * sandboxXXXX.mailgun.org, which is further restricted to a manually
+ * authorized recipient list) isn't necessarily MAILGUN_BASE, the domain used
+ * to authenticate and build the API URL — so it's forced separately here
+ * rather than trusted to whatever MAIL_FROM_ADDRESS happens to contain.
  */
 class MailgunClient
 {
@@ -25,20 +32,41 @@ class MailgunClient
         private readonly ?string $domain = null,
         private readonly ?string $secret = null,
         private readonly ?string $endpoint = null,
+        private readonly ?string $fromDomain = null,
     ) {
     }
 
     /**
-     * Whether both MAILGUN_API_KEY and MAILGUN_BASE are set. Check this before
-     * attempting to send, rather than relying on send() to throw — a caller
-     * looping over many recipients (the digest command, and later a scheduled
-     * job) wants one clear "not configured" message, not one per recipient.
+     * Whether MAILGUN_API_KEY, MAILGUN_BASE, and MAILGUN_FROM_DOMAIN are all
+     * set. Check this before attempting to send, rather than relying on
+     * send() to throw — a caller looping over many recipients (the digest
+     * command, and later a scheduled job) wants one clear "not configured"
+     * message, not one per recipient.
      */
     public function isConfigured(): bool
     {
-        [$domain, $secret] = $this->credentials();
+        [$domain, $secret, , $fromDomain] = $this->credentials();
 
-        return !empty($domain) && !empty($secret);
+        return !empty($domain) && !empty($secret) && !empty($fromDomain);
+    }
+
+    /**
+     * The "from" header to use when nothing more specific is supplied — the
+     * app's configured display name (MAIL_FROM_NAME), with the address's
+     * domain forced to MAILGUN_FROM_DOMAIN so it's always a domain Mailgun
+     * will actually let this account send from (a verified domain, or a
+     * sandbox domain's authorized-recipients-only domain — MAILGUN_BASE, the
+     * domain used to authenticate and build the API URL, isn't necessarily
+     * the same one you're allowed to send mail *as*).
+     */
+    public function defaultFrom(): string
+    {
+        [, , , $fromDomain] = $this->credentials();
+
+        $name = config('mail.from.name', config('app.name'));
+        $localPart = strstr(config('mail.from.address', 'noreply@example.com'), '@', true) ?: 'noreply';
+
+        return "{$name} <{$localPart}@{$fromDomain}>";
     }
 
     /**
@@ -55,7 +83,7 @@ class MailgunClient
 
         if (empty($domain) || empty($secret)) {
             throw new RuntimeException(
-                'Mailgun is not configured — set MAILGUN_API_KEY and MAILGUN_BASE in .env.'
+                'Mailgun is not configured — set MAILGUN_API_KEY, MAILGUN_BASE, and MAILGUN_FROM_DOMAIN in .env.'
             );
         }
 
@@ -78,13 +106,14 @@ class MailgunClient
         return $response->json();
     }
 
-    /** @return array{0: ?string, 1: ?string, 2: string} [domain, secret, endpoint] */
+    /** @return array{0: ?string, 1: ?string, 2: string, 3: ?string} [domain, secret, endpoint, fromDomain] */
     private function credentials(): array
     {
         return [
             $this->domain ?? config('services.mailgun.domain'),
             $this->secret ?? config('services.mailgun.secret'),
             $this->endpoint ?? config('services.mailgun.endpoint', 'api.mailgun.net'),
+            $this->fromDomain ?? config('services.mailgun.from_domain'),
         ];
     }
 }

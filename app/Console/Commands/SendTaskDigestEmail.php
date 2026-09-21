@@ -17,7 +17,7 @@ class SendTaskDigestEmail extends Command
     public function handle(TaskDigestMailer $mailer, MailgunClient $mailgun): int
     {
         if (!$mailgun->isConfigured()) {
-            $this->error('Mailgun is not configured — set MAILGUN_API_KEY and MAILGUN_BASE in .env.');
+            $this->error('Mailgun is not configured — set MAILGUN_API_KEY, MAILGUN_BASE, and MAILGUN_FROM_DOMAIN in .env.');
             return 1;
         }
 

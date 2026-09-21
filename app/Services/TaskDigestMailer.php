@@ -58,7 +58,7 @@ class TaskDigestMailer
         ])->render();
 
         $this->mailgun->send([
-            'from' => sprintf('%s <%s>', config('mail.from.name'), config('mail.from.address')),
+            'from' => $this->mailgun->defaultFrom(),
             'to' => sprintf('%s <%s>', $user->name, $user->email),
             'subject' => sprintf('Your Tasks for %s', $date->format('l, F j, Y')),
             'html' => $html,

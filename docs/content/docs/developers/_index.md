@@ -45,12 +45,22 @@ DigitalOcean) block outgoing SMTP, so `MAIL_MAILER=smtp`/PHP's `mail()` aren't u
 `App\Services\Mailgun\MailgunClient` calls Mailgun's HTTP API directly via Laravel's `Http` facade
 (Guzzle, already a framework dependency) rather than requiring the `mailgun/mailgun-php` SDK or
 Symfony's `mailgun-mailer` transport — neither is installable in every environment this app runs in.
-Configure `MAILGUN_API_KEY` and `MAILGUN_BASE` (the sending domain) in `.env`; both map to
-`config('services.mailgun.*')`, using the same key names (`domain`/`secret`/`endpoint`) Laravel's own
-built-in `mailgun` mail transport expects, so switching to `MAIL_MAILER=mailgun` later is a drop-in
-if `symfony/mailgun-mailer` ever becomes installable. `App\Services\TaskDigestMailer` builds a
-user's "tasks for the day" digest (used today by `php artisan email:task-digest`) without touching
-`Auth::id()` or `request()`, so it can be called the same way from a queued/scheduled job later.
+Configure `MAILGUN_API_KEY`, `MAILGUN_BASE`, and `MAILGUN_FROM_DOMAIN` in `.env`. `MAILGUN_BASE` is
+the domain used to authenticate and build the API URL (`https://api.mailgun.net/v3/<MAILGUN_BASE>/messages`)
+— for a free/trial Mailgun account this is the auto-generated `sandboxXXXX.mailgun.org` domain shown
+on the account dashboard. `MAILGUN_FROM_DOMAIN` is the domain the "from" address is built with
+(`MailgunClient::defaultFrom()`) and is **not necessarily the same value** — Mailgun sandbox domains
+can only send to recipients you've explicitly added to the account's authorized-recipients list
+(see the account dashboard), so sending to anyone else fails with a 403 ("Free accounts are for test
+purposes only...") regardless of which domain the mail claims to be from. In practice both env vars
+are usually the same domain, until a verified custom domain replaces the sandbox one. All three map
+to `config('services.mailgun.*')`; `domain`/`secret`/`endpoint` use the same key names Laravel's own
+built-in `mailgun` mail transport expects, so switching to `MAIL_MAILER=mailgun` later (if
+`symfony/mailgun-mailer` ever becomes installable) only needs `from_domain`'s effect reproduced via
+`MAIL_FROM_ADDRESS` instead — that config key has no Laravel-native equivalent.
+`App\Services\TaskDigestMailer` builds a user's "tasks for the day" digest (used today by
+`php artisan email:task-digest`) without touching `Auth::id()` or `request()`, so it can be called
+the same way from a queued/scheduled job later.
 
 **Alpine.js runs in CSP-safe mode** — directive expressions (`x-data`, `@click`, `:class`, ...) can only be a single JS expression, not statements like `const`/`if`. Multi-step logic needs to live in an `Alpine.data()` component method instead. See [Alpine.js & CSP](/docs/developers/frontend-csp/) for the failure mode and the fix pattern.
 
