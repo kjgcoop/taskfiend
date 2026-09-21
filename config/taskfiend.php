@@ -101,4 +101,15 @@ return [
     'day_export_png_width' => max(200, min(4000, (int) env('DAY_EXPORT_PNG_WIDTH', 600))),
     'day_export_png_font_regular' => env('PNG_EXPORT_FONT_REGULAR'),
     'day_export_png_font_bold' => env('PNG_EXPORT_FONT_BOLD'),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Test User Domain
+    |--------------------------------------------------------------------------
+    | Domain used for every fake/test user's email address (factories, the
+    | DatabaseSeeder, and the E2E test suite's seeded users) — now that the
+    | app actually sends email, this keeps automated tests from generating
+    | addresses that could pass for real, deliverable mailboxes.
+    */
+    'test_user_domain' => env('TEST_USER_DOMAIN', 'example.com'),
 ];

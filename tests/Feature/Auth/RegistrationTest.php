@@ -20,7 +20,7 @@ class RegistrationTest extends TestCase
     {
         $response = $this->post('/register', [
             'name' => 'Test User',
-            'email' => 'test@example.com',
+            'email' => 'test@' . config('taskfiend.test_user_domain'),
             'password' => 'password',
             'password_confirmation' => 'password',
         ]);
@@ -31,10 +31,12 @@ class RegistrationTest extends TestCase
 
     public function test_register_endpoint_is_rate_limited_after_six_attempts(): void
     {
+        $domain = config('taskfiend.test_user_domain');
+
         for ($i = 1; $i <= 5; $i++) {
             $response = $this->post('/register', [
                 'name' => 'Test User',
-                'email' => "test{$i}@example.com",
+                'email' => "test{$i}@{$domain}",
                 'password' => 'password',
                 'password_confirmation' => 'password',
             ]);
@@ -47,7 +49,7 @@ class RegistrationTest extends TestCase
 
         $response = $this->post('/register', [
             'name' => 'Test User',
-            'email' => 'test6@example.com',
+            'email' => "test6@{$domain}",
             'password' => 'password',
             'password_confirmation' => 'password',
         ]);

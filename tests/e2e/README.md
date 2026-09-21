@@ -44,8 +44,8 @@ Tests that verify tags are globally accessible:
 - ✅ **BUT** users still cannot see tasks tagged with tags if not authorized
 
 ### Daily Digest Seed Test (`daily-digest-seed.spec.js`)
-Gives `user1@test.com` and `user2@test.com` each an incomplete task due today, while
-verifying each user's Day view still only shows their own:
+Gives `user1@` and `user2@` (see Test User Credentials below for the domain) each an
+incomplete task due today, while verifying each user's Day view still only shows their own:
 
 - ✅ User 1's today-task is visible only to User 1
 - ✅ User 2's today-task is visible only to User 2
@@ -53,9 +53,8 @@ verifying each user's Day view still only shows their own:
 Since the app never deletes tasks, both tasks are still in the test database once the full
 suite finishes. That's the point — it lets you try the daily digest email
 (`php artisan email:task-digest --env=testing <email>`) against a real "has a task due today"
-user right after a test run, without a separate manual seeding step. Change `user1@test.com`/
-`user2@test.com`'s email addresses in the test database afterwards if you want to receive the
-emails yourself.
+user right after a test run, without a separate manual seeding step. Change that user's email
+address in the test database afterwards if you want to receive the emails yourself.
 
 ## Setup
 
@@ -77,7 +76,7 @@ npx playwright install
 
 The tests automatically:
 - Reset the database before running (`migrate:fresh`)
-- Seed test users (user1@test.com, user2@test.com, user3@test.com)
+- Seed test users (user1@, user2@, user3@ — see TEST_USER_DOMAIN below)
 - Clean up after tests
 
 ⚠️ **WARNING**: Tests will wipe your database! Use a separate test database.
@@ -220,11 +219,12 @@ test.describe('Feature Name', () => {
 
 ### Test User Credentials
 
-All test users use password: `password123`
+All test users use password: `password123`, at the domain set by `TEST_USER_DOMAIN` in
+`.env.testing` (defaults to `example.com`):
 
-- user1@test.com - User One
-- user2@test.com - User Two
-- user3@test.com - User Three
+- user1@{domain} - User One
+- user2@{domain} - User Two
+- user3@{domain} - User Three
 
 ## CI/CD Integration
 

@@ -1,3 +1,5 @@
+import { testUserDomain } from './env.js';
+
 /**
  * Authentication helper utilities for E2E tests
  */
@@ -61,19 +63,21 @@ export async function setupAuthenticatedSession(page, email, password = 'passwor
 /**
  * Test credentials
  */
+const domain = testUserDomain();
+
 export const testUsers = {
   user1: {
-    email: 'user1@test.com',
+    email: `user1@${domain}`,
     password: 'password123',
     name: 'User One'
   },
   user2: {
-    email: 'user2@test.com',
+    email: `user2@${domain}`,
     password: 'password123',
     name: 'User Two'
   },
   user3: {
-    email: 'user3@test.com',
+    email: `user3@${domain}`,
     password: 'password123',
     name: 'User Three'
   }

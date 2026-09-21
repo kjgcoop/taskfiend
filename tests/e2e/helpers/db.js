@@ -2,6 +2,7 @@ import { exec } from 'child_process';
 import { promisify } from 'util';
 import { fileURLToPath } from 'url';
 import { dirname, resolve } from 'path';
+import { testUserDomain } from './env.js';
 
 const execAsync = promisify(exec);
 
@@ -43,10 +44,12 @@ export async function resetDatabase() {
  * Seed database with test data
  */
 export async function seedTestData() {
+  const domain = testUserDomain();
+
   // Create test users
-  await runCommand('php artisan user:create user1@test.com "User One" password123 --env=testing');
-  await runCommand('php artisan user:create user2@test.com "User Two" password123 --env=testing');
-  await runCommand('php artisan user:create user3@test.com "User Three" password123 --env=testing');
+  await runCommand(`php artisan user:create user1@${domain} "User One" password123 --env=testing`);
+  await runCommand(`php artisan user:create user2@${domain} "User Two" password123 --env=testing`);
+  await runCommand(`php artisan user:create user3@${domain} "User Three" password123 --env=testing`);
 }
 
 /**

@@ -13,8 +13,8 @@ import { login, logout, testUsers } from './helpers/auth.js';
  * suite deletes or archives tasks it creates, so the two tasks below persist
  * in the test database after the run finishes. That's intentional: it lets
  * `php artisan email:task-digest --env=testing <email>` be tried against
- * user1@test.com / user2@test.com right after `npm run test:e2e`, without a
- * separate seeding step. (See README.md.)
+ * user1@/user2@ (TEST_USER_DOMAIN, see helpers/env.js) right after
+ * `npm run test:e2e`, without a separate seeding step. (See README.md.)
  */
 
 test.describe('Daily digest seed data', () => {
