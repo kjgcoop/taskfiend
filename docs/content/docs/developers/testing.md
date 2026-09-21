@@ -73,13 +73,14 @@ npx playwright test tag-visibility
 
 ## Test data
 
-Tests create three users automatically before each suite and reset the database between suites:
+Tests create three users automatically before each suite and reset the database between suites,
+at the domain set by `TEST_USER_DOMAIN` in `.env.testing` (`example.com` by default):
 
 | Email | Password |
 |-------|----------|
-| user1@test.com | password123 |
-| user2@test.com | password123 |
-| user3@test.com | password123 |
+| user1@example.com | password123 |
+| user2@example.com | password123 |
+| user3@example.com | password123 |
 
 ---
 

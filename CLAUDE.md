@@ -198,7 +198,7 @@ In `app/Console/Commands/`:
   - `playwright.config.js` - Configured to use system Firefox (no browser download needed)
   - Uses test database at `database/test-database.sqlite`
   - Auto-starts Laravel dev server before tests
-  - Creates 3 test users: user1@test.com, user2@test.com, user3@test.com (all use password: password123)
+  - Creates 3 test users: user1@example.com, user2@example.com, user3@example.com (all use password: password123; domain from `TEST_USER_DOMAIN`, see `.env.testing`)
 - **Test Coverage**: 30 tests ensuring users cannot see other users' data unless explicitly shared/assigned
 - **Documentation**: See `TESTING.md` for quick start, `tests/e2e/README.md` for comprehensive guide
 

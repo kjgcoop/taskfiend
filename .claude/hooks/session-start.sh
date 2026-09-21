@@ -40,17 +40,22 @@ if [ ! -f .env ]; then
   php artisan key:generate --force
 fi
 
+# TEST_USER_DOMAIN for the .env being bootstrapped, falling back to the
+# config default (config/taskfiend.php) if unset.
+TEST_USER_DOMAIN=$(grep -m1 '^TEST_USER_DOMAIN=' .env 2>/dev/null | cut -d '=' -f2-)
+TEST_USER_DOMAIN="${TEST_USER_DOMAIN:-example.com}"
+
 # ── 3. Production database ─────────────────────────────────────────────────────
 DB_PATH="database/database.sqlite"
 if [ ! -f "$DB_PATH" ]; then
   touch "$DB_PATH"
   php artisan migrate --force
-  php artisan user:create test@example.com "Test User" password123 2>/dev/null || true
+  php artisan user:create "test@${TEST_USER_DOMAIN}" "Test User" password123 2>/dev/null || true
 fi
 
 # ── 4. Test environment ────────────────────────────────────────────────────────
 if [ ! -f .env.testing ]; then
-  cat > .env.testing << 'ENVEOF'
+  cat > .env.testing << ENVEOF
 APP_NAME="Task Fiend Test"
 APP_ENV=testing
 APP_KEY=
@@ -71,9 +76,15 @@ DISABLE_REGISTRATION=false
 BULK_INPUT_MAX_CHARS=10000
 BULK_INPUT_MAX_LINES=100
 LONG_TEXT_MAX_CHARS=10000
+TEST_USER_DOMAIN=${TEST_USER_DOMAIN}
 ENVEOF
   php artisan key:generate --env=testing --force
 fi
+
+# TEST_USER_DOMAIN as set in .env.testing specifically (it may already have
+# existed with a different value than .env's, e.g. from a prior session).
+TEST_USER_DOMAIN=$(grep -m1 '^TEST_USER_DOMAIN=' .env.testing 2>/dev/null | cut -d '=' -f2-)
+TEST_USER_DOMAIN="${TEST_USER_DOMAIN:-example.com}"
 
 # ── 5. Test database ───────────────────────────────────────────────────────────
 TEST_DB="database/test-database.sqlite"
@@ -81,9 +92,9 @@ if [ ! -f "$TEST_DB" ]; then
   touch "$TEST_DB"
 fi
 php artisan migrate:fresh --force --env=testing
-php artisan user:create user1@test.com "User One" password123 --env=testing 2>/dev/null || true
-php artisan user:create user2@test.com "User Two" password123 --env=testing 2>/dev/null || true
-php artisan user:create user3@test.com "User Three" password123 --env=testing 2>/dev/null || true
+php artisan user:create "user1@${TEST_USER_DOMAIN}" "User One" password123 --env=testing 2>/dev/null || true
+php artisan user:create "user2@${TEST_USER_DOMAIN}" "User Two" password123 --env=testing 2>/dev/null || true
+php artisan user:create "user3@${TEST_USER_DOMAIN}" "User Three" password123 --env=testing 2>/dev/null || true
 
 # ── 8. Frontend assets ────────────────────────────────────────────────────────
 if [ ! -f public/build/manifest.json ]; then
