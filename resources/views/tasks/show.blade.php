@@ -1001,8 +1001,8 @@
                 projectComboActiveIndex: -1,
 
                 get filteredComboProjects() {
-                    if (!this.projectSearch) return this.allProjects;
-                    const q = this.projectSearch.toLowerCase();
+                    const q = this.projectSearch.trim().toLowerCase();
+                    if (!q) return this.allProjects;
                     return this.allProjects.filter(p => p.name.toLowerCase().includes(q));
                 },
 

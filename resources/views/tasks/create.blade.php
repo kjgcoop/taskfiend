@@ -595,8 +595,8 @@
                 },
 
                 get filteredComboProjects() {
-                    if (!this.projectSearch) return this.projects;
-                    const q = this.projectSearch.toLowerCase();
+                    const q = this.projectSearch.trim().toLowerCase();
+                    if (!q) return this.projects;
                     return this.projects.filter(p => p.name.toLowerCase().includes(q));
                 },
 
