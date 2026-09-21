@@ -14,7 +14,10 @@ use Illuminate\Support\Facades\View;
  *
  * Deliberately request/session-free (no Auth::id(), no request()) so it can be
  * called the same way from an artisan command (now) or a queued/scheduled job
- * (later, once users can opt in/out in their profile) without any changes.
+ * (later) without any changes. Callers are responsible for only invoking this
+ * for users who are opted into the daily_digest email (see
+ * `EmailSubscription` / `User::isSubscribedToEmail()`) — this class itself
+ * doesn't check subscription state.
  */
 class TaskDigestMailer
 {

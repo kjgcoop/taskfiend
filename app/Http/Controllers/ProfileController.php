@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\ProfileUpdateRequest;
+use App\Models\EmailSubscription;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -10,6 +11,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Redirect;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
 class ProfileController extends Controller
@@ -40,6 +42,29 @@ class ProfileController extends Controller
         $request->user()->save();
 
         return Redirect::route('profile.edit')->with('status', 'profile-updated');
+    }
+
+    /**
+     * Replace the user's email subscriptions with the checked set submitted
+     * from the profile form. Anything not submitted is treated as opted out.
+     */
+    public function updateEmailPreferences(Request $request): RedirectResponse
+    {
+        $validated = $request->validate([
+            'subscriptions' => ['array'],
+            'subscriptions.*' => ['string', Rule::in(array_keys(EmailSubscription::TYPES))],
+        ]);
+
+        $user = $request->user();
+        $selected = $validated['subscriptions'] ?? [];
+
+        $user->emailSubscriptions()->whereNotIn('type', $selected)->delete();
+
+        foreach ($selected as $type) {
+            EmailSubscription::firstOrCreate(['user_id' => $user->id, 'type' => $type]);
+        }
+
+        return Redirect::route('profile.edit')->with('status', 'email-preferences-updated');
     }
 
     /**

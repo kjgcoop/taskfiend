@@ -57,6 +57,21 @@ class User extends Authenticatable
         return $this->email_enabled_at === null;
     }
 
+    public function emailSubscriptions(): HasMany
+    {
+        return $this->hasMany(EmailSubscription::class);
+    }
+
+    public function isSubscribedToEmail(string $type): bool
+    {
+        return $this->emailSubscriptions()->where('type', $type)->exists();
+    }
+
+    public function scopeSubscribedToEmail($query, string $type)
+    {
+        return $query->whereHas('emailSubscriptions', fn ($q) => $q->where('type', $type));
+    }
+
     public function projects(): HasMany
     {
         return $this->hasMany(Project::class, 'user_id');

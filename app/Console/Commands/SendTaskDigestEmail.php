@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use App\Models\EmailSubscription;
 use App\Models\User;
 use App\Services\Mailgun\MailgunClient;
 use App\Services\TaskDigestMailer;
@@ -39,7 +40,9 @@ class SendTaskDigestEmail extends Command
 
             $users = collect([$user]);
         } else {
-            $users = User::whereNull('email_enabled_at')->get();
+            $users = User::whereNull('email_enabled_at')
+                ->subscribedToEmail(EmailSubscription::DAILY_DIGEST)
+                ->get();
         }
 
         $sent = 0;
