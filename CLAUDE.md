@@ -140,6 +140,13 @@ In `app/Console/Commands/`:
   / `importProjectTemplate()` let a user download/upload a project as a template zip file with
   **no** `ProjectTemplate` DB row involved at all — a parallel, file-only mechanism, distinct
   from everything above. Don't conflate the two when working in this area.
+- **Where files live**: stored templates are `storage/app/private/project-templates/*.zip` (private
+  disk). `storage/app/temp` is scratch only (extraction dirs, export zips streamed with
+  `deleteFileAfterSend`); `php artisan temp:prune` (scheduled daily 03:00) deletes entries older than
+  24h. Feature tests that hit the export endpoints leave zips there, because the test client never
+  calls `send()`, which is what triggers `deleteFileAfterSend`.
+- **Templates page shows `$errors`**: it didn't before, so a failed `importZip()` validation (most
+  often a file over PHP's `upload_max_filesize`) just redirected back with no message.
 - **In progress**: "template drafts" (edit a template's contents as a live, editable project,
   then save changes back into the template or discard them) — see `implementation-plan.md` /
   `spec.md` for that work as it lands.

@@ -10,6 +10,7 @@ Artisan::command('inspire', function () {
 
 Schedule::command('projects:auto-archive')->dailyAt('00:15');
 Schedule::command('projects:create-scheduled')->dailyAt('00:20');
+Schedule::command('temp:prune')->dailyAt('03:00');
 
 // Daily emails, only to users who opted in (profile > Email Preferences).
 // Times are in APP_TIMEZONE.
