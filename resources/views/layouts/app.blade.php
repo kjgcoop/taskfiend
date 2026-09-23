@@ -1855,14 +1855,18 @@
         </script>
 
         <script nonce="{{ csp_nonce() }}">
-            // Sets the notification bell's unread badge (navigation.blade.php). Used by the heartbeat
-            // below and by the bell menu after it fetches (and so marks seen) the feed.
+            // Sets every unread-notification indicator in navigation.blade.php: the bell's count badge,
+            // the mobile menu's count badge (data-notif-badge="count"), and the dot on the hamburger
+            // icon (data-notif-badge="dot"). Used by the heartbeat below and by the notifications menus
+            // after they fetch (and so mark seen) the feed.
             window.setNotificationBadge = function (count) {
-                const badge = document.getElementById('notif-badge');
-                if (!badge) return;
-                badge.textContent = count > 9 ? '9+' : String(count);
-                badge.classList.toggle('hidden', count <= 0);
-                badge.classList.toggle('inline-flex', count > 0);
+                document.querySelectorAll('[data-notif-badge]').forEach(function (badge) {
+                    if (badge.dataset.notifBadge === 'count') {
+                        badge.textContent = count > 9 ? '9+' : String(count);
+                        badge.classList.toggle('inline-flex', count > 0);
+                    }
+                    badge.classList.toggle('hidden', count <= 0);
+                });
             };
 
             // Heartbeat: redirects to login if the session has ended (logged out elsewhere, account

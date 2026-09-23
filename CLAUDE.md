@@ -316,6 +316,23 @@ Test user already created with API key generated.
   inserted → no polls while `document.hidden` → updates to "3" immediately on becoming visible → hides
   when marked seen elsewhere → redirects to `/login` when sessions are wiped. The bell menu's
   refetch-on-open is Alpine-driven and was **not** click-tested (no built assets).
+- **Follow-up: header too wide on an unfolded foldable phone.** Measured (Playwright + a hand-written
+  stand-in for the Tailwind classes the nav uses, since npm/CDNs are blocked here) that the full
+  header overflowed by 34–235px anywhere from 641 to ~880px, almost all from the left-hand nav links
+  (~600px), not the right-hand icons (~200px) — so dropping the bell wouldn't have fixed it. Changes in
+  `navigation.blade.php`:
+  - Nav's layout breakpoint moved from `sm` (640) to `md` (768): the hamburger layout now covers up
+    to 767px.
+  - From `md` to `lg`, tighter spacing (link `space-x-4`, icon `gap-1`, less padding on the avatar
+    button) and the "Search" text link hidden (`!hidden lg:!inline-flex`); the search icon still
+    covers quick search, and a `lg:hidden` "Search" entry was added to the More menu so the advanced
+    search page stays one click away. Measured: fits at 768 with ~39px to spare, ~112px at 841.
+  - Hamburger layout gained notification access, which it never had: a red dot on the ☰ icon and an
+    inline "Notifications (N)" collapsible in the slide-down menu (a second `notificationsMenu`
+    instance, same feed endpoint). All indicators are `[data-notif-badge="count"|"dot"]` and
+    `setNotificationBadge()` updates them all (verified: 0 → all hidden, 12 → "9+"/dot shown).
+  - Not verified with real Tailwind/Alpine: exact pixel widths use a fallback font instead of Figtree,
+    and the mobile Notifications collapsible's open/fetch wasn't click-tested.
 
 ### Session Summary (Sep 11, 2026) — Search token unification, project-picker audit, subtask inheritance, relative dates, Overdue export
 - **Source**: `implementation-plan.md`, a five-item checklist (all items now checked off in that

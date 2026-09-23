@@ -1,6 +1,6 @@
 <nav x-data="dropdown" class="bg-[#202020] border-b border-gray-700">
     <!-- Primary Navigation Menu -->
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="max-w-7xl mx-auto px-4 md:px-6 lg:px-8">
         <div class="flex justify-between h-16">
             <div class="flex">
                 <!-- Logo -->
@@ -11,7 +11,8 @@
                 </div>
 
                 <!-- Navigation Links -->
-                <div class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex">
+                {{-- Hamburger layout below md; tighter spacing from md to lg so the full header fits an unfolded foldable. --}}
+                <div class="hidden space-x-4 lg:space-x-8 md:-my-px md:ms-4 lg:ms-10 md:flex">
                     <x-nav-link :href="route('day')" :active="request()->routeIs('today') || request()->routeIs('dashboard') || (request()->routeIs('day') && !request()->has('date'))">
                         {{ __('Today') }}
                     </x-nav-link>
@@ -53,7 +54,7 @@
                             </div>
                         </div>
                     </div>
-                    <x-nav-link :href="route('search')" :active="request()->routeIs('search')">
+                    <x-nav-link :href="route('search')" :active="request()->routeIs('search')" class="!hidden lg:!inline-flex">
                         {{ __('Search') }}
                     </x-nav-link>
                     <div class="relative flex items-center" x-data="dropdown" @click.outside="open = false" @close.stop="open = false">
@@ -161,6 +162,10 @@
                              style="display: none;"
                              @click="open = false">
                             <div class="rounded-md ring-1 ring-black ring-opacity-5 py-1 bg-[#202020]">
+                                {{-- Search's own nav link is hidden below lg to save width; offer it here instead. --}}
+                                <a href="{{ route('search') }}" class="lg:hidden block w-full px-4 py-2 text-start text-sm leading-5 text-gray-300 hover:bg-gray-700 focus:outline-none transition duration-150 ease-in-out {{ request()->routeIs('search') ? 'bg-gray-700 text-gray-100' : '' }}">
+                                    {{ __('Search') }}
+                                </a>
                                 <a href="https://taskfiend.online" class="block w-full px-4 py-2 text-start text-sm leading-5 text-gray-300 hover:bg-gray-700 focus:outline-none transition duration-150 ease-in-out">
                                     Documentation
                                 </a>
@@ -186,7 +191,7 @@
             </div>
 
             <!-- Settings Dropdown -->
-            <div class="hidden sm:flex sm:items-center sm:gap-3 sm:ms-6">
+            <div class="hidden md:flex md:items-center md:gap-1 lg:gap-3 md:ms-3 lg:ms-6">
                 @auth
                 <!-- Quick Search -->
                 <div class="relative flex items-center" x-data="navSearch" @click.outside="close()">
@@ -211,7 +216,7 @@
                                        x-model="query"
                                        type="text"
                                        placeholder="Search…"
-                                       class="w-56 bg-gray-700 text-gray-100 placeholder-gray-400 text-sm rounded-md px-3 py-1.5 border border-gray-600 focus:outline-none focus:border-indigo-500"
+                                       class="w-40 lg:w-56 bg-gray-700 text-gray-100 placeholder-gray-400 text-sm rounded-md px-3 py-1.5 border border-gray-600 focus:outline-none focus:border-indigo-500"
                                        :class="query ? 'pr-7' : ''"
                                        @keydown.enter="submit()"
                                        @keydown.escape="close()">
@@ -246,7 +251,7 @@
                         </svg>
                         {{-- Always rendered (hidden at 0) so the heartbeat in layouts/app.blade.php can show it
                              when a notification arrives after page load. --}}
-                        <span id="notif-badge" @class([
+                        <span data-notif-badge="count" @class([
                                 'absolute -top-1 -right-1 items-center justify-center w-4 h-4 text-xs font-bold text-white bg-red-500 rounded-full',
                                 'inline-flex' => $unreadNotifications > 0,
                                 'hidden' => $unreadNotifications <= 0,
@@ -280,7 +285,7 @@
                 @auth
                 <x-dropdown align="right" width="48">
                     <x-slot name="trigger">
-                        <button data-testid="user-menu" class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-gray-300 bg-[#202020] hover:text-gray-100 focus:outline-none transition ease-in-out duration-150">
+                        <button data-testid="user-menu" class="inline-flex items-center px-1 lg:px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-gray-300 bg-[#202020] hover:text-gray-100 focus:outline-none transition ease-in-out duration-150">
                             @if(Auth::user()->profile_image)
                                 <img src="{{ route('profile.image.show', Auth::user()) }}"
                                      alt="{{ Auth::user()->name }}"
@@ -314,7 +319,7 @@
             </div>
 
             <!-- Hamburger -->
-            <div class="-me-2 flex items-center gap-1 sm:hidden">
+            <div class="-me-2 flex items-center gap-1 md:hidden">
                 @auth
                 <div x-data="navSearch" @click.outside="close()">
                     <div class="flex items-center gap-1">
@@ -356,7 +361,14 @@
                     </div>
                 </div>
                 @endauth
-                <button @click="open = ! open" class="inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-gray-100 hover:bg-gray-700 focus:outline-none focus:bg-gray-700 focus:text-gray-100 transition duration-150 ease-in-out">
+                <button @click="open = ! open" class="relative inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-gray-100 hover:bg-gray-700 focus:outline-none focus:bg-gray-700 focus:text-gray-100 transition duration-150 ease-in-out">
+                    @auth
+                    {{-- Unread-notifications dot; the count itself is on the Notifications item inside the menu. --}}
+                    <span data-notif-badge="dot" @class([
+                            'absolute top-1.5 right-1.5 w-2.5 h-2.5 bg-red-500 rounded-full ring-2 ring-[#202020]',
+                            'hidden' => $unreadNotifications <= 0,
+                          ])></span>
+                    @endauth
                     <svg class="h-6 w-6" stroke="currentColor" fill="none" viewBox="0 0 24 24">
                         <path :class="{'hidden': open, 'inline-flex': ! open }" class="inline-flex" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
                         <path :class="{'hidden': ! open, 'inline-flex': open }" class="hidden" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
@@ -367,7 +379,7 @@
     </div>
 
     <!-- Responsive Navigation Menu -->
-    <div :class="{'block': open, 'hidden': ! open}" class="hidden sm:hidden">
+    <div :class="{'block': open, 'hidden': ! open}" class="hidden md:hidden">
         <div class="pt-2 pb-3 space-y-1">
             <x-responsive-nav-link :href="route('day')" :active="request()->routeIs('today') || request()->routeIs('dashboard') || (request()->routeIs('day') && !request()->has('date'))">
                 {{ __('Today') }}
@@ -476,6 +488,32 @@
             <x-responsive-nav-link :href="route('templates.index')" :active="request()->routeIs('templates.*')">
                 {{ __('Templates') }}
             </x-responsive-nav-link>
+            @auth
+            <!-- Notifications (the bell's feed, inline) -->
+            <div x-data="notificationsMenu">
+                <button @click="toggle()" class="w-full flex items-center justify-between ps-3 pe-4 py-2 border-l-4 border-transparent text-base font-medium text-gray-400 hover:text-gray-100 hover:bg-gray-700 hover:border-gray-500 focus:outline-none focus:text-gray-100 focus:bg-gray-700 transition duration-150 ease-in-out">
+                    <span class="flex items-center gap-2">
+                        {{ __('Notifications') }}
+                        <span data-notif-badge="count" @class([
+                                'items-center justify-center min-w-[1.25rem] h-5 px-1 text-xs font-bold text-white bg-red-500 rounded-full',
+                                'inline-flex' => $unreadNotifications > 0,
+                                'hidden' => $unreadNotifications <= 0,
+                              ])>{{ $unreadNotifications > 9 ? '9+' : $unreadNotifications }}</span>
+                    </span>
+                    <svg class="h-5 w-5 transform transition-transform duration-200" :class="{'rotate-180': open}" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
+                    </svg>
+                </button>
+                <div x-show="open" x-transition class="bg-[#101010] max-h-96 overflow-y-auto" style="display: none;">
+                    <template x-if="!loaded">
+                        <div class="px-4 py-6 text-center text-sm text-gray-500">Loading…</div>
+                    </template>
+                    <template x-if="loaded">
+                        <div x-ref="notifHtml"></div>
+                    </template>
+                </div>
+            </div>
+            @endauth
             <x-responsive-nav-link :href="route('changelogs.user')" :active="request()->routeIs('changelogs.*')">
                 {{ __('Activity') }}
             </x-responsive-nav-link>
