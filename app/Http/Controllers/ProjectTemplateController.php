@@ -150,6 +150,10 @@ class ProjectTemplateController extends Controller
             'template_name'         => 'required|string|max:255',
             'template_description'  => 'nullable|string|max:1000',
             'is_public'             => 'nullable|boolean',
+        ], [
+            // PHP rejects files over upload_max_filesize before Laravel sees them,
+            // and the stock "failed to upload" message doesn't say why.
+            'template_file.uploaded' => 'The template file failed to upload. It may be larger than the server\'s upload limit (upload_max_filesize = ' . ini_get('upload_max_filesize') . ').',
         ]);
 
         $user = $request->user();

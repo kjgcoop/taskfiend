@@ -6,7 +6,7 @@
     </x-slot>
 
     <div class="py-12">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-8" x-data="{ showImportZip: false }">
+        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-8" x-data="{ showImportZip: {{ $errors->any() ? 'true' : 'false' }} }">
 
             @if(session('status'))
                 <div class="bg-green-900/40 border border-green-700 text-green-300 px-4 py-3 rounded">
@@ -17,6 +17,16 @@
             @if(session('error'))
                 <div class="bg-red-900/40 border border-red-700 text-red-300 px-4 py-3 rounded">
                     {{ session('error') }}
+                </div>
+            @endif
+
+            @if($errors->any())
+                <div class="bg-red-900/40 border border-red-700 text-red-300 px-4 py-3 rounded">
+                    <ul class="list-disc list-inside space-y-1">
+                        @foreach($errors->all() as $err)
+                            <li>{{ $err }}</li>
+                        @endforeach
+                    </ul>
                 </div>
             @endif
 
@@ -45,7 +55,7 @@
                         </div>
                         <div>
                             <label class="block text-sm text-gray-300 mb-1" for="import_zip_name">Template Name</label>
-                            <input id="import_zip_name" type="text" name="template_name" required maxlength="255"
+                            <input id="import_zip_name" type="text" name="template_name" required maxlength="255" value="{{ old('template_name') }}"
                                    class="w-full bg-gray-700 border border-gray-600 text-gray-100 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-gray-500"
                                    placeholder="Enter template name">
                         </div>
@@ -53,7 +63,7 @@
                             <label class="block text-sm text-gray-300 mb-1" for="import_zip_description">Description <span class="text-gray-500">(optional)</span></label>
                             <textarea id="import_zip_description" name="template_description" rows="2"
                                       class="w-full bg-gray-700 border border-gray-600 text-gray-100 rounded px-3 py-2 text-sm focus:outline-none focus:border-blue-500 placeholder-gray-500"
-                                      placeholder="What is this template for?"></textarea>
+                                      placeholder="What is this template for?">{{ old('template_description') }}</textarea>
                         </div>
                         <div class="flex items-center gap-2">
                             <input id="import_zip_public" type="checkbox" name="is_public" value="1"
