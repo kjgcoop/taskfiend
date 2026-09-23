@@ -8,6 +8,7 @@ use App\Services\Mailgun\MailgunClient;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\View;
+use RuntimeException;
 
 /**
  * Builds and sends a user's "tasks for the day" digest email.
@@ -44,9 +45,15 @@ class TaskDigestMailer
     /**
      * Build and send the digest for one user. Returns false (no email sent)
      * when the user has no tasks due that day — nothing to report.
+     *
+     * @throws RuntimeException for a disabled account. Never emailed, whoever the caller is.
      */
     public function send(User $user, ?Carbon $date = null): bool
     {
+        if (!$user->isEnabled()) {
+            throw new RuntimeException("Not emailing {$user->email}: account is disabled.");
+        }
+
         $date ??= Carbon::today();
         $tasks = $this->tasksFor($user, $date);
 

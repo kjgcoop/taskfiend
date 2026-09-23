@@ -73,6 +73,10 @@ embedded inline in the email. It takes the date as a parameter; the command alwa
 Users opt in separately from the digest ("Daily Task List as an Image (PNG)" under Email
 Preferences on their profile), and neither command is scheduled yet — run them from cron or add
 them to `routes/console.php`.
+Both commands send to one user by email address or to every subscriber with `--all`. A single
+address must have opted in unless you pass `--force` (for testing). A disabled account is never
+emailed, `--force` or not; the mailer classes refuse it themselves, so that holds for any future
+caller too.
 
 **Alpine.js runs in CSP-safe mode** — directive expressions (`x-data`, `@click`, `:class`, ...) can only be a single JS expression, not statements like `const`/`if`. Multi-step logic needs to live in an `Alpine.data()` component method instead. See [Alpine.js & CSP](/docs/developers/frontend-csp/) for the failure mode and the fix pattern.
 

@@ -15,7 +15,8 @@ use Tests\TestCase;
 
 /**
  * Feature tests for the daily task-list-as-PNG email (TaskPngMailer and the
- * `email:task-png` command). Mailgun is faked; assertions inspect the
+ * `email:task-png` command, including the recipient rules it shares with
+ * `email:task-digest`). Mailgun is faked; assertions inspect the
  * multipart request that would have been sent.
  */
 class TaskPngEmailTest extends TestCase
@@ -100,6 +101,55 @@ class TaskPngEmailTest extends TestCase
         Http::assertSentCount(1);
         Http::assertSent(fn (Request $request) => collect($request->data())
             ->contains(fn ($part) => $part['name'] === 'to' && str_contains($part['contents'], $subscribed->email)));
+    }
+
+    public function test_command_refuses_single_user_who_has_not_opted_in(): void
+    {
+        $user = $this->userWithTaskOn(Carbon::today());
+
+        $this->artisan('email:task-png', ['email' => $user->email])->assertExitCode(1);
+        Http::assertNothingSent();
+    }
+
+    public function test_command_force_sends_to_single_user_who_has_not_opted_in(): void
+    {
+        $user = $this->userWithTaskOn(Carbon::today());
+
+        $this->artisan('email:task-png', ['email' => $user->email, '--force' => true])->assertExitCode(0);
+        Http::assertSentCount(1);
+    }
+
+    /** Both commands share the recipient rules, so check the digest's too. */
+    public function test_disabled_account_is_never_emailed_even_with_force(): void
+    {
+        $user = $this->userWithTaskOn(Carbon::today());
+        EmailSubscription::create(['user_id' => $user->id, 'type' => EmailSubscription::DAILY_PNG]);
+        EmailSubscription::create(['user_id' => $user->id, 'type' => EmailSubscription::DAILY_DIGEST]);
+        $user->forceFill(['email_enabled_at' => now()])->save();
+
+        $this->artisan('email:task-png', ['email' => $user->email, '--force' => true])->assertExitCode(1);
+        $this->artisan('email:task-digest', ['email' => $user->email, '--force' => true])->assertExitCode(1);
+        $this->artisan('email:task-png', ['--all' => true])->assertExitCode(0);
+        Http::assertNothingSent();
+    }
+
+    public function test_mailer_refuses_disabled_account_regardless_of_caller(): void
+    {
+        $user = $this->userWithTaskOn(Carbon::today());
+        $user->forceFill(['email_enabled_at' => now()])->save();
+
+        try {
+            app(TaskPngMailer::class)->send($user, Carbon::today());
+            $this->fail('Expected a disabled account to be refused.');
+        } catch (\RuntimeException) {
+            Http::assertNothingSent();
+        }
+    }
+
+    public function test_force_is_rejected_with_all(): void
+    {
+        $this->artisan('email:task-png', ['--all' => true, '--force' => true])->assertExitCode(1);
+        Http::assertNothingSent();
     }
 
     public function test_profile_offers_png_subscription(): void

@@ -6,6 +6,7 @@ use App\Models\User;
 use App\Services\Mailgun\MailgunClient;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\View;
+use RuntimeException;
 
 /**
  * Emails a user one day's task list rendered as a PNG — the same image the
@@ -28,9 +29,15 @@ class TaskPngMailer
     /**
      * Build and send the image for one user and date. Returns false (no email
      * sent) when the user has no tasks due that day — nothing to report.
+     *
+     * @throws RuntimeException for a disabled account. Never emailed, whoever the caller is.
      */
     public function send(User $user, Carbon $date): bool
     {
+        if (!$user->isEnabled()) {
+            throw new RuntimeException("Not emailing {$user->email}: account is disabled.");
+        }
+
         // Same task set as the digest email, so the two can't disagree about
         // what "your tasks for the day" means.
         $tasks = $this->digest->tasksFor($user, $date);

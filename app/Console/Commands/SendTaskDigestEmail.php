@@ -2,8 +2,8 @@
 
 namespace App\Console\Commands;
 
+use App\Console\Commands\Concerns\ResolvesEmailRecipients;
 use App\Models\EmailSubscription;
-use App\Models\User;
 use App\Services\Mailgun\MailgunClient;
 use App\Services\TaskDigestMailer;
 use Carbon\Carbon;
@@ -11,7 +11,9 @@ use Illuminate\Console\Command;
 
 class SendTaskDigestEmail extends Command
 {
-    protected $signature = 'email:task-digest {email? : Only send to this one user, by email} {--date= : Date to summarize, Y-m-d (defaults to today)} {--all : Send to every user subscribed to the daily digest. Required when no email is given.}';
+    use ResolvesEmailRecipients;
+
+    protected $signature = 'email:task-digest {email? : Only send to this one user, by email} {--date= : Date to summarize, Y-m-d (defaults to today)} {--all : Send to every user subscribed to the daily digest. Required when no email is given.} {--force : With an email address, send even if that user hasn\'t opted in. Never sends to a disabled account.}';
 
     protected $description = "Email a user their tasks for the day, via Mailgun";
 
@@ -28,23 +30,9 @@ class SendTaskDigestEmail extends Command
 
         $date = $this->option('date') ? Carbon::parse($this->option('date')) : Carbon::today();
 
-        $email = $this->argument('email');
+        $users = $this->resolveRecipients(EmailSubscription::DAILY_DIGEST);
 
-        if ($email) {
-            $user = User::where('email', $email)->first();
-
-            if (!$user) {
-                $this->error("No user found with email address: {$email}");
-                return 1;
-            }
-
-            $users = collect([$user]);
-        } elseif ($this->option('all')) {
-            $users = User::whereNull('email_enabled_at')
-                ->subscribedToEmail(EmailSubscription::DAILY_DIGEST)
-                ->get();
-        } else {
-            $this->error('Pass an email address to send to one user, or --all to send to every subscribed user.');
+        if ($users === null) {
             return 1;
         }
 
