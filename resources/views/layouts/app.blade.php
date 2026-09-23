@@ -1855,6 +1855,19 @@
         </script>
 
         <script nonce="{{ csp_nonce() }}">
+            // Sets the notification bell's unread badge (navigation.blade.php). Used by the heartbeat
+            // below and by the bell menu after it fetches (and so marks seen) the feed.
+            window.setNotificationBadge = function (count) {
+                const badge = document.getElementById('notif-badge');
+                if (!badge) return;
+                badge.textContent = count > 9 ? '9+' : String(count);
+                badge.classList.toggle('hidden', count <= 0);
+                badge.classList.toggle('inline-flex', count > 0);
+            };
+
+            // Heartbeat: redirects to login if the session has ended (logged out elsewhere, account
+            // disabled, sessions cleared) and keeps the unread badge current. Only polls while the tab
+            // is visible — a background tab checks once as soon as it's brought back to the front.
             (function () {
                 const seconds = parseInt(
                     document.querySelector('meta[name="session-check-interval"]')?.content || '60',
@@ -1862,16 +1875,31 @@
                 );
                 if (!seconds || seconds <= 0) return;
 
-                setInterval(async function () {
+                async function check() {
                     try {
-                        const res = await fetch('/auth/check', { credentials: 'same-origin' });
-                        if (!res.ok) {
+                        const res = await fetch('/auth/check', {
+                            credentials: 'same-origin',
+                            headers: { 'Accept': 'application/json' },
+                        });
+                        if (res.status === 401) {
                             window.location.href = '/login';
+                            return;
                         }
+                        if (!res.ok) return; // 5xx/maintenance: not a logout, try again next tick.
+                        const data = await res.json();
+                        if (typeof data.unread === 'number') window.setNotificationBadge(data.unread);
                     } catch (_) {
                         // Network error — don't redirect; the server may just be temporarily unreachable.
                     }
+                }
+
+                setInterval(function () {
+                    if (!document.hidden) check();
                 }, seconds * 1000);
+
+                document.addEventListener('visibilitychange', function () {
+                    if (!document.hidden) check();
+                });
             })();
         </script>
     </body>

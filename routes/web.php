@@ -130,12 +130,14 @@ Route::middleware('auth')->group(function () {
     Route::post('/projects/{project}/import-markdown/apply', [DataExportController::class, 'importMarkdownApply'])->name('projects.import-markdown.apply');
 });
 
-// Session validity check — used by the client-side polling heartbeat.
-// Returns 200 {"ok":true} when authenticated, 401 {"ok":false} otherwise.
+// Client-side heartbeat (see the end of layouts/app.blade.php). Polled while the tab is visible.
+// Returns 200 {"ok":true,"unread":N} when authenticated — N drives the notification bell's badge —
+// and 401 {"ok":false} otherwise. Read-only: never marks notifications seen, so any number of open
+// tabs can poll it without stepping on each other.
 // Must be outside the auth middleware group so it returns JSON instead of redirecting.
 Route::get('/auth/check', function () {
     return auth()->check()
-        ? response()->json(['ok' => true])
+        ? response()->json(['ok' => true, 'unread' => NotificationsController::unreadCount()])
         : response()->json(['ok' => false], 401);
 })->name('auth.check');
 

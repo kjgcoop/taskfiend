@@ -291,6 +291,32 @@ Test user already created with API key generated.
 
 ## Important Notes
 
+### Session Summary (Sep 23, 2026) — Heartbeat: visible-tab polling + live notification badge
+- **Two separate timers, easily confused**: the day page's "it's past midnight" `staleBanner` is pure
+  client-side (`new Date()`), no network. The once-a-minute AJAX call is the **session heartbeat** at
+  the end of `layouts/app.blade.php`, polling `GET /auth/check` every `SESSION_CHECK_INTERVAL` seconds
+  (`0` disables it).
+- **Heartbeat now polls only while the tab is visible**, plus once immediately on `visibilitychange`
+  back to visible. It redirects to `/login` only on a **401**; a 5xx/maintenance 503 no longer kicks the
+  user to the login page.
+- **`/auth/check` now also returns `unread`** (`NotificationsController::unreadCount()`), and the
+  heartbeat updates the bell badge via `window.setNotificationBadge(n)`. The endpoint is read-only,
+  never marks anything seen, so multiple tabs don't need to coordinate: `seen` state already lives
+  server-side and every tab converges on the same count. The badge `<span id="notif-badge">` is now
+  always rendered (hidden at 0) so it can appear after page load, and the bell menu refetches the feed
+  on **every** open (it used to fetch once per page load), since that fetch is what marks items seen.
+- **Known side effect, pre-existing**: every heartbeat request refreshes the session, so
+  `SESSION_LIFETIME` never expires while a tab is open and visible.
+- **Not done (deliberately)**: pop-up toasts for new notifications. That needs a "which browser/tab
+  already announced notification N" record (e.g. last-shown id in `localStorage`) and was deferred.
+- **Verified**: `tests/Feature/AuthCheckHeartbeatTest.php` (written; PHPUnit still not installable in
+  this sandbox, so its assertions were exercised via a kernel-level script instead), and a real
+  Chromium run against `php artisan serve` (with a dummy `public/hot` since npm is blocked, and the
+  inline heartbeat doesn't need Vite/Alpine): badge hidden at load → shows "2" after notifications are
+  inserted → no polls while `document.hidden` → updates to "3" immediately on becoming visible → hides
+  when marked seen elsewhere → redirects to `/login` when sessions are wiped. The bell menu's
+  refetch-on-open is Alpine-driven and was **not** click-tested (no built assets).
+
 ### Session Summary (Sep 11, 2026) — Search token unification, project-picker audit, subtask inheritance, relative dates, Overdue export
 - **Source**: `implementation-plan.md`, a five-item checklist (all items now checked off in that
   file). Landed as two commits — `b5a10ca` ("Mostly bug fixes") and a same-day follow-up,

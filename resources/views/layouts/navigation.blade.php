@@ -244,11 +244,13 @@
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6 6 0 10-12 0v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
                         </svg>
-                        @if($unreadNotifications > 0)
-                        <span id="notif-badge" class="absolute -top-1 -right-1 inline-flex items-center justify-center w-4 h-4 text-xs font-bold text-white bg-red-500 rounded-full">
-                            {{ $unreadNotifications > 9 ? '9+' : $unreadNotifications }}
-                        </span>
-                        @endif
+                        {{-- Always rendered (hidden at 0) so the heartbeat in layouts/app.blade.php can show it
+                             when a notification arrives after page load. --}}
+                        <span id="notif-badge" @class([
+                                'absolute -top-1 -right-1 items-center justify-center w-4 h-4 text-xs font-bold text-white bg-red-500 rounded-full',
+                                'inline-flex' => $unreadNotifications > 0,
+                                'hidden' => $unreadNotifications <= 0,
+                              ])>{{ $unreadNotifications > 9 ? '9+' : $unreadNotifications }}</span>
                     </button>
 
                     <div x-show="open"
@@ -572,9 +574,11 @@ document.addEventListener('alpine:init', () => {
     Alpine.data('notificationsMenu', () => ({
         open: false,
         loaded: false,
+        // Refetches on every open, not just the first: the heartbeat can surface new notifications
+        // after the menu was last opened, and fetching the feed is what marks them seen.
         async toggle() {
             this.open = !this.open;
-            if (this.open && !this.loaded) {
+            if (this.open) {
                 this.loaded = true;
                 try {
                     const res = await fetch('{{ route('notifications.feed') }}', {
@@ -585,8 +589,7 @@ document.addEventListener('alpine:init', () => {
                     });
                     const d = await res.json();
                     if (this.$refs.notifHtml) this.$refs.notifHtml.innerHTML = d.html;
-                    const badge = document.getElementById('notif-badge');
-                    if (badge) badge.remove();
+                    window.setNotificationBadge(0);
                 } catch {}
             }
         }
