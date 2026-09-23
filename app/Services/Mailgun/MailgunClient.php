@@ -88,7 +88,11 @@ class MailgunClient
     /**
      * Send a single email through Mailgun.
      *
-     * @param array{from: string, to: string, subject: string, html?: string, text?: string} $message
+     * `inline` files are embedded in the message and can be shown in the HTML
+     * body via `<img src="cid:FILENAME">` — Mailgun uses each file's filename
+     * as its Content-ID.
+     *
+     * @param array{from: string, to: string, subject: string, html?: string, text?: string, inline?: list<array{filename: string, contents: string}>} $message
      * @return array The decoded JSON response body from Mailgun.
      *
      * @throws RuntimeException if Mailgun isn't configured, or the API call fails.
@@ -103,9 +107,13 @@ class MailgunClient
 
         [$domain, $secret, $endpoint] = $this->credentials();
 
-        $response = Http::asMultipart()
-            ->withBasicAuth('api', $secret)
-            ->post("https://{$endpoint}/v3/{$domain}/messages", array_filter([
+        $request = Http::asMultipart()->withBasicAuth('api', $secret);
+
+        foreach ($message['inline'] ?? [] as $file) {
+            $request->attach('inline', $file['contents'], $file['filename']);
+        }
+
+        $response = $request->post("https://{$endpoint}/v3/{$domain}/messages", array_filter([
                 'from' => $message['from'],
                 'to' => $message['to'],
                 'subject' => $message['subject'],

@@ -89,9 +89,11 @@ class DayPngExporter
         ]);
         $multiStatus = $rows->pluck('status')->unique()->count() > 1;
         $metaLine    = self::metaLine($filterQuery, $sort, $reversed);
+        $title       = $date->format('l, F j, Y');
+        $titleSize   = self::fitTitleSize($title, $width - 2 * self::MARGIN, $fontBold);
 
         // ---- Pass 1: measure total height (GD needs the canvas size up front) ----
-        $y = self::MARGIN + self::TITLE_SIZE + 6;
+        $y = self::MARGIN + $titleSize + 6;
         if ($metaLine) $y += self::META_SIZE + 10;
         $y += self::HEADER_RULE_GAP;
 
@@ -123,8 +125,8 @@ class DayPngExporter
         imagefilledrectangle($im, 0, 0, $width, $height, $white);
 
         $cursorY = self::MARGIN;
-        self::drawText($im, $fontBold, self::TITLE_SIZE, self::MARGIN, $cursorY + self::TITLE_SIZE, $date->format('l, F j, Y'), $ink);
-        $cursorY += self::TITLE_SIZE + 6;
+        self::drawText($im, $fontBold, $titleSize, self::MARGIN, $cursorY + $titleSize, $title, $ink);
+        $cursorY += $titleSize + 6;
 
         if ($metaLine) {
             self::drawText($im, $fontRegular, self::META_SIZE, self::MARGIN, $cursorY + self::META_SIZE, $metaLine, $muted);
@@ -243,6 +245,19 @@ class DayPngExporter
         if ($current !== '') $lines[] = $current;
 
         return $lines;
+    }
+
+    /** TITLE_SIZE, shrunk just enough that $title fits in $maxWidth px — a long date ("Wednesday, September 23, 2026") in bold otherwise runs off the right edge at the default 600px width. GD's built-in font can't be resized, so without a TTF this is just TITLE_SIZE. */
+    private static function fitTitleSize(string $title, float $maxWidth, ?string $font): float
+    {
+        $size = self::TITLE_SIZE;
+        if ($font === null) return $size;
+
+        while ($size > self::BODY_SIZE && self::ttfTextWidth($font, $size, $title) > $maxWidth) {
+            $size--;
+        }
+
+        return $size;
     }
 
     private static function ttfTextWidth(string $font, float $size, string $text): float

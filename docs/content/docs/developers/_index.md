@@ -67,6 +67,12 @@ force the "from" domain the way `defaultFrom()` does, so `MAIL_FROM_ADDRESS` wou
 be on `MAILGUN_BASE`'s domain at that point. `App\Services\TaskDigestMailer` builds a user's "tasks
 for the day" digest (used today by `php artisan email:task-digest`) without touching `Auth::id()` or
 `request()`, so it can be called the same way from a queued/scheduled job later.
+`App\Services\TaskPngMailer` (`php artisan email:task-png {email?} {--all}`) sends the same day's
+tasks as a single PNG — the image the day view's Export PNG button makes (`DayPngExporter`) —
+embedded inline in the email. It takes the date as a parameter; the command always passes today.
+Users opt in separately from the digest ("Daily Task List as an Image (PNG)" under Email
+Preferences on their profile), and neither command is scheduled yet — run them from cron or add
+them to `routes/console.php`.
 
 **Alpine.js runs in CSP-safe mode** — directive expressions (`x-data`, `@click`, `:class`, ...) can only be a single JS expression, not statements like `const`/`if`. Multi-step logic needs to live in an `Alpine.data()` component method instead. See [Alpine.js & CSP](/docs/developers/frontend-csp/) for the failure mode and the fix pattern.
 
