@@ -71,8 +71,9 @@ for the day" digest (used today by `php artisan email:task-digest`) without touc
 tasks as a single PNG — the image the day view's Export PNG button makes (`DayPngExporter`) —
 embedded inline in the email. It takes the date as a parameter; the command always passes today.
 Users opt in separately from the digest ("Daily Task List as an Image (PNG)" under Email
-Preferences on their profile), and neither command is scheduled yet — run them from cron or add
-them to `routes/console.php`.
+Preferences on their profile). Both run with `--all` at 6:00am (`APP_TIMEZONE`) via Laravel's
+scheduler in `routes/console.php`, which needs the usual single cron entry running
+`php artisan schedule:run` every minute.
 Both commands send to one user by email address or to every subscriber with `--all`. A single
 address must have opted in unless you pass `--force` (for testing). A disabled account is never
 emailed, `--force` or not; the mailer classes refuse it themselves, so that holds for any future
