@@ -239,7 +239,9 @@ test.describe('Task Authorization & Privacy', () => {
 
     // Set date and time to today at noon.
     // input[name="date"] is a hidden Alpine.js field; fill the visible text input instead.
-    const today = new Date().toISOString().split('T')[0];
+    // "today" is resolved server-side in the app's timezone; toISOString() is UTC
+    // and would give tomorrow's date in the evening (Pacific). See daily-digest-seed.spec.js.
+    const today = 'today';
     await page.fill('input[placeholder*="tomorrow"]', today);
     await page.fill('input[name="time"]', '12:00');
 

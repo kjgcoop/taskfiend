@@ -19,7 +19,11 @@ import { login, logout, testUsers } from './helpers/auth.js';
 
 test.describe('Daily digest seed data', () => {
   test('user1 and user2 each get a today task, visible only to themselves', async ({ page }) => {
-    const today = new Date().toISOString().split('T')[0];
+    // Type the word "today" rather than computing a YYYY-MM-DD here: the server
+    // resolves it in the app's timezone (APP_TIMEZONE), which is what /day uses.
+    // new Date().toISOString() is UTC, so in the evening (Pacific) it's already
+    // tomorrow's date and these tasks would silently land on the wrong day.
+    const today = 'today';
 
     // User 1: create a task due today.
     await login(page, testUsers.user1.email);
