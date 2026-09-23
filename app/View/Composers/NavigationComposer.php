@@ -6,6 +6,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
 use App\Http\Controllers\NotificationsController;
 use App\Models\Project;
+use App\Models\ProjectTemplate;
 use App\Models\Tag;
 
 class NavigationComposer
@@ -38,7 +39,15 @@ class NavigationComposer
         }
 
         $navProjects = collect();
+        $navTemplates = collect();
         if (Auth::check()) {
+            // Same set as the Templates page: the user's own plus other users' public ones.
+            $navTemplates = ProjectTemplate::where('created_by', Auth::id())
+                ->orWhere('is_public', true)
+                ->get(['id', 'name'])
+                ->sort(fn ($a, $b) => strnatcasecmp($a->name, $b->name))
+                ->values();
+
             $navProjects = Project::activeForUser(Auth::id())
                 ->get(['id', 'name', 'background_image', 'is_hearted'])
                 ->sort(fn ($a, $b) => strnatcasecmp($a->name, $b->name))
@@ -50,6 +59,7 @@ class NavigationComposer
         $view->with('otherLinksFiles', $otherLinksFiles);
         $view->with('navProjects', $navProjects);
         $view->with('navTags', $navTags);
+        $view->with('navTemplates', $navTemplates);
         $view->with('unreadNotifications', NotificationsController::unreadCount());
     }
 }

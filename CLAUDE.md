@@ -140,6 +140,11 @@ In `app/Console/Commands/`:
   / `importProjectTemplate()` let a user download/upload a project as a template zip file with
   **no** `ProjectTemplate` DB row involved at all — a parallel, file-only mechanism, distinct
   from everything above. Don't conflate the two when working in this area.
+- **Nav dropdown**: `NavigationComposer` supplies `$navTemplates` (own + others' public, same set as
+  `index()`). Desktop: an inline expandable list under Templates in the More menu (chevron uses
+  `@click.stop` because the More panel closes on any click inside it). Mobile: an expander like
+  Projects/Tags, with no "Add New". Templates have no show page, so items link to
+  `templates.index#template-{id}`; each card on the index has that `id` and a `target:` ring.
 - **In progress**: "template drafts" (edit a template's contents as a live, editable project,
   then save changes back into the template or discard them) — see `implementation-plan.md` /
   `spec.md` for that work as it lands.

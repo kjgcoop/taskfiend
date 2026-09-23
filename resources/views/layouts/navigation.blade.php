@@ -169,9 +169,29 @@
                                 <a href="https://taskfiend.online" class="block w-full px-4 py-2 text-start text-sm leading-5 text-gray-300 hover:bg-gray-700 focus:outline-none transition duration-150 ease-in-out">
                                     Documentation
                                 </a>
-                                <a href="{{ route('templates.index') }}" class="block w-full px-4 py-2 text-start text-sm leading-5 text-gray-300 hover:bg-gray-700 focus:outline-none transition duration-150 ease-in-out {{ request()->routeIs('templates.*') ? 'bg-gray-700 text-gray-100' : '' }}">
-                                    {{ __('Templates') }}
-                                </a>
+                                <!-- Templates, with an inline expandable list of templates -->
+                                <div x-data="dropdown">
+                                    <div class="flex">
+                                        <a href="{{ route('templates.index') }}" class="flex-1 px-4 py-2 text-start text-sm leading-5 text-gray-300 hover:bg-gray-700 focus:outline-none transition duration-150 ease-in-out {{ request()->routeIs('templates.*') ? 'bg-gray-700 text-gray-100' : '' }}">
+                                            {{ __('Templates') }}
+                                        </a>
+                                        {{-- .stop: the More panel closes itself on any click inside it --}}
+                                        <button @click.stop="open = !open" class="px-3 text-gray-400 hover:text-gray-100 hover:bg-gray-700 focus:outline-none transition duration-150 ease-in-out" title="Show templates">
+                                            <svg class="h-4 w-4 fill-current transform transition-transform duration-200" :class="{'rotate-180': open}" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+                                                <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
+                                            </svg>
+                                        </button>
+                                    </div>
+                                    <div x-show="open" class="bg-[#101010] max-h-64 overflow-y-auto" style="display: none;">
+                                        @forelse($navTemplates as $template)
+                                            <a href="{{ route('templates.index') }}#template-{{ $template->id }}" class="block w-full ps-7 pe-4 py-2 text-start text-sm leading-5 text-gray-300 hover:bg-gray-700 focus:outline-none transition duration-150 ease-in-out">
+                                                {{ $template->name }}
+                                            </a>
+                                        @empty
+                                            <span class="block ps-7 pe-4 py-2 text-sm text-gray-500 italic">No templates</span>
+                                        @endforelse
+                                    </div>
+                                </div>
                                 <a href="{{ route('changelogs.user') }}" class="block w-full px-4 py-2 text-start text-sm leading-5 text-gray-300 hover:bg-gray-700 focus:outline-none transition duration-150 ease-in-out {{ request()->routeIs('changelogs.*') ? 'bg-gray-700 text-gray-100' : '' }}">
                                     {{ __('Activity') }}
                                 </a>
@@ -485,9 +505,28 @@
 
                 </div>
             </div>
-            <x-responsive-nav-link :href="route('templates.index')" :active="request()->routeIs('templates.*')">
-                {{ __('Templates') }}
-            </x-responsive-nav-link>
+            <div x-data="dropdown">
+                <div class="flex">
+                    <a href="{{ route('templates.index') }}" class="flex-1 flex items-center ps-3 pe-4 py-2 border-l-4 text-base font-medium transition duration-150 ease-in-out focus:outline-none {{ request()->routeIs('templates.*') ? 'border-indigo-400 text-indigo-300 bg-gray-700' : 'border-transparent text-gray-400 hover:text-gray-100 hover:bg-gray-700 hover:border-gray-500' }}">
+                        {{ __('Templates') }}
+                    </a>
+                    <button @click="open = !open" class="px-4 py-2 text-gray-400 hover:text-gray-100 hover:bg-gray-700 focus:outline-none transition duration-150 ease-in-out">
+                        <svg class="h-5 w-5 transform transition-transform duration-200" :class="{'rotate-180': open}" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
+                        </svg>
+                    </button>
+                </div>
+                <div x-show="open" x-transition class="bg-[#101010]">
+                    @forelse($navTemplates as $template)
+                        <a href="{{ route('templates.index') }}#template-{{ $template->id }}"
+                           class="block w-full ps-3 pe-4 py-2 border-l-4 border-transparent text-base font-medium text-gray-400 hover:text-gray-100 hover:bg-gray-700 hover:border-gray-500 focus:outline-none transition duration-150 ease-in-out">
+                            {{ $template->name }}
+                        </a>
+                    @empty
+                        <span class="block ps-6 pe-4 py-2 text-sm text-gray-500 italic">No templates</span>
+                    @endforelse
+                </div>
+            </div>
             @auth
             <!-- Notifications (the bell's feed, inline) -->
             <div x-data="notificationsMenu">

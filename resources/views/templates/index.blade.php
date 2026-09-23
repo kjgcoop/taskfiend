@@ -83,7 +83,9 @@
                 @else
                     <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                         @foreach($myTemplates as $template)
-                            <div class="bg-[#202020] border border-gray-700 rounded-lg p-5 flex flex-col gap-3"
+                            {{-- id is the target of the nav's Templates dropdown links; :target highlights the card. --}}
+                            <div id="template-{{ $template->id }}"
+                                 class="bg-[#202020] border border-gray-700 rounded-lg p-5 flex flex-col gap-3 scroll-mt-6 target:ring-2 target:ring-indigo-500"
                                  x-data="templateItem">
 
                                 <div class="flex items-start justify-between gap-2">
@@ -221,7 +223,9 @@
                     <h3 class="text-lg font-semibold text-gray-100 mb-4">Public Templates</h3>
                     <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                         @foreach($publicTemplates as $template)
-                            <div class="bg-[#202020] border border-gray-700 rounded-lg p-5 flex flex-col gap-3"
+                            {{-- id is the target of the nav's Templates dropdown links; :target highlights the card. --}}
+                            <div id="template-{{ $template->id }}"
+                                 class="bg-[#202020] border border-gray-700 rounded-lg p-5 flex flex-col gap-3 scroll-mt-6 target:ring-2 target:ring-indigo-500"
                                  x-data="templateItem">
 
                                 <div>
