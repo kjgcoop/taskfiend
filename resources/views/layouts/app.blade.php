@@ -118,6 +118,33 @@
             return name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
         }
 
+        // Shared parent-task picker state/methods, spread into an Alpine.data() component's
+        // returned object (see taskPanelEditor below and taskEditor in tasks/show.blade.php,
+        // the only two places a task's parent is editable). The host component must provide
+        // `fields.parent_id` and `original.parentSearch` (for cancelEdit's reset).
+        function taskParentPicker() {
+            return {
+                parentSearch: '',
+                parentOpen: false,
+                parentTasks: [],
+                parentFiltered() {
+                    const q = this.parentSearch.toLowerCase().trim();
+                    if (!q) return this.parentTasks.slice(0, 10);
+                    return this.parentTasks.filter(t => t.rawName.toLowerCase().includes(q)).slice(0, 10);
+                },
+                selectParent(task) {
+                    this.fields.parent_id = task.id;
+                    this.parentSearch = task.rawName;
+                    this.parentOpen = false;
+                },
+                clearParent() {
+                    this.fields.parent_id = '';
+                    this.parentSearch = '';
+                    this.parentOpen = false;
+                },
+            };
+        }
+
         function toggleSortReversed() {
             const p = new URLSearchParams(window.location.search);
             if (p.get('reversed') === '1') { p.delete('reversed'); } else { p.set('reversed', '1'); }
@@ -731,12 +758,13 @@
             document.addEventListener('alpine:init', () => {
         Alpine.data('taskPanelEditor', function () {
             return {
+                ...taskParentPicker(),
                 taskId: 0,
                 editing: {},
                 renderedDescription: '',
                 fields: {
                     name: '', description: '', location: '', status: '',
-                    date: '', time: '', duration_minutes: '', project_id: '',
+                    date: '', time: '', duration_minutes: '', project_id: '', parent_id: '',
                     recurrence_pattern: '', recurrence_floating: false, recurrence_end_date: '',
                     show_map: false, tag_ids: [], assignee_ids: [],
                 },
@@ -833,9 +861,11 @@
                     this.dateText = taskData.dateText || '';
                     this.allTags = taskData.allTags || [];
                     this.allProjects = taskData.allProjects || [];
+                    this.parentSearch = taskData.parentSearch || '';
+                    this.parentTasks = taskData.parentTasks || [];
                     const currentProject = this.allProjects.find(p => p.id == this.fields.project_id);
                     this.displayProjectName = currentProject ? currentProject.name : 'Inbox';
-                    this.original = JSON.parse(JSON.stringify(Object.assign({}, this.fields, { dateText: this.dateText })));
+                    this.original = JSON.parse(JSON.stringify(Object.assign({}, this.fields, { dateText: this.dateText, parentSearch: this.parentSearch })));
                     const descEl = el.querySelector('[data-rendered-description]');
                     if (descEl) {
                         this.renderedDescription = descEl.innerHTML;
@@ -884,6 +914,9 @@
                         this.dateError = '';
                         this.datePast = false;
                         this.projects = null;
+                    } else if (field === 'parent_id') {
+                        this.parentSearch = this.original.parentSearch || '';
+                        this.parentOpen = false;
                     }
                     this.resetField(field);
                 },
@@ -904,7 +937,7 @@
                         this.nameAC.type = 'tag';
                         this.nameAC.query = q;
                         this.nameAC.results = this.allTags.filter(t => {
-                            const slug = t.name.toLowerCase().replace(/[^a-z0-9-]/g, '');
+                            const slug = slugify(t.name);
                             return t.name.toLowerCase().startsWith(q) || slug.startsWith(q);
                         }).slice(0, 8);
                         this.nameAC.show = this.nameAC.results.length > 0;
@@ -914,7 +947,7 @@
                         this.nameAC.type = 'project';
                         this.nameAC.query = q;
                         this.nameAC.results = this.allProjects.filter(p => {
-                            const slug = p.name.toLowerCase().replace(/[^a-z0-9-]/g, '');
+                            const slug = slugify(p.name);
                             return p.name.toLowerCase().startsWith(q) || slug.startsWith(q);
                         }).slice(0, 8);
                         this.nameAC.show = this.nameAC.results.length > 0;
@@ -942,7 +975,7 @@
                     const pos = input ? input.selectionStart : val.length;
                     const textToCursor = val.substring(0, pos);
                     const prefix = this.nameAC.type === 'tag' ? '@' : '#';
-                    const slug = item.name.toLowerCase().replace(/[^a-z0-9-]/g, '');
+                    const slug = slugify(item.name);
                     const newBeforeCursor = textToCursor.replace(new RegExp(prefix + '[\\w-]*$'), prefix + slug + ' ');
                     this.fields.name = newBeforeCursor + val.substring(pos);
                     if (this.nameAC.type === 'tag') {

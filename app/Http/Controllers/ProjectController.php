@@ -59,14 +59,14 @@ class ProjectController extends Controller
     public function store(Request $request)
     {
         $longTextMax = (int) config('taskfiend.long_text_max_chars');
-        $validated = $request->validate([
+        $validated = $request->validate(array_merge([
             'name' => 'required|string|max:255',
             'description' => "nullable|string|max:{$longTextMax}",
             'end_date' => 'nullable|date',
             'auto_close_action' => 'nullable|in:done,archived',
             'assignee_ids' => 'nullable|array',
             'assignee_ids.*' => 'exists:users,id',
-        ]);
+        ], $this->backgroundImageRules(required: false)));
 
         $project = Project::create([
             'name' => $validated['name'],
@@ -80,6 +80,10 @@ class ProjectController extends Controller
         // Sync assignees (include creator if no assignees specified)
         $assigneeIds = $validated['assignee_ids'] ?? [Auth::id()];
         $project->assignees()->sync($assigneeIds);
+
+        if ($request->hasFile('background_image')) {
+            $this->storeBackgroundImage($project, $request->file('background_image'));
+        }
 
         $this->logChange($project, 'created project');
 
@@ -519,20 +523,42 @@ class ProjectController extends Controller
             abort(403);
         }
 
-        $request->validate([
+        $request->validate($this->backgroundImageRules(required: true));
+
+        $this->storeBackgroundImage($project, $request->file('background_image'));
+
+        $this->logChange($project, 'updated background image');
+
+        return back()->with('success', 'Background image updated.');
+    }
+
+    /**
+     * Validation rules for the background_image input, shared between project
+     * creation and the existing per-project upload endpoint.
+     */
+    private function backgroundImageRules(bool $required): array
+    {
+        return [
             'background_image' => [
-                'required',
+                $required ? 'required' : 'nullable',
                 'file',
                 'mimetypes:image/jpeg,image/png,image/webp,image/gif,image/avif,image/heic,image/heif',
                 'max:20480',
             ],
-        ]);
+        ];
+    }
 
+    /**
+     * Resizes (when possible) and stores an uploaded background image for the
+     * given project, replacing any existing one. The project must already
+     * exist, since the storage path is keyed by its id.
+     */
+    private function storeBackgroundImage(Project $project, \Illuminate\Http\UploadedFile $file): void
+    {
         if ($project->background_image) {
             Storage::disk('private')->delete($project->background_image);
         }
 
-        $file      = $request->file('background_image');
         $mime      = $file->getMimeType();
         $directory = "project-backgrounds/{$project->id}";
         $path      = null;
@@ -585,10 +611,6 @@ class ProjectController extends Controller
 
         $project->background_image = $path;
         $project->save();
-
-        $this->logChange($project, 'updated background image');
-
-        return back()->with('success', 'Background image updated.');
     }
 
     public function removeBackground(Project $project)
@@ -664,6 +686,7 @@ class ProjectController extends Controller
             'date'                => 'required|date',
             'recurrence_pattern'  => 'nullable|string|max:100',
             'recurrence_floating' => 'nullable|boolean',
+            'note'                => 'nullable|string|max:255',
         ]);
 
         $pattern = $request->input('recurrence_pattern') ?: null;
@@ -687,6 +710,7 @@ class ProjectController extends Controller
             'date'                => $request->input('date'),
             'recurrence_pattern'  => $pattern,
             'recurrence_floating' => $request->boolean('recurrence_floating'),
+            'note'                => $request->input('note') ?: null,
         ];
 
         if ($existing) {
@@ -712,7 +736,7 @@ class ProjectController extends Controller
 
         if ($reminder->recurrence_pattern) {
             $dateParser = new DateParser;
-            $base = $reminder->recurrence_floating ? now() : $reminder->date;
+            $base = $reminder->recurrence_floating ? now() : \Carbon\Carbon::parse($reminder->getRawOriginal('date'));
             $next = $dateParser->getNextOccurrence($reminder->recurrence_pattern, $base);
 
             if ($next) {
@@ -721,6 +745,7 @@ class ProjectController extends Controller
                     'date'                => $next->toDateString(),
                     'recurrence_pattern'  => $reminder->recurrence_pattern,
                     'recurrence_floating' => $reminder->recurrence_floating,
+                    'note'                => $reminder->note,
                 ]);
             }
         }

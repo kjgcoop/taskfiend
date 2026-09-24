@@ -10,6 +10,8 @@ use App\Services\QuickAddParser;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\MessageBag;
+use Illuminate\Support\ViewErrorBag;
 
 class SearchController extends Controller
 {
@@ -99,10 +101,34 @@ class SearchController extends Controller
             'reversed'           => 'nullable|boolean',
             'search_title'       => 'nullable|boolean',
             'search_description' => 'nullable|boolean',
+            'search_comments'    => 'nullable|boolean',
             'no_date'            => 'nullable|boolean',
             'duration_min'       => 'nullable|integer|min:0',
             'duration_max'       => 'nullable|integer|min:0',
         ]);
+    }
+
+    /**
+     * When search text is present, at least one of Title/Description/Comments
+     * must be checked. Returns the validation message to show, or null when
+     * the search is valid (including when there's no search text at all, in
+     * which case the checkboxes don't matter).
+     */
+    private function searchScopeErrorMessage(Request $request): ?string
+    {
+        if (!$request->filled('q')) {
+            return null;
+        }
+
+        $inTitle    = $request->boolean('search_title');
+        $inDesc     = $request->boolean('search_description');
+        $inComments = $request->boolean('search_comments');
+
+        if (!$inTitle && !$inDesc && !$inComments) {
+            return 'Choose at least one field to search: Title, Description, or Comments.';
+        }
+
+        return null;
     }
 
     private function buildSearchQuery(Request $request): Builder
@@ -122,22 +148,23 @@ class SearchController extends Controller
             $searchText = $request->q;
             $inTitle    = $request->boolean('search_title');
             $inDesc     = $request->boolean('search_description');
+            $inComments = $request->boolean('search_comments');
 
-            if (!$inTitle && !$inDesc) {
-                $inTitle = true;
-                $inDesc  = true;
+            if ($inTitle || $inDesc || $inComments) {
+                $baseQuery->where(function ($q) use ($searchText, $inTitle, $inDesc, $inComments) {
+                    if ($inTitle) {
+                        $q->orWhere('name', 'like', '%' . $searchText . '%');
+                    }
+                    if ($inDesc) {
+                        $q->orWhere('description', 'like', '%' . $searchText . '%');
+                    }
+                    if ($inComments) {
+                        $q->orWhereHas('comments', function ($cq) use ($searchText) {
+                            $cq->where('comment', 'like', '%' . $searchText . '%');
+                        });
+                    }
+                });
             }
-
-            $baseQuery->where(function ($q) use ($searchText, $inTitle, $inDesc) {
-                if ($inTitle && $inDesc) {
-                    $q->where('name', 'like', '%' . $searchText . '%')
-                      ->orWhere('description', 'like', '%' . $searchText . '%');
-                } elseif ($inTitle) {
-                    $q->where('name', 'like', '%' . $searchText . '%');
-                } else {
-                    $q->where('description', 'like', '%' . $searchText . '%');
-                }
-            });
         }
 
         if ($request->filled('tag_ids')) {
@@ -228,6 +255,8 @@ class SearchController extends Controller
     {
         $this->validateSearchRequest($request);
 
+        $searchError = $this->searchScopeErrorMessage($request);
+
         $projects = Project::activeForUser(Auth::id())->get()->sort(fn ($a, $b) => strnatcasecmp($a->name, $b->name))->values();
 
         $tags  = Tag::active()->orderByRaw('LOWER(tag_name)')->get();
@@ -245,10 +274,10 @@ class SearchController extends Controller
         $sort     = $request->input('sort', 'date');
         $reversed = $request->boolean('reversed');
 
-        $baseQuery = $this->buildSearchQuery($request);
-
         // Markdown export uses unbounded queries
-        if ($request->input('export') === 'markdown') {
+        if (!$searchError && $request->input('export') === 'markdown') {
+            $baseQuery = $this->buildSearchQuery($request);
+
             $tasks          = $request->boolean('show_incomplete') ? $this->applySort((clone $baseQuery)->where('status', 'incomplete'), $sort, $reversed)->with($with)->get() : collect();
             $completedTasks = $request->boolean('show_done')       ? $this->applySort((clone $baseQuery)->where('status', 'done'),       $sort, $reversed)->with($with)->get() : collect();
             $archivedTasks  = $request->boolean('show_archived')   ? $this->applySort((clone $baseQuery)->where('status', 'archived'),   $sort, $reversed)->with($with)->get() : collect();
@@ -269,24 +298,40 @@ class SearchController extends Controller
             ]);
         }
 
-        $perPage = (int) config('taskfiend.pagination_per_page');
+        if ($searchError) {
+            $tasks = $completedTasks = $archivedTasks = collect();
+            $tasksHasMore = $completedTasksHasMore = $archivedTasksHasMore = false;
+            $tasksTotal = $completedTasksTotal = $archivedTasksTotal = 0;
+            $breakdown = [];
+        } else {
+            $baseQuery = $this->buildSearchQuery($request);
+            $perPage   = (int) config('taskfiend.pagination_per_page');
 
-        [$tasks, $tasksHasMore, $tasksTotal]                         = $this->fetchPage($baseQuery, 'incomplete', $sort, $reversed, $with, $perPage, $request->boolean('show_incomplete'));
-        [$completedTasks, $completedTasksHasMore, $completedTasksTotal] = $this->fetchPage($baseQuery, 'done',       $sort, $reversed, $with, $perPage, $request->boolean('show_done'));
-        [$archivedTasks,  $archivedTasksHasMore,  $archivedTasksTotal]  = $this->fetchPage($baseQuery, 'archived',   $sort, $reversed, $with, $perPage, $request->boolean('show_archived'));
+            [$tasks, $tasksHasMore, $tasksTotal]                         = $this->fetchPage($baseQuery, 'incomplete', $sort, $reversed, $with, $perPage, $request->boolean('show_incomplete'));
+            [$completedTasks, $completedTasksHasMore, $completedTasksTotal] = $this->fetchPage($baseQuery, 'done',       $sort, $reversed, $with, $perPage, $request->boolean('show_done'));
+            [$archivedTasks,  $archivedTasksHasMore,  $archivedTasksTotal]  = $this->fetchPage($baseQuery, 'archived',   $sort, $reversed, $with, $perPage, $request->boolean('show_archived'));
 
-        $breakdown = $tasks
-            ->groupBy(fn($t) => optional($t->project)->name ?? 'No Project')
-            ->map(fn($g, $name) => ['name' => $name, 'count' => $g->count()])
-            ->sortByDesc('count')
-            ->values()
-            ->toArray();
+            $breakdown = $tasks
+                ->groupBy(fn($t) => optional($t->project)->name ?? 'No Project')
+                ->map(fn($g, $name) => ['name' => $name, 'count' => $g->count()])
+                ->sortByDesc('count')
+                ->values()
+                ->toArray();
+        }
+
+        if ($searchError) {
+            $errors = session('errors');
+            if (!$errors instanceof ViewErrorBag) {
+                $errors = new ViewErrorBag();
+            }
+            session()->flash('errors', $errors->put('default', new MessageBag(['search_scope' => [$searchError]])));
+        }
 
         return view('search.index', compact(
             'tasks', 'tasksHasMore', 'tasksTotal',
             'completedTasks', 'completedTasksHasMore', 'completedTasksTotal',
             'archivedTasks', 'archivedTasksHasMore', 'archivedTasksTotal',
-            'projects', 'tags', 'users', 'locations', 'breakdown'
+            'projects', 'tags', 'users', 'locations', 'breakdown', 'searchError'
         ));
     }
 
@@ -314,6 +359,10 @@ class SearchController extends Controller
             'status' => 'required|in:incomplete,done,archived',
             'page'   => 'nullable|integer|min:1',
         ]);
+
+        if ($searchError = $this->searchScopeErrorMessage($request)) {
+            return response()->json(['error' => $searchError], 422);
+        }
 
         $perPage = (int) config('taskfiend.pagination_per_page');
         $page    = max(1, (int) $request->get('page', 1));

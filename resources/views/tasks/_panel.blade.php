@@ -68,6 +68,7 @@ $_panelTaskJson = json_encode([
         'time'               => $task->time ?? '',
         'duration_minutes'   => \App\Models\Task::formatDuration($task->duration_minutes) ?? '',
         'project_id'         => $task->project_id ?? $defaultProjectId,
+        'parent_id'          => $task->parent_id ?? '',
         'recurrence_pattern'   => $task->recurrence_pattern ?? '',
         'recurrence_floating'  => (bool) $task->recurrence_floating,
         'recurrence_end_date'  => $task->recurrence_end_date ?? '',
@@ -78,6 +79,8 @@ $_panelTaskJson = json_encode([
     'dateText'    => $task->date ? \Carbon\Carbon::parse($task->date)->format('l, F j, Y') : '',
     'allTags'     => $tags->map(fn($t) => ['id' => $t->id, 'name' => $t->tag_name, 'color' => $t->color])->values(),
     'allProjects' => $projects->map(fn($p) => ['id' => $p->id, 'name' => $p->name])->values(),
+    'parentSearch' => $task->parent ? $task->parent->name : '',
+    'parentTasks'  => $availableParents->map(fn($t) => ['id' => $t->id, 'name' => str_repeat('→ ', $t->getDepth()) . ($t->project ? $t->project->name . ': ' : '') . $t->name, 'rawName' => $t->name])->values(),
 ]);
 @endphp
 <div class="p-5 space-y-5" x-data="taskPanelEditor" data-task-json="{{ $_panelTaskJson }}">
@@ -411,6 +414,69 @@ $_panelTaskJson = json_encode([
                             <div class="px-3 py-2 text-sm text-gray-500 italic">No matching projects</div>
                         </template>
                     </div>
+                </div>
+            </div>
+            @endif
+        </div>
+
+        <!-- Parent Task -->
+        <div>
+            <span class="text-xs font-medium text-gray-500 uppercase tracking-wide">Parent Task</span>
+            <div @if(!$isInactive) @click="startEdit('parent_id')" @endif x-show="!editing.parent_id"
+                 class="mt-1 p-2 rounded {{ !$isInactive ? 'cursor-pointer hover:bg-gray-700' : '' }}">
+                <p class="text-sm text-gray-300">
+                    @if($task->parent)
+                        {{ $task->parent->name }}
+                    @else
+                        None (Top-level task)
+                    @endif
+                </p>
+            </div>
+            @if(!$isInactive)
+            <div x-show="editing.parent_id" class="mt-1" @click.outside="parentOpen = false">
+                <div class="relative">
+                    <input type="text"
+                           x-model="parentSearch" x-ref="parent_idInput"
+                           @input="fields.parent_id = ''; parentOpen = true"
+                           @focus="parentOpen = true"
+                           @keydown.escape="parentOpen = false"
+                           @keydown.enter.prevent="parentFiltered().length > 0 && selectParent(parentFiltered()[0])"
+                           placeholder="Search for a parent task…"
+                           autocomplete="off"
+                           class="w-full rounded-md bg-gray-700 border-gray-600 text-gray-100 placeholder-gray-500 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm pr-8">
+                    <button type="button" x-show="fields.parent_id || parentSearch"
+                            @click="clearParent()"
+                            class="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-100 text-lg leading-none">
+                        &times;
+                    </button>
+                    <div x-show="parentOpen" x-cloak
+                         class="absolute z-50 w-full mt-1 bg-gray-800 border border-gray-600 rounded-md shadow-lg max-h-60 overflow-y-auto">
+                        <div @mousedown.prevent="clearParent()"
+                             class="px-3 py-2 text-sm text-gray-400 cursor-pointer hover:bg-gray-700 border-b border-gray-700">
+                            None (Top-level task)
+                        </div>
+                        <template x-for="task in parentFiltered()" :key="task.id">
+                            <div @mousedown.prevent="selectParent(task)"
+                                 class="px-3 py-2 text-sm text-gray-100 cursor-pointer hover:bg-gray-700"
+                                 :class="{ 'bg-gray-600': fields.parent_id == task.id }">
+                                <span x-text="task.name"></span>
+                            </div>
+                        </template>
+                        <div x-show="parentSearch && parentFiltered().length === 0"
+                             class="px-3 py-2 text-sm text-gray-500 italic">
+                            No matching tasks found
+                        </div>
+                    </div>
+                </div>
+                <div class="flex gap-2 mt-2">
+                    <button @click="saveField('parent_id')"
+                            class="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700">
+                        Save
+                    </button>
+                    <button @click="cancelEdit('parent_id')"
+                            class="px-3 py-1 bg-gray-700 text-gray-300 text-sm rounded hover:bg-gray-600">
+                        Cancel
+                    </button>
                 </div>
             </div>
             @endif

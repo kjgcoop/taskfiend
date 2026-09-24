@@ -303,6 +303,202 @@ Test user already created with API key generated.
 
 ## Important Notes
 
+### Session Summary (Sep 23, 2026) — Wrap-Up: Stuck Tasks
+- Revisited all six Core Feature checkboxes in `implementation-plan.md` (Search Comments, Reminder
+  Notes, Consistent Token Slugs, Background Image on Project Create, Parent Task in Sidebar,
+  Single-Column PDF Export) — all were already `[x]` with zero `⚠️` failure notes anywhere in the
+  file. Nothing was stuck, so no `STUCK.md` was written; checked off this Wrap-Up item as-is.
+
+### Session Summary (Sep 23, 2026) — Wrap-Up: Full Test Run
+- Ran `npm test` (`php artisan test` + `npx playwright test`) after all six Core Features in this
+  plan (Search Comments, Reminder Notes, Consistent Token Slugs, Background Image on Project
+  Create, Parent Task in Sidebar, Single-Column PDF Export) were checked off.
+- **PHPUnit**: 505 tests / 1045 assertions, all passing.
+- **Playwright**: this sandbox had no downloaded Chromium build (`~/.cache/ms-playwright` was
+  empty — prior sessions' notes about `npx playwright install` being blocked no longer held;
+  `npx playwright install chromium` succeeded this time and downloaded a working browser). Full
+  56-test e2e suite: 55 passed, 1 failed on the first parallel (8-worker) run —
+  `project-authorization.spec.js` → "direct project assignee sees all tasks including those not
+  assigned to them" — with `page.goto('/tasks/create')` returning `net::ERR_ABORTED`. Re-ran that
+  single test alone (`--workers=1`) and it passed; treated as parallel-worker contention against
+  the shared SQLite dev server (`php artisan serve --env=testing`) rather than a real regression,
+  since none of this plan's six features touch project-assignee task visibility. No code changes
+  made for this task.
+
+### Session Summary (Sep 23, 2026) — Single-Column PDF Export
+- **The day-view PDF export (`DayPdfExporter`) is now always single-column.** Removed the
+  `$columns` parameter from `DayPdfExporter::build()` and all multi-column layout code
+  (`COLUMN_GAP`, the per-column `$columnX`/`$dividerXs` arrays, `drawColumnDividers()`, and the
+  "advance to next column, else new page" branch — now just "new page when the current row
+  doesn't fit"). `DashboardController::exportDayPdf()` no longer passes a columns argument.
+  Removed `day_export_columns` from `config/taskfiend.php`, `DAY_EXPORT_COLUMNS` from
+  `.env.example`, and updated `docs/content/docs/features/day-export.md` to describe the
+  single-column layout. `DAY_EXPORT_PNG_WIDTH`/`DayPngExporter` (already single-column, unrelated
+  setting) were left alone.
+- **Tests**: `tests/Unit/DayPdfExporterTest.php` — a basic structural-validity check, plus a
+  regression test that builds a PDF from 60 tasks (enough to overflow one page's worth of a single
+  column under the old 2-column default) and asserts every task-name `Td` text operator shares the
+  same x-position, with pagination (`/Type /Page ` appearing more than once) instead of a second
+  column at a different x. Confirmed red against the pre-fix code (two distinct x-positions, one
+  page) before implementing.
+
+### Session Summary (Sep 23, 2026) — Parent Task in Sidebar
+- **Feature**: the task sidebar panel (`resources/views/tasks/_panel.blade.php`, fetched by
+  `TaskController::panel()` and injected into `#task-panel-content`) now shows and lets you edit a
+  task's parent, matching the full task page (`tasks/show.blade.php`) exactly — same "Parent Task"
+  label, same click-to-edit searchable dropdown, same "None (Top-level task)" placeholder, same
+  read-only behavior when `$isInactive`.
+- **Controller**: `TaskController::show()`'s candidate-parent query (visible, incomplete, excluding
+  self + descendants to prevent cycles) was extracted into a private `availableParentsFor(Task
+  $task)` helper; both `show()` and `panel()` now call it and pass `$availableParents` to their
+  views — previously `panel()` didn't compute this at all, which is *why* the panel had no parent
+  field before this session.
+- **Shared, not duplicated**: `tasks/show.blade.php`'s `taskEditor` component had its own copy of
+  `parentSearch`/`parentOpen`/`parentTasks`/`parentFiltered`/`selectParent`/`clearParent`; the
+  layout's `taskPanelEditor` (`layouts/app.blade.php`) had none of it. Rather than copy that block
+  into `taskPanelEditor` too, extracted it into a plain global `taskParentPicker()` factory
+  function defined in `layouts/app.blade.php` right next to `slugify()` (same file, same
+  cross-file-global-function pattern already established there — `layouts/app.blade.php`'s inline
+  `<script>` tags aren't ES modules, so a `function foo(){}` declared in one becomes available to
+  every other inline script on the page, including page-specific `@push('scripts')` blocks like
+  `show.blade.php`'s, since `@stack('scripts')` renders after the layout's own script block).
+  `taskParentPicker()` returns `{ parentSearch, parentOpen, parentTasks, parentFiltered(),
+  selectParent(), clearParent() }` to be spread (`...taskParentPicker()`) into a host
+  `Alpine.data()` component, which must supply `fields.parent_id` and (for `cancelEdit`'s reset)
+  `original.parentSearch`. Both `taskEditor` and `taskPanelEditor` now spread this in.
+  `parentFiltered` changed from a getter to a plain method (spreading an object literal can't carry
+  a getter's accessor semantics — spreading a getter evaluates it once and copies the *value*, not
+  the accessor) — every template reference (`show.blade.php` and the new block in `_panel.blade.php`)
+  calls it as `parentFiltered()`, not the bare property `parentFiltered` the getter version allowed.
+- **`taskPanelEditor` init**: `parentSearch`/`parentTasks` are populated from the panel's
+  `data-task-json` payload (`_panelTaskJson`'s new `parentSearch`/`parentTasks` keys, same shape as
+  `show.blade.php`'s inline `@js(...)` values) inside `init()`, same place `allTags`/`allProjects`
+  already load from that payload. `fields.parent_id` was added to `taskPanelEditor`'s default
+  `fields` object and to `_panelTaskJson`'s `fields` array (neither existed before — the panel had
+  literally no notion of a task's parent). `cancelEdit('parent_id')` resets `parentSearch` from
+  `original.parentSearch`, mirroring how `cancelEdit('date')` already resets `dateText` from
+  `original.dateText`.
+- **Not verified against a running browser**: this sandbox's Playwright install has no downloaded
+  Chromium (`npx playwright test tests/e2e/task-panel.spec.js` fails with "Executable doesn't
+  exist" for every test, unrelated to this change), and this session's sandbox restricts file
+  access to the project directory, so no system/global browser binary from a prior session's setup
+  was reachable either. Verified instead via `tests/Feature/TaskPanelParentTest.php` (asserts the
+  panel's rendered HTML shows a set parent's name, the "None (Top-level task)" placeholder when
+  unset, and a valid candidate parent's name in the picker's data) and `php artisan view:cache`
+  (compiles every Blade template, including both edited ones, without error). Whoever next has a
+  working Playwright browser install should click through: open the sidebar panel, edit the parent
+  field via the dropdown and via typing a search, save, cancel, and confirm it matches the full
+  task page's identical behavior.
+
+### Session Summary (Sep 23, 2026) — Background Image on Project Create
+- **Feature**: the project creation form (`resources/views/projects/create.blade.php`) now has an
+  optional "Background Image" file input (`enctype="multipart/form-data"` added to the form).
+  `ProjectController::store()` accepts `background_image` (`nullable|file|mimetypes:...|max:20480`,
+  same rules as the existing per-project upload endpoint) and stores it after the `Project` row is
+  created, since the storage path is keyed by the project's id.
+- **Refactor**: the validation rules and the resize/store logic previously inlined in
+  `uploadBackground()` are now shared helpers — `backgroundImageRules(bool $required)` and
+  `storeBackgroundImage(Project $project, UploadedFile $file)` — called from both `store()`
+  (`required: false`) and `uploadBackground()` (`required: true`, unchanged behavior/route). No
+  functional change to the existing per-project upload flow, only extraction.
+- **Tests**: `tests/Feature/ProjectCreateBackgroundImageTest.php` — create-with-image stores the
+  file and sets `background_image`, create-without-image still works, an invalid file type is
+  rejected and the project is never created. The "with image" test uses a fake `image/avif` upload
+  (`UploadedFile::fake()->create(...)`, not `->image()`) to avoid the GD-based resize branch in
+  `storeBackgroundImage()` — this sandbox's PHP has no `gd` extension
+  (`function_exists('imagecreatetruecolor')` is false), so `->image()` throws and a real jpeg/png
+  upload would hit `@imagecreatefromstring()` untested here. Whoever next has `gd` installed should
+  spot-check a real jpeg/png upload through both endpoints.
+
+### Session Summary (Sep 23, 2026) — Consistent Token Slugs
+- **Bug**: the Create Task page's `#project`/`@tag` inline autocomplete
+  (`resources/views/tasks/create.blade.php` — `selectAutocomplete()`, `createAndSelectTag()`)
+  computed its own slug via `.toLowerCase().replace(/[^a-z0-9]/g, '')`, which deletes spaces and
+  punctuation entirely (e.g. "Home Renovation" → `homerenovation`), instead of using the shared
+  global `slugify()` helper defined in `resources/views/layouts/app.blade.php:117`
+  (`.replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')`, which dashes spaces: `home-renovation`).
+  Three more copies of the same pattern (missing only the whitespace→dash step, so they preserved
+  existing hyphens but never introduced them) lived in `layouts/app.blade.php` at the `#`/`@`
+  inline-autocomplete handlers used when editing a task's name field (`handleNameInput()`,
+  `selectNameAutocomplete()`, lines ~907/917/945).
+- **Fix**: all of the above now call the shared `slugify()` (a plain global `function`, not
+  Alpine-scoped, so it's already in scope wherever `<x-app-layout>` is used, including inside
+  `Alpine.data()` components registered via `alpine:init`). No behavior change server-side —
+  `QuickAddParser::parseProjectToken()`/tag matching already strip all hyphens when comparing, so
+  a dashed or space-deleted token resolves identically today; this was purely about the *inserted*
+  text into the task-name field being visually consistent with what quick-add and the search page
+  already produce (`home-renovation` rather than `homerenovation`).
+- **Tests**: `tests/Feature/TaskCreateSlugifyTest.php` — asserts the rendered `/tasks/create` page
+  no longer contains the old inline regex and does call `slugify(...)` at the relevant call sites.
+  Since server-side matching behavior is unchanged (see above), this is a rendered-output
+  assertion rather than a `tasks.store` behavioral test, per `spec.md`'s guidance for this case.
+
+### Session Summary (Sep 23, 2026) — Reminder Notes
+- **Feature**: a project reminder (`project_reminders` table) can now carry an optional free-text
+  `note` (nullable `string(255)`, migration
+  `2026_09_23_000000_add_note_to_project_reminders_table.php`, added to `ProjectReminder::$fillable`).
+  Set via a new "Note (optional)" text input on the reminder form on the project show page
+  (`resources/views/projects/show.blade.php`), validated `nullable|string|max:255` in
+  `ProjectController::storeReminder()`. Shown (escaped, muted `text-sm text-gray-400`) beneath the
+  main line on the `/day` reminder bar (`resources/views/dashboard/day.blade.php`), on
+  `projects/reminders-index.blade.php`, and in the reminder modal's "active reminder" summary and
+  edit-prefill on the project show page.
+- **Recurring reminders copy the note forward**: `ProjectController::dismissReminder()` already
+  builds the next occurrence by copying fields explicitly (`recurrence_pattern`,
+  `recurrence_floating`) — `note` is now copied the same way, so it doesn't silently disappear
+  after the first occurrence of a recurring reminder.
+- **Bug fix found and fixed along the way**: `dismissReminder()`'s non-floating branch passed
+  `$reminder->date` — the model's `date` *accessor*, which returns a human-formatted display
+  string (`Attribute::make(get: fn ($value) => ... ->format(config('app.human_date_format')))`),
+  not a `Carbon` instance — into `DateParser::getNextOccurrence(string $pattern, Carbon
+  $currentDate)`, which is strictly typed and threw a `TypeError` on every call. In practice this
+  meant **any non-floating recurring project reminder silently failed to create its next
+  occurrence when dismissed** (the exception surfaced as a generic 500, so the dismiss button
+  still appeared to "work"). Only the floating branch (`now()`, already a real `Carbon`) worked.
+  Fixed by parsing the raw stored value instead: `\Carbon\Carbon::parse($reminder->getRawOriginal('date'))`.
+  Found because the spec's own acceptance test for this task ("dismissing a recurring reminder
+  copies the note to the next occurrence") exercises exactly this path and failed with "next
+  occurrence is null" until this was fixed — not a pre-existing-and-ignored failure, a real blocker
+  for the feature this session was asked to build.
+- **Tests**: `tests/Feature/ProjectReminderNoteTest.php` — note saved on store, note is optional,
+  recurring dismiss copies the note to the next occurrence (also exercises the bug fix above), and
+  the `/day` view renders the note.
+- Not documented further in `/docs` — no existing feature page covers project reminders (`grep -rn
+  "project reminder" docs/content/docs` found only a passing mention in `developers/api.md` of the
+  `project_reminders` array in the `/api/tasks/on/{date}` response, which doesn't enumerate fields
+  and needs no change — `note` is included automatically via `select('project_reminders.*')`).
+
+### Session Summary (Sep 23, 2026) — Search Comments
+- **Feature**: the search page's "Search in" row (`resources/views/search/index.blade.php`) gained a
+  third checkbox, **Comments** (`search_comments`), alongside the existing Title/Description
+  checkboxes — checked by default under the same `$hasSearchParams` rule as the other two. Matching
+  is additive (OR): a task matches if the search text appears in the title, description, or any of
+  its comments (`orWhereHas('comments', ...)` on `comments.comment`).
+- **Visibility preserved**: the title/description/comments OR group is built *inside* the closure
+  already scoped by `Task::visibleTo(Auth::id())` in `SearchController::buildSearchQuery()` — a
+  comment match can never surface a task the searching user can't otherwise see. Covered by
+  `tests/Feature/SearchCommentsTest.php::test_comment_text_match_does_not_leak_another_users_private_task`.
+  Rewrote the three-way title/description/comments OR to just chain `orWhere`/`orWhereHas` for
+  every checked field — Laravel treats the first condition inside a fresh closure the same whether
+  called via `where` or `orWhere`, so no special-casing "first" vs "rest" is needed.
+- **None checked + search text present → validation error, not silent fallback.** The old code
+  silently defaulted to searching title+description if neither box was checked; that fallback is
+  gone. `SearchController::searchScopeErrorMessage()` is the single check shared by `index()` and
+  `more()` (also covers the markdown export path, since export is handled inside `index()`): with
+  no search text, the checkboxes don't matter and no error is shown; with search text and all three
+  boxes unchecked, it returns "Choose at least one field to search: Title, Description, or
+  Comments." `more()` (an AJAX/JSON endpoint) returns that as a 422 JSON body; `index()` renders the
+  search page normally (200, not a redirect) with empty results and the message shown in a banner
+  above the search box, and manually flashes a `ViewErrorBag` to session so `assertSessionHasErrors()`
+  still works even though there's no redirect to hang `withErrors()` off of (`view()` responses don't
+  have that method — only `RedirectResponse` does).
+- **Tests**: `tests/Feature/SearchCommentsTest.php` — comment match found when Comments is checked,
+  comment match on another user's private task never leaks, text-present/none-checked error case,
+  no-text/none-checked shows no error, `search.more` and the markdown export both honor
+  `search_comments` too.
+- Docs: `docs/content/docs/features/_index.md`'s Search Page section now mentions comments as a
+  third targetable field and the none-checked validation error.
+
 ### Session Summary (Sep 23, 2026) — Heartbeat: visible-tab polling + live notification badge
 - **Two separate timers, easily confused**: the day page's "it's past midnight" `staleBanner` is pure
   client-side (`new Date()`), no network. The once-a-minute AJAX call is the **session heartbeat** at

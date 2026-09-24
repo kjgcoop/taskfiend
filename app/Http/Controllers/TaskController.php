@@ -372,15 +372,7 @@ class TaskController extends Controller
             }
         }
 
-        // Get available parent tasks (exclude self and descendants to prevent cycles)
-        $excludeIds = $task->getAllDescendants()->pluck('id')->push($task->id);
-
-        $availableParents = Task::visibleTo(Auth::id())
-            ->whereNotIn('id', $excludeIds)
-            ->where('status', '=', 'incomplete')
-            ->with('parent', 'project') // For depth calculation and project name display
-            ->orderByRaw('LOWER(name)')
-            ->get();
+        $availableParents = $this->availableParentsFor($task);
 
         $isInactive = in_array($task->status, ['done', 'archived'])
             || ($task->project && in_array($task->project->status, ['done', 'archived']));
@@ -395,6 +387,19 @@ class TaskController extends Controller
             ->get();
 
         return view('tasks.show', compact('task', 'projects', 'tags', 'users', 'nextDueDate', 'availableParents', 'defaultProjectId', 'isInactive', 'referencingTasks'));
+    }
+
+    /** Candidate parent tasks for $task: visible, incomplete, excluding itself and its descendants (prevents cycles). */
+    private function availableParentsFor(Task $task)
+    {
+        $excludeIds = $task->getAllDescendants()->pluck('id')->push($task->id);
+
+        return Task::visibleTo(Auth::id())
+            ->whereNotIn('id', $excludeIds)
+            ->where('status', '=', 'incomplete')
+            ->with('parent', 'project') // For depth calculation and project name display
+            ->orderByRaw('LOWER(name)')
+            ->get();
     }
 
     public function panel(Task $task)
@@ -420,6 +425,8 @@ class TaskController extends Controller
             }
         }
 
+        $availableParents = $this->availableParentsFor($task);
+
         $isInactive = in_array($task->status, ['done', 'archived'])
             || ($task->project && in_array($task->project->status, ['done', 'archived']));
 
@@ -431,7 +438,7 @@ class TaskController extends Controller
             ->orderByRaw('LOWER(name)')
             ->get();
 
-        return view('tasks._panel', compact('task', 'projects', 'tags', 'users', 'nextDueDate', 'defaultProjectId', 'isInactive', 'referencingTasks'));
+        return view('tasks._panel', compact('task', 'projects', 'tags', 'users', 'nextDueDate', 'availableParents', 'defaultProjectId', 'isInactive', 'referencingTasks'));
     }
 
     public function edit(Task $task)

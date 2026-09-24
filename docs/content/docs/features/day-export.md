@@ -5,7 +5,7 @@ title: "Day Exports"
 The day view (`/day`) has a three dot menu in its header, next to the date. All the menu items are different types of exports. All reflect any filtering done on the page. Statuses (incomplete, done, archived) not unfolded are not represented in these exports:
 
 ## Export PDF
-This page displays tasks in one to four columns (value set in `.env` with `DAY_EXPORT_COLUMNS`; max and min are hard-coded; defaults to 2). I did this so I could print it, but that was an extravagant waste of paper. This is kind of awkward and minimally useful as-is. To me, anyway. Your use case may be different. I didn't take it out because it's not hurting anything.
+This page displays tasks in a single column, paginating onto a new page whenever the list overflows.
 
 Downloads a printable checklist of a day's incomplete tasks — `taskfiend-day-YYYY-MM-DD.pdf` —
 meant to be printed, folded down to pocket size, and marked up with a highlighter through the day

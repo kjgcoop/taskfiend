@@ -8,24 +8,18 @@ use Illuminate\Support\Collection;
 /**
  * Builds the printable "today's task list" PDF: an eyebrow label, a big bold
  * date, an optional meta line describing any active filter/sort, a rule, and
- * the incomplete tasks in a multi-column list (column count configurable via
- * DAY_EXPORT_COLUMNS, see config/taskfiend.php — 1 to 4) — a time gutter on
- * the left of each column, a divider line under every row instead of a
- * bullet, and vertical dividers between columns running the full column
- * height.
+ * the incomplete tasks in a single-column list — a time gutter on the left,
+ * a divider line under every row instead of a bullet, and a page break
+ * whenever the list overflows the page.
  *
  * Layout is hand-laid-out (via SimplePdfWriter) rather than left to a CSS
- * multi-column engine: it gives us the top-to-bottom-then-across fill order
- * a foldable checklist wants (column 1 fills completely before column 2
- * starts, and so on), without depending on a renderer's column support
- * being reliable.
+ * layout engine, using real Helvetica glyph-width metrics for word-wrapping.
  */
 class DayPdfExporter
 {
     private const PAGE_W = 612.0; // US Letter, points (72/inch)
     private const PAGE_H = 792.0;
     private const MARGIN = 48.0;
-    private const COLUMN_GAP = 32.0;
 
     private const GUTTER_WIDTH = 46.0;      // reserved for the time label
     private const GUTTER_TEXT_GAP = 14.0;   // space between the gutter and the task text
@@ -98,30 +92,15 @@ class DayPdfExporter
      *                        at. A single-status export (still the common case — Done/Archived
      *                        start folded on the day page, so exporting without expanding them
      *                        stays Incomplete-only) gets no labels at all, unchanged from before.
-     * @param  int  $columns  1-4; values outside that range are clamped (see config/taskfiend.php,
-     *                        which is the normal way this gets set — clamping here too means a
-     *                        caller passing a raw value directly can't produce a broken layout).
      */
-    public static function build(Carbon $date, Collection $tasks, ?string $filterQuery, string $sort, bool $reversed, int $columns = 2): string
+    public static function build(Carbon $date, Collection $tasks, ?string $filterQuery, string $sort, bool $reversed): string
     {
-        $columns = max(1, min(4, $columns));
-
         $pdf = new SimplePdfWriter(self::PAGE_W, self::PAGE_H);
 
-        $columnWidth = (self::PAGE_W - 2 * self::MARGIN - ($columns - 1) * self::COLUMN_GAP) / $columns;
+        $columnWidth = self::PAGE_W - 2 * self::MARGIN;
         $textWidth   = $columnWidth - self::GUTTER_WIDTH - self::GUTTER_TEXT_GAP;
         $bottomY     = self::MARGIN;
-
-        // x position of each column's left edge, and of each divider line sitting
-        // in the gap between one column and the next (columns - 1 of them).
-        $columnX = [];
-        for ($i = 0; $i < $columns; $i++) {
-            $columnX[$i] = self::MARGIN + $i * ($columnWidth + self::COLUMN_GAP);
-        }
-        $dividerXs = [];
-        for ($i = 0; $i < $columns - 1; $i++) {
-            $dividerXs[] = $columnX[$i] + $columnWidth + self::COLUMN_GAP / 2;
-        }
+        $x           = self::MARGIN;
 
         $contentTopFirstPage = self::drawHeader($pdf, $date, $filterQuery, $sort, $reversed);
         $contentTopOtherPages = self::PAGE_H - self::MARGIN - 10.0;
@@ -141,32 +120,23 @@ class DayPdfExporter
 
         $multiStatus = $rows->pluck('status')->unique()->count() > 1;
 
-        $col = 0;
-        $columnTop = $contentTopFirstPage;
-        $x = $columnX[0];
-        $y = $columnTop;
+        $pageTop = $contentTopFirstPage;
+        $y = $pageTop;
         $currentStatus = null;
-        self::drawColumnDividers($pdf, $dividerXs, $columnTop, $bottomY);
 
         foreach ($rows as $row) {
             $numLines    = count($row['lines']);
-            $atFreshTop  = ($y === $columnTop);
+            $atFreshTop  = ($y === $pageTop);
             $needsLabel  = $multiStatus && ($atFreshTop || $row['status'] !== $currentStatus);
             $labelHeight = $needsLabel ? self::SECTION_LABEL_HEIGHT : 0.0;
             $lastLineY   = $y - $labelHeight - ($numLines - 1) * self::LINE_HEIGHT;
             $fits        = ($lastLineY - self::ROW_GAP_BELOW_TEXT) >= $bottomY;
 
             if (!$fits && !$atFreshTop) {
-                $col++;
-                if ($col >= $columns) {
-                    $pdf->newPage();
-                    $col = 0;
-                    $columnTop = $contentTopOtherPages;
-                    self::drawColumnDividers($pdf, $dividerXs, $columnTop, $bottomY);
-                }
-                $x = $columnX[$col];
-                $y = $columnTop;
-                // A fresh column always gets a (re)drawn label in multi-status exports, even
+                $pdf->newPage();
+                $pageTop = $contentTopOtherPages;
+                $y = $pageTop;
+                // A fresh page always gets a (re)drawn label in multi-status exports, even
                 // mid-group, so a reader flipping here still knows what status they're looking at.
                 $needsLabel  = $multiStatus;
                 $labelHeight = $needsLabel ? self::SECTION_LABEL_HEIGHT : 0.0;
@@ -198,14 +168,6 @@ class DayPdfExporter
         }
 
         return $pdf->output();
-    }
-
-    /** Draws one vertical divider line in each gap between adjacent columns, for one page. */
-    private static function drawColumnDividers(SimplePdfWriter $pdf, array $dividerXs, float $top, float $bottom): void
-    {
-        foreach ($dividerXs as $dividerX) {
-            $pdf->line($dividerX, $top, $dividerX, $bottom, self::ROW_DIVIDER_WIDTH, self::ROW_DIVIDER_GRAY);
-        }
     }
 
     /**

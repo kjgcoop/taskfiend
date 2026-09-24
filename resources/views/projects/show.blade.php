@@ -202,6 +202,9 @@
                                 @if($activeReminder->recurrence_pattern)
                                     &middot; <span class="text-blue-400/70">{{ $activeReminder->recurrence_pattern }}</span>
                                 @endif
+                                @if($activeReminder->note)
+                                    <span class="block text-xs text-blue-400/70 mt-0.5">{{ $activeReminder->note }}</span>
+                                @endif
                             </span>
                             <form method="POST" action="{{ route('projects.reminders.destroy', [$project, $activeReminder]) }}">
                                 @csrf @method('DELETE')
@@ -240,6 +243,10 @@
                                placeholder="Recurrence (e.g. weekly, every Thursday)"
                                class="w-full rounded-md bg-gray-700 border-gray-600 text-gray-100 placeholder-gray-500 shadow-sm focus:border-blue-500 focus:ring-blue-500 px-3 py-2 text-sm">
                         @error('recurrence_pattern')<p class="text-xs text-red-400">{{ $message }}</p>@enderror
+                        <input type="text" name="note" value="{{ old('note', $activeReminder?->note) }}"
+                               placeholder="Note (optional)" maxlength="255"
+                               class="w-full rounded-md bg-gray-700 border-gray-600 text-gray-100 placeholder-gray-500 shadow-sm focus:border-blue-500 focus:ring-blue-500 px-3 py-2 text-sm">
+                        @error('note')<p class="text-xs text-red-400">{{ $message }}</p>@enderror
                         <label class="flex items-center gap-2 text-sm text-gray-400">
                             <input type="checkbox" name="recurrence_floating" value="1"
                                    {{ old('recurrence_floating', $activeReminder?->recurrence_floating) ? 'checked' : '' }}

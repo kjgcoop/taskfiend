@@ -384,7 +384,7 @@ class DashboardController extends Controller
             return back()->with('error', 'No tasks to export.');
         }
 
-        $pdf = DayPdfExporter::build($carbonDate, $tasks, $filter, $sort, $reversed, (int) config('taskfiend.day_export_columns'));
+        $pdf = DayPdfExporter::build($carbonDate, $tasks, $filter, $sort, $reversed);
 
         return response($pdf, 200, [
             'Content-Type'        => 'application/pdf',
@@ -394,10 +394,10 @@ class DashboardController extends Controller
 
     /**
      * A single tall PNG of the day's task list — for printing on a receipt/
-     * thermal printer, where DayPdfExporter's multi-column layout means cutting
-     * and taping strips together to avoid a blank gap between columns. Same
-     * "mirrors whatever's currently on screen" behavior as exportDayPdf() —
-     * same dayExportTaskGroups(), see its docblock and exportDayPdf()'s above.
+     * thermal printer, where DayPdfExporter's paginated US Letter layout
+     * would mean cutting and taping pages together. Same "mirrors whatever's
+     * currently on screen" behavior as exportDayPdf() — same
+     * dayExportTaskGroups(), see its docblock and exportDayPdf()'s above.
      */
     public function exportDayPng(Request $request)
     {

@@ -16,6 +16,7 @@ class ProjectReminder extends Model
         'recurrence_pattern',
         'recurrence_floating',
         'dismissed',
+        'note',
     ];
 
     protected $casts = [

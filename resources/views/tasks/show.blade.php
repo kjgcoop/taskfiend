@@ -428,7 +428,7 @@
                                        @input="fields.parent_id = ''; parentOpen = true"
                                        @focus="parentOpen = true"
                                        @keydown.escape="parentOpen = false"
-                                       @keydown.enter.prevent="parentFiltered.length > 0 && selectParent(parentFiltered[0])"
+                                       @keydown.enter.prevent="parentFiltered().length > 0 && selectParent(parentFiltered()[0])"
                                        placeholder="Search for a parent task…"
                                        autocomplete="off"
                                        class="w-full rounded-md bg-gray-700 border-gray-600 text-gray-100 placeholder-gray-500 shadow-sm focus:border-blue-500 focus:ring-blue-500 pr-8">
@@ -443,14 +443,14 @@
                                          class="px-3 py-2 text-sm text-gray-400 cursor-pointer hover:bg-gray-700 border-b border-gray-700">
                                         None (Top-level task)
                                     </div>
-                                    <template x-for="task in parentFiltered" :key="task.id">
+                                    <template x-for="task in parentFiltered()" :key="task.id">
                                         <div @mousedown.prevent="selectParent(task)"
                                              class="px-3 py-2 text-sm text-gray-100 cursor-pointer hover:bg-gray-700"
                                              :class="{ 'bg-gray-600': fields.parent_id == task.id }">
                                             <span x-text="task.name"></span>
                                         </div>
                                     </template>
-                                    <div x-show="parentSearch && parentFiltered.length === 0"
+                                    <div x-show="parentSearch && parentFiltered().length === 0"
                                          class="px-3 py-2 text-sm text-gray-500 italic">
                                         No matching tasks found
                                     </div>
@@ -975,24 +975,9 @@
                     return n;
                 },
                 _datePreviewTimeout: null,
+                ...taskParentPicker(),
                 parentSearch: @js($task->parent ? $task->parent->name : ''),
-                parentOpen: false,
                 parentTasks: @js($availableParents->map(fn($t) => ['id' => $t->id, 'name' => str_repeat('→ ', $t->getDepth()) . ($t->project ? $t->project->name . ': ' : '') . $t->name, 'rawName' => $t->name])->values()->all()),
-                get parentFiltered() {
-                    const q = this.parentSearch.toLowerCase().trim();
-                    if (!q) return this.parentTasks.slice(0, 10);
-                    return this.parentTasks.filter(t => t.rawName.toLowerCase().includes(q)).slice(0, 10);
-                },
-                selectParent(task) {
-                    this.fields.parent_id = task.id;
-                    this.parentSearch = task.rawName;
-                    this.parentOpen = false;
-                },
-                clearParent() {
-                    this.fields.parent_id = '';
-                    this.parentSearch = '';
-                    this.parentOpen = false;
-                },
 
                 allProjects: @js($projects->map(fn($p) => ['id' => $p->id, 'name' => $p->name])->values()),
                 displayProjectName: @js($task->project ? $task->project->name : 'Inbox'),

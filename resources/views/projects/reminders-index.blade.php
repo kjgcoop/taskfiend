@@ -29,6 +29,9 @@
                                 @if($reminder->recurrence_pattern)
                                     <div class="text-xs text-gray-500 mt-0.5">{{ $reminder->recurrence_pattern }}</div>
                                 @endif
+                                @if($reminder->note)
+                                    <div class="text-sm text-gray-400 mt-0.5 truncate">{{ $reminder->note }}</div>
+                                @endif
                             </div>
                             <div class="text-sm text-gray-300 whitespace-nowrap">
                                 {{ \Carbon\Carbon::parse($reminder->date)->format('l, M j, Y') }}

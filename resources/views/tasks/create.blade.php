@@ -769,7 +769,7 @@
 
                     // Replace the incomplete word with the selected name
                     let newBefore;
-                    let slug = name.toLowerCase().replace(/[^a-z0-9]/g, '');
+                    let slug = slugify(name);
 
                     if (this.autocompleteType === 'project') {
                         newBefore = beforeCursor.replace(/#\w*$/, '#' + slug + ' ');
@@ -779,7 +779,7 @@
                         // In multi-line mode the server handles per-line project assignment.
                         if (!isMultiLine) {
                             const project = this.projects.find(p =>
-                                p.name.toLowerCase().replace(/[^a-z0-9]/g, '') === slug
+                                slugify(p.name) === slug
                             );
                             if (project) {
                                 this.selectedProjectId = project.id;
@@ -793,7 +793,7 @@
                         // In multi-line mode the server parses @tags per line additively.
                         if (!isMultiLine) {
                             const tag = this.tags.find(t =>
-                                t.tag_name.toLowerCase().replace(/[^a-z0-9]/g, '') === slug
+                                slugify(t.tag_name) === slug
                             );
                             if (tag && !this.selectedTagIds.includes(tag.id)) {
                                 this.selectedTagIds.push(tag.id);
@@ -837,14 +837,14 @@
 
                         // Select it as if the user chose it from autocomplete
                         this.selectedTagIds.push(newTag.id);
-                        this.confirmedTagSlugs.push(newTag.tag_name.toLowerCase().replace(/[^a-z0-9]/g, ''));
+                        this.confirmedTagSlugs.push(slugify(newTag.tag_name));
 
                         // Replace @query in the task name
                         const inputEl = this.$refs.nameInput;
                         const cursorPos = inputEl.selectionStart;
                         const beforeCursor = this.taskName.substring(0, cursorPos);
                         const afterCursor = this.taskName.substring(cursorPos);
-                        const slug = newTag.tag_name.toLowerCase().replace(/[^a-z0-9]/g, '');
+                        const slug = slugify(newTag.tag_name);
                         const newBefore = beforeCursor.replace(/@\w*$/, '@' + slug + ' ');
 
                         this.taskName = newBefore + afterCursor;

@@ -129,16 +129,21 @@
                 <div class="mb-3 space-y-2">
                     @foreach($projectReminders as $reminder)
                         <div class="flex items-center justify-between px-4 py-2.5 bg-blue-950/30 border border-blue-700/50 rounded-lg gap-3">
-                            <div class="flex items-center gap-2 min-w-0">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 shrink-0 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                    <path stroke-linecap="round" stroke-linejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-                                </svg>
-                                <a href="{{ route('projects.show', $reminder->project) }}"
-                                   class="text-sm text-blue-300 hover:text-blue-100 font-medium truncate transition-colors">
-                                    {{ $reminder->project->name }} - {{ $reminder->date }}
-                                </a>
-                                @if($reminder->recurrence_pattern)
-                                    <span class="text-xs text-blue-500 shrink-0">{{ $reminder->recurrence_pattern }}</span>
+                            <div class="min-w-0">
+                                <div class="flex items-center gap-2 min-w-0">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 shrink-0 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                                    </svg>
+                                    <a href="{{ route('projects.show', $reminder->project) }}"
+                                       class="text-sm text-blue-300 hover:text-blue-100 font-medium truncate transition-colors">
+                                        {{ $reminder->project->name }} - {{ $reminder->date }}
+                                    </a>
+                                    @if($reminder->recurrence_pattern)
+                                        <span class="text-xs text-blue-500 shrink-0">{{ $reminder->recurrence_pattern }}</span>
+                                    @endif
+                                </div>
+                                @if($reminder->note)
+                                    <p class="text-sm text-gray-400 mt-0.5 pl-6 truncate">{{ $reminder->note }}</p>
                                 @endif
                             </div>
                             <form method="POST" action="{{ route('projects.reminders.dismiss', [$reminder->project, $reminder]) }}">

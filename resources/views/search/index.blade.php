@@ -9,9 +9,10 @@
     </x-slot>
 
     @php
-        $hasSearchParams          = request()->hasAny(['q', 'tag_ids', 'project_id', 'location', 'has_location', 'date_from', 'date_to', 'has_date', 'no_date', 'duration_min', 'duration_max', 'assignee_id', 'creator_id', 'show_incomplete', 'show_done', 'show_archived', 'show_archived_projects', 'sort', 'search_title', 'search_description']);
+        $hasSearchParams          = request()->hasAny(['q', 'tag_ids', 'project_id', 'location', 'has_location', 'date_from', 'date_to', 'has_date', 'no_date', 'duration_min', 'duration_max', 'assignee_id', 'creator_id', 'show_incomplete', 'show_done', 'show_archived', 'show_archived_projects', 'sort', 'search_title', 'search_description', 'search_comments']);
         $defaultSearchTitle       = $hasSearchParams ? request()->boolean('search_title')       : true;
         $defaultSearchDescription = $hasSearchParams ? request()->boolean('search_description') : true;
+        $defaultSearchComments    = $hasSearchParams ? request()->boolean('search_comments')     : true;
         $defaultHasDate           = $hasSearchParams ? request()->boolean('has_date') : true;
         $defaultNoDate            = $hasSearchParams ? request()->boolean('no_date')  : true;
     @endphp
@@ -24,6 +25,11 @@
                  data-tags="{{ json_encode($tags) }}"
                  data-show-filters="{{ $hasSearchParams ? 'false' : 'true' }}">
                 <form method="GET" action="{{ route('search') }}" @submit="prepareSubmit">
+                    @if(!empty($searchError))
+                        <div class="mb-4 p-3 rounded-md bg-red-900/40 border border-red-700 text-red-200 text-sm">
+                            {{ $searchError }}
+                        </div>
+                    @endif
                     <!-- Main Search Input -->
                     <div class="mb-4">
                         <label for="search" class="block text-sm font-medium text-gray-300 mb-2">
@@ -136,6 +142,11 @@
                                 <input type="checkbox" name="search_description" value="1" {{ $defaultSearchDescription ? 'checked' : '' }}
                                        class="rounded border-gray-600 bg-gray-700 text-blue-600 focus:ring-blue-500">
                                 <span class="ml-2 text-sm text-gray-300">Description</span>
+                            </label>
+                            <label class="inline-flex items-center cursor-pointer">
+                                <input type="checkbox" name="search_comments" value="1" {{ $defaultSearchComments ? 'checked' : '' }}
+                                       class="rounded border-gray-600 bg-gray-700 text-blue-600 focus:ring-blue-500">
+                                <span class="ml-2 text-sm text-gray-300">Comments</span>
                             </label>
                         </div>
                     </div>
@@ -275,7 +286,7 @@
 
                     <!-- Status Filters -->
                     @php
-                        $hasSearchParams = request()->hasAny(['q', 'tag_ids', 'project_id', 'location', 'has_location', 'date_from', 'date_to', 'has_date', 'assignee_id', 'creator_id', 'show_incomplete', 'show_done', 'show_archived', 'show_archived_projects', 'sort', 'search_title', 'search_description']);
+                        $hasSearchParams = request()->hasAny(['q', 'tag_ids', 'project_id', 'location', 'has_location', 'date_from', 'date_to', 'has_date', 'assignee_id', 'creator_id', 'show_incomplete', 'show_done', 'show_archived', 'show_archived_projects', 'sort', 'search_title', 'search_description', 'search_comments']);
                         $defaultIncomplete = $hasSearchParams ? request()->boolean('show_incomplete') : true;
                     @endphp
                     <div class="mb-6">

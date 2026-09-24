@@ -9,7 +9,7 @@
         <div class="max-w-3xl mx-auto sm:px-6 lg:px-8">
             <div class="bg-[#202020] border border-gray-700 overflow-hidden shadow-sm sm:rounded-lg">
                 <div class="p-6">
-                    <form method="POST" action="{{ route('projects.store') }}">
+                    <form method="POST" action="{{ route('projects.store') }}" enctype="multipart/form-data">
                         @csrf
 
                         <div class="mb-4">
@@ -57,6 +57,13 @@
                                     </label>
                                 @endforeach
                             </div>
+                        </div>
+
+                        <div class="mb-6">
+                            <label for="background_image" class="block text-sm font-medium text-gray-300 mb-2">Background Image <span class="text-gray-500 font-normal">(optional)</span></label>
+                            <input type="file" name="background_image" id="background_image" accept="image/*"
+                                   class="w-full text-sm text-gray-300 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-xs file:font-semibold file:uppercase file:tracking-widest file:bg-gray-700 file:text-gray-100 hover:file:bg-gray-600">
+                            @error('background_image')<p class="mt-1 text-sm text-red-600">{{ $message }}</p>@enderror
                         </div>
 
                         <div class="flex items-center gap-4">
