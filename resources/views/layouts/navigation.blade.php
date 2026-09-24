@@ -639,7 +639,7 @@ document.addEventListener('alpine:init', () => {
         submit() {
             const q = this.query.trim();
             if (q) {
-                window.location.href = '{{ route('search') }}?q=' + encodeURIComponent(q) + '&show_incomplete=1';
+                window.location.href = '{{ route('search') }}?q=' + encodeURIComponent(q) + '&show_incomplete=1&search_title=1&search_description=1';
             }
         },
         clearQuery() {
