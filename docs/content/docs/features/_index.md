@@ -37,7 +37,7 @@ Link to other tasks, projects, tags, or locations from any description or commen
 
 ### Search Page
 - There's a magnifying glass in the header that, when clicked, will provide a search input. Submitting a search takes you to the dedicated search page.
-- There's also a dedicated search page. It can, as you might expect, find tasks by title, description, comments, tags, projects, assignees, duration, and date presence; title, description, and comments can each be targeted independently via checkboxes under "Search in" (all three checked by default). A comment match never surfaces a task you can't otherwise see. If you enter search text but uncheck all three, the page shows a validation error and runs no search rather than silently searching everything.
+- There's also a dedicated search page. It can, as you might expect, find tasks by title, description, comments, tags, projects, assignees, duration, and date presence; title, description, and comments can each be targeted independently via checkboxes under "Search in" (Title and Description are checked by default; Comments is not). A comment match never surfaces a task you can't otherwise see. If you enter search text but uncheck all three, the page shows a validation error and runs no search rather than silently searching everything. The quick search (magnifying glass in the header) always searches Title and Description.
 - The search box itself understands `#project` and `@tag` the same way the quick-add bar does, hyphenated multi-word names included (e.g. `#home-renovation` matches a project named "Home Renovation") — it's the same matching logic under the hood, not a lookalike.
 
 ### Overdue Page

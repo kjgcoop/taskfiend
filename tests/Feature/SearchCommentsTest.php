@@ -155,4 +155,21 @@ class SearchCommentsTest extends TestCase
         $response->assertOk();
         $response->assertSee('Unrelated Name Three', false);
     }
+
+    public function test_comments_checkbox_is_unchecked_by_default(): void
+    {
+        $response = $this->actingAs($this->userA)->get(route('search'));
+
+        $response->assertOk();
+        $response->assertSee('name="search_title" value="1" checked', false);
+        $response->assertSee('name="search_description" value="1" checked', false);
+        $response->assertDontSee('name="search_comments" value="1" checked', false);
+    }
+
+    public function test_header_quick_search_searches_title_and_description(): void
+    {
+        $response = $this->actingAs($this->userA)->get(route('search'));
+
+        $response->assertSee('&search_title=1&search_description=1', false);
+    }
 }

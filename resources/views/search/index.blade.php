@@ -12,7 +12,7 @@
         $hasSearchParams          = request()->hasAny(['q', 'tag_ids', 'project_id', 'location', 'has_location', 'date_from', 'date_to', 'has_date', 'no_date', 'duration_min', 'duration_max', 'assignee_id', 'creator_id', 'show_incomplete', 'show_done', 'show_archived', 'show_archived_projects', 'sort', 'search_title', 'search_description', 'search_comments']);
         $defaultSearchTitle       = $hasSearchParams ? request()->boolean('search_title')       : true;
         $defaultSearchDescription = $hasSearchParams ? request()->boolean('search_description') : true;
-        $defaultSearchComments    = $hasSearchParams ? request()->boolean('search_comments')     : true;
+        $defaultSearchComments    = $hasSearchParams ? request()->boolean('search_comments')     : false;
         $defaultHasDate           = $hasSearchParams ? request()->boolean('has_date') : true;
         $defaultNoDate            = $hasSearchParams ? request()->boolean('no_date')  : true;
     @endphp

@@ -471,7 +471,10 @@ Test user already created with API key generated.
 ### Session Summary (Sep 23, 2026) — Search Comments
 - **Feature**: the search page's "Search in" row (`resources/views/search/index.blade.php`) gained a
   third checkbox, **Comments** (`search_comments`), alongside the existing Title/Description
-  checkboxes — checked by default under the same `$hasSearchParams` rule as the other two. Matching
+  checkboxes — **unchecked** by default (Title/Description stay checked by default). The header
+  quick search (magnifying glass, `navigation.blade.php`) explicitly sends
+  `search_title=1&search_description=1`, since a bare `?q=` would otherwise trip the none-checked
+  error below. Matching
   is additive (OR): a task matches if the search text appears in the title, description, or any of
   its comments (`orWhereHas('comments', ...)` on `comments.comment`).
 - **Visibility preserved**: the title/description/comments OR group is built *inside* the closure
