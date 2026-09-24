@@ -23,6 +23,7 @@ class TaskPanelParentTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
+        $this->withoutVite();
 
         $this->user = User::factory()->create();
 
@@ -77,5 +78,24 @@ class TaskPanelParentTest extends TestCase
 
         $response->assertOk();
         $response->assertSee('Candidate Parent Task', false);
+    }
+
+    public function test_panel_and_full_page_link_to_parent_when_set(): void
+    {
+        $parent = $this->makeTask(['name' => 'Linked Parent']);
+        $child  = $this->makeTask(['name' => 'Linked Child', 'parent_id' => $parent->id]);
+
+        $link = 'href="' . route('tasks.show', $parent) . '" title="Go to parent task"';
+
+        $this->actingAs($this->user)->get("/tasks/{$child->id}/panel")->assertOk()->assertSee($link, false);
+        $this->actingAs($this->user)->get("/tasks/{$child->id}")->assertOk()->assertSee($link, false);
+    }
+
+    public function test_no_parent_link_when_task_is_top_level(): void
+    {
+        $task = $this->makeTask(['name' => 'Top Level']);
+
+        $this->actingAs($this->user)->get("/tasks/{$task->id}/panel")->assertOk()->assertDontSee('Go to parent task');
+        $this->actingAs($this->user)->get("/tasks/{$task->id}")->assertOk()->assertDontSee('Go to parent task');
     }
 }

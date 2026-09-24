@@ -421,7 +421,11 @@ $_panelTaskJson = json_encode([
 
         <!-- Parent Task -->
         <div>
-            <span class="text-xs font-medium text-gray-500 uppercase tracking-wide">Parent Task</span>
+            <span class="text-xs font-medium text-gray-500 uppercase tracking-wide">Parent Task
+                @if($task->parent)
+                    <a href="{{ route('tasks.show', $task->parent) }}" title="Go to parent task" class="ml-1 text-orange-400 hover:text-orange-300"><svg class="inline w-3 h-3 opacity-70" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M1 9L9 1M9 1H4M9 1V6"/></svg></a>
+                @endif
+            </span>
             <div @if(!$isInactive) @click="startEdit('parent_id')" @endif x-show="!editing.parent_id"
                  class="mt-1 p-2 rounded {{ !$isInactive ? 'cursor-pointer hover:bg-gray-700' : '' }}">
                 <p class="text-sm text-gray-300">
