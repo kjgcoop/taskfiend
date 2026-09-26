@@ -143,6 +143,26 @@ class ProjectTemplateExportTest extends TestCase
         $this->assertSame('urgent', $data['tags'][0]['name']);
     }
 
+    public function test_zip_contains_readme_describing_the_template(): void
+    {
+        $parent = $this->makeTask(['name' => 'Buy tile']);
+        $this->makeTask(['name' => 'Pick grout color', 'parent_id' => $parent->id]);
+
+        $response = $this->actingAs($this->owner)->get(route('projects.export-template', $this->project));
+        $response->assertOk();
+
+        $zip = new ZipArchive();
+        $this->assertTrue($zip->open($response->getFile()->getPathname()) === true);
+        $readme = $zip->getFromName('README.md');
+        $zip->close();
+
+        $this->assertIsString($readme);
+        $this->assertStringContainsString('# Kitchen Remodel', $readme);
+        $this->assertStringContainsString('project template', $readme);
+        $this->assertStringContainsString("- Buy tile\n  - Pick grout color", $readme);
+        $this->assertStringContainsString('Import Template from Zip', $readme);
+    }
+
     public function test_zip_includes_task_attachment_file(): void
     {
         $task = $this->makeTask(['name' => 'Task with file']);

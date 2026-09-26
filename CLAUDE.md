@@ -132,6 +132,12 @@ In `app/Console/Commands/`:
   Assignees are **not** captured (always written as an empty array), even though the read side
   (`createFromTemplate()`) does know how to restore an `assignees` array if present. Attachment
   files are physically copied into the zip.
+  Every template zip (both this path and `DataExportController::exportProjectTemplate()`) also
+  gets a human-readable `README.md` from `App\Services\TemplateReadme::build($data)`, built from
+  the same array as `template.json`: name, description, export date, task/subtask/tag/attachment
+  counts, a nested task list, and how to import it. Import code ignores it; older zips without it
+  still import fine. "Task Fiend" is hardcoded there rather than `APP_NAME`, because the README's
+  job is to name the software.
 - **`ScheduledProject`** (`app/Models/ScheduledProject.php`, table `scheduled_projects`) — when
   `createFromTemplate()` is given a future start date, it creates one of these instead of a
   `Project` immediately. The `CreateScheduledProjects` console command

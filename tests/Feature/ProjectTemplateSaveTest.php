@@ -150,11 +150,16 @@ class ProjectTemplateSaveTest extends TestCase
         $zip = new ZipArchive();
         $this->assertTrue($zip->open($zipPath) === true);
         $data = json_decode($zip->getFromName('template.json'), true);
+        $readme = $zip->getFromName('README.md');
         $zip->close();
 
         $this->assertSame('project', $data['template_type']);
         $this->assertCount(1, $data['tasks']);
         $this->assertSame('Buy tile', $data['tasks'][0]['name']);
+
+        $this->assertIsString($readme);
+        $this->assertStringContainsString('# Kitchen Remodel', $readme);
+        $this->assertStringContainsString('- Buy tile', $readme);
     }
 
     public function test_saving_a_second_template_does_not_overwrite_the_first(): void

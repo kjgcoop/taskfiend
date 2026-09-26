@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use App\Services\SafeZipExtractor;
+use App\Services\TemplateReadme;
 use App\Models\Project;
 use App\Models\Task;
 use App\Models\Tag;
@@ -636,6 +637,7 @@ class DataExportController extends Controller
         // Write JSON file
         $jsonPath = $tempDir . '/template.json';
         file_put_contents($jsonPath, json_encode($data, JSON_PRETTY_PRINT));
+        file_put_contents($tempDir . '/README.md', TemplateReadme::build($data));
 
         // Create attachments directory
         $attachmentsDir = $tempDir . '/attachments';

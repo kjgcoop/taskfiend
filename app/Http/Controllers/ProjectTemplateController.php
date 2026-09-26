@@ -12,6 +12,7 @@ use App\Models\Task;
 use App\Models\TaskAttachment;
 use App\Services\DateParser;
 use App\Services\SafeZipExtractor;
+use App\Services\TemplateReadme;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -312,6 +313,7 @@ class ProjectTemplateController extends Controller
         }
 
         file_put_contents($tempDir . '/template.json', json_encode($data, JSON_PRETTY_PRINT));
+        file_put_contents($tempDir . '/README.md', TemplateReadme::build($data));
 
         $attachmentsDir = $tempDir . '/attachments';
         mkdir($attachmentsDir, 0755, true);
