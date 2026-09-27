@@ -1,0 +1,6 @@
+php artisan tinker --execute="
+DB::table('tasks')
+  ->join('tag_task', 'tasks.id', '=', 'tag_task.task_id')
+  ->join('tags', 'tags.id', '=', 'tag_task.tag_id')
+  ->where('tags.tag_name', '5 minutes')
+  ->update(['tasks.duration_minutes' => 5]);
