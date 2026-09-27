@@ -156,6 +156,12 @@ In `app/Console/Commands/`:
   `deleteFileAfterSend`); `php artisan temp:prune` (scheduled daily 03:00) deletes entries older than
   24h. Feature tests that hit the export endpoints leave zips there, because the test client never
   calls `send()`, which is what triggers `deleteFileAfterSend`.
+- **Imports are all-or-nothing**: `createProjectFromZip()` (used by `createFromTemplate()`,
+  `ScheduledProjectController` and `CreateScheduledProjects`) and
+  `DataExportController::importProjectTemplate()` wrap the project/tag/task/attachment writes in a DB
+  transaction, record every file they copy to the private disk, and on any exception roll back,
+  delete those files and the extraction dir, `report()` it, and fail gracefully (`false` / flash
+  error). See `tests/Feature/TemplateImportAtomicityTest.php`.
 - **Templates page shows `$errors`**: it didn't before, so a failed `importZip()` validation (most
   often a file over PHP's `upload_max_filesize`) just redirected back with no message.
 - **In progress**: "template drafts" (edit a template's contents as a live, editable project,
