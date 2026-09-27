@@ -116,7 +116,7 @@ In `app/Console/Commands/`:
   `templates.createFromTemplate`, `templates.update`, `templates.destroy`).
   - `index()` — lists the current user's own templates plus other users' public ones.
   - `store()` — **"save project as template"**: only the project's creator may do this;
-    builds a real zip (via the private `buildTemplateZip()` helper, which shells out to the
+    builds a real zip (via `ProjectTemplateArchive::build()`, which shells out to the
     `zip` binary) and always creates a **new** `ProjectTemplate` row. There is currently no
     "update this template in place" mode — every save is a new template.
   - `createFromTemplate()` — **"create project from template"**: extracts the template's zip
@@ -126,14 +126,26 @@ In `app/Console/Commands/`:
   - `importZip()` — stores an uploaded zip file directly as a new `ProjectTemplate`, bypassing
     the "import as project, then save as template" round trip.
   - `updateName()` / `destroy()` — rename/delete an existing template (creator-only).
-- **What a template's zip contains** (`buildTemplateZip()`): a `template.json` with the
+- **`App\Services\ProjectTemplateArchive` is the only code that reads or writes template zips.**
+  `build(Project)` → temp zip path (or `false`); `readManifest(zipPath)` validates without
+  importing (used by `importZip()`); `createProject(zipPath, name, user, ?templateId, ?templateName)`
+  → `Project`. Used by `ProjectTemplateController`, `DataExportController`'s download/upload pair,
+  `ScheduledProjectController::createNow()` and `CreateScheduledProjects` (the last two used to call
+  the controller's private import method via `ReflectionMethod`). A bad zip throws
+  `App\Exceptions\InvalidTemplateException` with a user-facing message; callers catch that and
+  `\Throwable` (report + generic message). **Tags are matched by name, case-insensitively,**
+  created only if missing; the manifest's tag ids only link tasks to entries in its own `tags`
+  list, because ids from another instance (or from before a tag was recreated) point at the wrong
+  tag or nothing. Attachments sharing a filename get `_N`-suffixed names in `attachments/`, and the
+  manifest's `path` records the suffixed name so each comes back with its own contents (this
+  used to silently duplicate the first file).
+- **What a template's zip contains** (`ProjectTemplateArchive::build()`): a `template.json` with the
   project's name/description, and only **incomplete** tasks (done/archived tasks are dropped).
   Each task's `date`/`time` are stripped to `null` — templates are deliberately date/time-less.
   Assignees are **not** captured (always written as an empty array), even though the read side
   (`createFromTemplate()`) does know how to restore an `assignees` array if present. Attachment
   files are physically copied into the zip.
-  Every template zip (both this path and `DataExportController::exportProjectTemplate()`) also
-  gets a human-readable `README.md` from `App\Services\TemplateReadme::build($data)`, built from
+  Every template zip also gets a human-readable `README.md` from `App\Services\TemplateReadme::build($data)`, built from
   the same array as `template.json`: name, description, export date, task/subtask/tag/attachment
   counts, a nested task list, and how to import it. Import code ignores it; older zips without it
   still import fine. "Task Fiend" is hardcoded there rather than `APP_NAME`, because the README's
@@ -156,12 +168,12 @@ In `app/Console/Commands/`:
   `deleteFileAfterSend`); `php artisan temp:prune` (scheduled daily 03:00) deletes entries older than
   24h. Feature tests that hit the export endpoints leave zips there, because the test client never
   calls `send()`, which is what triggers `deleteFileAfterSend`.
-- **Imports are all-or-nothing**: `createProjectFromZip()` (used by `createFromTemplate()`,
-  `ScheduledProjectController` and `CreateScheduledProjects`) and
-  `DataExportController::importProjectTemplate()` wrap the project/tag/task/attachment writes in a DB
-  transaction, record every file they copy to the private disk, and on any exception roll back,
-  delete those files and the extraction dir, `report()` it, and fail gracefully (`false` / flash
-  error). See `tests/Feature/TemplateImportAtomicityTest.php`.
+- **Imports are all-or-nothing**: `ProjectTemplateArchive::createProject()` wraps the
+  project/tag/task/attachment writes in a DB transaction, records every file it copies to the
+  private disk, and on any exception rolls back, deletes those files and the extraction dir, and
+  rethrows. It also change-logs the project's creation on every path (the one-off upload didn't
+  before). See `tests/Feature/TemplateImportAtomicityTest.php` and
+  `tests/Feature/ProjectTemplateArchiveTest.php`.
 - **Templates page shows `$errors`**: it didn't before, so a failed `importZip()` validation (most
   often a file over PHP's `upload_max_filesize`) just redirected back with no message.
 - **In progress**: "template drafts" (edit a template's contents as a live, editable project,

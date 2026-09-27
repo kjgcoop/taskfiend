@@ -2,7 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Exceptions\InvalidTemplateException;
 use App\Models\ScheduledProject;
+use App\Services\ProjectTemplateArchive;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 
@@ -72,13 +74,14 @@ class ScheduledProjectController extends Controller
             return back()->with('error', 'Template file not found on the server.');
         }
 
-        $templateController = new ProjectTemplateController();
-        $method = new \ReflectionMethod($templateController, 'createProjectFromZip');
-        $method->setAccessible(true);
-        $project = $method->invoke($templateController, $zipPath, $scheduledProject->project_name, $request->user(), $template->id);
-
-        if ($project === false) {
-            return back()->with('error', 'Failed to create project from template.');
+        try {
+            $project = app(ProjectTemplateArchive::class)
+                ->createProject($zipPath, $scheduledProject->project_name, $request->user(), $template->id, $template->name);
+        } catch (InvalidTemplateException $e) {
+            return back()->with('error', $e->getMessage());
+        } catch (\Throwable $e) {
+            report($e);
+            return back()->with('error', 'Failed to create project from template, so nothing was created.');
         }
 
         $scheduledProject->delete();

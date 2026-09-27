@@ -3,10 +3,10 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use App\Services\SafeZipExtractor;
-use App\Services\TemplateReadme;
+use App\Services\ProjectTemplateArchive;
+use App\Exceptions\InvalidTemplateException;
 use App\Models\Project;
 use App\Models\Task;
 use App\Models\Tag;
@@ -561,126 +561,11 @@ class DataExportController extends Controller
             abort(403, 'You do not have permission to export this project.');
         }
 
-        // Gather project data
-        $data = [
-            'exported_at' => now()->toIso8601String(),
-            'template_type' => 'project',
-            'project' => [
-                'name' => $project->name,
-                'description' => $project->description,
-            ],
-            'tasks' => [],
-            'tags' => [],
-            'task_attachments' => [],
-        ];
-
-        // Get only incomplete tasks for this project
-        $tasks = Task::where('project_id', $project->id)
-            ->where('status', 'incomplete')
-            ->get();
-
-        // Build a map from task ID to its position in the export array so we
-        // can store parent_index for subtasks.
-        $taskIdToIndex = $tasks->values()->mapWithKeys(function ($task, $index) {
-            return [$task->id => $index];
-        })->all();
-
-        $tagIds = [];
-        $taskAttachmentPaths = [];
-
-        foreach ($tasks as $task) {
-            $data['tasks'][] = [
-                'name' => $task->name,
-                'description' => $task->description,
-                'date' => null,
-                'time' => null,
-                'location' => $task->location,
-                'recurrence_pattern' => $task->recurrence_pattern,
-                'parent_index' => isset($taskIdToIndex[$task->parent_id]) ? $taskIdToIndex[$task->parent_id] : null,
-                'tags' => $task->tags->pluck('id')->toArray(),
-                'assignees' => [],
-            ];
-
-            // Collect tag IDs
-            foreach ($task->tags as $tag) {
-                if (!in_array($tag->id, $tagIds)) {
-                    $tagIds[] = $tag->id;
-                }
-            }
-
-            // Get task attachments
-            foreach ($task->attachments as $attachment) {
-                $data['task_attachments'][] = [
-                    'task_index' => count($data['tasks']) - 1,
-                    'filename' => $attachment->original_filename,
-                    'path' => $attachment->file_path,
-                ];
-                $taskAttachmentPaths[] = $attachment->file_path;
-            }
-        }
-
-        // Get all tags used in tasks
-        $tags = Tag::whereIn('id', $tagIds)->get();
-        foreach ($tags as $tag) {
-            $data['tags'][] = [
-                'id' => $tag->id,
-                'name' => $tag->tag_name,
-                'color' => $tag->color,
-            ];
-        }
-
-        // Create temporary directory for export
-        $tempDir = storage_path('app/temp/template_export_' . $project->id . '_' . time());
-        if (!file_exists($tempDir)) {
-            mkdir($tempDir, 0755, true);
-        }
-
-        // Write JSON file
-        $jsonPath = $tempDir . '/template.json';
-        file_put_contents($jsonPath, json_encode($data, JSON_PRETTY_PRINT));
-        file_put_contents($tempDir . '/README.md', TemplateReadme::build($data));
-
-        // Create attachments directory
-        $attachmentsDir = $tempDir . '/attachments';
-        if (!file_exists($attachmentsDir)) {
-            mkdir($attachmentsDir, 0755, true);
-        }
-
-        // Copy all attachment files
-        foreach ($taskAttachmentPaths as $path) {
-            if (Storage::disk('private')->exists($path)) {
-                $filename = basename($path);
-                $destPath = $attachmentsDir . '/' . $filename;
-
-                // Handle duplicate filenames by adding a counter
-                $counter = 1;
-                $originalFilename = pathinfo($filename, PATHINFO_FILENAME);
-                $extension = pathinfo($filename, PATHINFO_EXTENSION);
-
-                while (file_exists($destPath)) {
-                    $filename = $originalFilename . '_' . $counter . '.' . $extension;
-                    $destPath = $attachmentsDir . '/' . $filename;
-                    $counter++;
-                }
-
-                copy(Storage::disk('private')->path($path), $destPath);
-            }
-        }
-
-        // Create zip file using the system zip binary (no php-zip extension required)
-        $zipPath = storage_path('app/temp/taskfiend_template_' . $project->id . '_' . time() . '.zip');
-        $returnCode = 0;
-        exec('cd ' . escapeshellarg($tempDir) . ' && zip -r ' . escapeshellarg($zipPath) . ' .', $_, $returnCode);
-
-        if ($returnCode !== 0) {
-            $this->deleteDirectory($tempDir);
+        $zipPath = app(ProjectTemplateArchive::class)->build($project);
+        if ($zipPath === false) {
             return back()->with('error', 'Failed to create export archive. Please ensure the zip utility is installed on the server.');
         }
 
-        // Clean up temp directory
-        $this->deleteDirectory($tempDir);
-
-        // Return zip file as download
         return response()->download($zipPath, 'taskfiend_template_' . str_replace(' ', '_', $project->name) . '_' . now()->format('Y-m-d') . '.zip')->deleteFileAfterSend(true);
     }
 
@@ -694,181 +579,18 @@ class DataExportController extends Controller
             'project_name' => 'required|string|max:255',
         ]);
 
-        $user = $request->user();
-
-        // Create temp directory for extraction
-        $tempDir = storage_path('app/temp/template_import_' . $user->id . '_' . time());
-        if (!file_exists($tempDir)) {
-            mkdir($tempDir, 0755, true);
-        }
-
-        // Save uploaded file
-        $zipPath = $request->file('template_file')->path();
-
-        // Extract zip, rejecting symlinks/path traversal and enforcing size/entry limits
-        if (!SafeZipExtractor::extract($zipPath, $tempDir)) {
-            $this->deleteDirectory($tempDir);
-            return back()->with('error', 'Failed to extract template file.');
-        }
-
-        // Read JSON data
-        $jsonPath = $tempDir . '/template.json';
-        if (!file_exists($jsonPath)) {
-            $this->deleteDirectory($tempDir);
-            return back()->with('error', 'Invalid template file: template.json not found.');
-        }
-
-        $data = json_decode(file_get_contents($jsonPath), true);
-
-        // Verify it's a project template
-        if (!isset($data['template_type']) || $data['template_type'] !== 'project') {
-            $this->deleteDirectory($tempDir);
-            return back()->with('error', 'Invalid template file: not a project template.');
-        }
-
-        // All-or-nothing: a failure part-way (disk full, bad data) must not
-        // leave a half-built project behind, or orphaned files on disk.
-        $writtenFiles = [];
-        DB::beginTransaction();
         try {
-            // Create new project
-            $project = Project::create([
-                'name' => $request->project_name,
-                'description' => $data['project']['description'] ?? '',
-                'user_id' => $user->id,
-            ]);
-
-            // Import project background image if present
-            $projectBackgroundsDir = $tempDir . '/project-backgrounds';
-            if (!empty($data['project']['background_image'])) {
-                $bgFilename = basename($data['project']['background_image']);
-                $sourceFile = $projectBackgroundsDir . '/' . $bgFilename;
-                if (file_exists($sourceFile)) {
-                    $newBgPath = 'project-backgrounds/' . $project->id . '/' . $bgFilename;
-                    Storage::disk('private')->put($newBgPath, file_get_contents($sourceFile));
-                    $writtenFiles[] = $newBgPath;
-                    $project->update(['background_image' => $newBgPath]);
-                }
-            }
-
-            // Map old tag IDs to existing/new tag IDs
-            $tagIdMap = [];
-            foreach ($data['tags'] ?? [] as $tagData) {
-                // Try to find existing tag by ID first
-                $existingTag = Tag::find($tagData['id']);
-                if ($existingTag) {
-                    $tagIdMap[$tagData['id']] = $existingTag->id;
-                } else {
-                    // Create new tag with original ID if it doesn't exist
-                    $newTag = Tag::create([
-                        'id' => $tagData['id'],
-                        'tag_name' => $tagData['name'],
-                        'color' => $tagData['color'],
-                    ]);
-                    $tagIdMap[$tagData['id']] = $newTag->id;
-                }
-            }
-
-            // Create tasks — track index → new task ID so we can wire up parent_id afterwards
-            $attachmentsDir = $tempDir . '/attachments';
-            $indexToTaskId = [];
-            foreach ($data['tasks'] ?? [] as $index => $taskData) {
-                $task = Task::create([
-                    'name' => $taskData['name'],
-                    'description' => $taskData['description'],
-                    'status' => 'incomplete',
-                    'date' => $taskData['date'] ?? null,
-                    'time' => $taskData['time'] ?? null,
-                    'location' => $taskData['location'] ?? null,
-                    'recurrence_pattern' => $taskData['recurrence_pattern'],
-                    'project_id' => $project->id,
-                    'creator_id' => $user->id,
-                ]);
-
-                $indexToTaskId[$index] = $task->id;
-
-                // Log task creation
-                $task->changeLogs()->create([
-                    'date' => now(),
-                    'user_id' => $user->id,
-                    'entity_type' => 'tasks',
-                    'entity_id' => $task->id,
-                    'description' => 'created task via template import',
-                ]);
-
-                // Attach tags
-                $newTagIds = [];
-                foreach ($taskData['tags'] ?? [] as $oldTagId) {
-                    if (isset($tagIdMap[$oldTagId])) {
-                        $newTagIds[] = $tagIdMap[$oldTagId];
-                    }
-                }
-                if (!empty($newTagIds)) {
-                    $task->tags()->attach($newTagIds);
-                }
-
-                // Create assignments (keep original assignees + add importer)
-                $assigneeIds = $taskData['assignees'] ?? [];
-                if (!in_array($user->id, $assigneeIds)) {
-                    $assigneeIds[] = $user->id;
-                }
-
-                foreach ($assigneeIds as $assigneeId) {
-                    // Only create assignment if user exists
-                    if (\App\Models\User::find($assigneeId)) {
-                        Assignment::create([
-                            'task_id' => $task->id,
-                            'assignee_id' => $assigneeId,
-                            'assigned_by_id' => $user->id,
-                        ]);
-                    }
-                }
-
-                // Import attachments for this task
-                foreach ($data['task_attachments'] ?? [] as $attachmentData) {
-                    if ($attachmentData['task_index'] === $index) {
-                        $sourceFile = $attachmentsDir . '/' . basename($attachmentData['path']);
-
-                        if (file_exists($sourceFile)) {
-                            // Generate new unique path (basename() guards against
-                            // path traversal in the zip's JSON-supplied filename)
-                            $safeFilename = basename($attachmentData['filename']);
-                            $newPath = 'task_attachments/' . uniqid() . '_' . $safeFilename;
-                            Storage::disk('private')->put($newPath, file_get_contents($sourceFile));
-                            $writtenFiles[] = $newPath;
-
-                            TaskAttachment::create([
-                                'task_id' => $task->id,
-                                'user_id' => $user->id,
-                                'original_filename' => $safeFilename,
-                                'file_path' => $newPath,
-                                'file_size' => filesize($sourceFile),
-                            ]);
-                        }
-                    }
-                }
-            }
-
-            // Second pass: restore parent/child relationships
-            foreach ($data['tasks'] ?? [] as $index => $taskData) {
-                $parentIndex = $taskData['parent_index'] ?? null;
-                if ($parentIndex !== null && isset($indexToTaskId[$parentIndex], $indexToTaskId[$index])) {
-                    Task::where('id', $indexToTaskId[$index])
-                        ->update(['parent_id' => $indexToTaskId[$parentIndex]]);
-                }
-            }
-
-            DB::commit();
+            $project = app(ProjectTemplateArchive::class)->createProject(
+                $request->file('template_file')->path(),
+                $request->project_name,
+                $request->user(),
+            );
+        } catch (InvalidTemplateException $e) {
+            return back()->with('error', $e->getMessage());
         } catch (\Throwable $e) {
-            DB::rollBack();
-            Storage::disk('private')->delete($writtenFiles);
-            $this->deleteDirectory($tempDir);
             report($e);
             return back()->with('error', 'Template import failed, so nothing was created. Please try again.');
         }
-
-        // Clean up temp directory
-        $this->deleteDirectory($tempDir);
 
         return redirect()->route('projects.show', $project)->with('status', 'Project template imported successfully!');
     }

@@ -7,6 +7,7 @@ use App\Models\ChangeLog;
 use App\Models\ProjectTemplate;
 use App\Models\ScheduledProject;
 use App\Models\User;
+use App\Services\ProjectTemplateArchive;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Storage;
 
@@ -38,11 +39,12 @@ class CreateScheduledProjects extends Command
                 continue;
             }
 
-            $controller = new \App\Http\Controllers\ProjectTemplateController();
-            $project    = $this->callCreateFromZip($controller, $zipPath, $scheduled->project_name, $user, $template->id);
-
-            if ($project === false) {
-                $this->warn("Failed to create project for scheduled project #{$scheduled->id}.");
+            try {
+                $project = app(ProjectTemplateArchive::class)
+                    ->createProject($zipPath, $scheduled->project_name, $user, $template->id, $template->name);
+            } catch (\Throwable $e) {
+                report($e);
+                $this->warn("Failed to create project for scheduled project #{$scheduled->id}: {$e->getMessage()}");
                 continue;
             }
 
@@ -62,13 +64,5 @@ class CreateScheduledProjects extends Command
 
             $this->info("Created project \"{$project->name}\" for user {$user->email}.");
         }
-    }
-
-    private function callCreateFromZip($controller, string $zipPath, string $projectName, User $user, int $templateId)
-    {
-        // Access the private method via reflection
-        $method = new \ReflectionMethod($controller, 'createProjectFromZip');
-        $method->setAccessible(true);
-        return $method->invoke($controller, $zipPath, $projectName, $user, $templateId);
     }
 }
