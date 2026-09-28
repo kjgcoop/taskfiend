@@ -31,11 +31,17 @@ class TaskAttachmentController extends Controller
         // Catch that here so the user gets a readable message instead of
         // a confusing "field is required" validation error.
         if (isset($_FILES['attachments'])) {
-            $errors = (array) $_FILES['attachments']['error'];
-            foreach ($errors as $err) {
+            $fileErrors = (array) $_FILES['attachments']['error'];
+            foreach ($fileErrors as $err) {
                 if (in_array($err, [UPLOAD_ERR_INI_SIZE, UPLOAD_ERR_FORM_SIZE])) {
+                    $message = 'One or more files are too large. The maximum file size is ' . ini_get('upload_max_filesize') . '.';
+
+                    if ($request->expectsJson()) {
+                        return response()->json(['message' => $message, 'errors' => ['attachments' => [$message]]], 422);
+                    }
+
                     return redirect()->back()
-                        ->withErrors(['attachments' => 'One or more files are too large. The maximum file size is ' . ini_get('upload_max_filesize') . '.']);
+                        ->withErrors(['attachments' => $message]);
                 }
             }
         }
@@ -78,6 +84,10 @@ class TaskAttachmentController extends Controller
             'entity_id' => $task->id,
             'description' => $count === 1 ? 'added an attachment' : "added {$count} attachments",
         ]);
+
+        if ($request->expectsJson()) {
+            return response()->json(['success' => true, 'count' => $count]);
+        }
 
         return redirect()->route('tasks.show', $task)
             ->with('success', $count === 1 ? 'Attachment added successfully.' : "{$count} attachments added successfully.");
