@@ -31,8 +31,14 @@ class CommentController extends Controller
         // Catch that here so the user gets a readable message instead of
         // a confusing "field is required" validation error.
         if (isset($_FILES['attachment']) && in_array($_FILES['attachment']['error'], [UPLOAD_ERR_INI_SIZE, UPLOAD_ERR_FORM_SIZE])) {
+            $message = 'The uploaded file is too large. The maximum file size is ' . ini_get('upload_max_filesize') . '.';
+
+            if ($request->expectsJson()) {
+                return response()->json(['message' => $message, 'errors' => ['attachment' => [$message]]], 422);
+            }
+
             return redirect()->back()
-                ->withErrors(['attachment' => 'The uploaded file is too large. The maximum file size is ' . ini_get('upload_max_filesize') . '.'])
+                ->withErrors(['attachment' => $message])
                 ->withInput($request->except('attachment'));
         }
 
@@ -77,6 +83,10 @@ class CommentController extends Controller
             'entity_id' => $task->id,
             'description' => 'added a comment',
         ]);
+
+        if ($request->expectsJson()) {
+            return response()->json(['success' => true]);
+        }
 
         return redirect()->route('tasks.show', $task)
             ->with('success', 'Comment added successfully.');

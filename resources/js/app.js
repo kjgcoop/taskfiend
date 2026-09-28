@@ -99,7 +99,7 @@ Alpine.data('listQuickComplete', function () {
         }
     };
 });
-Alpine.data('tabSwitcher', () => ({ tab: 'comments' }));
+Alpine.data('tabSwitcher', (initial = 'comments') => ({ tab: initial }));
 Alpine.data('uploadToggle', () => ({
     showUpload: false,
     toggle() { this.showUpload = !this.showUpload; },
@@ -112,6 +112,43 @@ Alpine.data('multiFileInput', () => ({
     updateLabel(files) {
         if (!files || files.length === 0) { this.fileName = ''; return; }
         this.fileName = files.length === 1 ? files[0].name : `${files.length} files selected`;
+    },
+}));
+// Submits the task-panel comment/attachment forms over fetch instead of a plain
+// HTML form POST. A plain POST navigates the whole browser to wherever
+// redirect()->back()/route('tasks.show', ...) sends it -- since the panel is an
+// overlay fetched via JS, the address bar never actually moved to the task page,
+// so that navigation yanks the user away from whatever list they had open. Submitting
+// here keeps them on that list: the controller returns JSON (querying via the Accept
+// header) instead of redirecting, and success reloads just the panel in place.
+Alpine.data('panelUploadForm', (postUrl, taskId) => ({
+    submitting: false,
+    errorMessage: '',
+    async submit(form) {
+        if (this.submitting) return;
+        this.submitting = true;
+        this.errorMessage = '';
+
+        try {
+            const response = await fetch(postUrl, {
+                method: 'POST',
+                headers: { 'Accept': 'application/json' },
+                body: new FormData(form),
+            });
+            const data = await response.json().catch(() => ({}));
+
+            if (response.ok) {
+                window.reloadTaskPanel(taskId);
+                return;
+            }
+
+            const fieldErrors = Object.values(data.errors || {}).flat();
+            this.errorMessage = fieldErrors[0] || data.message || 'Something went wrong. Please try again.';
+        } catch (e) {
+            this.errorMessage = 'Network error. Please try again.';
+        } finally {
+            this.submitting = false;
+        }
     },
 }));
 Alpine.data('templateItem', () => ({ showUse: false, showDelete: false }));

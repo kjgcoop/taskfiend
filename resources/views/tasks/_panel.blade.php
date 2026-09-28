@@ -741,8 +741,11 @@ $_panelTaskJson = json_encode([
                 </div>
 
                 @if(!$isInactive)
-                <form method="POST" action="{{ route('comments.store', $task) }}" enctype="multipart/form-data">
+                <form method="POST" action="{{ route('comments.store', $task) }}" enctype="multipart/form-data"
+                      x-data="panelUploadForm('{{ route('comments.store', $task) }}', {{ $task->id }})"
+                      @submit.prevent="submit($el)">
                     @csrf
+                    <p x-show="errorMessage" x-text="errorMessage" class="text-xs text-red-400 mb-2"></p>
                     <textarea name="comment" rows="2" required
                               class="w-full rounded-md bg-gray-700 border-gray-600 text-gray-100 placeholder-gray-500 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm mb-2"
                               placeholder="Add a comment..."></textarea>
@@ -751,11 +754,11 @@ $_panelTaskJson = json_encode([
                             <span class="px-2 py-1 bg-gray-700 border border-gray-600 text-gray-300 text-xs rounded hover:bg-gray-600 flex-shrink-0">Choose file</span>
                             <span class="text-xs text-gray-400 truncate" x-text="fileName || 'No file chosen'"></span>
                             <input type="file" name="attachment" class="hidden"
-                                   accept=".jpg,.jpeg,.png,.webp,.gif,.heic,.heif,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.odt,.ods,.odp,.csv,.txt,.md,.xml,.yaml,.yml,.json,.zip"
+                                   accept=".jpg,.jpeg,.png,.webp,.gif,.avif,.heic,.heif,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.odt,.ods,.odp,.csv,.txt,.md,.xml,.yaml,.yml,.json,.zip"
                                    @change="fileName = $event.target.files[0] ? ($event.target.files[0].name.length > 20 ? $event.target.files[0].name.slice(0, 20) + '…' : $event.target.files[0].name) : ''">
                         </label>
-                        <button type="submit" class="px-3 py-1.5 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 flex-shrink-0">
-                            Post
+                        <button type="submit" :disabled="submitting" class="px-3 py-1.5 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 flex-shrink-0 disabled:opacity-50">
+                            <span x-text="submitting ? 'Posting…' : 'Post'"></span>
                         </button>
                     </div>
                 </form>
@@ -834,18 +837,21 @@ $_panelTaskJson = json_encode([
                     <p class="text-sm text-gray-500 mb-3">No attachments yet.</p>
                 @endif
                 @if(!$isInactive)
-                <form method="POST" action="{{ route('attachments.store', $task) }}" enctype="multipart/form-data">
+                <form method="POST" action="{{ route('attachments.store', $task) }}" enctype="multipart/form-data"
+                      x-data="panelUploadForm('{{ route('attachments.store', $task) }}', {{ $task->id }})"
+                      @submit.prevent="submit($el)">
                     @csrf
+                    <p x-show="errorMessage" x-text="errorMessage" class="text-xs text-red-400 mb-2"></p>
                     <div class="flex gap-2 items-center min-w-0" x-data="multiFileInput">
                         <label class="flex items-center gap-2 cursor-pointer min-w-0">
                             <span class="px-2 py-1 bg-gray-700 border border-gray-600 text-gray-300 text-xs rounded hover:bg-gray-600 flex-shrink-0">Choose files</span>
                             <span class="text-xs text-gray-400 truncate" x-text="fileName || 'No files chosen'"></span>
                             <input type="file" name="attachments[]" required multiple class="hidden"
-                                   accept=".jpg,.jpeg,.png,.webp,.gif,.heic,.heif,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.odt,.ods,.odp,.csv,.txt,.md,.xml,.yaml,.yml,.json,.zip"
+                                   accept=".jpg,.jpeg,.png,.webp,.gif,.avif,.heic,.heif,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.odt,.ods,.odp,.csv,.txt,.md,.xml,.yaml,.yml,.json,.zip"
                                    @change="updateLabel($event.target.files)">
                         </label>
-                        <button type="submit" class="px-3 py-1.5 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 flex-shrink-0">
-                            Upload
+                        <button type="submit" :disabled="submitting" class="px-3 py-1.5 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 flex-shrink-0 disabled:opacity-50">
+                            <span x-text="submitting ? 'Uploading…' : 'Upload'"></span>
                         </button>
                     </div>
                 </form>
