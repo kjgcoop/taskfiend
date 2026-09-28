@@ -96,7 +96,7 @@
                             {{-- id is the target of the nav's Templates dropdown links; :target highlights the card. --}}
                             <div id="template-{{ $template->id }}"
                                  class="bg-[#202020] border border-gray-700 rounded-lg p-5 flex flex-col gap-3 scroll-mt-6 target:ring-2 target:ring-indigo-500"
-                                 x-data="templateItem">
+                                 x-data="templateItem({{ $template->is_public ? 'true' : 'false' }})">
 
                                 <div class="flex items-start justify-between gap-2">
                                     <div class="flex-1 min-w-0">
@@ -116,11 +116,16 @@
                                                        @keydown.escape.prevent="cancel()"
                                                        class="text-gray-100 font-medium bg-gray-700 border border-gray-600 rounded px-2 py-0.5 text-sm focus:outline-none focus:border-blue-500 w-48" />
                                             </div>
-                                            @if($template->is_public)
-                                                <span class="text-xs px-1.5 py-0.5 rounded bg-blue-900/50 text-blue-300 border border-blue-700/50">Public</span>
-                                            @else
-                                                <span class="text-xs px-1.5 py-0.5 rounded bg-gray-700 text-gray-400 border border-gray-600">Private</span>
-                                            @endif
+                                            <button type="button"
+                                                    @click="toggleVisibility()"
+                                                    :disabled="togglingVisibility"
+                                                    :class="isPublic
+                                                        ? 'bg-blue-900/50 text-blue-300 border-blue-700/50 hover:bg-blue-900/70'
+                                                        : 'bg-gray-700 text-gray-400 border-gray-600 hover:bg-gray-600'"
+                                                    class="text-xs px-1.5 py-0.5 rounded border disabled:opacity-50"
+                                                    :title="isPublic ? 'Public — click to make private' : 'Private — click to make public'"
+                                                    x-text="isPublic ? 'Public' : 'Private'">
+                                            </button>
                                         </div>
                                         @if($template->description)
                                             <p class="text-gray-400 text-sm mt-1">{{ $template->description }}</p>
