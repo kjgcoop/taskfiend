@@ -142,6 +142,14 @@
                     this.parentSearch = '';
                     this.parentOpen = false;
                 },
+                // Alpine's CSP-safe parser only understands a single expression per directive,
+                // not JS statements — an @input with two semicolon-separated assignments fails
+                // silently (console-only "CSP Parser Error: Unexpected token") on every keystroke.
+                // See docs/content/docs/developers/frontend-csp.md.
+                searchParent() {
+                    this.fields.parent_id = '';
+                    this.parentOpen = true;
+                },
             };
         }
 

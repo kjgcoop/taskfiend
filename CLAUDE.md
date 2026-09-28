@@ -327,6 +327,34 @@ Test user already created with API key generated.
 
 ## Important Notes
 
+### Session Summary (Sep 28, 2026) — CSP parser errors: semicolon-joined Alpine directives
+- **Bug**: found while testing the cross-project parent/child fix below — editing a task's parent
+  and typing in the parent-search box threw a console-only `Uncaught Error: CSP Parser Error:
+  Unexpected token: parentOpen`. Root cause is the recurring Alpine-CSP pitfall already documented
+  in "Key Patterns Used" above: `@input="fields.parent_id = ''; parentOpen = true"`
+  (`tasks/_panel.blade.php`, `tasks/show.blade.php`) is two semicolon-separated statements, and
+  Alpine's CSP-safe parser only understands a single JS *expression* per directive — the failure
+  is silent on the page itself, console-only, so it's easy to ship unnoticed (as this one was).
+  A repo-wide grep for the same `@directive="...;..."` shape turned up one more real instance:
+  `@click="$refs.search.focus(); open = true"` on the project combo-box in
+  `changelogs/index.blade.php`.
+- **Fix**: moved each into a method on its host `Alpine.data()` component, called with a bare
+  expression, per the established pattern:
+  - `taskParentPicker()` (`layouts/app.blade.php`, spread into both `taskEditor` and
+    `taskPanelEditor`) gained `searchParent()` (`this.fields.parent_id = ''; this.parentOpen =
+    true;`); both blade files' `@input` now call `searchParent()`.
+  - `projectComboBox` (`changelogs/index.blade.php`) gained `focusSearch()`
+    (`this.$refs.search.focus(); this.open = true;`); the combo-box's `@click` now calls
+    `focusSearch()`.
+- **Verified**: `php artisan view:cache` compiles all four edited templates without error (doesn't
+  catch this class of bug itself — it's a runtime Alpine-parser error, not a Blade/PHP syntax
+  error — but confirms nothing else broke). Re-grepped the whole `resources/views` tree afterward
+  for the same `@directive="...;..."` shape and for bare `if`/`const`/`let`/`var` inside a
+  directive (another invalid-statement shape) — no further hits. Not click-tested against a real
+  browser in this sandbox (see this file's many prior notes on `npm`/Playwright-Chromium
+  constraints here); the fix mirrors the already-working `sortBy()`/`staleBanner` pattern exactly,
+  and the user's own screenshot of the specific error was the reproduction.
+
 ### Session Summary (Sep 28, 2026) — Cross-project parent/child visibility bug + banner
 - **Bug**: a task's parent picker doesn't require the parent to be in the same project as the
   task itself — a task can be filed in Project B while its parent lives in Project A. Every

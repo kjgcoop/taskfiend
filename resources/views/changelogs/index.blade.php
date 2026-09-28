@@ -44,7 +44,7 @@
                                 </template>
 
                                 {{-- Combo input --}}
-                                <div class="flex items-center bg-gray-700 border border-gray-600 rounded-md px-3 py-1.5 gap-1 cursor-text" @click="$refs.search.focus(); open = true">
+                                <div class="flex items-center bg-gray-700 border border-gray-600 rounded-md px-3 py-1.5 gap-1 cursor-text" @click="focusSearch()">
                                     <template x-for="id in selected" :key="id">
                                         <span class="inline-flex items-center gap-1 bg-gray-600 text-gray-200 text-xs rounded px-1.5 py-0.5 flex-shrink-0">
                                             <span x-text="labelFor(id)"></span>
@@ -322,6 +322,14 @@
 
             deselect(id) {
                 this.selected = this.selected.filter(s => s !== id);
+            },
+
+            // Alpine's CSP-safe parser only understands a single expression per directive, not
+            // JS statements — a @click with a method call and an assignment joined by ";" fails
+            // silently (console-only "CSP Parser Error"). See docs/content/docs/developers/frontend-csp.md.
+            focusSearch() {
+                this.$refs.search.focus();
+                this.open = true;
             },
 
             selectFirst() {

@@ -441,7 +441,7 @@ $_panelTaskJson = json_encode([
                 <div class="relative">
                     <input type="text"
                            x-model="parentSearch" x-ref="parent_idInput"
-                           @input="fields.parent_id = ''; parentOpen = true"
+                           @input="searchParent()"
                            @focus="parentOpen = true"
                            @keydown.escape="parentOpen = false"
                            @keydown.enter.prevent="parentFiltered().length > 0 && selectParent(parentFiltered()[0])"
