@@ -653,7 +653,7 @@
             </div>
 
             <!-- Tabbed sections: Subtasks, Attachments, Comments, History -->
-            <div x-data="tabSwitcher" class="bg-[#202020] border border-gray-700 overflow-hidden shadow-sm sm:rounded-lg">
+            <div x-data="tabSwitcher('{{ $errors->hasAny(['attachments', 'attachments.*']) ? 'attachments' : 'comments' }}')" class="bg-[#202020] border border-gray-700 overflow-hidden shadow-sm sm:rounded-lg">
 
                 <!-- Tab bar -->
                 <div class="flex border-b border-gray-700 overflow-x-auto">
@@ -757,6 +757,9 @@
                         @if(!$isInactive)
                         <form method="POST" action="{{ route('comments.store', $task) }}" enctype="multipart/form-data">
                             @csrf
+                            @error('attachment')
+                                <p class="text-sm text-red-400 mb-2">{{ $message }}</p>
+                            @enderror
                             <textarea name="comment" rows="3" required
                                       class="w-full rounded-md bg-gray-700 border-gray-600 text-gray-100 placeholder-gray-500 shadow-sm focus:border-blue-500 focus:ring-blue-500 mb-2"
                                       placeholder="Add a comment..."></textarea>
@@ -846,6 +849,12 @@
                         @if(!$isInactive)
                         <form method="POST" action="{{ route('attachments.store', $task) }}" enctype="multipart/form-data">
                             @csrf
+                            @error('attachments')
+                                <p class="text-sm text-red-400 mb-2">{{ $message }}</p>
+                            @enderror
+                            @error('attachments.*')
+                                <p class="text-sm text-red-400 mb-2">{{ $message }}</p>
+                            @enderror
                             <div class="flex items-center gap-2 min-w-0" x-data="multiFileInput">
                                 <label class="flex items-center gap-2 cursor-pointer min-w-0">
                                     <span class="px-3 py-1.5 bg-gray-700 border border-gray-600 text-gray-300 text-sm rounded hover:bg-gray-600 flex-shrink-0">Choose files</span>

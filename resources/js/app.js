@@ -99,7 +99,7 @@ Alpine.data('listQuickComplete', function () {
         }
     };
 });
-Alpine.data('tabSwitcher', () => ({ tab: 'comments' }));
+Alpine.data('tabSwitcher', (initial = 'comments') => ({ tab: initial }));
 Alpine.data('uploadToggle', () => ({
     showUpload: false,
     toggle() { this.showUpload = !this.showUpload; },

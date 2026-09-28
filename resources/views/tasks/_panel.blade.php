@@ -657,7 +657,7 @@ $_panelTaskJson = json_encode([
     @endif
 
     <!-- Tabbed section: Comments / Subtasks / Attachments -->
-    <div x-data="tabSwitcher" class="border border-gray-700 rounded-lg bg-[#202020]">
+    <div x-data="tabSwitcher('{{ $errors->hasAny(['attachments', 'attachments.*']) ? 'attachments' : 'comments' }}')" class="border border-gray-700 rounded-lg bg-[#202020]">
 
         <!-- Tab bar -->
         <div class="flex border-b border-gray-700 overflow-x-auto">
@@ -743,6 +743,9 @@ $_panelTaskJson = json_encode([
                 @if(!$isInactive)
                 <form method="POST" action="{{ route('comments.store', $task) }}" enctype="multipart/form-data">
                     @csrf
+                    @error('attachment')
+                        <p class="text-xs text-red-400 mb-2">{{ $message }}</p>
+                    @enderror
                     <textarea name="comment" rows="2" required
                               class="w-full rounded-md bg-gray-700 border-gray-600 text-gray-100 placeholder-gray-500 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm mb-2"
                               placeholder="Add a comment..."></textarea>
@@ -836,6 +839,12 @@ $_panelTaskJson = json_encode([
                 @if(!$isInactive)
                 <form method="POST" action="{{ route('attachments.store', $task) }}" enctype="multipart/form-data">
                     @csrf
+                    @error('attachments')
+                        <p class="text-xs text-red-400 mb-2">{{ $message }}</p>
+                    @enderror
+                    @error('attachments.*')
+                        <p class="text-xs text-red-400 mb-2">{{ $message }}</p>
+                    @enderror
                     <div class="flex gap-2 items-center min-w-0" x-data="multiFileInput">
                         <label class="flex items-center gap-2 cursor-pointer min-w-0">
                             <span class="px-2 py-1 bg-gray-700 border border-gray-600 text-gray-300 text-xs rounded hover:bg-gray-600 flex-shrink-0">Choose files</span>
