@@ -66,7 +66,7 @@ class TagController extends Controller
             ->where('status', '!=', 'archived')
             ->where('status', '!=', 'done')
             ->whereHas('project', fn($pq) => $pq->whereNotIn('status', ['archived', 'done']))
-            ->with(['creator', 'project', 'assignees', 'attachments', 'comments', 'completionLog.user']);
+            ->with(['creator', 'project', 'assignees', 'attachments', 'comments', 'completionLog.user', 'parent.project']);
         match ($sort) {
             'created'  => $tasksQuery->orderBy('created_at', $reversed ? 'asc' : 'desc'),
             'name'     => $tasksQuery->orderByRaw($reversed ? 'LOWER(name) DESC' : 'LOWER(name) ASC'),
@@ -87,7 +87,7 @@ class TagController extends Controller
         $completedTasksRaw = $tag->tasks()
             ->visibleTo(Auth::id())
             ->where('status', 'done')
-            ->with(['creator', 'project', 'assignees', 'attachments', 'comments', 'completionLog.user'])
+            ->with(['creator', 'project', 'assignees', 'attachments', 'comments', 'completionLog.user', 'parent.project'])
             ->orderBy('datetime')
             ->take($perPage + 1)
             ->get();
@@ -103,7 +103,7 @@ class TagController extends Controller
         $archivedTasksRaw = $tag->tasks()
             ->visibleTo(Auth::id())
             ->where('status', 'archived')
-            ->with(['creator', 'project', 'assignees', 'attachments', 'comments', 'completionLog.user'])
+            ->with(['creator', 'project', 'assignees', 'attachments', 'comments', 'completionLog.user', 'parent.project'])
             ->orderBy('datetime')
             ->take($perPage + 1)
             ->get();
@@ -163,7 +163,7 @@ class TagController extends Controller
         $tasks = $tag->tasks()
             ->visibleTo(Auth::id())
             ->where('status', 'done')
-            ->with(['creator', 'project', 'assignees', 'attachments', 'comments', 'completionLog.user'])
+            ->with(['creator', 'project', 'assignees', 'attachments', 'comments', 'completionLog.user', 'parent.project'])
             ->orderBy('datetime')
             ->skip($offset)->take($perPage + 1)
             ->get();
@@ -191,7 +191,7 @@ class TagController extends Controller
         $tasks = $tag->tasks()
             ->visibleTo(Auth::id())
             ->where('status', 'archived')
-            ->with(['creator', 'project', 'assignees', 'attachments', 'comments', 'completionLog.user'])
+            ->with(['creator', 'project', 'assignees', 'attachments', 'comments', 'completionLog.user', 'parent.project'])
             ->orderBy('datetime')
             ->skip($offset)->take($perPage + 1)
             ->get();

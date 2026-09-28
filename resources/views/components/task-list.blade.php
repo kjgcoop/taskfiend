@@ -1136,6 +1136,18 @@
                                @click.stop>
                                 {{ $task->parent->name }}
                             </a>
+                            @if($task->parent->project_id !== $task->project_id)
+                                <span class="text-gray-600">in</span>
+                                @if($task->parent->project)
+                                    <a href="{{ route('projects.show', $task->parent->project) }}"
+                                       class="text-blue-400 hover:underline"
+                                       @click.stop>
+                                        {{ $task->parent->project->name }}
+                                    </a>
+                                @else
+                                    <span class="text-gray-500">no project</span>
+                                @endif
+                            @endif
                         </div>
                     @endif
 

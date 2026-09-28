@@ -327,6 +327,55 @@ Test user already created with API key generated.
 
 ## Important Notes
 
+### Session Summary (Sep 28, 2026) — Cross-project parent/child visibility bug + banner
+- **Bug**: a task's parent picker doesn't require the parent to be in the same project as the
+  task itself — a task can be filed in Project B while its parent lives in Project A. Every
+  "top-level tasks in this project" query in `ProjectController` (the main task list, completed
+  and archived lists and counts, plus the paginated `completedTasks()`/`archivedTasks()`
+  endpoints — 7 call sites total) filtered with `whereNull('parent_id')`. A task with a non-null
+  `parent_id` pointing at a task in a *different* project was excluded from that "top-level"
+  query (it has a parent), and never rendered nested either (its parent isn't part of that
+  project's tree, since the children eager-load is scoped to descendants of the already-fetched
+  top-level tasks) — so it silently vanished from its own project's page entirely. This is what
+  the user hit: a parent in Project A with two children filed in Project B; the children stopped
+  appearing anywhere in Project B.
+- **Fix**: added `ProjectController::topLevelForProjectScope(Project $project)`, a closure
+  returning `whereNull('parent_id') OR whereHas('parent', project_id != this project's id OR
+  project_id IS NULL)` — "top-level for this project's list" now means "no parent, or the parent
+  belongs elsewhere." Replaced all 7 `whereNull('parent_id')` call sites in `ProjectController`
+  with `->where($this->topLevelForProjectScope($project))`. Doesn't touch the separate
+  `$visibleToUser` closure each query already applies, so per-task privacy is unaffected — a task
+  the current user can't see stays excluded regardless of where its parent lives (see the test's
+  `test_cross_project_top_level_scope_does_not_bypass_task_visibility`).
+- **Feature** (user-requested, natural companion to the bug): `task-list.blade.php`'s existing
+  "↳ Subtask of: <parent name>" banner (shown whenever `$task->parent` is set and the parent isn't
+  otherwise visible in the same rendered list — this is also what already appears on `/day` for a
+  child scheduled today whose parent isn't) now also shows "in <parent's project>" when
+  `$task->parent->project_id !== $task->project_id`, linking to that project. This is what makes
+  the now-visible cross-project children in Project B's page (and anywhere else task-list is used)
+  legible instead of just mysteriously present.
+- **Eager loading**: added `'parent.project'` to the `with()` lists in `ProjectController`,
+  `DashboardController` (all 7 task-list-backing queries), `TagController` (5 queries), and
+  `TaskController::index()`, since the new banner comparison touches `$task->parent->project` on
+  every row wherever `<x-task-list>` renders. Deliberately did **not** chase this into every nested
+  `children` sub-query (2-3 levels deep in `ProjectController`) — `$task->parent` on a nested child
+  was already lazy-loaded pre-existing behavior there, and the banner is mainly load-bearing at the
+  top level (where the cross-project case actually surfaces); not worth the added duplication for a
+  cosmetic N+1 on deeply nested subtasks.
+- **Tests**: `tests/Feature/CrossProjectChildVisibilityTest.php` — cross-project child now appears
+  on its own project's page with the parent-project banner rendered; a same-project child is still
+  only nested, never duplicated at top level; the new scope doesn't leak a task the viewing user
+  can't otherwise see. **Not run through PHPUnit** — this sandbox has no `vendor/bin/phpunit`
+  (`vendor/phpunit/phpunit/phpunit` itself is missing, only the package skeleton is present) and
+  `composer install` is blocked by the egress policy here (same constraint noted throughout this
+  file). Verified instead the way prior sessions have: a standalone script
+  (`ProjectController::show()` invoked directly against the `.env.testing` sqlite DB via the
+  Laravel kernel, `Auth::login()`+`view()->share('errors', ...)` standing in for the HTTP
+  middleware stack) exercising the same three scenarios as the test file — all three passed. Also
+  ran `php -l` on every edited controller and `php artisan view:cache` (compiles every Blade
+  template in the app, including the edited component) with no errors. Whoever next has a working
+  `composer install` should run the real suite once.
+
 ### Session Summary (Sep 23, 2026) — Wrap-Up: Stuck Tasks
 - Revisited all six Core Feature checkboxes in `implementation-plan.md` (Search Comments, Reminder
   Notes, Consistent Token Slugs, Background Image on Project Create, Parent Task in Sidebar,

@@ -20,6 +20,24 @@ class ProjectController extends Controller
 {
     use StoresAttachments;
 
+    /**
+     * Scope for "top-level within this project's task list": a task with no parent, or whose
+     * parent belongs to a different project. Without the second half, a task that belongs to
+     * this project but whose parent belongs to a different project is neither shown here as
+     * top-level (whereNull('parent_id') excludes it) nor nested under its parent (the parent
+     * isn't in this project's tree) — it simply disappears from the project entirely.
+     */
+    private function topLevelForProjectScope(Project $project)
+    {
+        return function ($q) use ($project) {
+            $q->whereNull('parent_id')
+              ->orWhereHas('parent', function ($pq) use ($project) {
+                  $pq->where('project_id', '!=', $project->id)
+                     ->orWhereNull('project_id');
+              });
+        };
+    }
+
     public function index(Request $request)
     {
         $all = Project::forMember(Auth::id())
@@ -117,13 +135,14 @@ class ProjectController extends Controller
             'attachments',
             'comments',
             'completionLog.user',
+            'parent.project',
         ];
 
         $tasks = $project->tasks()
             ->where($visibleToUser)
             ->where('status', '!=', 'archived')
             ->where('status', '!=', 'done')
-            ->whereNull('parent_id')
+            ->where($this->topLevelForProjectScope($project))
             ->with(array_merge($taskEagerLoad, [
                 'children' => function ($query) {
                     $query->where('status', '!=', 'archived')
@@ -156,13 +175,13 @@ class ProjectController extends Controller
         $completedTasksTotal = $project->tasks()
             ->where($visibleToUser)
             ->where('status', 'done')
-            ->whereNull('parent_id')
+            ->where($this->topLevelForProjectScope($project))
             ->count();
 
         $completedTasksRaw = $project->tasks()
             ->where($visibleToUser)
             ->where('status', 'done')
-            ->whereNull('parent_id')
+            ->where($this->topLevelForProjectScope($project))
             ->with(array_merge($taskEagerLoad, [
                 'children' => function ($query) {
                     $query->where('status', 'done')
@@ -188,13 +207,13 @@ class ProjectController extends Controller
         $archivedTasksTotal = $project->tasks()
             ->where($visibleToUser)
             ->where('status', 'archived')
-            ->whereNull('parent_id')
+            ->where($this->topLevelForProjectScope($project))
             ->count();
 
         $archivedTasksRaw = $project->tasks()
             ->where($visibleToUser)
             ->where('status', 'archived')
-            ->whereNull('parent_id')
+            ->where($this->topLevelForProjectScope($project))
             ->with(array_merge($taskEagerLoad, [
                 'children' => function ($query) {
                     $query->where('status', 'archived')
@@ -287,9 +306,9 @@ class ProjectController extends Controller
         $tasks = $project->tasks()
             ->where($visibleToUser)
             ->where('status', 'done')
-            ->whereNull('parent_id')
+            ->where($this->topLevelForProjectScope($project))
             ->with([
-                'creator', 'tags', 'assignees', 'attachments', 'comments', 'completionLog.user',
+                'creator', 'tags', 'assignees', 'attachments', 'comments', 'completionLog.user', 'parent.project',
                 'children' => function ($query) {
                     $query->where('status', 'done')
                           ->with([
@@ -337,9 +356,9 @@ class ProjectController extends Controller
         $tasks = $project->tasks()
             ->where($visibleToUser)
             ->where('status', 'archived')
-            ->whereNull('parent_id')
+            ->where($this->topLevelForProjectScope($project))
             ->with([
-                'creator', 'tags', 'assignees', 'attachments', 'comments', 'completionLog.user',
+                'creator', 'tags', 'assignees', 'attachments', 'comments', 'completionLog.user', 'parent.project',
                 'children' => function ($query) {
                     $query->where('status', 'archived')
                           ->with([

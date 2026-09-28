@@ -50,7 +50,7 @@ class DashboardController extends Controller
             ->where('status', '!=', 'done')
             ->where('date', $dateStr)
             ->whereHas('project', fn($pq) => $pq->whereNotIn('status', ['archived', 'done']))
-            ->with(['creator', 'project', 'tags', 'assignees', 'attachments', 'comments', 'completionLog.user']);
+            ->with(['creator', 'project', 'tags', 'assignees', 'attachments', 'comments', 'completionLog.user', 'parent.project']);
         $this->applySortOrder($query, $sort, $reversed);
 
         return $query;
@@ -167,7 +167,7 @@ class DashboardController extends Controller
             ->whereNotNull('date')
             ->where('date', '<', today()->format('Y-m-d'))
             ->whereHas('project', fn($pq) => $pq->whereNotIn('status', ['archived', 'done']))
-            ->with(['creator', 'project', 'tags', 'assignees', 'attachments', 'comments', 'completionLog.user']);
+            ->with(['creator', 'project', 'tags', 'assignees', 'attachments', 'comments', 'completionLog.user', 'parent.project']);
 
         $this->applySortOrder($tasksQuery, $sort, $reversed);
 
@@ -195,7 +195,7 @@ class DashboardController extends Controller
             ->where('status', '!=', 'done')
             ->whereNull('date')
             ->whereHas('project', fn($pq) => $pq->whereNotIn('status', ['archived', 'done']))
-            ->with(['creator', 'project', 'tags', 'assignees', 'attachments', 'comments', 'completionLog.user']);
+            ->with(['creator', 'project', 'tags', 'assignees', 'attachments', 'comments', 'completionLog.user', 'parent.project']);
 
         $this->applySortOrder($tasksQuery, $sort, $reversed);
         $tasks = $tasksQuery->get();
@@ -214,7 +214,7 @@ class DashboardController extends Controller
             ->visibleTo(Auth::id())
             ->where('status', '!=', 'archived')
             ->whereHas('project', fn($pq) => $pq->whereNotIn('status', ['archived', 'done']))
-            ->with(['creator', 'project', 'tags', 'assignees', 'attachments', 'comments', 'completionLog.user'])
+            ->with(['creator', 'project', 'tags', 'assignees', 'attachments', 'comments', 'completionLog.user', 'parent.project'])
             ->orderByRaw("CASE WHEN status = 'done' THEN 1 ELSE 0 END ASC");
 
         $this->applySortOrder($tasksQuery, $sort, $reversed);
@@ -245,7 +245,7 @@ class DashboardController extends Controller
             ->whereNotNull('date')
             ->whereBetween('date', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
             ->whereHas('project', fn($pq) => $pq->whereNotIn('status', ['archived', 'done']))
-            ->with(['creator', 'project', 'tags', 'assignees', 'attachments', 'comments', 'completionLog.user'])
+            ->with(['creator', 'project', 'tags', 'assignees', 'attachments', 'comments', 'completionLog.user', 'parent.project'])
             ->orderByRaw('time IS NULL, time ASC')
             ->get()
             ->groupBy(function ($task) {
@@ -441,7 +441,7 @@ class DashboardController extends Controller
 
         $perPage = (int) config('taskfiend.pagination_per_page');
 
-$dayWith = ['creator', 'project', 'tags', 'assignees', 'attachments', 'comments', 'completionLog.user'];
+$dayWith = ['creator', 'project', 'tags', 'assignees', 'attachments', 'comments', 'completionLog.user', 'parent.project'];
 
         $completedTasksTotal = $this->completedTasksForDate($dateStr)->count();
 
@@ -506,7 +506,7 @@ $dayWith = ['creator', 'project', 'tags', 'assignees', 'attachments', 'comments'
 $tasks = Task::visibleTo(Auth::id())
             ->where('status', 'done')
             ->whereDate('completed_at', $dateStr)
-            ->with(['creator', 'project', 'tags', 'assignees', 'attachments', 'comments', 'completionLog.user'])
+            ->with(['creator', 'project', 'tags', 'assignees', 'attachments', 'comments', 'completionLog.user', 'parent.project'])
             ->orderByRaw('time IS NULL, time ASC')
             ->skip($offset)->take($perPage + 1)
             ->get();
@@ -540,7 +540,7 @@ $tasks = Task::visibleTo(Auth::id())
                          ->whereHas('project', fn($pq) => $pq->whereIn('status', ['archived', 'done']));
                   });
             })
-            ->with(['creator', 'project', 'tags', 'assignees', 'attachments', 'comments', 'completionLog.user'])
+            ->with(['creator', 'project', 'tags', 'assignees', 'attachments', 'comments', 'completionLog.user', 'parent.project'])
             ->orderByRaw('time IS NULL, time ASC')
             ->skip($offset)->take($perPage + 1)
             ->get();
@@ -563,7 +563,7 @@ $tasks = Task::visibleTo(Auth::id())
     private function dayReview(Carbon $carbonDate, string $dateStr)
     {
         $userId = Auth::id();
-        $taskWith = ['creator', 'project', 'tags', 'assignees', 'attachments', 'comments', 'completionLog.user'];
+        $taskWith = ['creator', 'project', 'tags', 'assignees', 'attachments', 'comments', 'completionLog.user', 'parent.project'];
 
         // Tasks directly dated for this day where the user is creator or assignee
         $datedTasks = Task::visibleTo($userId)
