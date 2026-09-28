@@ -10,7 +10,7 @@ trait StoresAttachments
     protected static function allowedMimetypes(): string
     {
         return
-            'image/jpeg,image/png,image/webp,image/gif,image/heic,image/heif,' .
+            'image/jpeg,image/png,image/webp,image/gif,image/avif,image/heic,image/heif,' .
             'application/pdf,' .
             'application/msword,' .
             'application/vnd.openxmlformats-officedocument.wordprocessingml.document,' .
@@ -28,7 +28,7 @@ trait StoresAttachments
 
     protected static function allowedMimetypesMessage(): string
     {
-        return 'File type not allowed. Accepted: images (JPG, PNG, WebP, GIF, HEIC), PDF, Word, Excel, PowerPoint, LibreOffice formats, CSV, TXT, JSON, Markdown, XML, YAML, ZIP.';
+        return 'File type not allowed. Accepted: images (JPG, PNG, WebP, GIF, AVIF, HEIC), PDF, Word, Excel, PowerPoint, LibreOffice formats, CSV, TXT, JSON, Markdown, XML, YAML, ZIP.';
     }
 
     // Store an uploaded file, scaling it down if it is an image whose largest
@@ -36,7 +36,7 @@ trait StoresAttachments
     protected function storeScaled(\Illuminate\Http\UploadedFile $file, string $directory): array
     {
         $mime = $file->getMimeType();
-        $scalableMimes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+        $scalableMimes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/avif'];
 
         if (in_array($mime, $scalableMimes)) {
             $scaleTo = (int) config('taskfiend.scale_largest_to');
@@ -67,11 +67,12 @@ trait StoresAttachments
                         'image/png'  => imagepng($dst),
                         'image/webp' => imagewebp($dst, null, 90),
                         'image/gif'  => imagegif($dst),
+                        'image/avif' => imageavif($dst, null, 90),
                     };
                     $data = ob_get_clean();
                     imagedestroy($dst);
 
-                    $ext  = ['image/jpeg' => 'jpg', 'image/png' => 'png', 'image/webp' => 'webp', 'image/gif' => 'gif'][$mime];
+                    $ext  = ['image/jpeg' => 'jpg', 'image/png' => 'png', 'image/webp' => 'webp', 'image/gif' => 'gif', 'image/avif' => 'avif'][$mime];
                     $path = $directory . '/' . uniqid() . '.' . $ext;
                     Storage::disk('private')->put($path, $data);
 
