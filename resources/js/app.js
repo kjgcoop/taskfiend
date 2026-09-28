@@ -151,7 +151,7 @@ Alpine.data('panelUploadForm', (postUrl, taskId) => ({
         }
     },
 }));
-Alpine.data('templateItem', (isPublic = false) => ({
+Alpine.data('templateItem', (isPublic = false, templateId = 0) => ({
     showUse: false,
     showDelete: false,
     isPublic,
@@ -159,7 +159,6 @@ Alpine.data('templateItem', (isPublic = false) => ({
     async toggleVisibility() {
         if (this.togglingVisibility) return;
         this.togglingVisibility = true;
-        const templateId = parseInt(this.$el.id.replace('template-', ''));
         try {
             const resp = await fetch(`/templates/${templateId}/visibility`, {
                 method: 'PATCH',
