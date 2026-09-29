@@ -151,7 +151,35 @@ Alpine.data('panelUploadForm', (postUrl, taskId) => ({
         }
     },
 }));
-Alpine.data('templateItem', () => ({ showUse: false, showDelete: false }));
+Alpine.data('templateItem', (isPublic = false, templateId = 0) => ({
+    showUse: false,
+    showDelete: false,
+    isPublic,
+    togglingVisibility: false,
+    async toggleVisibility() {
+        if (this.togglingVisibility) return;
+        this.togglingVisibility = true;
+        try {
+            const resp = await fetch(`/templates/${templateId}/visibility`, {
+                method: 'PATCH',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                },
+            });
+            const data = await resp.json();
+            if (data.success) {
+                this.isPublic = data.is_public;
+            } else {
+                alert(data.message || 'Failed to update visibility');
+            }
+        } catch (e) {
+            alert('An error occurred while updating visibility');
+        } finally {
+            this.togglingVisibility = false;
+        }
+    },
+}));
 Alpine.data('templateNameEditor', function () {
     return {
         templateId: 0,

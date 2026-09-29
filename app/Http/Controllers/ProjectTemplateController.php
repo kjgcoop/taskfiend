@@ -208,6 +208,20 @@ class ProjectTemplateController extends Controller
     }
 
     /**
+     * Toggle a stored template's public/private visibility. Only the creator may change it.
+     */
+    public function toggleVisibility(Request $request, ProjectTemplate $template)
+    {
+        if ($template->created_by !== $request->user()->id) {
+            return response()->json(['success' => false, 'message' => 'Only the template creator can change its visibility.'], 403);
+        }
+
+        $template->update(['is_public' => !$template->is_public]);
+
+        return response()->json(['success' => true, 'is_public' => $template->is_public]);
+    }
+
+    /**
      * Delete a stored template (zip + DB record). Only the creator may delete.
      */
     public function destroy(Request $request, ProjectTemplate $template)

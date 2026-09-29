@@ -106,6 +106,7 @@ Route::middleware('auth')->group(function () {
     Route::post('/templates/import-zip', [ProjectTemplateController::class, 'importZip'])->name('templates.importZip');
     Route::post('/templates/{template}/create-project', [ProjectTemplateController::class, 'createFromTemplate'])->name('templates.createFromTemplate');
     Route::patch('/templates/{template}', [ProjectTemplateController::class, 'updateName'])->name('templates.update');
+    Route::patch('/templates/{template}/visibility', [ProjectTemplateController::class, 'toggleVisibility'])->name('templates.toggleVisibility');
     Route::delete('/templates/{template}', [ProjectTemplateController::class, 'destroy'])->name('templates.destroy');
 
     Route::get('/scheduled-projects', [ScheduledProjectController::class, 'index'])->name('scheduled-projects.index');
