@@ -327,6 +327,30 @@ Test user already created with API key generated.
 
 ## Important Notes
 
+### Session Summary (Sep 29, 2026) — Release 15 (v15.0.0) docs sync
+- **Release requires `npm run build` and `php artisan migrate`.** Most v15 items already have their own
+  entries below (search comments, reminder notes, token slugs, background on project create, parent in
+  sidebar, cross-project parent/child, single-column PDF, template `README.md`, heartbeat/live badge, the
+  CSP parser fixes). Items from the release notes that had no entry:
+- **Morning email notifications**: opt-in per user (`EmailSubscription`: `daily_digest`, `daily_png`,
+  Email Preferences on the profile). `email:task-digest --all` and `email:task-png --all` are scheduled
+  06:00 in `routes/console.php`; send via Mailgun's HTTP API (`MAILGUN_API_KEY`/`MAILGUN_BASE`). Needs the
+  cron `schedule:run` entry. Details in `docs/content/docs/developers/_index.md`.
+- **Assignee icons hide the viewing user** on task lists; project cards on the index show other members'
+  avatars (again excluding the viewer).
+- **Export buttons** (MD/PDF/PNG) are always under the three-dot menu, not only on narrow screens.
+  `DAY_EXPORT_COLUMNS` removed from `.env.example` (the setting no longer exists).
+- **Templates**: public/private visibility can be toggled after creation (fixed a bug where the toggle sent
+  `NaN` as the template id); nav Templates dropdown.
+- **Attachments**: AVIF accepted; long filenames truncated so the Post button stays reachable.
+- **Project Details modal**: one shared Save button, no page reload while open, closes on success.
+- **Tooltips**: task-count breakdown stays on screen on phones; recurrence pattern tooltip always shows the
+  end date (hover scoped to the pattern text).
+- **Panel project dropdown** trims whitespace; archived tags hidden everywhere tags render (see Aug 18 entry).
+- **Archived in release notes**: PNG export for other lists — nixed for lack of need. **Maybe later**:
+  project description/files.
+- Docs: `docs/content/blog/2026/release-15.md` added; `docs/content/docs/features/_index.md` updated.
+
 ### Session Summary (Sep 28, 2026) — CSP parser errors: semicolon-joined Alpine directives
 - **Bug**: found while testing the cross-project parent/child fix below — editing a task's parent
   and typing in the parent-search box threw a console-only `Uncaught Error: CSP Parser Error:

@@ -25,6 +25,14 @@ docker compose exec app php artisan migrate --force
 docker compose exec app php artisan user:create admin@example.com "Admin User" password123
 ```
 
+## Upgrading
+
+After pulling a new release, run `npm run build` and `php artisan migrate` (Docker: `docker compose exec app php artisan migrate --force`). Release notes list anything else required.
+
+## Optional: morning email
+
+Users can opt in (profile → Email Preferences) to a daily task digest or PNG. This needs `MAILGUN_API_KEY` and `MAILGUN_BASE` in `.env` and a cron entry running `php artisan schedule:run` every minute. See the [developer docs](https://taskfiend.online/docs/developers/).
+
 ## Frontend assets
 
 Third-party assets are vendored so the app works without external CDN requests.
