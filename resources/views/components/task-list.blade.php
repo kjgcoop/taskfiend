@@ -1194,10 +1194,11 @@
                                data-task-project-display>{{ $task->project->name }}</a>
                         @endif
                         @if($task->recurrence_pattern)
-                            <span class="relative group inline-block">
+                            {{-- Named group (group/rec): the row card is itself a plain `group`, and an unnamed group-hover fires for ANY hovered ancestor group, so the tooltip popped up anywhere on the row (e.g. the checkbox). --}}
+                            <span class="relative group/rec inline-block">
                                 <span class="text-purple-400 cursor-help underline decoration-dotted" data-task-recurrence-display>{{ $task->recurrence_pattern }}{{ $task->recurrence_floating ? '*' : '' }}</span>
-                                {{-- Same phone-safe placement as components/task-count-badge: below + viewport margins on phones, above + anchored on sm+ --}}
-                                <span class="fixed left-4 right-4 mt-1 sm:absolute sm:left-0 sm:right-auto sm:mt-0 sm:bottom-full sm:mb-1 hidden group-hover:block bg-gray-900 border border-gray-600 rounded px-2 py-1 text-xs text-gray-200 sm:whitespace-nowrap z-50 shadow-lg pointer-events-none">
+                                {{-- Phone-safe placement as in components/task-count-badge: below on phones (capped to viewport), above + anchored on sm+. Sized to its text (w-max). --}}
+                                <span class="fixed left-4 mt-1 sm:absolute sm:left-0 sm:mt-0 sm:bottom-full sm:mb-1 hidden group-hover/rec:block w-max max-w-[calc(100vw-2rem)] bg-gray-900 border border-gray-600 rounded px-2 py-1 text-xs text-gray-200 z-50 shadow-lg pointer-events-none">
                                     @if($task->recurrence_end_date)
                                         Continues until {{ \Carbon\Carbon::parse($task->recurrence_end_date)->format('l, F j, Y') }}
                                     @else
