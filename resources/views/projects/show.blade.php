@@ -464,15 +464,9 @@
                     <div class="mb-4">
                         <label class="block text-sm font-medium text-gray-400 mb-1">Project Name</label>
                         @if(!$isInactive)
-                            <div class="flex gap-2">
-                                <input type="text" x-model="fields.name"
-                                       @keydown.enter="saveField('name')"
-                                       class="flex-1 rounded-md bg-gray-700 border-gray-600 text-gray-100 placeholder-gray-500 shadow-sm focus:border-blue-500 focus:ring-blue-500 px-3 py-2 text-sm">
-                                <button @click="saveField('name')"
-                                        class="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700">
-                                    Save
-                                </button>
-                            </div>
+                            <input type="text" x-model="fields.name"
+                                   @keydown.enter="saveAll()"
+                                   class="w-full rounded-md bg-gray-700 border-gray-600 text-gray-100 placeholder-gray-500 shadow-sm focus:border-blue-500 focus:ring-blue-500 px-3 py-2 text-sm">
                         @else
                             <p class="text-gray-300 px-1">{{ $project->name }}</p>
                         @endif
@@ -483,16 +477,10 @@
                         <label class="block text-sm font-medium text-gray-400 mb-1">Description</label>
                         @if(!$isInactive)
                             <textarea x-model="fields.description" rows="4"
-                                      @keydown.ctrl.enter="saveField('description')"
+                                      @keydown.ctrl.enter="saveAll()"
                                       class="w-full rounded-md bg-gray-700 border-gray-600 text-gray-100 placeholder-gray-500 shadow-sm focus:border-blue-500 focus:ring-blue-500 px-3 py-2 text-sm"
                                       placeholder="Add a description..."></textarea>
-                            <div class="flex items-center justify-between mt-1">
-                                <p class="text-xs text-gray-500">Ctrl+Enter to save</p>
-                                <button @click="saveField('description')"
-                                        class="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700">
-                                    Save
-                                </button>
-                            </div>
+                            <p class="mt-1 text-xs text-gray-500">Ctrl+Enter to save</p>
                         @else
                             <div class="markdown-body text-gray-300 px-1">
                                 @if($project->description)
@@ -507,33 +495,12 @@
                     {{-- Status --}}
                     <div class="mb-4">
                         <label class="block text-sm font-medium text-gray-400 mb-1">Status</label>
-                        @if(!$isInactive)
-                            <div class="flex gap-2">
-                                <select x-model="fields.status"
-                                        class="flex-1 rounded-md bg-gray-700 border-gray-600 text-gray-100 shadow-sm focus:border-blue-500 focus:ring-blue-500 px-3 py-2 text-sm">
-                                    <option value="incomplete">Incomplete</option>
-                                    <option value="done">Done</option>
-                                    <option value="archived">Archived</option>
-                                </select>
-                                <button @click="saveField('status')"
-                                        class="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700">
-                                    Save
-                                </button>
-                            </div>
-                        @else
-                            <div class="flex gap-2">
-                                <select x-model="fields.status"
-                                        class="flex-1 rounded-md bg-gray-700 border-gray-600 text-gray-100 shadow-sm focus:border-blue-500 focus:ring-blue-500 px-3 py-2 text-sm">
-                                    <option value="incomplete">Incomplete</option>
-                                    <option value="done">Done</option>
-                                    <option value="archived">Archived</option>
-                                </select>
-                                <button @click="saveField('status')"
-                                        class="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700">
-                                    Save
-                                </button>
-                            </div>
-                        @endif
+                        <select x-model="fields.status"
+                                class="w-full rounded-md bg-gray-700 border-gray-600 text-gray-100 shadow-sm focus:border-blue-500 focus:ring-blue-500 px-3 py-2 text-sm">
+                            <option value="incomplete">Incomplete</option>
+                            <option value="done">Done</option>
+                            <option value="archived">Archived</option>
+                        </select>
                     </div>
 
                     <hr class="p-1">
@@ -542,14 +509,8 @@
                     <div class="mb-4">
                         <label class="block text-sm font-medium text-gray-400 mb-1">End Date <span class="text-gray-500 font-normal">(optional)</span></label>
                         @if(!$isInactive)
-                            <div class="flex gap-2">
-                                <input type="date" x-model="fields.end_date"
-                                       class="flex-1 rounded-md bg-gray-700 border-gray-600 text-gray-100 shadow-sm focus:border-blue-500 focus:ring-blue-500 px-3 py-2 text-sm">
-                                <button @click="saveField('end_date')"
-                                        class="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700">
-                                    Save
-                                </button>
-                            </div>
+                            <input type="date" x-model="fields.end_date"
+                                   class="w-full rounded-md bg-gray-700 border-gray-600 text-gray-100 shadow-sm focus:border-blue-500 focus:ring-blue-500 px-3 py-2 text-sm">
                         @else
                             <p class="text-gray-300 px-1">{{ $project->end_date ? $project->end_date->format('F j, Y') : '—' }}</p>
                         @endif
@@ -559,17 +520,11 @@
                     <div class="mb-4">
                         <label class="block text-sm font-medium text-gray-400 mb-1">When end date passes</label>
                         @if(!$isInactive)
-                            <div class="flex gap-2">
-                                <select x-model="fields.auto_close_action"
-                                        class="flex-1 rounded-md bg-gray-700 border-gray-600 text-gray-100 shadow-sm focus:border-blue-500 focus:ring-blue-500 px-3 py-2 text-sm">
-                                    <option value="archived">Archive the project</option>
-                                    <option value="done">Mark the project as done</option>
-                                </select>
-                                <button @click="saveField('auto_close_action')"
-                                        class="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700">
-                                    Save
-                                </button>
-                            </div>
+                            <select x-model="fields.auto_close_action"
+                                    class="w-full rounded-md bg-gray-700 border-gray-600 text-gray-100 shadow-sm focus:border-blue-500 focus:ring-blue-500 px-3 py-2 text-sm">
+                                <option value="archived">Archive the project</option>
+                                <option value="done">Mark the project as done</option>
+                            </select>
                         @else
                             <p class="text-gray-300 px-1">{{ $project->auto_close_action === 'done' ? 'Mark as done' : 'Archive' }}</p>
                         @endif
@@ -590,10 +545,6 @@
                                     </label>
                                 @endforeach
                             </div>
-                            <button @click="saveField('assignee_ids')"
-                                    class="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700">
-                                Save Assignees
-                            </button>
                         @else
                             @if($project->assignees->count() > 0)
                                 @foreach($project->assignees as $a)
@@ -657,11 +608,17 @@
                     </div>
 
                     <div x-show="fieldError" x-cloak class="mb-4 p-3 bg-red-900/50 border border-red-700 rounded text-sm text-red-300" x-text="fieldError"></div>
+                    <div x-show="saveMessage" x-cloak class="mb-4 p-3 bg-green-900/50 border border-green-700 rounded text-sm text-green-300" x-text="saveMessage"></div>
 
-                    <div class="flex justify-end">
+                    <div class="flex justify-end gap-2">
                         <button @click="closeDetails()"
                                 class="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-gray-300 rounded text-sm">
                             Close
+                        </button>
+                        <button id="project-details-save" @click="saveAll()"
+                                :disabled="saving"
+                                class="px-4 py-2 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 disabled:opacity-50">
+                            <span x-text="saving ? 'Saving...' : 'Save'"></span>
                         </button>
                     </div>
                 </div>
@@ -1144,8 +1101,22 @@
                     showDetails: false,
                     editing: {},
                     fieldError: null,
+                    saveMessage: '',
+                    saving: false,
+                    hasSavedChanges: false,
                     openDetails() { this.showDetails = true; },
-                    closeDetails() { this.showDetails = false; },
+                    closeDetails() {
+                        this.showDetails = false;
+                        // Several parts of the page outside this component (header title,
+                        // status badges, the end-date banner) render from server-side Blade
+                        // output rather than these Alpine fields, so a saved change is only
+                        // fully reflected everywhere after a reload. We defer that reload
+                        // until the user explicitly closes the modal, rather than on every
+                        // save, so the modal itself never gets yanked out from under them.
+                        if (this.hasSavedChanges) {
+                            window.location.reload();
+                        }
+                    },
                     fields: {
                         name: @js($project->name),
                         description: @js($project->description ?? ''),
@@ -1159,6 +1130,15 @@
                     init() {
                         this.projectId = parseInt(this.$el.dataset.projectId) || 0;
                         this.original = JSON.parse(JSON.stringify(this.fields));
+                    },
+
+                    fieldChanged(field) {
+                        if (Array.isArray(this.fields[field])) {
+                            const a = [...this.fields[field]].map(String).sort();
+                            const b = [...this.original[field]].map(String).sort();
+                            return JSON.stringify(a) !== JSON.stringify(b);
+                        }
+                        return this.fields[field] !== this.original[field];
                     },
 
                     startEdit(field) {
@@ -1184,39 +1164,72 @@
                         this.fields[field] = JSON.parse(JSON.stringify(this.original[field]));
                     },
 
-                    async saveField(field) {
-                        this.fieldError = null;
-                        try {
-                            const formData = new FormData();
-                            formData.append('_token', document.querySelector('meta[name="csrf-token"]').content);
-                            formData.append('field', field);
+                    async postField(field) {
+                        const formData = new FormData();
+                        formData.append('_token', document.querySelector('meta[name="csrf-token"]').content);
+                        formData.append('field', field);
 
-                            if (Array.isArray(this.fields[field])) {
-                                this.fields[field].forEach(value => {
-                                    formData.append(field + '[]', value);
-                                });
-                            } else {
-                                formData.append('value', this.fields[field]);
-                            }
-
-                            const response = await fetch(`/projects/${this.projectId}/update-field`, {
-                                method: 'POST',
-                                body: formData,
+                        if (Array.isArray(this.fields[field])) {
+                            this.fields[field].forEach(value => {
+                                formData.append(field + '[]', value);
                             });
-
-                            const data = await response.json();
-
-                            if (data.success) {
-                                this.original[field] = JSON.parse(JSON.stringify(this.fields[field]));
-                                this.editing[field] = false;
-                                window.location.reload();
-                            } else {
-                                this.fieldError = data.message || 'Failed to update';
-                            }
-                        } catch (error) {
-                            console.error('Error:', error);
-                            this.fieldError = 'An error occurred while saving. Check the server logs.';
+                        } else {
+                            formData.append('value', this.fields[field]);
                         }
+
+                        const response = await fetch(`/projects/${this.projectId}/update-field`, {
+                            method: 'POST',
+                            body: formData,
+                        });
+
+                        return response.json();
+                    },
+
+                    // Single shared Save button for the whole modal: sends one AJAX request
+                    // per changed field (the update-field endpoint only accepts one field at a
+                    // time) and never reloads or closes the modal itself.
+                    async saveAll() {
+                        this.fieldError = null;
+                        this.saveMessage = '';
+
+                        const changedFields = Object.keys(this.fields).filter(field => this.fieldChanged(field));
+                        if (changedFields.length === 0) {
+                            this.saveMessage = 'Nothing to save.';
+                            return;
+                        }
+
+                        this.saving = true;
+                        const errors = [];
+
+                        for (const field of changedFields) {
+                            try {
+                                const data = await this.postField(field);
+                                if (data.success) {
+                                    this.original[field] = JSON.parse(JSON.stringify(this.fields[field]));
+                                    this.editing[field] = false;
+                                    this.hasSavedChanges = true;
+                                    if (field === 'name') {
+                                        const headerEl = document.querySelector('[x-data="projectHeaderEditor"]');
+                                        if (headerEl && window.Alpine) {
+                                            const headerData = Alpine.$data(headerEl);
+                                            headerData.name = this.fields.name;
+                                            headerData.original = this.fields.name;
+                                        }
+                                    }
+                                } else {
+                                    this.fields[field] = JSON.parse(JSON.stringify(this.original[field]));
+                                    errors.push(data.message || `Failed to update ${field}.`);
+                                }
+                            } catch (error) {
+                                console.error('Error saving field:', field, error);
+                                this.fields[field] = JSON.parse(JSON.stringify(this.original[field]));
+                                errors.push(`An error occurred while saving ${field}.`);
+                            }
+                        }
+
+                        this.saving = false;
+                        this.fieldError = errors.length > 0 ? errors.join(' ') : null;
+                        this.saveMessage = errors.length === 0 ? 'Saved.' : '';
                     },
                 };
             });

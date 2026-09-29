@@ -146,17 +146,21 @@ test.describe('Project Authorization & Privacy', () => {
     await page.locator('button:has-text("Details")').click();
     await page.waitForSelector(`label:has-text("${testUsers.user2.name}") input[type="checkbox"]`, { state: 'visible' });
     await page.check(`label:has-text("${testUsers.user2.name}") input[type="checkbox"]`);
-    await page.locator('button:has-text("Save Assignees")').click();
-
-    // saveField() reloads the page on success — re-open Details modal to verify and to remove
+    await page.click('#project-details-save');
+    await page.waitForSelector('text=Saved.', { state: 'visible' });
+    // The modal saves via AJAX and stays open until explicitly closed; the rest of the
+    // page (header, badges) only reflects the change after that close-triggered reload.
+    await page.click('button:has-text("Close")');
     await page.waitForLoadState('networkidle');
+
+    // Remove assignee
     await page.getByTitle('More options').click();
     await page.locator('button:has-text("Details")').click();
     await page.waitForSelector(`label:has-text("${testUsers.user2.name}") input[type="checkbox"]:checked`, { state: 'attached' });
-
-    // Remove assignee
     await page.uncheck(`label:has-text("${testUsers.user2.name}") input[type="checkbox"]`);
-    await page.locator('button:has-text("Save Assignees")').click();
+    await page.click('#project-details-save');
+    await page.waitForSelector('text=Saved.', { state: 'visible' });
+    await page.click('button:has-text("Close")');
     await page.waitForLoadState('networkidle');
   });
 
@@ -268,7 +272,9 @@ test.describe('Project Authorization & Privacy', () => {
     await page.locator('button:has-text("Details")').click();
     await page.waitForSelector(`label:has-text("${testUsers.user2.name}") input[type="checkbox"]`, { state: 'visible' });
     await page.check(`label:has-text("${testUsers.user2.name}") input[type="checkbox"]`);
-    await page.locator('button:has-text("Save Assignees")').click();
+    await page.click('#project-details-save');
+    await page.waitForSelector('text=Saved.', { state: 'visible' });
+    await page.click('button:has-text("Close")');
     await page.waitForLoadState('networkidle');
 
     // Create a task assigned only to User 1 (auto-assigned as creator)
@@ -354,7 +360,9 @@ test.describe('Project Authorization & Privacy', () => {
     await page.locator('button:has-text("Details")').click();
     await page.waitForSelector(`label:has-text("${testUsers.user2.name}") input[type="checkbox"]`, { state: 'visible' });
     await page.uncheck(`label:has-text("${testUsers.user2.name}") input[type="checkbox"]`);
-    await page.locator('button:has-text("Save Assignees")').click();
+    await page.click('#project-details-save');
+    await page.waitForSelector('text=Saved.', { state: 'visible' });
+    await page.click('button:has-text("Close")');
     await page.waitForLoadState('networkidle');
     await logout(page);
 
