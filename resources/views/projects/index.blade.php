@@ -233,6 +233,39 @@
                                     @endif
                                 </span>
                                 <div class="flex items-center gap-2">
+                                    {{-- Everyone else on the project: owner + project-level assignees, minus the viewer --}}
+                                    @php
+                                        $members = collect([$project->creator])
+                                            ->merge($project->assignees)
+                                            ->filter(fn ($u) => $u && $u->id !== Auth::id())
+                                            ->unique('id')
+                                            ->values();
+                                        $avatarColors = ['bg-blue-500', 'bg-green-500', 'bg-yellow-500', 'bg-purple-500', 'bg-pink-500', 'bg-indigo-500', 'bg-red-500', 'bg-teal-500'];
+                                        $avatarRing = $hasBg ? 'ring-black/60' : 'ring-[#202020]';
+                                    @endphp
+                                    @if($members->isNotEmpty())
+                                        <div class="flex -space-x-2">
+                                            @foreach($members->take(3) as $member)
+                                                @if($member->profile_image)
+                                                    <img src="{{ route('profile.image.show', $member) }}"
+                                                         alt="{{ $member->name }}"
+                                                         title="{{ $member->name }}"
+                                                         class="w-6 h-6 rounded-full object-cover ring-2 {{ $avatarRing }}">
+                                                @else
+                                                    <div class="w-6 h-6 rounded-full {{ $avatarColors[$member->id % count($avatarColors)] }} flex items-center justify-center text-[10px] font-bold text-white ring-2 {{ $avatarRing }}"
+                                                         title="{{ $member->name }}">
+                                                        {{ strtoupper(substr($member->name, 0, 1)) }}
+                                                    </div>
+                                                @endif
+                                            @endforeach
+                                            @if($members->count() > 3)
+                                                <div class="w-6 h-6 rounded-full bg-gray-600 flex items-center justify-center text-[10px] font-medium text-gray-200 ring-2 {{ $avatarRing }}"
+                                                     title="{{ $members->slice(3)->pluck('name')->join(', ') }}">
+                                                    +{{ $members->count() - 3 }}
+                                                </div>
+                                            @endif
+                                        </div>
+                                    @endif
                                     @if($project->end_date)
                                         @php
                                             $daysUntil = (int) now()->startOfDay()->diffInDays($project->end_date, false);

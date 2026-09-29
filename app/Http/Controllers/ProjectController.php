@@ -47,6 +47,7 @@ class ProjectController extends Controller
             ])
             ->with([
                 'creator',
+                'assignees',
                 'latestStatusLog',
             ])
             ->get();
