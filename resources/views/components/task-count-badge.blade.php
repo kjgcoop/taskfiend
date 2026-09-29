@@ -22,7 +22,9 @@
         <span x-show="$store.taskCount.filtered" class="inline">showing&nbsp;<span x-text="$store.taskCount.visible"></span>&nbsp;of&nbsp;</span><span class="relative group inline-block {{ !empty($breakdown) ? 'underline decoration-dotted cursor-default' : '' }}">
             <span x-text="$store.taskCount.total"></span>
             @if(!empty($breakdown))
-            <div class="absolute hidden group-hover:block bottom-full left-0 mb-1 bg-gray-900 border border-gray-600 rounded p-2 text-gray-200 z-50 shadow-lg min-w-max text-xs not-italic normal-case font-normal whitespace-nowrap">
+            {{-- Phones: pinned to the viewport's side margins, opens below the count (the count sits
+                 just under the header, so there's no room above). sm+: anchored to the count, min-w-max. --}}
+            <div class="fixed left-4 right-4 mt-1 sm:absolute sm:left-0 sm:right-auto sm:mt-0 sm:bottom-full sm:mb-1 hidden group-hover:block bg-gray-900 border border-gray-600 rounded p-2 text-gray-200 z-50 shadow-lg sm:min-w-max sm:max-w-sm text-xs not-italic normal-case font-normal">
                 @foreach($breakdown as $item)
                 <div class="flex items-center justify-between gap-6 py-0.5">
                     <span class="text-gray-300">{{ $item['name'] }}</span>
