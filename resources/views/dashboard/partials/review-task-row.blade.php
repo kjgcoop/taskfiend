@@ -55,10 +55,11 @@
             </a>
 
             {{-- Assignee avatars --}}
-            @if($task->assignees->count() > 0)
+            @php $otherAssignees = $task->assignees->reject(fn ($u) => $u->id === Auth::id())->values(); @endphp
+            @if($otherAssignees->count() > 0)
                 @php $avatarColors = ['bg-blue-500','bg-green-500','bg-yellow-500','bg-purple-500','bg-pink-500','bg-indigo-500','bg-red-500','bg-teal-500']; @endphp
                 <div class="flex-shrink-0 flex gap-1">
-                    @foreach($task->assignees->take(3) as $assignee)
+                    @foreach($otherAssignees->take(3) as $assignee)
                         @if($assignee->profile_image)
                             <img src="{{ route('profile.image.show', $assignee) }}"
                                  alt="{{ $assignee->name }}" title="{{ $assignee->name }}"

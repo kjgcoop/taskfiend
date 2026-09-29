@@ -109,12 +109,15 @@
                         <a href="{{ route('tasks.show', $task) }}" class="block hover:text-gray-100 transition min-w-0">
                             <h4 class="font-medium truncate task-title {{ $task->status === 'archived' ? 'line-through text-gray-500' : 'text-gray-200' }}">{!! render_title($task->name) !!}</h4>
                         </a>
-                        @if($task->assignees->count() > 0)
+                        @php
+                            $otherAssignees = $task->assignees->reject(fn ($u) => $u->id === Auth::id())->values();
+                        @endphp
+                        @if($otherAssignees->count() > 0)
                             <div class="flex-shrink-0 flex space-x-1">
                                 @php
                                     $avatarColors = ['bg-blue-500', 'bg-green-500', 'bg-yellow-500', 'bg-purple-500', 'bg-pink-500', 'bg-indigo-500', 'bg-red-500', 'bg-teal-500'];
                                 @endphp
-                                @foreach($task->assignees->take(3) as $assignee)
+                                @foreach($otherAssignees->take(3) as $assignee)
                                     @if($assignee->profile_image)
                                         <img src="{{ route('profile.image.show', $assignee) }}"
                                              alt="{{ $assignee->name }}"
@@ -127,10 +130,10 @@
                                         </div>
                                     @endif
                                 @endforeach
-                                @if($task->assignees->count() > 3)
+                                @if($otherAssignees->count() > 3)
                                     <div class="w-6 h-6 rounded-full bg-gray-600 flex items-center justify-center text-[10px] font-medium text-gray-300 shadow-sm"
-                                         title="{{ $task->assignees->count() - 3 }} more">
-                                        +{{ $task->assignees->count() - 3 }}
+                                         title="{{ $otherAssignees->count() - 3 }} more">
+                                        +{{ $otherAssignees->count() - 3 }}
                                     </div>
                                 @endif
                             </div>

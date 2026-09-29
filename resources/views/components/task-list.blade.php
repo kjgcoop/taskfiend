@@ -1260,6 +1260,8 @@
                 <!-- Completer / Assignee Avatars -->
                 @php
                     $avatarColors = ['bg-blue-500', 'bg-green-500', 'bg-yellow-500', 'bg-purple-500', 'bg-pink-500', 'bg-indigo-500', 'bg-red-500', 'bg-teal-500'];
+                    // Only show the other people on the task; the viewer's own avatar is noise.
+                    $otherAssignees = $task->assignees->reject(fn ($u) => $u->id === Auth::id())->values();
                 @endphp
                 @if($task->status === 'done' && $task->completionLog?->user)
                     @php $completer = $task->completionLog->user; @endphp
@@ -1276,9 +1278,9 @@
                             </div>
                         @endif
                     </div>
-                @elseif($task->assignees->count() > 0)
+                @elseif($otherAssignees->count() > 0)
                     <div class="flex-shrink-0 flex space-x-1">
-                        @foreach($task->assignees->take(3) as $assignee)
+                        @foreach($otherAssignees->take(3) as $assignee)
                             @if($assignee->profile_image)
                                 <img src="{{ route('profile.image.show', $assignee) }}"
                                      alt="{{ $assignee->name }}"
@@ -1291,10 +1293,10 @@
                                 </div>
                             @endif
                         @endforeach
-                        @if($task->assignees->count() > 3)
+                        @if($otherAssignees->count() > 3)
                             <div class="w-8 h-8 rounded-full bg-gray-600 flex items-center justify-center text-xs font-medium text-gray-300 shadow-sm"
-                                 title="{{ $task->assignees->count() - 3 }} more">
-                                +{{ $task->assignees->count() - 3 }}
+                                 title="{{ $otherAssignees->count() - 3 }} more">
+                                +{{ $otherAssignees->count() - 3 }}
                             </div>
                         @endif
                     </div>
