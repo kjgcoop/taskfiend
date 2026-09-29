@@ -24,7 +24,9 @@ class TaskListOtherAssigneesTest extends TestCase
             'project_id' => $project->id,
             'status' => 'incomplete',
         ]);
-        $task->assignees()->attach([$me->id, $spouse->id]);
+        foreach ([$me, $spouse] as $assignee) {
+            $task->assignments()->create(['assignee_id' => $assignee->id, 'assigned_by_id' => $me->id]);
+        }
 
         $response = $this->actingAs($me)->get(route('projects.show', $project));
 
