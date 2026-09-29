@@ -608,7 +608,6 @@
                     </div>
 
                     <div x-show="fieldError" x-cloak class="mb-4 p-3 bg-red-900/50 border border-red-700 rounded text-sm text-red-300" x-text="fieldError"></div>
-                    <div x-show="saveMessage" x-cloak class="mb-4 p-3 bg-green-900/50 border border-green-700 rounded text-sm text-green-300" x-text="saveMessage"></div>
 
                     <div class="flex justify-end gap-2">
                         <button @click="closeDetails()"
@@ -1101,7 +1100,6 @@
                     showDetails: false,
                     editing: {},
                     fieldError: null,
-                    saveMessage: '',
                     saving: false,
                     hasSavedChanges: false,
                     openDetails() { this.showDetails = true; },
@@ -1187,14 +1185,14 @@
 
                     // Single shared Save button for the whole modal: sends one AJAX request
                     // per changed field (the update-field endpoint only accepts one field at a
-                    // time) and never reloads or closes the modal itself.
+                    // time), then closes the modal once every field saved successfully. Stays
+                    // open on error so the user can see what failed and retry.
                     async saveAll() {
                         this.fieldError = null;
-                        this.saveMessage = '';
 
                         const changedFields = Object.keys(this.fields).filter(field => this.fieldChanged(field));
                         if (changedFields.length === 0) {
-                            this.saveMessage = 'Nothing to save.';
+                            this.closeDetails();
                             return;
                         }
 
@@ -1228,8 +1226,12 @@
                         }
 
                         this.saving = false;
-                        this.fieldError = errors.length > 0 ? errors.join(' ') : null;
-                        this.saveMessage = errors.length === 0 ? 'Saved.' : '';
+
+                        if (errors.length > 0) {
+                            this.fieldError = errors.join(' ');
+                        } else {
+                            this.closeDetails();
+                        }
                     },
                 };
             });
