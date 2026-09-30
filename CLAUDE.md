@@ -180,6 +180,21 @@ In `app/Console/Commands/`:
   then save changes back into the template or discard them) — see `implementation-plan.md` /
   `spec.md` for that work as it lands.
 
+### Other Links (Custom Pages) (✓)
+- Lets whoever runs an instance add their own pages (privacy policy, terms, docs) as Markdown files.
+  No DB involved. It is **not** a separate nav dropdown: the links sit at the bottom of the **More**
+  menu (desktop) and the mobile menu, under a divider, and only when at least one file exists.
+- **Sources** (disks in `config/filesystems.php`): `site` → `storage/app/site/` (instance-owned;
+  gitignored except its own `.gitignore`, so the directory exists on fresh checkouts) and
+  `bundled-links` → `resources/links/` (ships with the app, grouped as "Documentation"; currently absent).
+- **Code**: `OtherLinksController` (`/other-links`, `/other-links/{source}/{path}`), views in
+  `resources/views/other/links/`, nav list built by `NavigationComposer` (`$otherLinksFiles`).
+  The nav shows only top-level files in each source; `/other-links` also lists subdirectories, grouped.
+  Title = filename with `-`/`_` → spaces. Symlinks allowed; `show()` checks the dir stays inside the root.
+- Docs: "Adding pages to Other Links" in `docs/content/docs/developers/_index.md` (it once said
+  `storage/app/other-links/`, which nothing reads; fixed) and a bullet in the Features page.
+- Easy to miss when searching: the code never says "pages" or "privacy policy", only "other links".
+
 ### Frontend Views (✓)
 **All views completed in `resources/views/`:**
 - **Layout** - Updated navigation.blade.php with all menu items (Today, Inbox, Calendar, Search, Projects, Tags)

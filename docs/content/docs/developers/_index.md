@@ -87,13 +87,15 @@ caller too.
 
 I added the ability to add other links because I didn't want to put words in your mouth with respect to a privacy policy or Terms of Service or such nonsense. Now it's your problem to add. 
 
-Drop any Markdown file into `storage/app/other-links/`. It will:
+Drop any Markdown file into `storage/app/site/` (the directory ships empty; your files there are gitignored, so they won't be committed). It will:
 
-- Appear as a link in the **Other Links** nav dropdown (desktop) and collapsible section (mobile)
-- Be accessible at `/other-links/{filename}` (filename including extension)
+- Appear as a link in the **More** nav dropdown (desktop) and the mobile menu, below a divider after Activity. There's no dropdown of its own, and nothing shows until at least one file exists.
+- Be accessible at `/other-links/site/{filename}` (filename including extension). `/other-links` lists every file, including those in subdirectories, grouped by directory name.
 - Use the filename (minus extension, with `-` and `_` replaced by spaces) as the page title
 
-The nav is populated by `app/View/Composers/NavigationComposer.php`, which shares `$otherLinksFiles` to all views using the navigation layout. Symlinks are supported.
+Files in `resources/links/` (shipped with the app, if that directory exists) appear the same way, under "Documentation", at `/other-links/bundled/{filename}`.
+
+The nav is populated by `app/View/Composers/NavigationComposer.php`, which shares `$otherLinksFiles` to all views using the navigation layout. Only files directly in a source directory appear in the nav; files in subdirectories are reachable from `/other-links` only. Symlinks are supported.
 
 ---
 

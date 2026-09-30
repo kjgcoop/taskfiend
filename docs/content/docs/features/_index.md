@@ -8,6 +8,7 @@ title: "Features"
 - **Project/tag navigation** - the header nav includes dropdowns listing all your projects, tags and templates. The Templates dropdown is a convenience: there's no page per template, so choosing one scrolls you to it on the templates index.
 - **Live change alerts** - alerts about changes other users made to your shared projects and tasks appear in more or less real time while a tab is open and visible; no page load required.
 - **[Email notifications](/docs/developers/)** - opt in under Email Preferences on your profile to get that day's tasks emailed each morning, either inline as a digest or as an attached PNG. Requires Mailgun to be configured by whoever hosts your instance.
+- **Other Links** - whoever runs your instance can add their own pages (a privacy policy, house rules, extra documentation) as Markdown files; they show up at the bottom of the **More** menu. See [Adding pages to Other Links](/docs/developers/#adding-pages-to-other-links).
 
 ### Task Lists
 - **Quick-add bar** on task list views - type a task name with natural language dates and inline shortcuts (`#project`, `@tag`, `+location`, `&user`, `nodate`) to autofill fields; autocomplete suggestions appear as you type. Paste multiple lines to create multiple tasks at once, or use Shift-Enter to add them in sequence.
