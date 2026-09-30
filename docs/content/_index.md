@@ -4,7 +4,7 @@ title: "Task Fiend"
 
 You're probably looking for the [documentation](/docs) or the [code](https://github.com/kjgcoop/taskfiend).
 
-Task Fiend is a self-hosted to-do list for small groups of people who trust each other. It was built because no existing tool handled multi-user task assignment in quite the way I wanted, and because watching AI write software is fun.
+Task Fiend is a self-hosted to-do list for small groups of people who trust each other[^1]. It was built because no existing tool handled multi-user task assignment in quite the way I wanted, and because watching AI write software is fun.
 
 It's not designed to scale to thousands of users. It has been battle tested with as many as two (2) users on a VPS with 2 GB RAM.
 
@@ -31,3 +31,5 @@ It assumes at least one person in the group is comfortable running a server and 
 - A full **changelog** is kept for every task, project, and tag
 
 If you find a disagreement between this documentation and the README in the repository, trust the README.
+
+[^1]: Although tasks and projects can remain private/secret from other users, I wanted to note that it assumes a level of trust amongst all users in that it's fairly permissive regarding attachment types. Also, all users can see each other in lists of users - if you want to continue to conceal your children who live secretly in the attic from your overbearing father who won't just die already, you'll need to spin up another instance.
