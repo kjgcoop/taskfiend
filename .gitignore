@@ -28,10 +28,12 @@ Thumbs.db
 /implementation_notes
 /playwright-report
 /test-results
-/.claude/
+/.claude/*
 !/.claude/hooks/
 !/.claude/hooks/*.sh
 !/.claude/settings.json
+!/.claude/rules/
+!/.claude/rules/*.md
 .env.testing
 resources/links/For-Claude-Code.md
 resources/links/Read-Me.md
