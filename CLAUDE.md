@@ -84,3 +84,11 @@ CLI commands live in `app/Console/Commands/`: `user:create`, `user:toggle`, `api
 ## Linguistic Norms
 
 Headlines should be in title case: almost every word should be capitalized. Exceptions (according to [this](https://sellertoolkit.org/is-is-capitalized-in-a-title/what-words-are-not-capitalized-in-a-title)) include articles (a, an, the), coordinating conjunctions (and, but, or, nor, for, so, yet), and short prepositions. It is insufficient to capitalize just the first word.
+
+## Run tests
+
+```bash
+npm test                    # All tests
+npm run test:e2e            # Playwright E2E tests only
+php artisan test            # PHPUnit unit/feature tests only
+```
