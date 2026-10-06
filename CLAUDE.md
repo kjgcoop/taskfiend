@@ -77,6 +77,7 @@ CLI commands live in `app/Console/Commands/`: `user:create`, `user:toggle`, `api
 
 ## Working Style
 
+- Test commands: `php artisan test` (PHPUnit), `npm run test:e2e` (Playwright), `npm test` (both). Add `--env=testing` to any artisan command that touches the DB.
 - Verify before claiming done: run `php artisan view:cache` (compiles every Blade template) and the relevant PHPUnit tests. See `.claude/rules/testing.md` for what the cloud sandbox can and can't run.
 - Runtime Alpine/browser errors are console-only and won't be caught by Blade compilation. Say so when you couldn't click-test.
 
