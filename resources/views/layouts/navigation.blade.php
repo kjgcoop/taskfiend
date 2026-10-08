@@ -166,9 +166,6 @@
                                 <a href="{{ route('search') }}" class="lg:hidden block w-full px-4 py-2 text-start text-sm leading-5 text-gray-300 hover:bg-gray-700 focus:outline-none transition duration-150 ease-in-out {{ request()->routeIs('search') ? 'bg-gray-700 text-gray-100' : '' }}">
                                     {{ __('Search') }}
                                 </a>
-                                <a href="https://taskfiend.online" class="block w-full px-4 py-2 text-start text-sm leading-5 text-gray-300 hover:bg-gray-700 focus:outline-none transition duration-150 ease-in-out">
-                                    Documentation
-                                </a>
                                 <!-- Templates, with an inline expandable list of templates -->
                                 <div x-data="dropdown">
                                     <div class="flex">
@@ -195,7 +192,10 @@
                                 <a href="{{ route('changelogs.user') }}" class="block w-full px-4 py-2 text-start text-sm leading-5 text-gray-300 hover:bg-gray-700 focus:outline-none transition duration-150 ease-in-out {{ request()->routeIs('changelogs.*') ? 'bg-gray-700 text-gray-100' : '' }}">
                                     {{ __('Activity') }}
                                 </a>
-                                @if($otherLinksFiles->isNotEmpty())
+                                <a href="https://taskfiend.online" class="block w-full px-4 py-2 text-start text-sm leading-5 text-gray-300 hover:bg-gray-700 focus:outline-none transition duration-150 ease-in-out">
+                                    Public Documentation
+                                </a>
+                            @if($otherLinksFiles->isNotEmpty())
                                     <div class="border-t border-gray-700 my-1"></div>
                                     @foreach($otherLinksFiles as $filename => $displayName)
                                         <a href="/other-links/{{ $filename }}" class="block w-full px-4 py-2 text-start text-sm leading-5 text-gray-300 hover:bg-gray-700 focus:outline-none transition duration-150 ease-in-out {{ request()->routeIs('other.links.link') && request()->route('path') === $filename ? 'bg-gray-700 text-gray-100' : '' }}">
@@ -575,6 +575,11 @@
                     </div>
                 </div>
             @endif
+
+            <x-responsive-nav-link href="https://taskfiend.online">
+                Public Documentation
+            </x-responsive-nav-link>
+
 
             <x-responsive-nav-link :href="route('tasks.create')" :active="request()->routeIs('tasks.create')" class="bg-blue-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-blue-700">
                 Add Task
