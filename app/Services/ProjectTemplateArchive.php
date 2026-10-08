@@ -182,18 +182,14 @@ class ProjectTemplateArchive
                     $task->tags()->attach($newTagIds);
                 }
 
-                // Keep listed assignees who exist here; always include the importer.
-                $assigneeIds = $taskData['assignees'] ?? [];
-                if (!in_array($user->id, $assigneeIds)) {
-                    $assigneeIds[] = $user->id;
-                }
-                foreach (User::whereIn('id', $assigneeIds)->pluck('id') as $assigneeId) {
-                    Assignment::create([
-                        'task_id'        => $task->id,
-                        'assignee_id'    => $assigneeId,
-                        'assigned_by_id' => $user->id,
-                    ]);
-                }
+                // Assignee ids in a manifest belong to the instance that built it and
+                // would point at the wrong people here, so they are ignored: every
+                // task is assigned to the importer alone.
+                Assignment::create([
+                    'task_id'        => $task->id,
+                    'assignee_id'    => $user->id,
+                    'assigned_by_id' => $user->id,
+                ]);
 
                 foreach ($data['task_attachments'] ?? [] as $attachmentData) {
                     if (($attachmentData['task_index'] ?? null) !== $index) {

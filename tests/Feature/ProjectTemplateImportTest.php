@@ -228,6 +228,35 @@ class ProjectTemplateImportTest extends TestCase
         $this->assertTrue($importedTask->assignees->contains($importer));
     }
 
+    public function test_assignee_ids_in_a_manifest_are_ignored_on_import(): void
+    {
+        $stranger = User::factory()->create();
+        $importer = User::factory()->create();
+
+        $zipPath = tempnam(sys_get_temp_dir(), 'tpl') . '.zip';
+        $zip = new \ZipArchive();
+        $zip->open($zipPath, \ZipArchive::CREATE | \ZipArchive::OVERWRITE);
+        $zip->addFromString('template.json', json_encode([
+            'template_type'    => 'project',
+            'project'          => ['name' => 'Foreign', 'description' => ''],
+            'tags'             => [],
+            'task_attachments' => [],
+            'tasks'            => [[
+                'name' => 'Has assignee', 'description' => '', 'recurrence_pattern' => null,
+                'parent_index' => null, 'tags' => [], 'assignees' => [$stranger->id],
+            ]],
+        ]));
+        $zip->close();
+
+        $this->actingAs($importer)->post(route('projects.import-template'), [
+            'project_name'  => 'Imported Project',
+            'template_file' => $this->uploadedZip($zipPath),
+        ]);
+
+        $task = Task::where('name', 'Has assignee')->firstOrFail();
+        $this->assertSame([$importer->id], $task->assignees->pluck('id')->all());
+    }
+
     public function test_imported_task_attachment_is_copied_with_sanitized_filename(): void
     {
         $owner = User::factory()->create();
