@@ -192,6 +192,9 @@
                                 <a href="{{ route('changelogs.user') }}" class="block w-full px-4 py-2 text-start text-sm leading-5 text-gray-300 hover:bg-gray-700 focus:outline-none transition duration-150 ease-in-out {{ request()->routeIs('changelogs.*') ? 'bg-gray-700 text-gray-100' : '' }}">
                                     {{ __('Activity') }}
                                 </a>
+                                <a href="https://github.com/kjgcoop/taskfiend/" class="block w-full px-4 py-2 text-start text-sm leading-5 text-gray-300 hover:bg-gray-700 focus:outline-none transition duration-150 ease-in-out">
+                                    Task Fiend Source Code
+                                </a>
                                 <a href="https://taskfiend.online" class="block w-full px-4 py-2 text-start text-sm leading-5 text-gray-300 hover:bg-gray-700 focus:outline-none transition duration-150 ease-in-out">
                                     Public Documentation
                                 </a>
@@ -575,7 +578,9 @@
                     </div>
                 </div>
             @endif
-
+            <x-responsive-nav-link href="https://github.com/kjgcoop/taskfiend/">
+                Task Fiend Source Code
+            </x-responsive-nav-link>
             <x-responsive-nav-link href="https://taskfiend.online">
                 Public Documentation
             </x-responsive-nav-link>
