@@ -22,7 +22,7 @@ class ScheduledProject extends Model
 
     public function template(): BelongsTo
     {
-        return $this->belongsTo(ProjectTemplate::class, 'template_id');
+        return $this->belongsTo(Project::class, 'template_id');
     }
 
     public function user(): BelongsTo

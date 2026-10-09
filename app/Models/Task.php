@@ -47,6 +47,18 @@ class Task extends Model
         'status' => 'incomplete',
     ];
 
+    protected static function booted(): void
+    {
+        // Templates are deliberately date-less: whatever path writes a task into a
+        // template project (forms, quick-add, bulk actions, API), date and time are nulled.
+        static::saving(function (Task $task) {
+            if (($task->date !== null || $task->time !== null) && $task->project?->isTemplate()) {
+                $task->date = null;
+                $task->time = null;
+            }
+        });
+    }
+
     protected $appends = ['url'];
 
     public function getUrlAttribute(): string
@@ -302,6 +314,10 @@ class Task extends Model
      *                                        falling back to the current user when the source has none.
      * @param \Closure|null $afterChildCreate fn(Task $originalChild, Task $newChild): void — called after
      *                                        each child (not the root) is created, e.g. to write a change log.
+     * @param int|null      $actingUserId     The user recorded as creator/assigned_by/uploader instead of
+     *                                        auth()->id() — for console runs where nobody is logged in.
+     * @param bool          $assignToActorOnly Ignore the source's assignees and assign the copy only to the
+     *                                        acting user (template instantiation).
      */
     public function duplicate(
         array $overrides = [],
@@ -310,7 +326,10 @@ class Task extends Model
         array $childOverrides = [],
         bool $preserveOwnership = false,
         ?\Closure $afterChildCreate = null,
+        ?int $actingUserId = null,
+        bool $assignToActorOnly = false,
     ): self {
+        $actorId = $actingUserId ?? auth()->id();
         $this->loadMissing(['tags', 'assignees', 'attachments']);
 
         $new = self::create(array_merge([
@@ -326,7 +345,7 @@ class Task extends Model
             'recurrence_pattern'  => $this->recurrence_pattern,
             'recurrence_floating' => $this->recurrence_floating,
             'recurrence_end_date' => $this->recurrence_end_date,
-            'creator_id'          => $preserveOwnership ? $this->creator_id : auth()->id(),
+            'creator_id'          => $preserveOwnership ? $this->creator_id : $actorId,
             'status'              => 'incomplete',
         ], $overrides));
 
@@ -340,11 +359,11 @@ class Task extends Model
                 ]);
             }
         } else {
-            $assigneeIds = $this->assignees->pluck('id')->toArray() ?: [auth()->id()];
+            $assigneeIds = $assignToActorOnly ? [$actorId] : ($this->assignees->pluck('id')->toArray() ?: [$actorId]);
             foreach ($assigneeIds as $assigneeId) {
                 $new->assignments()->create([
                     'assignee_id'    => $assigneeId,
-                    'assigned_by_id' => auth()->id(),
+                    'assigned_by_id' => $actorId,
                 ]);
             }
         }
@@ -354,7 +373,7 @@ class Task extends Model
             $newPath = 'task_attachments/' . Str::random(40) . ($extension ? '.' . $extension : '');
             Storage::disk('private')->copy($attachment->file_path, $newPath);
             $new->attachments()->create([
-                'user_id'           => $preserveOwnership ? $attachment->user_id : auth()->id(),
+                'user_id'           => $preserveOwnership ? $attachment->user_id : $actorId,
                 'file_path'         => $newPath,
                 'original_filename' => $attachment->original_filename,
                 'mime_type'         => $attachment->mime_type,
@@ -372,6 +391,8 @@ class Task extends Model
                     childOverrides: $childOverrides,
                     preserveOwnership: $preserveOwnership,
                     afterChildCreate: $afterChildCreate,
+                    actingUserId: $actorId,
+                    assignToActorOnly: $assignToActorOnly,
                 );
                 if ($afterChildCreate) {
                     $afterChildCreate($child, $newChild);

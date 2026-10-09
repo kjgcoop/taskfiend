@@ -96,6 +96,17 @@ class TaskController extends Controller
             ?? optional($preselectedParentTask)->project_id
             ?? Auth::user()->defaultProject()->id;
 
+        // Templates are excluded from pickers, but a creator adding tasks to
+        // their own template (via its page) needs it as the preselected project.
+        $ownTemplate = Project::where('id', $preselectedProjectId)
+            ->where('project_type', Project::TYPE_TEMPLATE)
+            ->where('user_id', Auth::id())
+            ->where('status', 'incomplete')
+            ->first();
+        if ($ownTemplate) {
+            $projects->push($ownTemplate);
+        }
+
         // Get available parent tasks (exclude archived)
         $availableParents = Task::visibleTo(Auth::id())
             ->where('status', '=', 'incomplete')
@@ -152,7 +163,12 @@ class TaskController extends Controller
         if (!empty($validated['project_id'])) {
             $targetProject = Project::where('id', $validated['project_id'])
                 ->forMember(Auth::id())
-                ->first();
+                ->first()
+                // Templates are not move/pick targets, but their creator edits them directly.
+                ?? Project::where('id', $validated['project_id'])
+                    ->where('project_type', Project::TYPE_TEMPLATE)
+                    ->where('user_id', Auth::id())
+                    ->first();
             if (!$targetProject) {
                 return $this->storeError($request, ['project_id' => 'You do not have access to this project.']);
             }

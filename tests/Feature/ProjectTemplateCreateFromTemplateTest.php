@@ -5,7 +5,6 @@ namespace Tests\Feature;
 use App\Models\Assignment;
 use App\Models\ChangeLog;
 use App\Models\Project;
-use App\Models\ProjectTemplate;
 use App\Models\ScheduledProject;
 use App\Models\Tag;
 use App\Models\Task;
@@ -39,29 +38,23 @@ class ProjectTemplateCreateFromTemplateTest extends TestCase
     }
 
     /**
-     * Save a real project as a template via the actual store() endpoint, so
-     * these tests exercise a genuine app-produced template rather than a
-     * hand-rolled approximation of the schema.
+     * A template is a Project row with project_type = 'template'.
      */
-    private function createSavedTemplate(User $owner, bool $isPublic = false): ProjectTemplate
+    private function createSavedTemplate(User $owner, bool $isPublic = false): Project
     {
-        $sourceProject = Project::create([
-            'name' => 'Source Project', 'user_id' => $owner->id, 'status' => 'incomplete',
+        $template = Project::create([
+            'name' => 'Kitchen Template', 'user_id' => $owner->id, 'status' => 'incomplete',
+            'project_type' => Project::TYPE_TEMPLATE, 'is_public' => $isPublic,
         ]);
         $tag = Tag::create(['tag_name' => 'urgent', 'color' => '#ff0000']);
         $task = Task::create([
             'name' => 'Buy tile', 'description' => 'Get the good kind',
-            'creator_id' => $owner->id, 'project_id' => $sourceProject->id, 'status' => 'incomplete',
+            'creator_id' => $owner->id, 'project_id' => $template->id, 'status' => 'incomplete',
         ]);
         $task->tags()->attach($tag->id);
         Assignment::create(['task_id' => $task->id, 'assignee_id' => $owner->id, 'assigned_by_id' => $owner->id]);
 
-        $this->actingAs($owner)->post(route('templates.store', $sourceProject), [
-            'template_name' => 'Kitchen Template',
-            'is_public'     => $isPublic,
-        ]);
-
-        return ProjectTemplate::where('name', 'Kitchen Template')->firstOrFail();
+        return $template;
     }
 
     // =========================================================================
@@ -201,5 +194,93 @@ class ProjectTemplateCreateFromTemplateTest extends TestCase
 
         $this->assertNotNull($scheduled);
         $this->assertSame($futureDate, $scheduled->start_date->toDateString());
+    }
+
+    // =========================================================================
+    // Template list, duplicate-based creation, scheduled paths
+    // =========================================================================
+
+    public function test_index_lists_only_template_projects_own_and_public(): void
+    {
+        $mine = $this->createSavedTemplate($this->owner);
+        $other = User::factory()->create();
+        $pub = Project::create(['name' => 'Their Public', 'user_id' => $other->id, 'project_type' => 'template', 'is_public' => true]);
+        Project::create(['name' => 'Their Private', 'user_id' => $other->id, 'project_type' => 'template', 'is_public' => false]);
+        Project::create(['name' => 'Plain Project', 'user_id' => $this->owner->id, 'is_public' => true]);
+
+        $r = $this->actingAs($this->owner)->get(route('templates.index'));
+
+        $r->assertOk();
+        $this->assertSame([$mine->id], $r->viewData('myTemplates')->pluck('id')->all());
+        $this->assertSame([$pub->id], $r->viewData('publicTemplates')->pluck('id')->all());
+    }
+
+    public function test_archived_tasks_do_not_come_along(): void
+    {
+        $template = $this->createSavedTemplate($this->owner);
+        Task::create(['name' => 'Old task', 'creator_id' => $this->owner->id, 'project_id' => $template->id, 'status' => 'archived']);
+
+        $this->actingAs($this->owner)->post(route('templates.createFromTemplate', $template), ['project_name' => 'Fresh']);
+
+        $project = Project::where('name', 'Fresh')->firstOrFail();
+        $this->assertSame(['Buy tile'], Task::where('project_id', $project->id)->pluck('name')->all());
+        $this->assertSame('normal', $project->project_type);
+    }
+
+    public function test_create_now_uses_the_templates_current_state(): void
+    {
+        $template = $this->createSavedTemplate($this->owner);
+        $scheduled = ScheduledProject::create([
+            'template_id' => $template->id, 'user_id' => $this->owner->id,
+            'project_name' => 'Later', 'start_date' => Carbon::now()->addWeek()->toDateString(),
+        ]);
+        Task::create(['name' => 'Added later', 'creator_id' => $this->owner->id, 'project_id' => $template->id, 'status' => 'incomplete']);
+
+        $this->actingAs($this->owner)->post(route('scheduled-projects.create-now', $scheduled));
+
+        $project = Project::where('name', 'Later')->firstOrFail();
+        $this->assertEqualsCanonicalizing(['Buy tile', 'Added later'], Task::where('project_id', $project->id)->pluck('name')->all());
+        $this->assertSame($template->id, $project->template_id);
+        $this->assertDatabaseMissing('scheduled_projects', ['id' => $scheduled->id]);
+    }
+
+    public function test_scheduled_command_reflects_template_state_on_the_day(): void
+    {
+        $template = $this->createSavedTemplate($this->owner);
+        ScheduledProject::create([
+            'template_id' => $template->id, 'user_id' => $this->owner->id,
+            'project_name' => 'Due Today', 'start_date' => now()->toDateString(),
+        ]);
+        Task::where('project_id', $template->id)->update(['status' => 'archived']);
+        Task::create(['name' => 'Only this', 'creator_id' => $this->owner->id, 'project_id' => $template->id, 'status' => 'incomplete']);
+
+        $this->artisan('projects:create-scheduled')->assertSuccessful();
+
+        $project = Project::where('name', 'Due Today')->firstOrFail();
+        $this->assertSame($this->owner->id, $project->user_id);
+        $this->assertSame(['Only this'], Task::where('project_id', $project->id)->pluck('name')->all());
+        $this->assertDatabaseHas('scheduled_projects', ['project_name' => 'Due Today', 'is_created' => true]);
+    }
+
+    public function test_project_page_links_template_only_when_viewer_can_edit(): void
+    {
+        $template = $this->createSavedTemplate($this->owner, isPublic: true);
+        $project = $template->duplicate('From Tpl', $this->owner->id);
+
+        $r = $this->actingAs($this->owner)->get(route('projects.show', $project));
+        $r->assertSee('Created from template', false);
+        $r->assertSee('data-template-source-link', false);
+
+        $other = User::factory()->create();
+        $project->assignees()->sync([$this->owner->id, $other->id]);
+        $r = $this->actingAs($other)->get(route('projects.show', $project));
+        $r->assertSee('Created from template', false);
+        $r->assertSee('Kitchen Template');
+        $r->assertDontSee('data-template-source-link', false);
+
+        $template->update(['status' => 'archived']);
+        $r = $this->actingAs($this->owner)->get(route('projects.show', $project));
+        $r->assertSee('(archived)', false);
+        $r->assertDontSee('data-template-source-link', false);
     }
 }

@@ -3,7 +3,6 @@
 namespace Tests\Feature;
 
 use App\Models\Project;
-use App\Models\ProjectTemplate;
 use App\Models\Tag;
 use App\Models\Task;
 use App\Models\TaskAttachment;
@@ -89,25 +88,4 @@ class TemplateImportAtomicityTest extends TestCase
         $this->assertNothingWasCreated();
     }
 
-    public function test_failed_create_from_stored_template_leaves_nothing_behind(): void
-    {
-        $stored = 'project-templates/broken.zip';
-        Storage::disk('private')->put($stored, file_get_contents($this->buildHalfBrokenZip()));
-        $template = ProjectTemplate::create([
-            'name'       => 'Broken template',
-            'filename'   => $stored,
-            'created_by' => $this->user->id,
-            'is_public'  => false,
-        ]);
-
-        $response = $this->actingAs($this->user)
-            ->from(route('templates.index'))
-            ->post(route('templates.createFromTemplate', $template), ['project_name' => 'Imported']);
-
-        $response->assertRedirect(route('templates.index'));
-        $response->assertSessionHas('error');
-        $this->assertNothingWasCreated();
-        // The stored template itself must survive a failed use.
-        Storage::disk('private')->assertExists($stored);
-    }
 }

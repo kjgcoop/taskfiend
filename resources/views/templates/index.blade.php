@@ -148,6 +148,10 @@
                                             class="flex-1 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded">
                                         Use Template
                                     </button>
+                                    <a href="{{ route('templates.download', $template) }}"
+                                       class="px-3 py-1.5 bg-gray-700 hover:bg-gray-600 text-gray-300 text-sm rounded border border-gray-600">
+                                        Download as Zip
+                                    </a>
                                     <button @click="showDelete = true"
                                             class="px-3 py-1.5 bg-gray-700 hover:bg-red-900/60 text-gray-300 hover:text-red-300 text-sm rounded border border-gray-600 hover:border-red-700/50">
                                         Delete
@@ -206,7 +210,7 @@
                                          @click.stop>
                                         <h4 class="text-gray-100 font-semibold mb-2">Delete Template?</h4>
                                         <p class="text-gray-400 text-sm mb-4">
-                                            "<span class="text-gray-200">{{ $template->name }}</span>" will be permanently deleted.
+                                            "<span class="text-gray-200">{{ $template->name }}</span>" will be archived and removed from this list.
                                             Projects created from it are not affected.
                                         </p>
                                         <form method="POST" action="{{ route('templates.destroy', $template) }}">

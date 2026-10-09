@@ -131,6 +131,9 @@ return [
 
     'reschedule_badge_threshold' => env('RESCHEDULE_BADGE_THRESHOLD', 5),
 
+    // Prefix duplicated project names with "Copy of " (create-from-template passes an explicit name instead).
+    'duplicate_name_prefix' => env('DUPLICATE_NAME_PREFIX', true),
+
     'human_date_format' => env('HUMAN_DATE_FORMAT'),
 
 ];

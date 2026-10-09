@@ -55,6 +55,9 @@ Link to other tasks, projects, tags, or locations from any description or commen
 - **Public or private** - a saved template's visibility can be toggled after creation.
 - **README in exports** - every template zip includes a `README.md` describing what it is and how to import it, for when you find a random zip on your hard drive in six months.
 
+### Scheduled Projects
+- **Live template contents** - a project scheduled from a template matches the template's contents on the day it's actually created, not the day it was scheduled. Edits you make to the template in the meantime are picked up.
+
 ### Search Page
 - There's a magnifying glass in the header that, when clicked, will provide a search input. Submitting a search takes you to the dedicated search page.
 - There's also a dedicated search page. It can, as you might expect, find tasks by title, description, comments, tags, projects, assignees, duration, and date presence; title, description, and comments can each be targeted independently via checkboxes under "Search in" (Title and Description are checked by default; Comments is not). A comment match never surfaces a task you can't otherwise see. If you enter search text but uncheck all three, the page shows a validation error and runs no search rather than silently searching everything. The quick search (magnifying glass in the header) always searches Title and Description.

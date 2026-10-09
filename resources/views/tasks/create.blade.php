@@ -141,7 +141,11 @@
                             @error('location')<p class="mt-1 text-sm text-red-600">{{ $message }}</p>@enderror
                         </div>
 
-                        <div class="mb-4 grid grid-cols-2 gap-4" x-data="dateInput" data-initial-date="{{ old('date', $preselectedDate) }}">
+                        @php $dateless = (bool) $projects->firstWhere('id', (int) $preselectedProjectId)?->isTemplate(); @endphp
+                        @if($dateless)
+                        <p data-dateless-note class="mb-2 text-xs text-purple-300 italic">Templates don't have dates; set dates on projects created from this template.</p>
+                        @endif
+                        <fieldset @disabled($dateless) class="mb-4 grid grid-cols-2 gap-4 min-w-0 {{ $dateless ? 'opacity-50 cursor-not-allowed' : '' }}" x-data="dateInput" data-initial-date="{{ old('date', $preselectedDate) }}">
                             <div>
                                 <label for="date" class="block text-sm font-medium text-gray-300 mb-2">Date (Optional)</label>
                                 <div class="flex gap-2 items-start">
@@ -204,7 +208,7 @@
                                 <p class="mt-1 text-xs text-gray-500">Optional - leave blank for all-day tasks.</p>
                                 @error('time')<p class="mt-1 text-sm text-red-600">{{ $message }}</p>@enderror
                             </div>
-                        </div>
+                        </fieldset>
 
                         <div class="mb-4">
                             <label for="duration_minutes" class="block text-sm font-medium text-gray-300 mb-2">Duration (Optional)</label>

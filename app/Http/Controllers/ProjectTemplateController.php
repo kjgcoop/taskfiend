@@ -26,13 +26,16 @@ class ProjectTemplateController extends Controller
     {
         $user = $request->user();
 
-        $myTemplates = ProjectTemplate::where('created_by', $user->id)
+        $templates = fn () => Project::where('project_type', Project::TYPE_TEMPLATE)
+            ->where('status', '!=', 'archived');
+
+        $myTemplates = $templates()->where('user_id', $user->id)
             ->orderBy('name')
             ->with('creator')
             ->get();
 
-        $publicTemplates = ProjectTemplate::where('is_public', true)
-            ->where('created_by', '!=', $user->id)
+        $publicTemplates = $templates()->where('is_public', true)
+            ->where('user_id', '!=', $user->id)
             ->orderBy('name')
             ->with('creator')
             ->get();
@@ -83,8 +86,10 @@ class ProjectTemplateController extends Controller
     /**
      * Create a new project from a stored template.
      */
-    public function createFromTemplate(Request $request, ProjectTemplate $template)
+    public function createFromTemplate(Request $request, Project $template)
     {
+        abort_unless($template->isTemplate(), 404);
+
         $request->validate([
             'project_name' => 'required|string|max:255',
             'start_date'   => 'nullable|string|max:255',
@@ -92,7 +97,7 @@ class ProjectTemplateController extends Controller
 
         $user = $request->user();
 
-        if (!$template->is_public && $template->created_by !== $user->id) {
+        if ($template->status === 'archived' || !$template->templateViewableBy($user->id)) {
             abort(403, 'You do not have access to this template.');
         }
 
@@ -120,16 +125,8 @@ class ProjectTemplateController extends Controller
         }
 
         // Create immediately
-        $zipPath = Storage::disk('private')->path($template->filename);
-
-        if (!file_exists($zipPath)) {
-            return back()->with('error', 'Template file not found on the server.');
-        }
-
         try {
-            $project = $this->archive->createProject($zipPath, $request->project_name, $user, $template->id, $template->name);
-        } catch (InvalidTemplateException $e) {
-            return back()->with('error', $e->getMessage());
+            $project = Project::createFromTemplate($template, $request->project_name, $user);
         } catch (\Throwable $e) {
             report($e);
             return back()->with('error', 'Failed to create project from template, so nothing was created.');
@@ -169,27 +166,50 @@ class ProjectTemplateController extends Controller
             return back()->with('error', $e->getMessage());
         }
 
-        // The uploaded zip is already in the right format — store it as-is.
-        $storedFilename = 'project-templates/' . uniqid('tpl_') . '.zip';
-        Storage::disk('private')->put($storedFilename, file_get_contents($zipPath));
+        // Always a new template; never matches or replaces an existing one.
+        try {
+            $template = $this->archive->createProject($zipPath, $request->template_name, $user);
+        } catch (InvalidTemplateException $e) {
+            return back()->with('error', $e->getMessage());
+        } catch (\Throwable $e) {
+            report($e);
+            return back()->with('error', 'Failed to import template, so nothing was created.');
+        }
 
-        ProjectTemplate::create([
-            'name'        => $request->template_name,
-            'description' => $request->template_description,
-            'filename'    => $storedFilename,
-            'created_by'  => $user->id,
-            'is_public'   => $request->boolean('is_public', false),
+        $template->update([
+            'project_type' => Project::TYPE_TEMPLATE,
+            'description'  => $request->template_description ?? $template->description,
+            'is_public'    => $request->boolean('is_public', false),
         ]);
 
         return back()->with('status', 'Template "' . $request->template_name . '" imported successfully.');
     }
 
     /**
+     * Download a template as a zip, generated on demand.
+     */
+    public function download(Request $request, Project $template)
+    {
+        abort_unless($template->isTemplate(), 404);
+        abort_unless($template->templateViewableBy($request->user()->id), 403, 'You do not have access to this template.');
+
+        $zipPath = $this->archive->build($template);
+        if ($zipPath === false) {
+            return back()->with('error', 'Failed to create template archive. Please ensure the zip utility is installed on the server.');
+        }
+
+        return response()->download($zipPath, 'taskfiend_template_' . str_replace(' ', '_', $template->name) . '_' . now()->format('Y-m-d') . '.zip')
+            ->deleteFileAfterSend(true);
+    }
+
+    /**
      * Rename a stored template. Only the creator may rename.
      */
-    public function updateName(Request $request, ProjectTemplate $template)
+    public function updateName(Request $request, Project $template)
     {
-        if ($template->created_by !== $request->user()->id) {
+        abort_unless($template->isTemplate(), 404);
+
+        if ($template->user_id !== $request->user()->id) {
             return response()->json(['success' => false, 'message' => 'Only the template creator can rename it.'], 403);
         }
 
@@ -210,9 +230,11 @@ class ProjectTemplateController extends Controller
     /**
      * Toggle a stored template's public/private visibility. Only the creator may change it.
      */
-    public function toggleVisibility(Request $request, ProjectTemplate $template)
+    public function toggleVisibility(Request $request, Project $template)
     {
-        if ($template->created_by !== $request->user()->id) {
+        abort_unless($template->isTemplate(), 404);
+
+        if ($template->user_id !== $request->user()->id) {
             return response()->json(['success' => false, 'message' => 'Only the template creator can change its visibility.'], 403);
         }
 
@@ -224,17 +246,16 @@ class ProjectTemplateController extends Controller
     /**
      * Delete a stored template (zip + DB record). Only the creator may delete.
      */
-    public function destroy(Request $request, ProjectTemplate $template)
+    public function destroy(Request $request, Project $template)
     {
-        if ($template->created_by !== $request->user()->id) {
+        abort_unless($template->isTemplate(), 404);
+
+        if ($template->user_id !== $request->user()->id) {
             abort(403, 'You can only delete your own templates.');
         }
 
-        if (Storage::disk('private')->exists($template->filename)) {
-            Storage::disk('private')->delete($template->filename);
-        }
-
-        $template->delete();
+        // Templates are archived, never deleted; instances keep their template_id.
+        $template->update(['status' => 'archived']);
 
         return back()->with('status', 'Template deleted.');
     }

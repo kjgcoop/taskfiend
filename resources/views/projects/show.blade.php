@@ -371,6 +371,28 @@
             <div class="absolute inset-0 bg-black/65"></div>
         @endif
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-6 relative">
+            @if($project->isTemplate())
+                <div data-template-banner class="p-3 bg-purple-900 bg-opacity-20 border border-purple-500 rounded-lg">
+                    <p class="text-sm text-purple-300">
+                        📋 This is a template, not a regular project.
+                        @if($project->user_id !== Auth::id())
+                            You can view it but only its creator can edit it.
+                        @endif
+                    </p>
+                </div>
+            @endif
+            @if($project->template_id && ($sourceTemplate = $project->template))
+                <p class="text-sm text-gray-400">
+                    Created from template
+                    @if($sourceTemplate->status === 'archived')
+                        <span class="text-gray-300">{{ $sourceTemplate->name }}</span> (archived)
+                    @elseif($sourceTemplate->user_id === Auth::id())
+                        <a data-template-source-link href="{{ route('projects.show', $sourceTemplate) }}" class="text-blue-400 hover:text-blue-300 underline">{{ $sourceTemplate->name }}</a>
+                    @else
+                        <span class="text-gray-300">{{ $sourceTemplate->name }}</span>
+                    @endif
+                </p>
+            @endif
             @if($project->status === 'archived')
                 <div class="bg-amber-950/40 border border-amber-700/60 rounded-lg p-4 flex items-center gap-3">
                     <span class="text-amber-500 text-xl">⊘</span>

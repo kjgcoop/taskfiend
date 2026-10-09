@@ -2,11 +2,9 @@
 
 namespace App\Http\Controllers;
 
-use App\Exceptions\InvalidTemplateException;
+use App\Models\Project;
 use App\Models\ScheduledProject;
-use App\Services\ProjectTemplateArchive;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
 
 class ScheduledProjectController extends Controller
 {
@@ -69,16 +67,8 @@ class ScheduledProjectController extends Controller
             return back()->with('error', 'The template for this scheduled project no longer exists.');
         }
 
-        $zipPath = Storage::disk('private')->path($template->filename);
-        if (!file_exists($zipPath)) {
-            return back()->with('error', 'Template file not found on the server.');
-        }
-
         try {
-            $project = app(ProjectTemplateArchive::class)
-                ->createProject($zipPath, $scheduledProject->project_name, $request->user(), $template->id, $template->name);
-        } catch (InvalidTemplateException $e) {
-            return back()->with('error', $e->getMessage());
+            $project = Project::createFromTemplate($template, $scheduledProject->project_name, $request->user());
         } catch (\Throwable $e) {
             report($e);
             return back()->with('error', 'Failed to create project from template, so nothing was created.');

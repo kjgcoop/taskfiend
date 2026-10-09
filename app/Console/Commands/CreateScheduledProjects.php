@@ -4,12 +4,9 @@ namespace App\Console\Commands;
 
 use App\Models\ActivityNotification;
 use App\Models\ChangeLog;
-use App\Models\ProjectTemplate;
+use App\Models\Project;
 use App\Models\ScheduledProject;
-use App\Models\User;
-use App\Services\ProjectTemplateArchive;
 use Illuminate\Console\Command;
-use Illuminate\Support\Facades\Storage;
 
 class CreateScheduledProjects extends Command
 {
@@ -33,15 +30,9 @@ class CreateScheduledProjects extends Command
                 continue;
             }
 
-            $zipPath = Storage::disk('private')->path($template->filename);
-            if (!file_exists($zipPath)) {
-                $this->warn("Template file missing for scheduled project #{$scheduled->id}, skipping.");
-                continue;
-            }
-
             try {
-                $project = app(ProjectTemplateArchive::class)
-                    ->createProject($zipPath, $scheduled->project_name, $user, $template->id, $template->name);
+                // Reads the template's current state, not a snapshot from scheduling time.
+                $project = Project::createFromTemplate($template, $scheduled->project_name, $user);
             } catch (\Throwable $e) {
                 report($e);
                 $this->warn("Failed to create project for scheduled project #{$scheduled->id}: {$e->getMessage()}");

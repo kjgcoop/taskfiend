@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { login, logout, testUsers } from './helpers/auth.js';
+import { artisan } from './helpers/db.js';
 
 /**
  * Project Authorization & Privacy Tests
@@ -371,5 +372,47 @@ test.describe('Project Authorization & Privacy', () => {
       await page.locator('text=/forbidden|unauthorized|access denied|not found/i').isVisible().catch(() => false);
 
     expect(isAccessDenied).toBeTruthy();
+  });
+
+  // Creates a project as user 1, then flips its type/visibility directly in the test DB.
+  async function createProjectAs1(page, name, type, isPublic) {
+    await login(page, testUsers.user1.email);
+    await page.goto('/projects/create');
+    await page.fill('#name', name);
+    await page.click('button[type="submit"]');
+    await page.waitForURL(/\/projects\/(\d+)/);
+    const projectId = page.url().match(/\/projects\/(\d+)/)[1];
+    await artisan(
+      `tinker --execute="App\\\\Models\\\\Project::find(${projectId})->update(['project_type' => '${type}', 'is_public' => ${isPublic}]);"`
+    );
+    await logout(page);
+    return projectId;
+  }
+
+  test('public template is viewable read-only by another user, private is not, and never in project lists', async ({ page }) => {
+    const publicId = await createProjectAs1(page, 'Public Template E2E', 'template', 'true');
+    const privateId = await createProjectAs1(page, 'Private Template E2E', 'template', 'false');
+
+    await login(page, testUsers.user2.email);
+
+    await page.goto(`/projects/${publicId}`);
+    await expect(page.locator('[data-template-banner]')).toContainText('only its creator can edit it');
+
+    const res = await page.goto(`/projects/${privateId}`);
+    const denied = res.status() >= 400 || !page.url().includes(`/projects/${privateId}`);
+    expect(denied).toBeTruthy();
+
+    await page.goto('/projects');
+    await expect(page.locator('main').locator('text=Public Template E2E')).not.toBeVisible();
+    await expect(page.locator('main').locator('text=Private Template E2E')).not.toBeVisible();
+  });
+
+  test('is_public has no effect on a normal project', async ({ page }) => {
+    const normalId = await createProjectAs1(page, 'Public Flag Normal E2E', 'normal', 'true');
+
+    await login(page, testUsers.user2.email);
+    const res = await page.goto(`/projects/${normalId}`);
+    const denied = res.status() >= 400 || !page.url().includes(`/projects/${normalId}`);
+    expect(denied).toBeTruthy();
   });
 });

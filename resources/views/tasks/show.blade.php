@@ -159,16 +159,23 @@
                     </div>
 
                     <!-- Date -->
-                    <div>
+                    @php
+                        $dateless = (bool) $task->project?->isTemplate();
+                        $dateEditable = !$isInactive && !$dateless;
+                    @endphp
+                    <div @class(['opacity-50 cursor-not-allowed' => $dateless])>
                         <span class="text-sm font-medium text-gray-500">Date</span>
-                        <div @if(!$isInactive) @click="startEditDate()" @endif x-show="!editing.date" class="mt-1 p-2 rounded min-h-[40px] {{ !$isInactive ? 'cursor-pointer hover:bg-gray-700' : '' }}">
+                        <div @if($dateEditable) @click="startEditDate()" @endif x-show="!editing.date" class="mt-1 p-2 rounded min-h-[40px] {{ $dateEditable ? 'cursor-pointer hover:bg-gray-700' : '' }}">
                             @if($task->date)
                                 <p class="text-gray-300">{{ \Carbon\Carbon::parse($task->date)->format('l, F j, Y') }}</p>
                             @else
-                                <p class="text-gray-400 italic">{{ $isInactive ? 'No date set' : 'Click to set date' }}</p>
+                                <p class="text-gray-400 italic">{{ ($isInactive || $dateless) ? 'No date set' : 'Click to set date' }}</p>
                             @endif
                         </div>
-                        @if(!$isInactive)
+                        @if($dateless)
+                        <p data-dateless-note class="text-xs text-purple-300 italic">Templates don't have dates; set dates on projects created from this template.</p>
+                        @endif
+                        @if($dateEditable)
                         <div x-show="editing.date" class="mt-1">
                             <div class="flex gap-2 items-start">
                                 <div class="flex-1">
@@ -239,16 +246,16 @@
                     </div>
 
                     <!-- Time -->
-                    <div>
+                    <div @class(['opacity-50 cursor-not-allowed' => $dateless])>
                         <span class="text-sm font-medium text-gray-500">Time</span>
-                        <div @if(!$isInactive) @click="startEdit('time')" @endif x-show="!editing.time" class="mt-1 p-2 rounded min-h-[40px] {{ !$isInactive ? 'cursor-pointer hover:bg-gray-700' : '' }}">
+                        <div @if($dateEditable) @click="startEdit('time')" @endif x-show="!editing.time" class="mt-1 p-2 rounded min-h-[40px] {{ $dateEditable ? 'cursor-pointer hover:bg-gray-700' : '' }}">
                             @if($task->time)
                                 <p class="text-gray-300">{{ \Carbon\Carbon::parse($task->time)->format('g:i A') }}</p>
                             @else
-                                <p class="text-gray-400 italic">{{ $isInactive ? 'No time set' : 'Click to set time (optional)' }}</p>
+                                <p class="text-gray-400 italic">{{ ($isInactive || $dateless) ? 'No time set' : 'Click to set time (optional)' }}</p>
                             @endif
                         </div>
-                        @if(!$isInactive)
+                        @if($dateEditable)
                         <div x-show="editing.time" class="mt-1">
                             <input type="time" x-model="fields.time" x-ref="timeInput"
                                    @keydown.enter="saveField('time')"

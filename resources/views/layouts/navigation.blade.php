@@ -181,7 +181,7 @@
                                     </div>
                                     <div x-show="open" class="bg-[#101010] max-h-64 overflow-y-auto" style="display: none;">
                                         @forelse($navTemplates as $template)
-                                            <a href="{{ route('templates.index') }}#template-{{ $template->id }}" class="block w-full ps-7 pe-4 py-2 text-start text-sm leading-5 text-gray-300 hover:bg-gray-700 focus:outline-none transition duration-150 ease-in-out">
+                                            <a data-nav-template href="{{ route('projects.show', $template->id) }}" class="block w-full ps-7 pe-4 py-2 text-start text-sm leading-5 text-gray-300 hover:bg-gray-700 focus:outline-none transition duration-150 ease-in-out">
                                                 {{ $template->name }}
                                             </a>
                                         @empty
@@ -521,7 +521,7 @@
                 </div>
                 <div x-show="open" x-transition class="bg-[#101010]">
                     @forelse($navTemplates as $template)
-                        <a href="{{ route('templates.index') }}#template-{{ $template->id }}"
+                        <a data-nav-template href="{{ route('projects.show', $template->id) }}"
                            class="block w-full ps-3 pe-4 py-2 border-l-4 border-transparent text-base font-medium text-gray-400 hover:text-gray-100 hover:bg-gray-700 hover:border-gray-500 focus:outline-none transition duration-150 ease-in-out">
                             {{ $template->name }}
                         </a>

@@ -121,7 +121,8 @@ class ProjectController extends Controller
         $reversed = $request->boolean('reversed');
 
         $isDirectMember = $project->user_id === Auth::id()
-            || $project->assignees()->where('users.id', Auth::id())->exists();
+            || $project->assignees()->where('users.id', Auth::id())->exists()
+            || $project->templateViewableBy(Auth::id());
 
         $visibleToUser = function ($q) use ($isDirectMember) {
             if (!$isDirectMember) {
@@ -296,7 +297,8 @@ class ProjectController extends Controller
         $readOnly = in_array($project->status, ['done', 'archived']);
 
         $isDirectMember = $project->user_id === Auth::id()
-            || $project->assignees()->where('users.id', Auth::id())->exists();
+            || $project->assignees()->where('users.id', Auth::id())->exists()
+            || $project->templateViewableBy(Auth::id());
 
         $visibleToUser = function ($q) use ($isDirectMember) {
             if (!$isDirectMember) {
@@ -346,7 +348,8 @@ class ProjectController extends Controller
         $offset  = ($page - 1) * $perPage;
 
         $isDirectMember = $project->user_id === Auth::id()
-            || $project->assignees()->where('users.id', Auth::id())->exists();
+            || $project->assignees()->where('users.id', Auth::id())->exists()
+            || $project->templateViewableBy(Auth::id());
 
         $visibleToUser = function ($q) use ($isDirectMember) {
             if (!$isDirectMember) {
@@ -466,7 +469,7 @@ class ProjectController extends Controller
 
     public function reorderTasks(Request $request, Project $project)
     {
-        $this->authorizeProjectAccess($project);
+        $this->authorizeProjectAccess($project, write: true);
 
         $request->validate([
             'ids'   => 'required|array|min:1',
@@ -655,7 +658,7 @@ class ProjectController extends Controller
 
     public function storeReminder(Request $request, Project $project)
     {
-        $this->authorizeProjectAccess($project);
+        $this->authorizeProjectAccess($project, write: true);
 
         $request->validate([
             'date'                => 'required|date',
@@ -701,7 +704,7 @@ class ProjectController extends Controller
 
     public function dismissReminder(Request $request, Project $project, ProjectReminder $reminder)
     {
-        $this->authorizeProjectAccess($project);
+        $this->authorizeProjectAccess($project, write: true);
 
         if ($reminder->user_id !== Auth::id()) {
             abort(403);
@@ -730,7 +733,7 @@ class ProjectController extends Controller
 
     public function destroyReminder(Request $request, Project $project, ProjectReminder $reminder)
     {
-        $this->authorizeProjectAccess($project);
+        $this->authorizeProjectAccess($project, write: true);
 
         if ($reminder->user_id !== Auth::id()) {
             abort(403);
@@ -776,8 +779,16 @@ class ProjectController extends Controller
         return back()->with('success', 'Status update deleted.');
     }
 
-    protected function authorizeProjectAccess(Project $project)
+    protected function authorizeProjectAccess(Project $project, bool $write = false)
     {
+        if ($project->isTemplate()) {
+            // Templates: creator only, or read-only for others when public.
+            if ($project->user_id === Auth::id() || (!$write && $project->templateViewableBy(Auth::id()))) {
+                return;
+            }
+            abort(403, 'You do not have access to this template.');
+        }
+
         $isCreator = $project->user_id === Auth::id();
         $isAssignee = $project->assignees()->where('users.id', Auth::id())->exists();
         $hasTaskInProject = $project->tasks()
