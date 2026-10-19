@@ -19,7 +19,8 @@ Area-specific notes live in `.claude/rules/` and load automatically when you tou
 
 These replaced drifted copy-pasted logic. Use them for any new code:
 
-- **`Task::visibleTo($userId)`**: the creator-or-assignee visibility rule. Always use it for task list queries.
+- **`Task::visibleTo($userId)`**: the *access* rule ("can this user see it?"): creator, task assignee, or member of the task's project (`Project::forMember`). Use it for search, tags, pickers, exports, bulk actions and anything that looks a task up.
+- **`Task::assignedTo($userId)`**: the *plate* rule ("is it mine?"): creator or task assignee, ignoring project membership. Use it for lists of the user's own work: day, overdue, undated, all, calendar, the digest. Don't use `visibleTo` there, or a project-mate's tasks flood your overdue list.
 - **`Project::forMember($userId)`**: owner or project-level assignee; the rule for *acting on* a project (creating or moving tasks into it). Stricter than `Project::activeForUser()`, which also grants visibility via assigned tasks. Reject `done`/`archived` target projects with a 422/flash error.
 - **`TaskLifecycle::changeStatus()`** (`app/Services/TaskLifecycle.php`): the task status state machine (descendant cascades, `completed_at`, change logging, recurring rollover). Route *every* status change through it, including bulk actions. Bypassing it once left `completed_at` null and broke recurrence.
 - **`QuickAddParser`** (`app/Services/QuickAddParser.php`): single source of truth for inline tokens (`#project`, `@tag`, `+location`/`++location`, `&user`). Used by single store, bulk store, the live preview and search.
@@ -28,7 +29,7 @@ These replaced drifted copy-pasted logic. Use them for any new code:
 
 ## Key Patterns
 
-- **Authorization**: tasks/projects are private by default, visible to creator + assignees only.
+- **Authorization**: tasks/projects are private by default, visible to creator + assignees + members of the task's project (owner or project-level assignee). Project exports require project membership; being assigned one task isn't enough.
 - **Change logging**: all CRUD operations log to `change_logs`.
 - **No deletion**: tasks/projects are archived, never deleted (per spec).
 - **File storage**: `private` disk for task and comment attachments.

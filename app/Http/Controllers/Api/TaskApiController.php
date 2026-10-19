@@ -157,7 +157,7 @@ class TaskApiController extends Controller
         $user = $request->user();
 
         $baseQuery = function ($status) use ($user, $carbonDate) {
-            return Task::visibleTo($user->id)
+            return Task::assignedTo($user->id)
                 ->where('status', $status)
                 ->whereDate('updated_at', $carbonDate)
                 ->with(['creator', 'project', 'tags', 'assignees', 'comments' => function ($q) {
@@ -188,7 +188,7 @@ class TaskApiController extends Controller
 
         $user = $request->user();
 
-        $tasks = Task::visibleTo($user->id)
+        $tasks = Task::assignedTo($user->id)
             ->where('status', '!=', 'archived')
             ->where('date', $carbonDate->format('Y-m-d'))
             ->with(['creator', 'project', 'tags', 'assignees', 'comments' => function ($q) {

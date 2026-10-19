@@ -42,7 +42,7 @@ class DataExportController extends Controller
             'change_logs' => [],
         ];
 
-        // Get all tasks the user has access to (created by user OR assigned to user)
+        // Get all tasks the user can see (their own, assigned to them, or in a project they belong to)
         $tasks = Task::visibleTo($user->id)->get();
 
         // Get all projects the user has access to (created by user OR has assigned tasks in)
@@ -545,21 +545,25 @@ class DataExportController extends Controller
     }
 
     /**
+     * Project exports include every task in the project, so only project
+     * members (owner or project-level assignee) may run them. Being assigned
+     * a single task inside someone else's project is not enough.
+     */
+    private function authorizeProjectExport(Project $project, int $userId): void
+    {
+        if (!Project::forMember($userId)->whereKey($project->id)->exists()) {
+            abort(403, 'You do not have permission to export this project.');
+        }
+    }
+
+    /**
      * Export a single project as a template (incomplete tasks only).
      */
     public function exportProjectTemplate(Request $request, Project $project)
     {
         $user = $request->user();
 
-        // Check authorization - user must be creator or assignee
-        $isCreator = $project->user_id === $user->id;
-        $isAssignee = $project->tasks()->whereHas('assignments', function($q) use ($user) {
-            $q->where('assignee_id', $user->id);
-        })->exists();
-
-        if (!$isCreator && !$isAssignee) {
-            abort(403, 'You do not have permission to export this project.');
-        }
+        $this->authorizeProjectExport($project, $user->id);
 
         $zipPath = app(ProjectTemplateArchive::class)->build($project);
         if ($zipPath === false) {
@@ -602,14 +606,7 @@ class DataExportController extends Controller
     {
         $user = $request->user();
 
-        $isCreator = $project->user_id === $user->id;
-        $isAssignee = $project->tasks()->whereHas('assignments', function($q) use ($user) {
-            $q->where('assignee_id', $user->id);
-        })->exists();
-
-        if (!$isCreator && !$isAssignee) {
-            abort(403, 'You do not have permission to export this project.');
-        }
+        $this->authorizeProjectExport($project, $user->id);
 
         // Load all top-level tasks with their children
         $tasks = Task::where('project_id', $project->id)

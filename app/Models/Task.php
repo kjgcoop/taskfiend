@@ -223,11 +223,32 @@ class Task extends Model
     }
 
     /**
-     * Scope: tasks visible to the given user — tasks they created or are
-     * assigned to. This is the canonical visibility rule for task lists;
-     * use it everywhere instead of hand-rolling the creator/assignee check.
+     * Scope: tasks the given user can SEE — everything on their plate (see
+     * scopeAssignedTo) plus every task in a project they're a member of
+     * (owner or project-level assignee, i.e. Project::forMember). This is the
+     * canonical access rule: search, tags, pickers, exports, bulk actions.
+     * It matches authorizeTaskAccess(), which already lets project members
+     * open and edit any task in their project.
+     *
+     * "Can see" is not "is mine": lists meant to hold the user's own work
+     * (day, overdue, undated, calendar, digest) use scopeAssignedTo instead.
      */
     public function scopeVisibleTo(Builder $query, int $userId): Builder
+    {
+        return $query->where(function ($q) use ($userId) {
+            $q->where('creator_id', $userId)
+              ->orWhereHas('assignees', fn ($aq) => $aq->where('users.id', $userId))
+              ->orWhereHas('project', fn ($pq) => $pq->forMember($userId));
+        });
+    }
+
+    /**
+     * Scope: tasks on the given user's plate — ones they created or are
+     * assigned to, regardless of project membership. A creator is normally
+     * an assignee too, but not on every path (a subtask created without
+     * explicit assignees inherits its parent's), so both are checked.
+     */
+    public function scopeAssignedTo(Builder $query, int $userId): Builder
     {
         return $query->where(function ($q) use ($userId) {
             $q->where('creator_id', $userId)
