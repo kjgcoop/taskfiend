@@ -1151,7 +1151,9 @@
                         </div>
                     @endif
 
-                    <h3 class="font-semibold {{ ($showAsArchived || $task->status === 'archived') ? 'text-gray-500 line-through' : 'text-gray-100' }}">
+                    {{-- On the day only through project membership: mute the title and project link (the badge below stays legible). --}}
+                    @php $notMine = $markNotAssigned && !$task->isOnPlateOf(Auth::id()); @endphp
+                    <h3 class="font-semibold {{ ($showAsArchived || $task->status === 'archived') ? 'text-gray-500 line-through' : ($notMine ? 'text-gray-500' : 'text-gray-100') }}">
                         <span data-task-name-display class="task-title">{!! render_title($task->name) !!}</span>
                         @if($task->children->count() > 0)
                             <span class="text-xs text-gray-500 font-normal">
@@ -1190,10 +1192,10 @@
                         @if($task->project)
                             <a href="{{ route('projects.show', $task->project) }}"
                                @click.stop
-                               class="text-blue-400 hover:text-blue-300 hover:underline"
+                               class="{{ $notMine ? 'text-gray-500 hover:text-gray-400' : 'text-blue-400 hover:text-blue-300' }} hover:underline"
                                data-task-project-display>{{ $task->project->name }}</a>
                         @endif
-                        @if($markNotAssigned)
+                        @if($notMine)
                             <x-not-assigned-badge :task="$task" />
                         @endif
                         @if($task->recurrence_pattern)

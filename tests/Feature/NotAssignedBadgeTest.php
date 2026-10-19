@@ -71,7 +71,9 @@ class NotAssignedBadgeTest extends TestCase
             ->assertOk()
             ->assertSee('Watched Zebra Task')
             ->assertSee(self::MARK, false)
-            ->assertSee('Not Assigned to You');
+            ->assertSee('Not Assigned to You')
+            // The title is muted too, not just badged.
+            ->assertSee('font-semibold text-gray-500', false);
     }
 
     public function test_badge_is_absent_for_a_task_assigned_to_the_viewer(): void
@@ -81,7 +83,8 @@ class NotAssignedBadgeTest extends TestCase
         $this->actingAs($this->member)->get(route('day', ['date' => $this->today]))
             ->assertOk()
             ->assertSee('Mine Zebra Task')
-            ->assertDontSee(self::MARK, false);
+            ->assertDontSee(self::MARK, false)
+            ->assertDontSee('font-semibold text-gray-500', false);
     }
 
     public function test_badge_is_absent_for_the_owner_of_the_task(): void
