@@ -360,7 +360,7 @@ class ApiTaskTest extends TestCase
         $this->assertTrue($task->tags->contains($tag));
     }
 
-    public function test_create_stores_explicit_assignees(): void
+    public function test_create_stores_explicit_assignees_and_always_assigns_the_key_owner(): void
     {
         $this->createDefaultProject();
         $other = User::factory()->create();
@@ -369,7 +369,8 @@ class ApiTaskTest extends TestCase
 
         $task = Task::where('name', 'Assigned Task')->firstOrFail();
         $this->assertTrue($task->assignees->contains($other));
-        $this->assertFalse($task->assignees->contains($this->user));
+        // The creator is always an assignee, same as the web form.
+        $this->assertTrue($task->assignees->contains($this->user));
     }
 
     public function test_create_stores_recurrence_pattern(): void

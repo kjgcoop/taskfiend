@@ -323,16 +323,11 @@ class TaskController extends Controller
         // Auto-inherit parent assignees if no assignees specified
         if (isset($validated['parent_id']) && empty($validated['assignee_ids'])) {
             $parentTask = Task::find($validated['parent_id']);
-            $assigneeIds = array_unique(array_merge($parentTask->assignees->pluck('id')->toArray(), [Auth::id()]));
+            $assigneeIds = $parentTask->assignees->pluck('id')->toArray();
         } else {
-            $assigneeIds = array_unique(array_merge($validated['assignee_ids'] ?? [], [Auth::id()]));
+            $assigneeIds = $validated['assignee_ids'] ?? [];
         }
-        foreach ($assigneeIds as $assigneeId) {
-            $task->assignments()->create([
-                'assignee_id' => $assigneeId,
-                'assigned_by_id' => Auth::id(),
-            ]);
-        }
+        $task->assignWithCreator($assigneeIds);
 
         $this->logChange($task, 'created task', 'created');
 
@@ -1604,19 +1599,11 @@ class TaskController extends Controller
         // ── Assignees ────────────────────────────────────────────────────────────────
         if (!empty($validated['parent_id']) && empty($lineAssigneeIds)) {
             $parentTask  = Task::find($validated['parent_id']);
-            $assigneeIds = $parentTask ? $parentTask->assignees->pluck('id')->toArray() : [Auth::id()];
+            $assigneeIds = $parentTask ? $parentTask->assignees->pluck('id')->toArray() : [];
         } else {
-            $assigneeIds = $lineAssigneeIds ?? [Auth::id()];
+            $assigneeIds = $lineAssigneeIds ?? [];
         }
-        // The creator is always an assignee, whatever the line's &tokens or the parent say.
-        $assigneeIds = array_values(array_unique(array_merge($assigneeIds, [Auth::id()])));
-
-        foreach ($assigneeIds as $assigneeId) {
-            $task->assignments()->create([
-                'assignee_id'    => $assigneeId,
-                'assigned_by_id' => Auth::id(),
-            ]);
-        }
+        $task->assignWithCreator($assigneeIds);
 
         $this->logChange($task, 'created task', 'created');
 

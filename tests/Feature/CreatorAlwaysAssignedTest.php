@@ -11,8 +11,9 @@ use Tests\TestCase;
 /**
  * A task's creator is always one of its assignees. Several creation paths
  * used to copy someone else's assignee list (the parent's, a &user token's,
- * the source task's) and forget to add the creator. (The API's create
- * endpoint is deliberately not covered: ApiTaskTest pins its own behavior.)
+ * the source task's) and forget to add the creator. They all go through
+ * Task::assignWithCreator() now. (The API's create endpoint is covered by
+ * ApiTaskTest::test_create_stores_explicit_assignees_and_always_assigns_the_key_owner.)
  */
 class CreatorAlwaysAssignedTest extends TestCase
 {

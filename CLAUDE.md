@@ -21,6 +21,7 @@ These replaced drifted copy-pasted logic. Use them for any new code:
 
 - **`Task::visibleTo($userId)`**: the *access* rule ("can this user see it?"): creator, task assignee, or member of the task's project (`Project::forMember`). Use it for search, tags, pickers, exports, bulk actions and anything that looks a task up.
 - **`Task::assignedTo($userId)`**: the *plate* rule ("is it mine?"): creator or task assignee, ignoring project membership. Use it for lists of the user's own work: day, overdue, undated, all, calendar, the digest. Don't use `visibleTo` there, or a project-mate's tasks flood your overdue list.
+- **`Task::assignWithCreator($assigneeIds)`**: the only way to assign a *new* task. It adds the creator to whatever list you pass (the creator is always an assignee). Every creation path uses it: single store, bulk add, API create and `Task::duplicate()`. Don't loop over `assignments()->create()` yourself.
 - **`Project::forMember($userId)`**: owner or project-level assignee; the rule for *acting on* a project (creating or moving tasks into it). Stricter than `Project::activeForUser()`, which also grants visibility via assigned tasks. Reject `done`/`archived` target projects with a 422/flash error.
 - **`TaskLifecycle::changeStatus()`** (`app/Services/TaskLifecycle.php`): the task status state machine (descendant cascades, `completed_at`, change logging, recurring rollover). Route *every* status change through it, including bulk actions. Bypassing it once left `completed_at` null and broke recurrence.
 - **`QuickAddParser`** (`app/Services/QuickAddParser.php`): single source of truth for inline tokens (`#project`, `@tag`, `+location`/`++location`, `&user`). Used by single store, bulk store, the live preview and search.
@@ -68,7 +69,7 @@ php artisan migrate
 php artisan serve                               # http://localhost:8000
 ```
 
-CLI commands live in `app/Console/Commands/`: `user:create`, `user:toggle`, `apikey:create`, `apikey:invalidate`, `email:task-digest`, `email:task-png`, `temp:prune`, `tasks:backfill-completed-at`, `todoist:import`, and the scheduled `CreateScheduledProjects`.
+CLI commands live in `app/Console/Commands/`: `user:create`, `user:toggle`, `apikey:create`, `apikey:invalidate`, `email:task-digest`, `email:task-png`, `temp:prune`, `tasks:backfill-completed-at`, `tasks:backfill-creator-assignments`, `todoist:import`, and the scheduled `CreateScheduledProjects`.
 
 ## File Locations
 
@@ -79,6 +80,7 @@ CLI commands live in `app/Console/Commands/`: `user:create`, `user:toggle`, `api
 ## Working Style
 
 - Verify before claiming done: run `php artisan view:cache` (compiles every Blade template) and the relevant PHPUnit tests. See `.claude/rules/testing.md` for what the cloud sandbox can and can't run.
+- Add a user-facing entry to `CHANGELOG.md` for each change worth mentioning in release notes. It is deliberately *not* cumulative: it lists what's been implemented since the last release and is cleared when one ships. Keep the explanatory note at the top, and put any one-time upgrade command under "Upgrade Steps".
 - Runtime Alpine/browser errors are console-only and won't be caught by Blade compilation. Say so when you couldn't click-test.
 
 ## Linguistic Norms

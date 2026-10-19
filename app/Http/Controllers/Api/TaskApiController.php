@@ -121,13 +121,7 @@ class TaskApiController extends Controller
             $task->tags()->sync($validated['tag_ids']);
         }
 
-        $assigneeIds = $validated['assignee_ids'] ?? [$user->id];
-        foreach ($assigneeIds as $assigneeId) {
-            $task->assignments()->create([
-                'assignee_id' => $assigneeId,
-                'assigned_by_id' => $user->id,
-            ]);
-        }
+        $task->assignWithCreator($validated['assignee_ids'] ?? []);
 
         $task->changeLogs()->create([
             'date' => now(),

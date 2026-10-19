@@ -112,6 +112,24 @@ class Task extends Model
         return $this->tags->whereNull('archived_at');
     }
 
+    /**
+     * Assign a NEW task to $assigneeIds plus its creator. The creator is always
+     * an assignee and can never unassign themselves, so every creation path goes
+     * through here instead of building its own list. "Assigned by" is the creator.
+     * Call once, right after create(): it doesn't look at existing assignments.
+     */
+    public function assignWithCreator(array $assigneeIds = []): void
+    {
+        $ids = array_values(array_unique(array_filter(array_merge($assigneeIds, [$this->creator_id]))));
+
+        foreach ($ids as $assigneeId) {
+            $this->assignments()->create([
+                'assignee_id'    => $assigneeId,
+                'assigned_by_id' => $this->creator_id,
+            ]);
+        }
+    }
+
     public function assignments(): HasMany
     {
         return $this->hasMany(Assignment::class);
@@ -361,16 +379,7 @@ class Task extends Model
                 ]);
             }
         } else {
-            // The copy belongs to the current user, so they're always on it.
-            $assigneeIds = array_values(array_unique(array_filter(
-                array_merge($this->assignees->pluck('id')->toArray(), [auth()->id()])
-            )));
-            foreach ($assigneeIds as $assigneeId) {
-                $new->assignments()->create([
-                    'assignee_id'    => $assigneeId,
-                    'assigned_by_id' => auth()->id(),
-                ]);
-            }
+            $new->assignWithCreator($this->assignees->pluck('id')->toArray());
         }
 
         foreach ($this->attachments as $attachment) {
