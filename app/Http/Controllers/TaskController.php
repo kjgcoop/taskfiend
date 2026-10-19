@@ -323,7 +323,7 @@ class TaskController extends Controller
         // Auto-inherit parent assignees if no assignees specified
         if (isset($validated['parent_id']) && empty($validated['assignee_ids'])) {
             $parentTask = Task::find($validated['parent_id']);
-            $assigneeIds = $parentTask->assignees->pluck('id')->toArray();
+            $assigneeIds = array_unique(array_merge($parentTask->assignees->pluck('id')->toArray(), [Auth::id()]));
         } else {
             $assigneeIds = array_unique(array_merge($validated['assignee_ids'] ?? [], [Auth::id()]));
         }
@@ -1608,6 +1608,8 @@ class TaskController extends Controller
         } else {
             $assigneeIds = $lineAssigneeIds ?? [Auth::id()];
         }
+        // The creator is always an assignee, whatever the line's &tokens or the parent say.
+        $assigneeIds = array_values(array_unique(array_merge($assigneeIds, [Auth::id()])));
 
         foreach ($assigneeIds as $assigneeId) {
             $task->assignments()->create([

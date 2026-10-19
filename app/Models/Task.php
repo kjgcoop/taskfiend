@@ -361,7 +361,10 @@ class Task extends Model
                 ]);
             }
         } else {
-            $assigneeIds = $this->assignees->pluck('id')->toArray() ?: [auth()->id()];
+            // The copy belongs to the current user, so they're always on it.
+            $assigneeIds = array_values(array_unique(array_filter(
+                array_merge($this->assignees->pluck('id')->toArray(), [auth()->id()])
+            )));
             foreach ($assigneeIds as $assigneeId) {
                 $new->assignments()->create([
                     'assignee_id'    => $assigneeId,
