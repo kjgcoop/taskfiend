@@ -21,6 +21,10 @@ Anyone who owns a project, or is assigned to it, can now find every task in it, 
 - Being assigned to a single task still lets you see that one task, and nothing else in the project.
 - Your own lists are unchanged: Today, Overdue, Undated, All, Calendar, the morning digest emails and the day API still show only tasks you created or are assigned to. A project-mate's overdue tasks will not pile up on your Overdue page.
 
+## Fixes
+
+- **Project page for members.** Opening a project you're assigned to but don't own showed a stuck-open status dialog and dozens of console errors, because the page's scripts only loaded for the project's owner. The page now works the same for every member.
+
 ## Project Exports Require Project Membership
 
 Exporting a project (Markdown or template) now requires owning it or being assigned to it as a project. Two problems are fixed:
