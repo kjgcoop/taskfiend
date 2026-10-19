@@ -45,7 +45,7 @@ class DashboardController extends Controller
     private function incompleteTasksForDate(string $dateStr, string $sort, bool $reversed)
     {
         $query = Task::query()
-            ->assignedTo(Auth::id())
+            ->onDayOf(Auth::user())
             ->where('status', '!=', 'archived')
             ->where('status', '!=', 'done')
             ->where('date', $dateStr)
@@ -60,7 +60,7 @@ class DashboardController extends Controller
     private function completedTasksForDate(string $dateStr)
     {
         return Task::query()
-            ->assignedTo(Auth::id())
+            ->onDayOf(Auth::user())
             ->where('status', 'done')
             ->whereDate('completed_at', $dateStr)
             ->orderByRaw('time IS NULL, time ASC');
@@ -74,7 +74,7 @@ class DashboardController extends Controller
     private function archivedTasksForDate(string $dateStr)
     {
         return Task::query()
-            ->assignedTo(Auth::id())
+            ->onDayOf(Auth::user())
             ->where('status', 'archived')
             ->where(function ($q) use ($dateStr) {
                 $q->whereDate('completed_at', $dateStr)
@@ -503,7 +503,7 @@ $dayWith = ['creator', 'project', 'tags', 'assignees', 'attachments', 'comments'
         $offset  = ($page - 1) * $perPage;
         $dateStr = $request->get('date', today()->format('Y-m-d'));
 
-$tasks = Task::assignedTo(Auth::id())
+$tasks = Task::onDayOf(Auth::user())
             ->where('status', 'done')
             ->whereDate('completed_at', $dateStr)
             ->with(['creator', 'project', 'tags', 'assignees', 'attachments', 'comments', 'completionLog.user', 'parent.project'])
@@ -531,7 +531,7 @@ $tasks = Task::assignedTo(Auth::id())
         $offset  = ($page - 1) * $perPage;
         $dateStr = $request->get('date', today()->format('Y-m-d'));
 
-$tasks = Task::assignedTo(Auth::id())
+$tasks = Task::onDayOf(Auth::user())
             ->where('status', 'archived')
             ->where(function ($q) use ($dateStr) {
                 $q->whereDate('completed_at', $dateStr)
@@ -563,10 +563,11 @@ $tasks = Task::assignedTo(Auth::id())
     private function dayReview(Carbon $carbonDate, string $dateStr)
     {
         $userId = Auth::id();
+        $user = Auth::user();
         $taskWith = ['creator', 'project', 'tags', 'assignees', 'attachments', 'comments', 'completionLog.user', 'parent.project'];
 
         // Tasks directly dated for this day where the user is creator or assignee
-        $datedTasks = Task::assignedTo($userId)
+        $datedTasks = Task::onDayOf($user)
             ->where('date', $dateStr)
             ->with($taskWith)
             ->orderByRaw('time IS NULL, time ASC')
@@ -587,7 +588,7 @@ $tasks = Task::assignedTo(Auth::id())
         if (!empty($rescheduledTaskIds)) {
             $rescheduledTasks = Task::whereIn('id', $rescheduledTaskIds)
                 ->whereNotIn('id', $datedTasks->keys()->toArray())
-                ->assignedTo($userId)
+                ->onDayOf($user)
                 ->with($taskWith)
                 ->get()
                 ->keyBy('id');

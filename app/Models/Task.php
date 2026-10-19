@@ -275,6 +275,30 @@ class Task extends Model
     }
 
     /**
+     * Scope: tasks that belong on the user's /day: their plate (scopeAssignedTo),
+     * plus, when they've turned on "show project tasks on my day" in their
+     * profile, dated tasks in projects they're a member of (Project::forMember),
+     * i.e. things they're "watching". Used by /day and everything that must
+     * match it: its done/archived groups, exports, past-day review, the digest
+     * and PNG emails, and the day API. Overdue, undated and the calendar stay on
+     * scopeAssignedTo so a project-mate's backlog never lands on your lists.
+     */
+    public function scopeOnDayOf(Builder $query, User $user): Builder
+    {
+        if (!$user->show_project_tasks_on_day) {
+            return $query->assignedTo($user->id);
+        }
+
+        return $query->where(function ($q) use ($user) {
+            $q->assignedTo($user->id)
+              ->orWhere(function ($w) use ($user) {
+                  $w->whereNotNull('date')
+                    ->whereHas('project', fn ($pq) => $pq->forMember($user->id));
+              });
+        });
+    }
+
+    /**
      * Scope: tasks whose description or comments contain a reference to $taskId.
      * Covers [task:N], /tasks/N URLs, and ?task=N / &task=N sidebar URLs.
      */

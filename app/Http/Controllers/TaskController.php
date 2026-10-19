@@ -965,7 +965,7 @@ class TaskController extends Controller
         if ($result) {
             $dateStr = $result->format('Y-m-d');
             $tasks = Task::with('project:id,name')
-                ->assignedTo(Auth::id())
+                ->onDayOf(Auth::user())
                 ->where('date', $dateStr)
                 ->where('status', 'incomplete')
                 ->get(['id', 'name', 'project_id']);

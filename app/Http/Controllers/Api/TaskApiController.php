@@ -151,7 +151,7 @@ class TaskApiController extends Controller
         $user = $request->user();
 
         $baseQuery = function ($status) use ($user, $carbonDate) {
-            return Task::assignedTo($user->id)
+            return Task::onDayOf($user)
                 ->where('status', $status)
                 ->whereDate('updated_at', $carbonDate)
                 ->with(['creator', 'project', 'tags', 'assignees', 'comments' => function ($q) {
@@ -182,7 +182,7 @@ class TaskApiController extends Controller
 
         $user = $request->user();
 
-        $tasks = Task::assignedTo($user->id)
+        $tasks = Task::onDayOf($user)
             ->where('status', '!=', 'archived')
             ->where('date', $carbonDate->format('Y-m-d'))
             ->with(['creator', 'project', 'tags', 'assignees', 'comments' => function ($q) {

@@ -4,14 +4,24 @@ These changes have been implemented since the last release. This file is not cum
 
 ## Upgrade Steps
 
-Run this once after deploying:
+Run these after deploying:
 
 ```bash
+php artisan migrate
 php artisan tasks:backfill-creator-assignments --dry-run   # preview
 php artisan tasks:backfill-creator-assignments             # apply
 ```
 
 It assigns each existing task to its creator when the creator isn't already an assignee (see "The Creator Is Always Assigned" below). It's safe to run more than once.
+
+## Watching Project Tasks on Your Day
+
+New under Day Preferences on your profile: **Also show dated tasks from projects I'm assigned to**. When it's on, tasks dated for a day appear on that day's page even if they're assigned to someone else in a project you belong to, so you can follow along without being added to every task. It's off by default, so nothing changes until you opt in.
+
+- Applies to the Day page (including its Done and Archived sections and past days), the day exports (Markdown, PDF, PNG), the morning digest and PNG emails, the day API and the date suggestions while typing a task.
+- Doesn't apply to Overdue, Undated, All Tasks or the Calendar, which still show only tasks assigned to you. A project-mate's backlog never lands on your Overdue page.
+- Only dated tasks are shown. Undated tasks in your projects stay on the project page.
+- Run `php artisan migrate` after deploying; it adds one column to users.
 
 ## Project Members Can See Each Other's Tasks
 
@@ -19,7 +29,7 @@ Anyone who owns a project, or is assigned to it, can now find every task in it, 
 
 - Search, tag pages and tag counts, the change log, parent-task pickers, location suggestions, reordering, bulk actions and the full data export now include tasks from projects you belong to.
 - Being assigned to a single task still lets you see that one task, and nothing else in the project.
-- Your own lists are unchanged: Today, Overdue, Undated, All, Calendar, the morning digest emails and the day API still show only tasks you created or are assigned to. A project-mate's overdue tasks will not pile up on your Overdue page.
+- Your own lists are unchanged: Overdue, Undated, All Tasks and the Calendar still show only tasks you created or are assigned to. A project-mate's overdue tasks will not pile up on your Overdue page. The Day page, morning emails and day API work the same way unless you opt in to the setting above.
 
 ## Fixes
 

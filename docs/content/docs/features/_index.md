@@ -66,6 +66,7 @@ Link to other tasks, projects, tags, or locations from any description or commen
 
 ### Day Page
 - Tasks can be marked done inline without a page reload, but to mark a task archived, you need to open it up and update the dropdown.
+- By default the Day page shows only tasks assigned to you. If you'd also like to follow along with a project you're assigned to, tick **Also show dated tasks from projects I'm assigned to** under Day Preferences on your profile. Dated tasks in those projects then appear on their day, even when they aren't assigned to you. The same list feeds your day exports and morning emails. Overdue, Undated and Calendar are unaffected and still show only tasks assigned to you.
 - Click the date header to jump to any date.
     - Toggle between layouts with the buttons on the right extreme of the page, toward the top. 
         - **List view** - pretty much what it sounds like.
