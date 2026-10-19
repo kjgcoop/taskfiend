@@ -517,8 +517,9 @@ $tasks = Task::onDayOf(Auth::user())
         }
 
         $hideDate = true;
+        $markNotAssigned = true;
         return response()->json([
-            'html'     => view('tasks.partials.completed-list', compact('tasks', 'hideDate'))->render(),
+            'html'     => view('tasks.partials.completed-list', compact('tasks', 'hideDate', 'markNotAssigned'))->render(),
             'hasMore'  => $hasMore,
             'nextPage' => $page + 1,
         ]);
@@ -553,8 +554,9 @@ $tasks = Task::onDayOf(Auth::user())
         $readOnly = true;
         $showAsArchived = true;
         $hideDate = true;
+        $markNotAssigned = true;
         return response()->json([
-            'html'     => view('tasks.partials.completed-list', compact('tasks', 'readOnly', 'showAsArchived', 'hideDate'))->render(),
+            'html'     => view('tasks.partials.completed-list', compact('tasks', 'readOnly', 'showAsArchived', 'hideDate', 'markNotAssigned'))->render(),
             'hasMore'  => $hasMore,
             'nextPage' => $page + 1,
         ]);

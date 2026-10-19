@@ -86,6 +86,8 @@
                 <span class="text-blue-400">{{ $task->project->name }}</span>
             @endif
 
+            <x-not-assigned-badge :task="$task" />
+
             @if($showCreator && $task->creator && $task->creator_id !== auth()->id())
                 <span class="text-gray-600">from <span class="text-gray-400">{{ $task->creator->name }}</span></span>
             @endif

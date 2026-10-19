@@ -176,6 +176,7 @@
                     <a href="{{ route('tasks.show', $task) }}"
                        @click.prevent="($event.ctrlKey || $event.metaKey) ? window.open('{{ route('tasks.show', $task) }}', '_blank') : $dispatch('open-task-panel', { taskId: {{ $task->id }} })"
                        class="text-xs font-medium text-gray-200 truncate task-title cursor-pointer">{!! render_title($task->name) !!}</a>
+                    <x-not-assigned-badge :task="$task" :compact="true" />
                 </span>
             @endforeach
         </div>
@@ -321,7 +322,7 @@
                              half-leading from eating into that top-aligned space, which is what let
                              a too-short block clip the top *and* bottom of a line simultaneously. --}}
                         <div class="flex flex-col justify-start overflow-hidden h-full">
-                            <div class="text-xs font-semibold leading-none truncate task-title">{!! render_title($task->name) !!}</div>
+                            <div class="text-xs font-semibold leading-none truncate task-title"><x-not-assigned-badge :task="$task" :compact="true" />{!! render_title($task->name) !!}</div>
                             <div class="text-xs opacity-75 leading-none truncate mt-0.5">{{ $timeLabel }}</div>
                             @if($task->description)
                             <div class="text-xs opacity-60 leading-none truncate mt-0.5">{{ $task->description }}</div>

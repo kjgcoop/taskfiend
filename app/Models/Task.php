@@ -275,6 +275,17 @@ class Task extends Model
     }
 
     /**
+     * Whether this task is on the user's plate (they created it or are
+     * assigned to it), as opposed to appearing on their day only because they
+     * belong to its project (see scopeOnDayOf). Reads the loaded assignees, so
+     * day lists should eager-load them (they already do).
+     */
+    public function isOnPlateOf(int $userId): bool
+    {
+        return $this->creator_id === $userId || $this->assignees->contains('id', $userId);
+    }
+
+    /**
      * Scope: tasks that belong on the user's /day: their plate (scopeAssignedTo),
      * plus, when they've turned on "show project tasks on my day" in their
      * profile, dated tasks in projects they're a member of (Project::forMember),

@@ -1,4 +1,4 @@
-@props(['tasks', 'depth' => 0, 'hideDate' => false, 'readOnly' => false, 'viewDate' => null, 'showAsArchived' => false, 'sortable' => false, 'reorderUrl' => null, 'overdueView' => false])
+@props(['tasks', 'depth' => 0, 'hideDate' => false, 'readOnly' => false, 'viewDate' => null, 'showAsArchived' => false, 'sortable' => false, 'reorderUrl' => null, 'overdueView' => false, 'markNotAssigned' => false])
 
 @pushOnce('scripts')
 <script nonce="{{ csp_nonce() }}">
@@ -1192,6 +1192,9 @@
                                @click.stop
                                class="text-blue-400 hover:text-blue-300 hover:underline"
                                data-task-project-display>{{ $task->project->name }}</a>
+                        @endif
+                        @if($markNotAssigned)
+                            <x-not-assigned-badge :task="$task" />
                         @endif
                         @if($task->recurrence_pattern)
                             {{-- Named group (group/rec): the row card is itself a plain `group`, and an unnamed group-hover fires for ANY hovered ancestor group, so the tooltip popped up anywhere on the row (e.g. the checkbox). --}}
