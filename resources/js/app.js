@@ -45,6 +45,18 @@ window.collectVisibleFilterableTaskIds = function () {
     });
     return ids;
 };
+// Export MD links on the project and tag pages: navigate to the link's own href with the ids of
+// every task row visible right now (folded sections, collapsed subtasks and the on-page filter
+// all hide rows), so the export mirrors the screen. The server only narrows to this set. 'ids' is
+// always sent, even empty, so a fully folded page doesn't fall back to "everything".
+Alpine.data('visibleIdsExport', () => ({
+    go() {
+        const p = new URLSearchParams();
+        window.collectVisibleFilterableTaskIds().forEach(id => p.append('ids[]', id));
+        if (!p.has('ids[]')) p.append('ids', '');
+        window.location.href = this.$el.href + '?' + p.toString();
+    },
+}));
 // Quick-complete circle button on a task-list row. Same story as taskSortableList above: this
 // used to live only in task-list.blade.php's @pushOnce, which subtask-list.blade.php relied on
 // without actually including — so the quick-complete button on subtask rows silently threw

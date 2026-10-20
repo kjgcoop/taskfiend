@@ -213,9 +213,23 @@ class TagController extends Controller
 
     public function exportMarkdown(Request $request, Tag $tag)
     {
-        $incomplete = $tag->tasks()->visibleTo(Auth::id())->where('status', 'incomplete')->orderByRaw('tasks.date IS NULL, tasks.date ASC, tasks.time IS NULL, tasks.time ASC')->get();
-        $done       = $tag->tasks()->visibleTo(Auth::id())->where('status', 'done')->orderByRaw('tasks.date IS NULL, tasks.date ASC')->get();
-        $archived   = $tag->tasks()->visibleTo(Auth::id())->where('status', 'archived')->orderByRaw('tasks.date IS NULL, tasks.date ASC')->get();
+        // The tag page sends the ids of the task rows currently visible on screen (folded
+        // sections and the on-page filter hide rows); this only narrows, never widens. No 'ids'
+        // param at all (a bookmarked URL) exports everything.
+        $visibleIds = $request->has('ids')
+            ? array_map('intval', array_filter((array) $request->input('ids', []), fn ($id) => $id !== ''))
+            : null;
+
+        $group = fn (string $status, string $order) => $tag->tasks()
+            ->visibleTo(Auth::id())
+            ->where('status', $status)
+            ->when($visibleIds !== null, fn ($q) => $q->whereIn('tasks.id', $visibleIds))
+            ->orderByRaw($order)
+            ->get();
+
+        $incomplete = $group('incomplete', 'tasks.date IS NULL, tasks.date ASC, tasks.time IS NULL, tasks.time ASC');
+        $done       = $group('done', 'tasks.date IS NULL, tasks.date ASC');
+        $archived   = $group('archived', 'tasks.date IS NULL, tasks.date ASC');
 
         $lines = ['# ' . $tag->tag_name];
 

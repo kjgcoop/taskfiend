@@ -57,6 +57,8 @@
                         Details
                     </button>
                     <a href="{{ route('tags.export-markdown', $tag) }}"
+                       x-data="visibleIdsExport"
+                       @click.prevent="go()"
                        class="block px-4 py-2 text-gray-200 hover:bg-gray-700">
                         Export MD
                     </a>
