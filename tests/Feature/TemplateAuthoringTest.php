@@ -104,6 +104,25 @@ class TemplateAuthoringTest extends TestCase
         $this->assertNotContains('Fresh Template', collect($response->viewData('projects'))->pluck('name')->all());
     }
 
+    // --- Tasks created in a template ------------------------------------------
+
+    public function test_tasks_created_in_a_template_belong_to_it_and_the_panel_names_it(): void
+    {
+        $template = $this->makeProject('Template Home', Project::TYPE_TEMPLATE);
+
+        $this->actingAs($this->owner)->post(route('tasks.store'), ['name' => 'Form task', 'project_id' => $template->id]);
+        $this->actingAs($this->owner)->postJson(route('tasks.store'), ['name' => 'Quick task', 'project_id' => $template->id, 'quick_add' => 1]);
+
+        $task = Task::where('name', 'Form task')->firstOrFail();
+        $this->assertSame($template->id, $task->project_id);
+        $this->assertSame($template->id, Task::where('name', 'Quick task')->firstOrFail()->project_id);
+
+        // The panel can't find a template in its project list (templates are not
+        // pickable), so it must be given the project name rather than defaulting to "Inbox".
+        $html = $this->actingAs($this->owner)->get(route('tasks.panel', $task))->assertOk()->getContent();
+        $this->assertStringContainsString('&quot;projectName&quot;:&quot;Template Home&quot;', $html);
+    }
+
     // --- Opening from the list -----------------------------------------------
 
     public function test_template_titles_link_to_the_template_page(): void

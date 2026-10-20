@@ -872,7 +872,7 @@
                     this.parentSearch = taskData.parentSearch || '';
                     this.parentTasks = taskData.parentTasks || [];
                     const currentProject = this.allProjects.find(p => p.id == this.fields.project_id);
-                    this.displayProjectName = currentProject ? currentProject.name : 'Inbox';
+                    this.displayProjectName = currentProject ? currentProject.name : (taskData.projectName || 'Inbox');
                     this.original = JSON.parse(JSON.stringify(Object.assign({}, this.fields, { dateText: this.dateText, parentSearch: this.parentSearch })));
                     const descEl = el.querySelector('[data-rendered-description]');
                     if (descEl) {

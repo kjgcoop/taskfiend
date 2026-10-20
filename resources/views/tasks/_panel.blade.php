@@ -79,6 +79,8 @@ $_panelTaskJson = json_encode([
     'dateText'    => $task->date ? \Carbon\Carbon::parse($task->date)->format('l, F j, Y') : '',
     'allTags'     => $tags->map(fn($t) => ['id' => $t->id, 'name' => $t->tag_name, 'color' => $t->color])->values(),
     'allProjects' => $projects->map(fn($p) => ['id' => $p->id, 'name' => $p->name])->values(),
+    // allProjects omits templates, so a template task's own project name can't be looked up there.
+    'projectName' => $task->project?->name,
     'parentSearch' => $task->parent ? $task->parent->name : '',
     'parentTasks'  => $availableParents->map(fn($t) => ['id' => $t->id, 'name' => str_repeat('→ ', $t->getDepth()) . ($t->project ? $t->project->name . ': ' : '') . $t->name, 'rawName' => $t->name])->values(),
 ]);
