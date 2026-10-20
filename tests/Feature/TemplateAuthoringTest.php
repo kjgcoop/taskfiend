@@ -24,6 +24,10 @@ class TemplateAuthoringTest extends TestCase
         parent::setUp();
         $this->owner = User::factory()->create();
         $this->other = User::factory()->create();
+
+        // TaskController::edit()/create() throw without a default project.
+        $default = Project::create(['name' => 'Inbox', 'user_id' => $this->owner->id, 'is_default' => true]);
+        $default->assignees()->sync([$this->owner->id]);
     }
 
     private function makeProject(string $name, string $type = Project::TYPE_NORMAL, ?User $user = null): Project
@@ -83,9 +87,10 @@ class TemplateAuthoringTest extends TestCase
         $this->actingAs($this->owner)->post(route('templates.storeNew'), ['name' => 'Quiet'])->assertRedirect();
         $this->assertFalse(Project::where('name', 'Quiet')->first()->is_public);
 
+        $before = Project::count();
         $this->actingAs($this->owner)->post(route('templates.storeNew'), ['name' => ''])
             ->assertSessionHasErrors('name');
-        $this->assertSame(1, Project::count());
+        $this->assertSame($before, Project::count());
     }
 
     public function test_new_template_appears_in_my_templates_not_in_project_list(): void
@@ -93,7 +98,10 @@ class TemplateAuthoringTest extends TestCase
         $this->actingAs($this->owner)->post(route('templates.storeNew'), ['name' => 'Fresh Template']);
 
         $this->actingAs($this->owner)->get(route('templates.index'))->assertSee('Fresh Template');
-        $this->actingAs($this->owner)->get(route('projects.index'))->assertDontSee('Fresh Template');
+
+        // (Not assertDontSee on the page: the nav's Templates dropdown lists it everywhere.)
+        $response = $this->actingAs($this->owner)->get(route('projects.index'))->assertOk();
+        $this->assertNotContains('Fresh Template', collect($response->viewData('projects'))->pluck('name')->all());
     }
 
     // --- Opening from the list -----------------------------------------------
