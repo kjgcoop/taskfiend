@@ -8,7 +8,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
 /**
- * Rename / visibility / delete (archive) actions on template Projects.
+ * Visibility / delete (archive) actions on template Projects.
  */
 class TemplateManagementActionsTest extends TestCase
 {
@@ -30,28 +30,6 @@ class TemplateManagementActionsTest extends TestCase
             'name' => $name, 'user_id' => $this->owner->id,
             'project_type' => Project::TYPE_TEMPLATE, 'is_public' => $public,
         ]);
-    }
-
-    public function test_creator_can_rename(): void
-    {
-        $t = $this->makeTemplate();
-        $this->actingAs($this->owner)->patchJson(route('templates.update', $t), ['name' => ' Renamed '])
-            ->assertOk()->assertJson(['success' => true, 'name' => 'Renamed']);
-        $this->assertSame('Renamed', $t->fresh()->name);
-    }
-
-    public function test_rename_rejects_blank_name(): void
-    {
-        $t = $this->makeTemplate();
-        $this->actingAs($this->owner)->patchJson(route('templates.update', $t), ['name' => '  '])->assertStatus(400);
-        $this->assertSame('My Template', $t->fresh()->name);
-    }
-
-    public function test_non_creator_cannot_rename_even_if_public(): void
-    {
-        $t = $this->makeTemplate(true);
-        $this->actingAs($this->other)->patchJson(route('templates.update', $t), ['name' => 'X'])->assertForbidden();
-        $this->assertSame('My Template', $t->fresh()->name);
     }
 
     public function test_creator_can_toggle_visibility_both_ways(): void

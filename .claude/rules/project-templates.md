@@ -21,13 +21,14 @@ paths:
 
 ## Controller Actions (`ProjectTemplateController`)
 
-Routes: `templates.index`, `.store`, `.importZip`, `.createFromTemplate`, `.update`, `.destroy`.
+Routes: `templates.index`, `.create`, `.storeNew`, `.store`, `.importZip`, `.createFromTemplate`, `.destroy`.
 
 - `index()`: own templates plus other users' public ones (the nav's `$navTemplates` uses the same set).
 - `store()`: "save project as template". Only the project's creator may. Always creates a **new** template row (no update-in-place mode).
 - `createFromTemplate()`: extracts the zip and creates the `Project` and its full task tree in one call.
 - `importZip()`: stores an uploaded zip directly as a template. The page must render `$errors` (a file over `upload_max_filesize` otherwise fails silently).
-- `updateName()` / `destroy()`: creator-only. Visibility can be toggled after creation.
+- `create()` / `storeNew()`: start an empty template from scratch (a `Project` with `project_type = template`, creator as sole assignee), then redirect to its project page.
+- `destroy()` (archives): creator-only. Visibility can be toggled after creation. There is no rename endpoint: the template list links titles to the template's project page, where the title is click-to-edit via `projects.updateField`.
 
 ## `ProjectTemplateArchive` Is the Only Zip Reader/Writer
 
@@ -49,7 +50,11 @@ Routes: `templates.index`, `.store`, `.importZip`, `.createFromTemplate`, `.upda
 
 ## Nav Dropdown
 
-Desktop: an inline expandable list under Templates in the More menu (chevron uses `@click.stop` because the More panel closes on any click inside it). Mobile: an expander like Projects/Tags, no "Add New". Templates have no show page; items link to `templates.index#template-{id}` and each card has that `id` plus a `target:` ring.
+Desktop: an inline expandable list under Templates in the More menu (chevron uses `@click.stop` because the More panel closes on any click inside it). Mobile: an expander like Projects/Tags, no "Add New". Templates open on their project page (`projects.show`), as do the titles on `/templates`.
+
+## Template Task Trees Stay Inside the Template
+
+Unlike normal projects, a template's tasks may only be nested under tasks of the *same* template, and no outside task may be nested under a template's task. `Task::parentLinkAllowed()` is the rule; it's enforced in `TaskController::update()` and `updateField()`, and the parent pickers are filtered with `Task::scopeParentCandidatesIn()`. A template task that has a parent or subtasks can't be moved out (`Task::isTiedToTemplateTree()`, checked in `update()`, `updateField()` and `bulkUpdate()`). Moving into a template is already impossible (`forMember()` excludes templates).
 
 ## In Progress
 

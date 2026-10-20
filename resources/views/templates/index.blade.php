@@ -30,7 +30,11 @@
                 </div>
             @endif
 
-            <div class="flex justify-end">
+            <div class="flex justify-end gap-2">
+                <a href="{{ route('templates.create') }}"
+                   class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded text-sm">
+                    Add Template
+                </a>
                 <button @click="showImportZip = !showImportZip"
                         class="px-4 py-2 bg-gray-700 hover:bg-gray-600 border border-gray-600 text-gray-100 rounded text-sm">
                     Import Template from Zip
@@ -88,7 +92,7 @@
 
                 @if($myTemplates->isEmpty())
                     <div class="bg-[#202020] border border-gray-700 rounded-lg p-6 text-gray-500">
-                        You haven't saved any templates yet. Open a project and click <strong class="text-gray-400">Save as Template</strong> to create one.
+                        You don't have any templates yet. Click <strong class="text-gray-400">Add Template</strong> to start one, or open a project and click <strong class="text-gray-400">Save as Template</strong>.
                     </div>
                 @else
                     <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -101,21 +105,8 @@
                                 <div class="flex items-start justify-between gap-2">
                                     <div class="flex-1 min-w-0">
                                         <div class="flex items-center gap-2 flex-wrap">
-                                            <div x-data="templateNameEditor"
-                                                 data-template-id="{{ $template->id }}"
-                                                 data-template-name="{{ $template->name }}"
-                                                 class="min-w-0">
-                                                <span x-show="!editing"
-                                                      @click="startEdit()"
-                                                      x-text="name"
-                                                      class="text-gray-100 font-medium cursor-pointer hover:text-gray-300"></span>
-                                                <input x-show="editing" x-cloak x-ref="nameInput"
-                                                       x-model="name"
-                                                       @blur="save()"
-                                                       @keydown.enter.prevent="save()"
-                                                       @keydown.escape.prevent="cancel()"
-                                                       class="text-gray-100 font-medium bg-gray-700 border border-gray-600 rounded px-2 py-0.5 text-sm focus:outline-none focus:border-blue-500 w-48" />
-                                            </div>
+                                            <a href="{{ route('projects.show', $template) }}"
+                                               class="text-gray-100 font-medium hover:text-gray-300 hover:underline">{{ $template->name }}</a>
                                             <button type="button"
                                                     @click="toggleVisibility()"
                                                     :disabled="togglingVisibility"
@@ -248,7 +239,8 @@
                                  x-data="templateItem">
 
                                 <div>
-                                    <span class="text-gray-100 font-medium">{{ $template->name }}</span>
+                                    <a href="{{ route('projects.show', $template) }}"
+                                       class="text-gray-100 font-medium hover:text-gray-300 hover:underline">{{ $template->name }}</a>
                                     <span class="ml-2 text-xs text-gray-500">by {{ $template->creator->name }}</span>
                                     @if($template->description)
                                         <p class="text-gray-400 text-sm mt-1">{{ $template->description }}</p>
