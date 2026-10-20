@@ -109,6 +109,8 @@
                         </button>
                     @endif
                     <a href="{{ route('projects.export-markdown', $project) }}"
+                       x-data="projectMarkdownExport"
+                       @click.prevent="go()"
                        class="block px-4 py-2 text-gray-200 hover:bg-gray-700">
                         Export MD
                     </a>
@@ -1319,6 +1321,22 @@
     @endpush
 
 <script nonce="{{ csp_nonce() }}">
+// Export MD mirrors what's on screen, same as the Today page: the ids of every task row that's
+// visible right now (so folded Incomplete/Done/Archived sections and collapsed subtasks are left
+// out, and so is anything hidden by the on-page filter). The server only ever narrows to this set.
+// Defined outside the owner-only script block because assignees get the export link too.
+document.addEventListener('alpine:init', () => {
+    Alpine.data('projectMarkdownExport', () => ({
+        go() {
+            const p = new URLSearchParams();
+            window.collectVisibleFilterableTaskIds().forEach(id => p.append('ids[]', id));
+            // Always send 'ids' (even when empty) so a fully folded page doesn't fall back to "everything".
+            if (!p.has('ids[]')) p.append('ids', '');
+            window.location.href = this.$el.href + '?' + p.toString();
+        },
+    }));
+});
+
 function setDefaultProject(projectId) {
     fetch(`/projects/${projectId}/set-default`, {
         method: 'POST',

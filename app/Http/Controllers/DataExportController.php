@@ -608,12 +608,22 @@ class DataExportController extends Controller
 
         $this->authorizeProjectExport($project, $user->id);
 
+        // The project page sends the ids of the task rows currently visible on screen (folded
+        // sections, collapsed subtasks and the on-page filter all hide rows). Like the Today
+        // export, this only narrows the query below; an id can never widen it. No 'ids' param at
+        // all (a bookmarked URL) exports the whole project.
+        $visibleIds = $request->has('ids')
+            ? array_map('intval', array_filter((array) $request->input('ids', []), fn ($id) => $id !== ''))
+            : null;
+
         // Load all top-level tasks with their children
         $tasks = Task::where('project_id', $project->id)
             ->whereNull('parent_id')
+            ->when($visibleIds !== null, fn ($q) => $q->whereIn('id', $visibleIds))
             ->orderBy('created_at')
-            ->with(['children' => function($q) {
-                $q->orderBy('created_at');
+            ->with(['children' => function($q) use ($visibleIds) {
+                $q->when($visibleIds !== null, fn ($cq) => $cq->whereIn('id', $visibleIds))
+                    ->orderBy('created_at');
             }])
             ->get();
 
