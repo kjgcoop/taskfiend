@@ -4,7 +4,7 @@
 @unless($task->isOnPlateOf(Auth::id()))
     @php
         $assigneeNames = $task->assignees->pluck('name')->join(', ');
-        $badgeTitle = 'Not assigned to you' . ($assigneeNames !== '' ? ' (assigned to ' . $assigneeNames . ')' : '');
+        $badgeTitle = 'Not assigned to you but in a project you follow' . ($assigneeNames !== '' ? ' (assigned to ' . $assigneeNames . ')' : '');
     @endphp
     <span data-not-assigned-badge title="{{ $badgeTitle }}"
           @class([
