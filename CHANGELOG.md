@@ -7,7 +7,9 @@ These changes have been implemented since the last release. This file is not cum
 Run these after deploying:
 
 ```bash
+npm run build
 php artisan migrate
+php artisan templates:convert-to-projects
 php artisan tasks:backfill-creator-assignments --dry-run   # preview
 php artisan tasks:backfill-creator-assignments             # apply
 ```
