@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Services\TaskMarkdownExport;
 use App\Models\Project;
 use App\Models\Tag;
 use App\Models\Task;
@@ -213,12 +214,7 @@ class TagController extends Controller
 
     public function exportMarkdown(Request $request, Tag $tag)
     {
-        // The tag page sends the ids of the task rows currently visible on screen (folded
-        // sections and the on-page filter hide rows); this only narrows, never widens. No 'ids'
-        // param at all (a bookmarked URL) exports everything.
-        $visibleIds = $request->has('ids')
-            ? array_map('intval', array_filter((array) $request->input('ids', []), fn ($id) => $id !== ''))
-            : null;
+        $visibleIds = TaskMarkdownExport::visibleIds($request);
 
         $group = fn (string $status, string $order) => $tag->tasks()
             ->visibleTo(Auth::id())
@@ -227,28 +223,15 @@ class TagController extends Controller
             ->orderByRaw($order)
             ->get();
 
-        $incomplete = $group('incomplete', 'tasks.date IS NULL, tasks.date ASC, tasks.time IS NULL, tasks.time ASC');
-        $done       = $group('done', 'tasks.date IS NULL, tasks.date ASC');
-        $archived   = $group('archived', 'tasks.date IS NULL, tasks.date ASC');
-
-        $lines = ['# ' . $tag->tag_name];
-
-        foreach ([['## Incomplete', $incomplete], ['## Done', $done], ['## Archived', $archived]] as [$heading, $group]) {
-            if ($group->isNotEmpty()) {
-                $lines[] = '';
-                $lines[] = $heading;
-                foreach ($group as $task) {
-                    $lines[] = '* ' . $task->name;
-                }
-            }
-        }
-
-        $filename = 'tag_' . preg_replace('/[^a-z0-9]+/', '_', strtolower($tag->tag_name)) . '_' . now()->format('Y-m-d') . '.md';
-
-        return response(implode("\n", $lines) . "\n", 200, [
-            'Content-Type'        => 'text/markdown; charset=UTF-8',
-            'Content-Disposition' => 'attachment; filename="' . $filename . '"',
-        ]);
+        return TaskMarkdownExport::response(
+            $tag->tag_name,
+            [
+                'Incomplete' => $group('incomplete', 'tasks.date IS NULL, tasks.date ASC, tasks.time IS NULL, tasks.time ASC'),
+                'Done'       => $group('done', 'tasks.date IS NULL, tasks.date ASC'),
+                'Archived'   => $group('archived', 'tasks.date IS NULL, tasks.date ASC'),
+            ],
+            'tag_' . preg_replace('/[^a-z0-9]+/', '_', strtolower($tag->tag_name)) . '_' . now()->format('Y-m-d') . '.md'
+        );
     }
 
     public function updateField(Request $request, Tag $tag)

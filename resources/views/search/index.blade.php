@@ -345,7 +345,7 @@
                      data-locations="{{ json_encode($locations) }}">
                     @if($tasksTotal > 0 || $completedTasksTotal > 0 || $archivedTasksTotal > 0)
                     <div class="flex justify-end items-center gap-3 mb-4">
-                        <a href="{{ request()->fullUrlWithQuery(['export' => 'markdown']) }}" class="px-3 py-1.5 bg-gray-700 border border-gray-600 text-xs text-gray-100 rounded hover:bg-gray-600">
+                        <a href="{{ request()->fullUrlWithQuery(['export' => 'markdown']) }}" x-data="visibleIdsExport" data-only-when-filtered @click.prevent="go()" class="px-3 py-1.5 bg-gray-700 border border-gray-600 text-xs text-gray-100 rounded hover:bg-gray-600">
                             Export MD
                         </a>
                         <div class="flex items-center gap-2">

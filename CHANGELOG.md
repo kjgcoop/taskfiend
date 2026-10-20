@@ -14,6 +14,10 @@ php artisan tasks:backfill-creator-assignments             # apply
 
 It assigns each existing task to its creator when the creator isn't already an assignee (see "The Creator Is Always Assigned" below). It's safe to run more than once.
 
+## Markdown Exports Match What's on the Page
+
+Export MD on a project or tag page now exports only what's showing: folded Done and Archived sections and collapsed subtasks are left out, as on the Today page. On Overdue and Search, typing in the page's filter box now narrows the export to the rows that match it; with no filter, they still export every result.
+
 ## Watching Project Tasks on Your Day
 
 New under Day Preferences on your profile: **Also show dated tasks from projects I'm assigned to**. When it's on, tasks dated for a day appear on that day's page even if they're assigned to someone else in a project you belong to, so you can follow along without being added to every task. It's off by default, so nothing changes until you opt in.

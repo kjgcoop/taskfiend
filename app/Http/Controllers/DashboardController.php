@@ -10,6 +10,7 @@ use App\Models\Tag;
 use App\Models\Task;
 use App\Models\User;
 use App\Services\DayPdfExporter;
+use App\Services\TaskMarkdownExport;
 use App\Services\DayPngExporter;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -108,11 +109,11 @@ class DashboardController extends Controller
     {
         $incompleteQuery = $this->incompleteTasksForDate($dateStr, $sort, $reversed);
 
-        if (!$request->has('ids')) {
+        $ids = TaskMarkdownExport::visibleIds($request);
+        if ($ids === null) {
             return [$incompleteQuery->get(), collect(), collect()];
         }
 
-        $ids = array_map('intval', (array) $request->input('ids', []));
         $doneQuery     = $this->completedTasksForDate($dateStr);
         $archivedQuery = $this->archivedTasksForDate($dateStr);
 
@@ -290,22 +291,16 @@ class DashboardController extends Controller
             ->whereHas('project', fn($pq) => $pq->whereNotIn('status', ['archived', 'done']))
             ->orderByRaw('date ASC, time IS NULL, time ASC');
 
-        if ($request->has('ids')) {
-            $ids = array_map('intval', (array) $request->input('ids', []));
+        $ids = TaskMarkdownExport::visibleIds($request);
+        if ($ids !== null) {
             $tasksQuery->whereIn('id', $ids);
         }
 
-        $tasks = $tasksQuery->get();
-
-        $lines = ['# Overdue Tasks'];
-        foreach ($tasks as $task) {
-            $lines[] = '* ' . $task->name;
-        }
-
-        return response(implode("\n", $lines) . "\n", 200, [
-            'Content-Type'        => 'text/markdown; charset=UTF-8',
-            'Content-Disposition' => 'attachment; filename="overdue_' . today()->format('Y-m-d') . '.md"',
-        ]);
+        return TaskMarkdownExport::response(
+            'Overdue Tasks',
+            [$tasksQuery->get()],
+            'overdue_' . today()->format('Y-m-d') . '.md'
+        );
     }
 
     /**
@@ -327,22 +322,11 @@ class DashboardController extends Controller
 
         [$incomplete, $done, $archived] = $this->dayExportTaskGroups($dateStr, $request, $sort, $reversed);
 
-        $lines = ['# ' . $carbonDate->format('l, F j, Y')];
-
-        foreach ([['## Incomplete', $incomplete], ['## Done', $done], ['## Archived', $archived]] as [$heading, $group]) {
-            if ($group->isNotEmpty()) {
-                $lines[] = '';
-                $lines[] = $heading;
-                foreach ($group as $task) {
-                    $lines[] = '* ' . $task->name;
-                }
-            }
-        }
-
-        return response(implode("\n", $lines) . "\n", 200, [
-            'Content-Type'        => 'text/markdown; charset=UTF-8',
-            'Content-Disposition' => 'attachment; filename="tasks_' . $dateStr . '.md"',
-        ]);
+        return TaskMarkdownExport::response(
+            $carbonDate->format('l, F j, Y'),
+            ['Incomplete' => $incomplete, 'Done' => $done, 'Archived' => $archived],
+            'tasks_' . $dateStr . '.md'
+        );
     }
 
     /**
