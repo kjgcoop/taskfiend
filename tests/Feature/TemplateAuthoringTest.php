@@ -123,6 +123,75 @@ class TemplateAuthoringTest extends TestCase
         $this->assertStringContainsString('&quot;projectName&quot;:&quot;Template Home&quot;', $html);
     }
 
+    // --- Moving tasks: templates mirror normal projects -------------------------
+
+    public function test_template_task_can_move_only_to_another_own_template(): void
+    {
+        $a = $this->makeProject('A', Project::TYPE_TEMPLATE);
+        $b = $this->makeProject('B', Project::TYPE_TEMPLATE);
+        $normal = $this->makeProject('Normal');
+        $others = $this->makeProject('Theirs', Project::TYPE_TEMPLATE, $this->other);
+        $others->update(['is_public' => true]);
+        $task = $this->makeTask($a);
+
+        foreach ([$normal, $others] as $bad) {
+            $this->actingAs($this->owner)->postJson(route('tasks.updateField', $task), ['field' => 'project_id', 'value' => $bad->id])
+                ->assertStatus(422);
+        }
+        $this->assertSame($a->id, $task->fresh()->project_id);
+
+        $this->actingAs($this->owner)->postJson(route('tasks.updateField', $task), ['field' => 'project_id', 'value' => $b->id])
+            ->assertOk();
+        $this->assertSame($b->id, $task->fresh()->project_id);
+    }
+
+    public function test_normal_task_cannot_move_into_a_template(): void
+    {
+        $normal = $this->makeProject('Normal');
+        $template = $this->makeProject('Tpl', Project::TYPE_TEMPLATE);
+        $task = $this->makeTask($normal);
+
+        $this->actingAs($this->owner)->postJson(route('tasks.updateField', $task), ['field' => 'project_id', 'value' => $template->id])
+            ->assertStatus(422);
+        $this->actingAs($this->owner)->postJson(route('tasks.bulkUpdate'), ['task_ids' => [$task->id], 'project_id' => $template->id])
+            ->assertStatus(422);
+    }
+
+    public function test_bulk_move_keeps_templates_and_normal_projects_apart(): void
+    {
+        $a = $this->makeProject('A', Project::TYPE_TEMPLATE);
+        $b = $this->makeProject('B', Project::TYPE_TEMPLATE);
+        $normal = $this->makeProject('Normal');
+        $tplTask = $this->makeTask($a);
+        $normalTask = $this->makeTask($normal);
+
+        $this->actingAs($this->owner)->postJson(route('tasks.bulkUpdate'), ['task_ids' => [$tplTask->id], 'project_id' => $normal->id])
+            ->assertStatus(422);
+        $this->actingAs($this->owner)->postJson(route('tasks.bulkUpdate'), ['task_ids' => [$tplTask->id, $normalTask->id], 'project_id' => $b->id])
+            ->assertStatus(422);
+        $this->actingAs($this->owner)->postJson(route('tasks.bulkUpdate'), ['task_ids' => [$tplTask->id], 'project_id' => $b->id])
+            ->assertOk();
+        $this->assertSame($b->id, $tplTask->fresh()->project_id);
+        $this->assertSame($normal->id, $normalTask->fresh()->project_id);
+    }
+
+    public function test_project_dropdown_lists_templates_for_template_tasks_and_projects_for_the_rest(): void
+    {
+        $a = $this->makeProject('Alpha Template', Project::TYPE_TEMPLATE);
+        $this->makeProject('Beta Template', Project::TYPE_TEMPLATE);
+        $this->makeProject('Gamma Normal');
+        $tplTask = $this->makeTask($a);
+        $normalTask = $this->makeTask($this->makeProject('Delta Normal'));
+
+        $panel = $this->actingAs($this->owner)->get(route('tasks.panel', $tplTask))->getContent();
+        $this->assertStringContainsString('Beta Template', $panel);
+        $this->assertStringNotContainsString('Gamma Normal', $panel);
+
+        $panel = $this->actingAs($this->owner)->get(route('tasks.panel', $normalTask))->getContent();
+        $this->assertStringContainsString('Gamma Normal', $panel);
+        $this->assertStringNotContainsString('Beta Template', $panel);
+    }
+
     // --- Opening from the list -----------------------------------------------
 
     public function test_template_titles_link_to_the_template_page(): void

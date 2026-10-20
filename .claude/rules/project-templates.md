@@ -54,7 +54,7 @@ Desktop: an inline expandable list under Templates in the More menu (chevron use
 
 ## Template Task Trees Stay Inside the Template
 
-Unlike normal projects, a template's tasks may only be nested under tasks of the *same* template, and no outside task may be nested under a template's task. `Task::parentLinkAllowed()` is the rule; it's enforced in `TaskController::update()` and `updateField()`, and the parent pickers are filtered with `Task::scopeParentCandidatesIn()`. A template task that has a parent or subtasks can't be moved out (`Task::isTiedToTemplateTree()`, checked in `update()`, `updateField()` and `bulkUpdate()`). Moving into a template is already impossible (`forMember()` excludes templates).
+Unlike normal projects, a template's tasks may only be nested under tasks of the *same* template, and no outside task may be nested under a template's task. `Task::parentLinkAllowed()` is the rule; it's enforced in `TaskController::update()` and `updateField()`, and the parent pickers are filtered with `Task::scopeParentCandidatesIn()`. A template task that has a parent or subtasks can't be moved out (`Task::isTiedToTemplateTree()`, checked in `update()`, `updateField()` and `bulkUpdate()`). Project moves mirror this: a template's task can only move to another of the creator's templates, and any other task can never move into one (`Project::scopeMoveTargetFor()` validates in `update()`, `updateField()` and `bulkUpdate()`; `scopePickableFor()` feeds the task page/panel/edit dropdowns).
 
 ## In Progress
 
