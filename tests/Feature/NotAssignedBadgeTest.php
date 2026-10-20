@@ -87,6 +87,23 @@ class NotAssignedBadgeTest extends TestCase
             ->assertDontSee('font-semibold text-gray-500', false);
     }
 
+    public function test_tags_on_a_watched_task_are_muted_but_bright_on_an_assigned_one(): void
+    {
+        $tag = \App\Models\Tag::create(['tag_name' => 'zebra-tag', 'color' => '#ff5722']);
+        $watched  = $this->makeTask('Watched Zebra Task', $this->today);
+        $assigned = $this->makeTask('Mine Zebra Task', $this->today, [$this->member->id]);
+        $watched->tags()->sync([$tag->id]);
+        $assigned->tags()->sync([$tag->id]);
+
+        $html = $this->actingAs($this->member)->get(route('day', ['date' => $this->today]))
+            ->assertOk()->getContent();
+
+        // One chip is muted (no inline text color, flagged for the panel's redraw), one keeps the tag's color.
+        $this->assertSame(1, substr_count($html, 'data-muted-tags="1"'));
+        $this->assertSame(1, substr_count($html, 'background-color: #ff572222; color: #ff5722'));
+        $this->assertSame(1, substr_count($html, 'background-color: #ff572222;"'));
+    }
+
     public function test_badge_is_absent_for_the_owner_of_the_task(): void
     {
         $this->makeTask('Owned Zebra Task', $this->today);

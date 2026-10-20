@@ -897,7 +897,9 @@
                     const span = document.createElement('span');
                     span.className = 'inline-block px-2 py-1 text-xs rounded';
                     span.style.backgroundColor = `${t.color}22`;
-                    span.style.color = t.color;
+                    // Watched-only tasks keep their tags muted (see data-muted-tags in the row markup).
+                    if (tagsEl.dataset.mutedTags === '1') span.classList.add('text-gray-500');
+                    else span.style.color = t.color;
                     span.textContent = t.name;
                     tagsEl.appendChild(span);
                 });
@@ -1252,12 +1254,13 @@
                         @endif
                     </div>
                     <div class="flex gap-1 mt-2 flex-wrap" data-task-tags-display
+                         @if($notMine) data-muted-tags="1" @endif
                          @if($task->visibleTags()->count() === 0) style="display:none" @endif>
                         @foreach($task->visibleTags() as $tag)
                             <a href="{{ route('tags.show', $tag) }}"
                                @click.stop
-                               class="inline-block px-2 py-1 text-xs rounded hover:opacity-75"
-                               style="background-color: {{ $tag->color }}22; color: {{ $tag->color }}">
+                               class="inline-block px-2 py-1 text-xs rounded hover:opacity-75 {{ $notMine ? 'text-gray-500' : '' }}"
+                               style="background-color: {{ $tag->color }}22;{{ $notMine ? '' : ' color: ' . $tag->color }}">
                                 {{ $tag->tag_name }}
                             </a>
                         @endforeach

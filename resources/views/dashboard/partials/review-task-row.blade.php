@@ -101,8 +101,8 @@
             @endif
 
             @foreach($task->visibleTags() as $tag)
-                <span class="px-1.5 py-0.5 rounded text-xs"
-                      style="background-color:{{ $tag->color }}22; color:{{ $tag->color }}">
+                <span class="px-1.5 py-0.5 rounded text-xs {{ $notMine ? 'text-gray-500' : '' }}"
+                      style="background-color:{{ $tag->color }}22;{{ $notMine ? '' : 'color:' . $tag->color }}">
                     {{ $tag->tag_name }}
                 </span>
             @endforeach
