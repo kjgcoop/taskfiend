@@ -121,13 +121,7 @@ class TaskApiController extends Controller
             $task->tags()->sync($validated['tag_ids']);
         }
 
-        $assigneeIds = $validated['assignee_ids'] ?? [$user->id];
-        foreach ($assigneeIds as $assigneeId) {
-            $task->assignments()->create([
-                'assignee_id' => $assigneeId,
-                'assigned_by_id' => $user->id,
-            ]);
-        }
+        $task->assignWithCreator($validated['assignee_ids'] ?? []);
 
         $task->changeLogs()->create([
             'date' => now(),
@@ -157,7 +151,7 @@ class TaskApiController extends Controller
         $user = $request->user();
 
         $baseQuery = function ($status) use ($user, $carbonDate) {
-            return Task::visibleTo($user->id)
+            return Task::onDayOf($user)
                 ->where('status', $status)
                 ->whereDate('updated_at', $carbonDate)
                 ->with(['creator', 'project', 'tags', 'assignees', 'comments' => function ($q) {
@@ -188,7 +182,7 @@ class TaskApiController extends Controller
 
         $user = $request->user();
 
-        $tasks = Task::visibleTo($user->id)
+        $tasks = Task::onDayOf($user)
             ->where('status', '!=', 'archived')
             ->where('date', $carbonDate->format('Y-m-d'))
             ->with(['creator', 'project', 'tags', 'assignees', 'comments' => function ($q) {

@@ -26,6 +26,7 @@ class User extends Authenticatable
         'password',
         'email_enabled_at',
         'profile_image',
+        'show_project_tasks_on_day',
     ];
 
     /**
@@ -48,6 +49,7 @@ class User extends Authenticatable
         return [
 //            'email_verified_at' => 'datetime',
             'email_enabled_at' => 'datetime',
+            'show_project_tasks_on_day' => 'boolean',
             'password' => 'hashed',
         ];
     }

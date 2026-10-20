@@ -20,7 +20,7 @@ class TaskController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Task::visibleTo(Auth::id());
+        $query = Task::assignedTo(Auth::id());
 
         if ($request->has('status')) {
             $query->where('status', $request->status);
@@ -341,14 +341,9 @@ class TaskController extends Controller
             $parentTask = Task::find($validated['parent_id']);
             $assigneeIds = $parentTask->assignees->pluck('id')->toArray();
         } else {
-            $assigneeIds = array_unique(array_merge($validated['assignee_ids'] ?? [], [Auth::id()]));
+            $assigneeIds = $validated['assignee_ids'] ?? [];
         }
-        foreach ($assigneeIds as $assigneeId) {
-            $task->assignments()->create([
-                'assignee_id' => $assigneeId,
-                'assigned_by_id' => Auth::id(),
-            ]);
-        }
+        $task->assignWithCreator($assigneeIds);
 
         $this->logChange($task, 'created task', 'created');
 
@@ -986,7 +981,7 @@ class TaskController extends Controller
         if ($result) {
             $dateStr = $result->format('Y-m-d');
             $tasks = Task::with('project:id,name')
-                ->visibleTo(Auth::id())
+                ->onDayOf(Auth::user())
                 ->where('date', $dateStr)
                 ->where('status', 'incomplete')
                 ->get(['id', 'name', 'project_id']);
@@ -1118,7 +1113,7 @@ class TaskController extends Controller
 
         $userId = Auth::id();
 
-        // Only reorder tasks the user has access to (creator or assignee)
+        // Only reorder tasks the user can see
         $accessibleIds = Task::visibleTo($userId)
             ->whereIn('id', $request->ids)
             ->pluck('id')
@@ -1620,17 +1615,11 @@ class TaskController extends Controller
         // ── Assignees ────────────────────────────────────────────────────────────────
         if (!empty($validated['parent_id']) && empty($lineAssigneeIds)) {
             $parentTask  = Task::find($validated['parent_id']);
-            $assigneeIds = $parentTask ? $parentTask->assignees->pluck('id')->toArray() : [Auth::id()];
+            $assigneeIds = $parentTask ? $parentTask->assignees->pluck('id')->toArray() : [];
         } else {
-            $assigneeIds = $lineAssigneeIds ?? [Auth::id()];
+            $assigneeIds = $lineAssigneeIds ?? [];
         }
-
-        foreach ($assigneeIds as $assigneeId) {
-            $task->assignments()->create([
-                'assignee_id'    => $assigneeId,
-                'assigned_by_id' => Auth::id(),
-            ]);
-        }
+        $task->assignWithCreator($assigneeIds);
 
         $this->logChange($task, 'created task', 'created');
 

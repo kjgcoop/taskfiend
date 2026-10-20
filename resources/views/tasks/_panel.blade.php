@@ -86,6 +86,9 @@ $_panelTaskJson = json_encode([
 <div class="p-5 space-y-5" x-data="taskPanelEditor" data-task-json="{{ $_panelTaskJson }}">
     <div data-rendered-description hidden>{!! render_body($task->description ?? '') !!}</div>
 
+    {{-- Visible only through project membership: say why, and where to change it --}}
+    <x-not-assigned-notice :task="$task" />
+
     {{-- Recurrence warning --}}
     @if($task->recurrence_pattern && $task->status !== 'done' && $task->status !== 'archived')
     <div class="p-3 bg-purple-900 bg-opacity-20 border border-purple-500 rounded-lg">

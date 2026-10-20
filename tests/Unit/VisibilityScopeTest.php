@@ -10,7 +10,9 @@ use Tests\TestCase;
 
 /**
  * Tests for the shared visibility query scopes:
- *   Task::visibleTo($userId)   — tasks the user created or is assigned to
+ *   Task::visibleTo($userId)    — tasks the user can see: their own, assigned to them,
+ *                                 or in a project they belong to
+ *   Task::assignedTo($userId)   — tasks on the user's plate: created by or assigned to them
  *   Project::forMember($userId) — projects the user owns or is assigned to
  */
 class VisibilityScopeTest extends TestCase
@@ -74,13 +76,20 @@ class VisibilityScopeTest extends TestCase
 
     public function test_visible_to_groups_conditions_so_other_filters_still_apply(): void
     {
-        // A done task belonging to someone else must not leak through when the
-        // scope is combined with an OR-prone status filter — the scope's
-        // creator/assignee pair has to stay inside its own WHERE group.
+        // A done task belonging to someone else, in a project the stranger
+        // does not share with the owner, must not leak through when the scope
+        // is combined with an OR-prone status filter — the scope's
+        // creator/assignee/member conditions have to stay inside their own
+        // WHERE group.
+        $strangerProject = Project::create([
+            'name'    => 'Stranger Project',
+            'user_id' => $this->stranger->id,
+            'status'  => 'incomplete',
+        ]);
         $foreign = Task::create([
             'name'       => 'Foreign done task',
             'creator_id' => $this->stranger->id,
-            'project_id' => $this->project->id,
+            'project_id' => $strangerProject->id,
             'status'     => 'done',
         ]);
 
@@ -89,6 +98,67 @@ class VisibilityScopeTest extends TestCase
             ->pluck('id');
 
         $this->assertFalse($visible->contains($foreign->id));
+    }
+
+    public function test_visible_to_includes_tasks_in_projects_the_user_owns(): void
+    {
+        $task = Task::create([
+            'name'       => 'Made by someone else, in the owner\'s project',
+            'creator_id' => $this->stranger->id,
+            'project_id' => $this->project->id,
+            'status'     => 'incomplete',
+        ]);
+
+        $this->assertTrue(Task::visibleTo($this->owner->id)->pluck('id')->contains($task->id));
+    }
+
+    public function test_visible_to_includes_unassigned_tasks_in_projects_the_user_is_assigned_to(): void
+    {
+        $this->project->assignees()->sync([$this->assignee->id]);
+        $task = $this->makeTask('Only the owner is on this task');
+
+        $this->assertTrue(Task::visibleTo($this->assignee->id)->pluck('id')->contains($task->id));
+        $this->assertFalse(Task::visibleTo($this->stranger->id)->pluck('id')->contains($task->id));
+    }
+
+    public function test_visible_to_does_not_grant_the_rest_of_a_project_via_a_single_assigned_task(): void
+    {
+        $mine   = $this->makeTask('Assigned to stranger');
+        $theirs = $this->makeTask('Not assigned to stranger');
+        $mine->assignments()->create([
+            'assignee_id'    => $this->stranger->id,
+            'assigned_by_id' => $this->owner->id,
+        ]);
+
+        $visible = Task::visibleTo($this->stranger->id)->pluck('id');
+
+        $this->assertTrue($visible->contains($mine->id));
+        $this->assertFalse($visible->contains($theirs->id));
+    }
+
+    public function test_assigned_to_includes_created_and_assigned_tasks_only(): void
+    {
+        $created  = $this->makeTask('Created by owner');
+        $assigned = $this->makeTask('Assigned to assignee');
+        $assigned->assignments()->create([
+            'assignee_id'    => $this->assignee->id,
+            'assigned_by_id' => $this->owner->id,
+        ]);
+
+        $this->assertTrue(Task::assignedTo($this->owner->id)->pluck('id')->contains($created->id));
+        $this->assertTrue(Task::assignedTo($this->assignee->id)->pluck('id')->contains($assigned->id));
+        $this->assertFalse(Task::assignedTo($this->assignee->id)->pluck('id')->contains($created->id));
+    }
+
+    public function test_assigned_to_excludes_unassigned_tasks_in_a_project_the_user_belongs_to(): void
+    {
+        // The whole point of the split: project membership lets you SEE a
+        // task (visibleTo) but does not put it on your plate (assignedTo).
+        $this->project->assignees()->sync([$this->assignee->id]);
+        $task = $this->makeTask('Only the owner is on this task');
+
+        $this->assertTrue(Task::visibleTo($this->assignee->id)->pluck('id')->contains($task->id));
+        $this->assertFalse(Task::assignedTo($this->assignee->id)->pluck('id')->contains($task->id));
     }
 
     public function test_visible_to_works_through_belongs_to_many_relations(): void

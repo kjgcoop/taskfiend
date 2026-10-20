@@ -27,5 +27,6 @@ The Overdue page's Markdown export (`DashboardController::exportOverdueMarkdown(
 ## Notes
 
 - Day Markdown and PDF exports share the on-page sort/reversed params.
+- The day exports, the digest and PNG emails and the day API all list `Task::onDayOf($user)`, the same query as the Day page, so they follow the user's "Also show dated tasks from projects I'm assigned to" profile setting. Don't give an export its own visibility query.
 - Export buttons (MD/PDF/PNG) always live under the three-dot menu.
 - Morning emails (`EmailSubscription`: `daily_digest`, `daily_png`) are sent by `email:task-digest --all` and `email:task-png --all`, scheduled at 06:00 in `routes/console.php`, via Mailgun's HTTP API (`MAILGUN_API_KEY`/`MAILGUN_BASE`). They need the `schedule:run` cron entry. Details: `docs/content/docs/developers/_index.md`.

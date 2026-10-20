@@ -1013,7 +1013,7 @@
         </div>
     </div>
 
-    @if($project->user_id === Auth::id())
+    {{-- Registered for every viewer, not just the owner: the header and modals below render for everyone, and a missing component leaves them uninitialised (modals stuck open). Owner-only behaviour is gated inside the markup. --}}
     @push('scripts')
     <script nonce="{{ csp_nonce() }}">
         document.addEventListener('alpine:init', () => {
@@ -1317,7 +1317,6 @@
         });
     </script>
     @endpush
-    @endif
 
 <script nonce="{{ csp_nonce() }}">
 function setDefaultProject(projectId) {

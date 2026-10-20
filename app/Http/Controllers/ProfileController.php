@@ -68,6 +68,21 @@ class ProfileController extends Controller
     }
 
     /**
+     * Save the "what belongs on my day" preferences. An unchecked box submits
+     * nothing, so a missing field means off.
+     */
+    public function updateDayPreferences(Request $request): RedirectResponse
+    {
+        $request->validate(['show_project_tasks_on_day' => ['nullable', 'boolean']]);
+
+        $request->user()->update([
+            'show_project_tasks_on_day' => $request->boolean('show_project_tasks_on_day'),
+        ]);
+
+        return Redirect::route('profile.edit')->with('status', 'day-preferences-updated');
+    }
+
+    /**
      * Update the user's profile image.
      */
     public function updateImage(Request $request): RedirectResponse

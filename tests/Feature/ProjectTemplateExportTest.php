@@ -81,8 +81,21 @@ class ProjectTemplateExportTest extends TestCase
         $response->assertForbidden();
     }
 
-    public function test_assignee_who_is_not_creator_can_export(): void
+    public function test_project_assignee_who_is_not_owner_can_export_without_any_task_assignment(): void
     {
+        $member = User::factory()->create();
+        $this->project->assignees()->sync([$member->id]);
+        $this->makeTask();
+
+        $response = $this->actingAs($member)->get(route('projects.export-template', $this->project));
+
+        $response->assertOk();
+    }
+
+    public function test_user_assigned_to_a_single_task_cannot_export_the_whole_project(): void
+    {
+        // A task-level assignment lets you see that one task, not download
+        // every other task (including private ones) in the project.
         $assignee = User::factory()->create();
         $task = $this->makeTask();
         Assignment::create([
@@ -93,7 +106,32 @@ class ProjectTemplateExportTest extends TestCase
 
         $response = $this->actingAs($assignee)->get(route('projects.export-template', $this->project));
 
+        $response->assertForbidden();
+    }
+
+    public function test_markdown_export_includes_every_task_for_a_project_assignee(): void
+    {
+        $member = User::factory()->create();
+        $this->project->assignees()->sync([$member->id]);
+        $this->makeTask(['name' => 'Owner-only step']);
+
+        $response = $this->actingAs($member)->get(route('projects.export-markdown', $this->project));
+
         $response->assertOk();
+        $this->assertStringContainsString('Owner-only step', $response->getContent());
+    }
+
+    public function test_markdown_export_is_forbidden_for_a_single_task_assignee(): void
+    {
+        $assignee = User::factory()->create();
+        $task = $this->makeTask();
+        Assignment::create([
+            'task_id'        => $task->id,
+            'assignee_id'    => $assignee->id,
+            'assigned_by_id' => $this->owner->id,
+        ]);
+
+        $this->actingAs($assignee)->get(route('projects.export-markdown', $this->project))->assertForbidden();
     }
 
     // =========================================================================

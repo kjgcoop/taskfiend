@@ -46,3 +46,7 @@ site
 docs/public/*
 .hugo_build.lock
 /spec.md
+/implementation_plan.md
+/prompt.md
+/ralph.sh
+

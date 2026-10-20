@@ -33,7 +33,7 @@ class TaskDigestMailer
     public function tasksFor(User $user, Carbon $date): Collection
     {
         return Task::query()
-            ->visibleTo($user->id)
+            ->onDayOf($user)
             ->where('status', 'incomplete')
             ->where('date', $date->format('Y-m-d'))
             ->whereHas('project', fn ($q) => $q->whereNotIn('status', ['archived', 'done']))

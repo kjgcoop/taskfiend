@@ -6,6 +6,8 @@
     $subtitle    = $subtitle    ?? null;
     $showCreator = $showCreator ?? false;
     $completable = $completable ?? false;
+    // On the day only through project membership: mute the title and project (the badge stays legible).
+    $notMine     = !$task->isOnPlateOf(Auth::id());
 @endphp
 
 <div class="bg-[#202020] px-4 py-3 rounded-lg border border-gray-700 flex items-start gap-3" data-review-row>
@@ -50,7 +52,7 @@
     <div class="flex-1 min-w-0">
         <div class="flex items-start justify-between gap-2">
             <a href="{{ route('tasks.show', $task) }}"
-               class="font-medium leading-snug hover:underline task-title {{ $dimName ? 'text-gray-500 line-through' : 'text-gray-100' }}">
+               class="font-medium leading-snug hover:underline task-title {{ $dimName ? 'text-gray-500 line-through' : ($notMine ? 'text-gray-500' : 'text-gray-100') }}">
                 {!! render_title($task->name) !!}
             </a>
 
@@ -83,8 +85,10 @@
             @endif
 
             @if($task->project)
-                <span class="text-blue-400">{{ $task->project->name }}</span>
+                <span class="{{ $notMine ? 'text-gray-500' : 'text-blue-400' }}">{{ $task->project->name }}</span>
             @endif
+
+            <x-not-assigned-badge :task="$task" />
 
             @if($showCreator && $task->creator && $task->creator_id !== auth()->id())
                 <span class="text-gray-600">from <span class="text-gray-400">{{ $task->creator->name }}</span></span>
@@ -97,8 +101,8 @@
             @endif
 
             @foreach($task->visibleTags() as $tag)
-                <span class="px-1.5 py-0.5 rounded text-xs"
-                      style="background-color:{{ $tag->color }}22; color:{{ $tag->color }}">
+                <span class="px-1.5 py-0.5 rounded text-xs {{ $notMine ? 'text-gray-500' : '' }}"
+                      style="background-color:{{ $tag->color }}22;{{ $notMine ? '' : 'color:' . $tag->color }}">
                     {{ $tag->tag_name }}
                 </span>
             @endforeach

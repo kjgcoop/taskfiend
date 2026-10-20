@@ -8,6 +8,7 @@
     'ajaxUrl' => null,
     'hasMore' => false,
     'nextPage' => 2,
+    'markNotAssigned' => false,
 ])
 
 @php
@@ -43,7 +44,7 @@
 
     <div x-show="showCompleted" x-cloak class="mt-4">
         <div x-ref="list">
-            <x-task-list :tasks="$tasks" :hide-date="$hideDate" :read-only="$readOnly" :show-as-archived="$showAsArchived" />
+            <x-task-list :tasks="$tasks" :hide-date="$hideDate" :read-only="$readOnly" :show-as-archived="$showAsArchived" :mark-not-assigned="$markNotAssigned" />
         </div>
 
         <div class="mt-4 text-center" x-show="hasMore">

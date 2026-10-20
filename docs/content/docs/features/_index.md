@@ -15,12 +15,13 @@ title: "Features"
 - **Multi-select** - activate with the clipboard icon next to the quick-add bar to select multiple tasks and perform bulk operations including status, project (combo box), location, and duration. Only tasks on the current page are affected; if the list is paginated, navigate to each page to act on those tasks.
 - **Duration in task lists** - tasks that have a duration set show it directly in list view rows so you can gauge workload at a glance
 - **Sorting** - sort task lists by date, duration, or other fields; a reverse-sort button flips the current order. Tasks without a date or time are sorted by creation date (newest last) - the bottom of an undated list stays stable. Created date is always the secondary sort.
-- **Assignee icons show only other people** - a task's assignee icons leave out you, the person viewing the list. You're obviously an assignee or you wouldn't see it, so only your collaborators' icons appear.
+- **Assignee icons show only other people** - a task's assignee icons leave out you, the person viewing the list. On your own lists you're normally an assignee already, so only your collaborators' icons appear.
 - **Recurrence tooltip** - hover or long-press a task's recurrence pattern to see when the series ends.
 - **Task count tooltip** - hover or long-press the count in a list header for the project breakdown; it now stays on screen on phones.
 - **Manual task reordering** - drag tasks to reorder them, with auto-scroll when dragging to the edge of the page. Scoot arrows (↑ ↓ ⤒ ⤓) let you nudge a task up, down, to the top, or to the bottom one tap at a time; the page follows the arrows so you don't have to hunt for them after each move.
 
 ### Tasks
+- **The creator is always an assignee** - whoever creates a task is assigned to it and can't be unassigned, however it was created (form, quick-add, bulk add, subtask, duplicate or API). Assigning other people adds to the creator; it never replaces them.
 - **Two completed statuses** - statuses done vs archived allow you to see what got completed vs what was intentionally discarded.
 - **Natural language dates & recurrence** - type natural language in the quick-add bar and dates/recurrence are parsed automatically (see below for full syntax)
 - **Markdown** is supported in task descriptions and comments; `` `code` `` spans are also supported in task titles
@@ -47,6 +48,7 @@ Link to other tasks, projects, tags, or locations from any description or commen
 - **Favorite projects** - star any project to mark it as a favorite from the project list or the project's own page; the project list can be filtered to show only favorites, making it easy to separate active work from back-burner projects
 
 ### Project Page
+- **Everyone on the project sees every task in it** - the owner and anyone assigned to the project at the project level can open, search for, tag-browse and bulk-edit any task in the project, whether or not it's assigned to them. Being assigned to a single task shows only that task. Exporting a project (Markdown or template) also requires project membership.
 - **Project Details modal** has a single Save button for all its fields, and the modal stays open while it saves instead of the page reloading out from under it.
 - **Reminder notes** - a project reminder can carry an optional note, to remind you why you're reminding yourself. It shows on the day view and the reminders list, and carries forward when a recurring reminder is dismissed.
 - **Background on creation** - the New Project form takes an optional background image; you no longer have to create the project and upload one as a second step.
@@ -69,6 +71,7 @@ Link to other tasks, projects, tags, or locations from any description or commen
 
 ### Day Page
 - Tasks can be marked done inline without a page reload, but to mark a task archived, you need to open it up and update the dropdown.
+- By default the Day page shows only tasks assigned to you. If you'd also like to follow along with a project you're assigned to, tick **Also show dated tasks from projects I'm assigned to** under Day Preferences on your profile. Dated tasks in those projects then appear on their day, even when they aren't assigned to you. The same list feeds your day exports and morning emails. Tasks that appear only because of this setting carry a **Not Assigned to You** label and muted gray text, and opening one in the side panel shows a notice explaining why it's there, with a link back to the setting. Overdue, Undated and Calendar are unaffected and still show only tasks assigned to you.
 - Click the date header to jump to any date.
     - Toggle between layouts with the buttons on the right extreme of the page, toward the top. 
         - **List view** - pretty much what it sounds like.

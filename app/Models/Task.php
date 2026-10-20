@@ -124,6 +124,24 @@ class Task extends Model
         return $this->tags->whereNull('archived_at');
     }
 
+    /**
+     * Assign a NEW task to $assigneeIds plus its creator. The creator is always
+     * an assignee and can never unassign themselves, so every creation path goes
+     * through here instead of building its own list. "Assigned by" is the creator.
+     * Call once, right after create(): it doesn't look at existing assignments.
+     */
+    public function assignWithCreator(array $assigneeIds = []): void
+    {
+        $ids = array_values(array_unique(array_filter(array_merge($assigneeIds, [$this->creator_id]))));
+
+        foreach ($ids as $assigneeId) {
+            $this->assignments()->create([
+                'assignee_id'    => $assigneeId,
+                'assigned_by_id' => $this->creator_id,
+            ]);
+        }
+    }
+
     public function assignments(): HasMany
     {
         return $this->hasMany(Assignment::class);
@@ -235,15 +253,71 @@ class Task extends Model
     }
 
     /**
-     * Scope: tasks visible to the given user — tasks they created or are
-     * assigned to. This is the canonical visibility rule for task lists;
-     * use it everywhere instead of hand-rolling the creator/assignee check.
+     * Scope: tasks the given user can SEE — everything on their plate (see
+     * scopeAssignedTo) plus every task in a project they're a member of
+     * (owner or project-level assignee, i.e. Project::forMember). This is the
+     * canonical access rule: search, tags, pickers, exports, bulk actions.
+     * It matches authorizeTaskAccess(), which already lets project members
+     * open and edit any task in their project.
+     *
+     * "Can see" is not "is mine": lists meant to hold the user's own work
+     * (day, overdue, undated, calendar, digest) use scopeAssignedTo instead.
      */
     public function scopeVisibleTo(Builder $query, int $userId): Builder
     {
         return $query->where(function ($q) use ($userId) {
             $q->where('creator_id', $userId)
+              ->orWhereHas('assignees', fn ($aq) => $aq->where('users.id', $userId))
+              ->orWhereHas('project', fn ($pq) => $pq->forMember($userId));
+        });
+    }
+
+    /**
+     * Scope: tasks on the given user's plate — ones they created or are
+     * assigned to, regardless of project membership. A creator is normally
+     * an assignee too, but not on every path (a subtask created without
+     * explicit assignees inherits its parent's), so both are checked.
+     */
+    public function scopeAssignedTo(Builder $query, int $userId): Builder
+    {
+        return $query->where(function ($q) use ($userId) {
+            $q->where('creator_id', $userId)
               ->orWhereHas('assignees', fn ($aq) => $aq->where('users.id', $userId));
+        });
+    }
+
+    /**
+     * Whether this task is on the user's plate (they created it or are
+     * assigned to it), as opposed to appearing on their day only because they
+     * belong to its project (see scopeOnDayOf). Reads the loaded assignees, so
+     * day lists should eager-load them (they already do).
+     */
+    public function isOnPlateOf(int $userId): bool
+    {
+        return $this->creator_id === $userId || $this->assignees->contains('id', $userId);
+    }
+
+    /**
+     * Scope: tasks that belong on the user's /day: their plate (scopeAssignedTo),
+     * plus, when they've turned on "show project tasks on my day" in their
+     * profile, dated tasks in projects they're a member of (Project::forMember),
+     * i.e. things they're "watching". Used by /day and everything that must
+     * match it: its done/archived groups, exports, past-day review, the digest
+     * and PNG emails, and the day API. Overdue, undated and the calendar stay on
+     * scopeAssignedTo so a project-mate's backlog never lands on your lists.
+     */
+    public function scopeOnDayOf(Builder $query, User $user): Builder
+    {
+        if (!$user->show_project_tasks_on_day) {
+            return $query->assignedTo($user->id);
+        }
+
+        return $query->where(function ($q) use ($user) {
+            $q->assignedTo($user->id)
+              ->orWhere(function ($w) use ($user) {
+                  $w->whereNotNull('date')
+                    ->whereHas('project', fn ($pq) => $pq->forMember($user->id));
+              });
         });
     }
 
@@ -359,13 +433,7 @@ class Task extends Model
                 ]);
             }
         } else {
-            $assigneeIds = $assignToActorOnly ? [$actorId] : ($this->assignees->pluck('id')->toArray() ?: [$actorId]);
-            foreach ($assigneeIds as $assigneeId) {
-                $new->assignments()->create([
-                    'assignee_id'    => $assigneeId,
-                    'assigned_by_id' => $actorId,
-                ]);
-            }
+            $new->assignWithCreator($assignToActorOnly ? [] : $this->assignees->pluck('id')->toArray());
         }
 
         foreach ($this->attachments as $attachment) {

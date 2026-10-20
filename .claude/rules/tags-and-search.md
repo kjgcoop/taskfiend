@@ -25,7 +25,7 @@ paths:
 
 ## Quick-Add Tokens
 
-`QuickAddParser` returns a `QuickAddTokens` DTO. Matching is hyphen-insensitive, limited to **active** projects/tags, and unmatched tokens stay in the title. Location fuzzy-match is scoped to the user's *visible* tasks. Matched `&user` tokens are stripped by both preview and store using the typed token, not a re-derived slug.
+`QuickAddParser` returns a `QuickAddTokens` DTO. Matching is hyphen-insensitive, limited to **active** projects/tags, and unmatched tokens stay in the title. Location fuzzy-match is scoped to the user's *visible* tasks (`Task::visibleTo`). Matched `&user` tokens are stripped by both preview and store using the typed token, not a re-derived slug.
 
 ## Search
 

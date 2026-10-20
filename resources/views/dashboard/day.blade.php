@@ -210,6 +210,7 @@
                 <x-completed-tasks-section
                     :tasks="$completedTasks"
                     :hide-date="true"
+                    :mark-not-assigned="true"
                     :total-count="$completedTasksTotal"
                     :has-more="$completedTasksHasMore"
                     :ajax-url="$completedTasksHasMore ? route('day.completedTasks') . '?date=' . $date : null" />
@@ -219,6 +220,7 @@
                     :hide-date="true"
                     :read-only="true"
                     :show-as-archived="true"
+                    :mark-not-assigned="true"
                     :total-count="$archivedTasksTotal"
                     :has-more="$archivedTasksHasMore"
                     :ajax-url="$archivedTasksHasMore ? route('day.archivedTasks') . '?date=' . $date : null" />
@@ -271,7 +273,7 @@
                 </div>
                 <div x-show="showIncomplete">
                     <div x-ref="taskContainer">
-                        <x-task-list :tasks="$tasks" :hide-date="true" :view-date="$carbonDate->format('Y-m-d')" :sortable="$sort === 'custom'" />
+                        <x-task-list :tasks="$tasks" :hide-date="true" :view-date="$carbonDate->format('Y-m-d')" :sortable="$sort === 'custom'" :mark-not-assigned="true" />
                     </div>
                     <div x-show="noResults" x-cloak class="bg-[#202020] p-8 rounded-lg text-center text-gray-400 border border-gray-700">
                         No tasks match your filter.
@@ -280,6 +282,7 @@
                 <x-completed-tasks-section
                     :tasks="$completedTasks"
                     :hide-date="true"
+                    :mark-not-assigned="true"
                     :total-count="$completedTasksTotal"
                     :has-more="$completedTasksHasMore"
                     :ajax-url="$completedTasksHasMore ? route('day.completedTasks') . '?date=' . $date : null" />
@@ -289,6 +292,7 @@
                     :hide-date="true"
                     :read-only="true"
                     :show-as-archived="true"
+                    :mark-not-assigned="true"
                     :total-count="$archivedTasksTotal"
                     :has-more="$archivedTasksHasMore"
                     :ajax-url="$archivedTasksHasMore ? route('day.archivedTasks') . '?date=' . $date : null" />

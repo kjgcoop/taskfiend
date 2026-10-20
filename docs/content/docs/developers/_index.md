@@ -65,7 +65,7 @@ Laravel's own built-in `mailgun` mail transport expects, so switching to `MAIL_M
 is a drop-in if `symfony/mailgun-mailer` ever becomes installable — except that transport doesn't
 force the "from" domain the way `defaultFrom()` does, so `MAIL_FROM_ADDRESS` would need to already
 be on `MAILGUN_BASE`'s domain at that point. `App\Services\TaskDigestMailer` builds a user's "tasks
-for the day" digest (used today by `php artisan email:task-digest`) without touching `Auth::id()` or
+for the day" digest (the same `Task::onDayOf($user)` list as the Day page, so it follows the user's Day Preferences; used today by `php artisan email:task-digest`) without touching `Auth::id()` or
 `request()`, so it can be called the same way from a queued/scheduled job later.
 `App\Services\TaskPngMailer` (`php artisan email:task-png {email?} {--all}`) sends the same day's
 tasks as a single PNG — the image the day view's Export PNG button makes (`DayPngExporter`) —

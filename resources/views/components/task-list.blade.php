@@ -1,4 +1,4 @@
-@props(['tasks', 'depth' => 0, 'hideDate' => false, 'readOnly' => false, 'viewDate' => null, 'showAsArchived' => false, 'sortable' => false, 'reorderUrl' => null, 'overdueView' => false])
+@props(['tasks', 'depth' => 0, 'hideDate' => false, 'readOnly' => false, 'viewDate' => null, 'showAsArchived' => false, 'sortable' => false, 'reorderUrl' => null, 'overdueView' => false, 'markNotAssigned' => false])
 
 @pushOnce('scripts')
 <script nonce="{{ csp_nonce() }}">
@@ -897,7 +897,9 @@
                     const span = document.createElement('span');
                     span.className = 'inline-block px-2 py-1 text-xs rounded';
                     span.style.backgroundColor = `${t.color}22`;
-                    span.style.color = t.color;
+                    // Watched-only tasks keep their tags muted (see data-muted-tags in the row markup).
+                    if (tagsEl.dataset.mutedTags === '1') span.classList.add('text-gray-500');
+                    else span.style.color = t.color;
                     span.textContent = t.name;
                     tagsEl.appendChild(span);
                 });
@@ -1151,7 +1153,9 @@
                         </div>
                     @endif
 
-                    <h3 class="font-semibold {{ ($showAsArchived || $task->status === 'archived') ? 'text-gray-500 line-through' : 'text-gray-100' }}">
+                    {{-- On the day only through project membership: mute the title and project link (the badge below stays legible). --}}
+                    @php $notMine = $markNotAssigned && !$task->isOnPlateOf(Auth::id()); @endphp
+                    <h3 class="font-semibold {{ ($showAsArchived || $task->status === 'archived') ? 'text-gray-500 line-through' : ($notMine ? 'text-gray-500' : 'text-gray-100') }}">
                         <span data-task-name-display class="task-title">{!! render_title($task->name) !!}</span>
                         @if($task->children->count() > 0)
                             <span class="text-xs text-gray-500 font-normal">
@@ -1190,8 +1194,11 @@
                         @if($task->project)
                             <a href="{{ route('projects.show', $task->project) }}"
                                @click.stop
-                               class="text-blue-400 hover:text-blue-300 hover:underline"
+                               class="{{ $notMine ? 'text-gray-500 hover:text-gray-400' : 'text-blue-400 hover:text-blue-300' }} hover:underline"
                                data-task-project-display>{{ $task->project->name }}</a>
+                        @endif
+                        @if($notMine)
+                            <x-not-assigned-badge :task="$task" />
                         @endif
                         @if($task->recurrence_pattern)
                             {{-- Named group (group/rec): the row card is itself a plain `group`, and an unnamed group-hover fires for ANY hovered ancestor group, so the tooltip popped up anywhere on the row (e.g. the checkbox). --}}
@@ -1247,12 +1254,13 @@
                         @endif
                     </div>
                     <div class="flex gap-1 mt-2 flex-wrap" data-task-tags-display
+                         @if($notMine) data-muted-tags="1" @endif
                          @if($task->visibleTags()->count() === 0) style="display:none" @endif>
                         @foreach($task->visibleTags() as $tag)
                             <a href="{{ route('tags.show', $tag) }}"
                                @click.stop
-                               class="inline-block px-2 py-1 text-xs rounded hover:opacity-75"
-                               style="background-color: {{ $tag->color }}22; color: {{ $tag->color }}">
+                               class="inline-block px-2 py-1 text-xs rounded hover:opacity-75 {{ $notMine ? 'text-gray-500' : '' }}"
+                               style="background-color: {{ $tag->color }}22;{{ $notMine ? '' : ' color: ' . $tag->color }}">
                                 {{ $tag->tag_name }}
                             </a>
                         @endforeach
