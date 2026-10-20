@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Exceptions\InvalidTemplateException;
+use App\Models\ChangeLog;
 use App\Models\Project;
 use App\Models\ProjectTemplate;
 use App\Models\ScheduledProject;
@@ -41,6 +42,53 @@ class ProjectTemplateController extends Controller
             ->get();
 
         return view('templates.index', compact('myTemplates', 'publicTemplates'));
+    }
+
+    /**
+     * Form for starting a template from scratch (no source project).
+     */
+    public function create()
+    {
+        return view('templates.create');
+    }
+
+    /**
+     * Create an empty template and open it, like creating a project.
+     * Templates are projects with project_type "template"; owner-only,
+     * so there are no assignees beyond the creator.
+     */
+    public function storeNew(Request $request)
+    {
+        $longTextMax = (int) config('taskfiend.long_text_max_chars');
+        $validated = $request->validate([
+            'name'        => 'required|string|max:255',
+            'description' => "nullable|string|max:{$longTextMax}",
+            'is_public'   => 'nullable|boolean',
+        ]);
+
+        $user = $request->user();
+
+        $template = Project::create([
+            'name'         => $validated['name'],
+            'description'  => $validated['description'] ?? null,
+            'user_id'      => $user->id,
+            'status'       => 'incomplete',
+            'project_type' => Project::TYPE_TEMPLATE,
+            'is_public'    => $request->boolean('is_public', false),
+        ]);
+
+        $template->assignees()->sync([$user->id]);
+
+        ChangeLog::create([
+            'date'        => now(),
+            'user_id'     => $user->id,
+            'entity_type' => 'projects',
+            'entity_id'   => $template->id,
+            'description' => 'created template',
+        ]);
+
+        return redirect()->route('projects.show', $template)
+            ->with('success', 'Template created. Add tasks to it below.');
     }
 
     /**
@@ -200,31 +248,6 @@ class ProjectTemplateController extends Controller
 
         return response()->download($zipPath, 'taskfiend_template_' . str_replace(' ', '_', $template->name) . '_' . now()->format('Y-m-d') . '.zip')
             ->deleteFileAfterSend(true);
-    }
-
-    /**
-     * Rename a stored template. Only the creator may rename.
-     */
-    public function updateName(Request $request, Project $template)
-    {
-        abort_unless($template->isTemplate(), 404);
-
-        if ($template->user_id !== $request->user()->id) {
-            return response()->json(['success' => false, 'message' => 'Only the template creator can rename it.'], 403);
-        }
-
-        $name = trim((string) $request->input('name'));
-
-        if ($name === '') {
-            return response()->json(['success' => false, 'message' => 'Name cannot be empty'], 400);
-        }
-        if (strlen($name) > 255) {
-            return response()->json(['success' => false, 'message' => 'Name cannot exceed 255 characters.'], 422);
-        }
-
-        $template->update(['name' => $name]);
-
-        return response()->json(['success' => true, 'name' => $template->name]);
     }
 
     /**

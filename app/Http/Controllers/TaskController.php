@@ -96,7 +96,7 @@ class TaskController extends Controller
             ?? optional($preselectedParentTask)->project_id
             ?? Auth::user()->defaultProject()->id;
 
-        // Templates are excluded from pickers, but a creator adding tasks to
+        // Templates are excluded from normal-task pickers, but a creator adding tasks to
         // their own template (via its page) needs it as the preselected project.
         $ownTemplate = Project::where('id', $preselectedProjectId)
             ->where('project_type', Project::TYPE_TEMPLATE)
@@ -109,6 +109,7 @@ class TaskController extends Controller
 
         // Get available parent tasks (exclude archived)
         $availableParents = Task::visibleTo(Auth::id())
+            ->parentCandidatesIn(Project::find($preselectedProjectId))
             ->where('status', '=', 'incomplete')
             ->with('parent', 'project') // For depth calculation and project name display
             ->orderByRaw('LOWER(name)')
@@ -366,7 +367,7 @@ class TaskController extends Controller
         $task->load(['creator', 'project', 'tags', 'assignees', 'assignments.assignedBy',
                      'attachments', 'comments.user', 'changeLogs.user', 'children', 'parent']);
 
-        $projects = Project::activeForUser(Auth::id())->get()->sort(fn ($a, $b) => strnatcasecmp($a->name, $b->name))->values();
+        $projects = Project::pickableFor(Auth::id(), $task->project)->get()->sort(fn ($a, $b) => strnatcasecmp($a->name, $b->name))->values();
 
         $tags = Tag::active()->orderByRaw('LOWER(tag_name)')->get();
         $users = User::whereNull('email_enabled_at')->get();
@@ -406,6 +407,7 @@ class TaskController extends Controller
         $excludeIds = $task->getAllDescendants()->pluck('id')->push($task->id);
 
         return Task::visibleTo(Auth::id())
+            ->parentCandidatesIn($task->project)
             ->whereNotIn('id', $excludeIds)
             ->where('status', '=', 'incomplete')
             ->with('parent', 'project') // For depth calculation and project name display
@@ -420,7 +422,7 @@ class TaskController extends Controller
         $task->load(['creator', 'project', 'tags', 'assignees', 'assignments.assignedBy',
                      'attachments', 'comments.user', 'changeLogs.user', 'children', 'parent']);
 
-        $projects = Project::activeForUser(Auth::id())->get()->sort(fn ($a, $b) => strnatcasecmp($a->name, $b->name))->values();
+        $projects = Project::pickableFor(Auth::id(), $task->project)->get()->sort(fn ($a, $b) => strnatcasecmp($a->name, $b->name))->values();
 
         $tags = Tag::active()->orderByRaw('LOWER(tag_name)')->get();
         $users = User::whereNull('email_enabled_at')->get();
@@ -457,7 +459,7 @@ class TaskController extends Controller
         $this->authorizeTaskAccess($task);
         $this->assertProjectActive($task);
 
-        $projects = Project::activeForUser(Auth::id())->get()->sort(fn ($a, $b) => strnatcasecmp($a->name, $b->name))->values();
+        $projects = Project::pickableFor(Auth::id(), $task->project)->get()->sort(fn ($a, $b) => strnatcasecmp($a->name, $b->name))->values();
 
         $tags = Tag::active()->orderByRaw('LOWER(tag_name)')->get();
         $users = User::whereNull('email_enabled_at')->get();
@@ -467,6 +469,7 @@ class TaskController extends Controller
         $excludeIds = $task->getAllDescendants()->pluck('id')->push($task->id);
 
         $availableParents = Task::visibleTo(Auth::id())
+            ->parentCandidatesIn($task->project)
             ->whereNotIn('id', $excludeIds)
             ->where('status', '=', 'incomplete')
             ->with('parent', 'project') // For depth calculation and project name display
@@ -533,7 +536,7 @@ class TaskController extends Controller
         // Validate project access when project is being changed
         if (isset($validated['project_id']) && $validated['project_id'] != $task->project_id) {
             $targetProject = Project::where('id', $validated['project_id'])
-                ->forMember(Auth::id())
+                ->moveTargetFor(Auth::id(), $task->project)
                 ->first();
             if (!$targetProject) {
                 $msg = 'You do not have access to this project.';
@@ -549,6 +552,16 @@ class TaskController extends Controller
                 }
                 return back()->withErrors(['project_id' => $msg])->withInput();
             }
+        }
+
+        // Templates never mix with other projects in a parent/child tree.
+        $targetProjectId = isset($validated['project_id']) ? (int) $validated['project_id'] : $task->project_id;
+        $targetParent = isset($validated['parent_id']) ? Task::find($validated['parent_id']) : $task->parent;
+        if (!Task::parentLinkAllowed($targetParent, $targetProjectId)) {
+            return $this->parentLinkError($request, Task::TEMPLATE_PARENT_MESSAGE, 'parent_id');
+        }
+        if ((int) $targetProjectId !== (int) $task->project_id && $task->isTiedToTemplateTree()) {
+            return $this->parentLinkError($request, 'Move the subtasks out of the template tree first: a template\'s tasks cannot leave it while nested.', 'project_id');
         }
 
         // Validate parent change (prevent circular references)
@@ -733,6 +746,10 @@ class TaskController extends Controller
                     }
 
                     $this->authorizeTaskAccess($newParent);
+
+                    if (!Task::parentLinkAllowed($newParent, $task->project_id)) {
+                        return response()->json(['success' => false, 'message' => Task::TEMPLATE_PARENT_MESSAGE], 422);
+                    }
                 }
 
                 $task->parent_id = $newParentId;
@@ -871,13 +888,16 @@ class TaskController extends Controller
                 // pickers" plan item; updateField() previously had none at all).
                 if ($field === 'project_id' && $value && $value != $task->project_id) {
                     $targetProject = Project::where('id', $value)
-                        ->forMember(Auth::id())
+                        ->moveTargetFor(Auth::id(), $task->project)
                         ->first();
                     if (!$targetProject) {
                         return response()->json(['success' => false, 'message' => 'You do not have access to this project.'], 422);
                     }
                     if (in_array($targetProject->status, ['done', 'archived'])) {
                         return response()->json(['success' => false, 'message' => 'Cannot move tasks into an inactive project.'], 422);
+                    }
+                    if ($task->isTiedToTemplateTree()) {
+                        return response()->json(['success' => false, 'message' => 'A template\'s tasks cannot leave it while nested under other tasks.'], 422);
                     }
                 }
 
@@ -1161,8 +1181,10 @@ class TaskController extends Controller
 
         // Validate project access
         if ($projectId) {
+            // The target's own type picks the rule here (template: creator only;
+            // normal: forMember); the per-task type mismatch is checked below.
             $project = Project::where('id', $projectId)
-                ->forMember(Auth::id())
+                ->moveTargetFor(Auth::id(), Project::find($projectId))
                 ->first();
 
             if (!$project) {
@@ -1178,6 +1200,16 @@ class TaskController extends Controller
         $tasks = Task::visibleTo(Auth::id())
             ->whereIn('id', $request->input('task_ids'))
             ->get();
+
+        // Templates and normal projects don't mix: a template's tasks move only to
+        // templates, and other tasks never into one.
+        if ($projectId && $tasks->contains(fn (Task $t) => (bool) $t->project?->isTemplate() !== $project->isTemplate())) {
+            return response()->json(['success' => false, 'message' => 'Tasks in a template can only be moved to another template, and other tasks cannot be moved into one.'], 422);
+        }
+
+        if ($projectId !== null && $tasks->contains(fn (Task $t) => $t->project_id != $projectId && $t->isTiedToTemplateTree())) {
+            return response()->json(['success' => false, 'message' => 'A template\'s tasks cannot leave it while nested under other tasks.'], 422);
+        }
 
         // Status is intentionally excluded here and applied separately via
         // TaskLifecycle::changeStatus() below, so it gets the same side effects
@@ -1228,6 +1260,15 @@ class TaskController extends Controller
             'updated' => $updatedCount,
             'message' => "Updated {$updatedCount} task(s).",
         ]);
+    }
+
+    private function parentLinkError(Request $request, string $message, string $field)
+    {
+        if ($request->ajax() || $request->wantsJson()) {
+            return response()->json(['success' => false, 'message' => $message], 422);
+        }
+
+        return back()->withErrors([$field => $message])->withInput();
     }
 
     protected function assertProjectActive(Task $task, bool $asJson = false)

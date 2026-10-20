@@ -103,11 +103,12 @@ Route::middleware('auth')->group(function () {
     Route::get('/profile-image/{user}', [ProfileController::class, 'showImage'])->name('profile.image.show');
 
     Route::get('/templates', [ProjectTemplateController::class, 'index'])->name('templates.index');
+    Route::get('/templates/create', [ProjectTemplateController::class, 'create'])->name('templates.create');
+    Route::post('/templates', [ProjectTemplateController::class, 'storeNew'])->name('templates.storeNew');
     Route::post('/projects/{project}/save-as-template', [ProjectTemplateController::class, 'store'])->name('templates.store');
     Route::post('/templates/import-zip', [ProjectTemplateController::class, 'importZip'])->name('templates.importZip');
     Route::get('/templates/{template}/download', [ProjectTemplateController::class, 'download'])->name('templates.download');
     Route::post('/templates/{template}/create-project', [ProjectTemplateController::class, 'createFromTemplate'])->name('templates.createFromTemplate');
-    Route::patch('/templates/{template}', [ProjectTemplateController::class, 'updateName'])->name('templates.update');
     Route::patch('/templates/{template}/visibility', [ProjectTemplateController::class, 'toggleVisibility'])->name('templates.toggleVisibility');
     Route::delete('/templates/{template}', [ProjectTemplateController::class, 'destroy'])->name('templates.destroy');
 

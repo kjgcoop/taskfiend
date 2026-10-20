@@ -203,6 +203,31 @@ class Project extends Model
         });
     }
 
+    /**
+     * Scope: where a task currently in $from may be moved. Templates mirror
+     * normal projects: a template's task can only go to another template of
+     * the same creator, and everything else keeps the usual forMember() rule
+     * (which excludes templates). Status is checked by the caller.
+     */
+    public function scopeMoveTargetFor(Builder $query, int $userId, ?self $from): Builder
+    {
+        if ($from?->isTemplate()) {
+            return $query->where('project_type', self::TYPE_TEMPLATE)->where('user_id', $userId);
+        }
+
+        return $query->forMember($userId);
+    }
+
+    /** Scope: the projects a picker offers for a task currently in $from (see scopeMoveTargetFor). */
+    public function scopePickableFor(Builder $query, int $userId, ?self $from): Builder
+    {
+        if ($from?->isTemplate()) {
+            return $query->moveTargetFor($userId, $from)->where('status', 'incomplete');
+        }
+
+        return $query->activeForUser($userId);
+    }
+
     public function scopeActiveForUser(Builder $query, int $userId): Builder
     {
         return $query->where('status', 'incomplete')

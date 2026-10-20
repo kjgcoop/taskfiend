@@ -341,6 +341,46 @@ class Task extends Model
         });
     }
 
+    public const TEMPLATE_PARENT_MESSAGE = 'Tasks in a template can only be nested under tasks in the same template.';
+
+    /**
+     * Template rule for parent/child links: a template's tasks may only be
+     * nested under tasks of the same template, and no task may be nested under
+     * a template's task from outside it. (Normal projects may still mix.)
+     */
+    public static function parentLinkAllowed(?self $parent, ?int $childProjectId): bool
+    {
+        if (!$parent || (int) $parent->project_id === (int) $childProjectId) {
+            return true;
+        }
+
+        return !$parent->project?->isTemplate()
+            && !($childProjectId && Project::whereKey($childProjectId)->where('project_type', Project::TYPE_TEMPLATE)->exists());
+    }
+
+    /**
+     * True when moving this task to another project would split a template's
+     * parent/child tree (it sits in a template and has a parent or subtasks).
+     */
+    public function isTiedToTemplateTree(): bool
+    {
+        return $this->project?->isTemplate() && ($this->parent_id || $this->children()->exists());
+    }
+
+    /**
+     * Scope to the tasks that may be chosen as the parent of a task living in
+     * $project: only its own tasks when it is a template, otherwise any task
+     * outside templates.
+     */
+    public function scopeParentCandidatesIn($query, ?Project $project)
+    {
+        if ($project?->isTemplate()) {
+            return $query->where('project_id', $project->id);
+        }
+
+        return $query->whereDoesntHave('project', fn ($q) => $q->where('project_type', Project::TYPE_TEMPLATE));
+    }
+
     /**
      * Scope to get only root-level tasks (no parent)
      */
