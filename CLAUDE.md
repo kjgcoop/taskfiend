@@ -37,7 +37,8 @@ These replaced drifted copy-pasted logic. Use them for any new code:
 - **File storage**: `private` disk for task and comment attachments.
 - **Mass assignment**: Laravel silently drops non-`$fillable` attributes. A new column that "does nothing" on `update()` is usually missing from `$fillable`.
 - **Null = active/enabled** convention for timestamps (`User::email_enabled_at`, `Tag::archived_at`).
-- **Task assignment**: new tasks auto-assign to the creator unless specified; the creator can add/remove any assignee; an assignee can remove only themselves; only creator and assignees see a task.
+- **Task assignment**: the creator is always an assignee and can't be unassigned (every creation path goes through `Task::assignWithCreator()`); the creator can add/remove any other assignee; an assignee can remove only themselves. Creator, assignees and members of the task's project can see a task (`Task::visibleTo`), but only creator and assignees have it on their plate (`Task::assignedTo`).
+- **Day Preferences**: `users.show_project_tasks_on_day` (default off) makes `Task::onDayOf()` add dated project tasks to /day, exports, digests and the day API. Tasks shown only that way are muted and badged: `<x-not-assigned-badge>` on day rows (opt-in with `:mark-not-assigned` on `x-task-list` / `x-completed-tasks-section`; any new day row template must opt in too) and `<x-not-assigned-notice>` in the task side panel. Don't use this on other pages: they only show the user's own tasks.
 - **Subtasks always inherit their parent's project**, through every input path (including inline `#project` tokens). A parent may be in a different project than its child, so "top-level in this project" means "no parent, or parent belongs elsewhere" (`ProjectController::topLevelForProjectScope()`).
 - **Alpine.js runs in CSP-safe mode**: directive expressions must be a single expression, not statements. See `.claude/rules/alpine-csp.md`.
 

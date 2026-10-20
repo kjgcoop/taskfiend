@@ -2,7 +2,7 @@
 title: "Day Exports"
 ---
 
-The day view (`/day`) has a three dot menu in its header, next to the date. All the menu items are different types of exports. All reflect any filtering done on the page. Statuses (incomplete, done, archived) not unfolded are not represented in these exports:
+The day view (`/day`) has a three dot menu in its header, next to the date. All the menu items are different types of exports. All reflect any filtering done on the page, and list the same tasks the page does, including dated tasks from your projects if you've turned on Day Preferences on your profile. Statuses (incomplete, done, archived) not unfolded are not represented in these exports:
 
 ## Export PDF
 This page displays tasks in a single column, paginating onto a new page whenever the list overflows.

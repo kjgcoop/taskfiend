@@ -4,7 +4,7 @@ title: "Security"
 
 ## Overview
 
-Task Fiend is designed for use by a single household or small trusted group. All data is private by default — tasks and projects are only visible to their creator and explicitly assigned members.
+Task Fiend is designed for use by a single household or small trusted group. All data is private by default — tasks and projects are only visible to their creator, their assignees and, for tasks, the members of the task's project.
 
 ---
 
@@ -32,8 +32,9 @@ A full security audit was completed covering IDOR/authorization, file upload saf
 
 - All web routes require an authenticated session (`auth` middleware)
 - All API routes require a bearer token matched against hashed keys in `api_keys` (`auth.api` middleware)
-- Tasks are private to their creator and assignees; no other user can view, edit, or comment
+- Tasks are private to their creator, their assignees and the members of their project (the project's owner and its project-level assignees); no other user can view, edit, or comment. Being assigned to one task shows that task only, not the rest of its project
 - Projects are private to their creator and members (direct assignees or users with an assigned task)
+- Exporting a project (Markdown or template) requires being its owner or a project-level assignee; being assigned to a single task is not enough
 - Tags are global — all authenticated users can create and manage tags
 
 ---

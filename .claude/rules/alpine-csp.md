@@ -44,5 +44,6 @@ Only the top level is sortable (`$depth === 0`) in both `task-list` and `subtask
 
 ## Misc
 
+- Task rows that are on the user's day only through project membership are muted (`text-gray-500`) and badged. The tag chips of such a row carry `data-muted-tags="1"`; the script in `task-list.blade.php` that rebuilds chips after a side-panel edit reads it, and any new script that redraws tag chips must too, or the row turns bright until reload.
 - Day view: the task input bar is always rendered outside the `showIncomplete` collapse gate.
 - Dark theme: `bg-black` page, `bg-gray-800` containers/nav with `border-gray-700`, text `gray-100` (headers) / `300` (labels) / `400` (body) / `500` (muted), inputs `bg-gray-700` + `border-gray-600`, primary buttons `bg-blue-600`. Status badge and tag colors are preserved.

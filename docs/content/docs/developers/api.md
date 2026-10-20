@@ -32,7 +32,7 @@ Natural language is parsed from the `name` field if `date` or `recurrence_patter
 }
 ```
 
-All fields except `name` are optional. If `assignee_ids` is omitted, the task is assigned to the key owner. If `project_id` is omitted, the task goes into the key owner's inbox. `project_id` is rejected with a 422 if it's a project the key owner isn't a member of, or a project that's `done`/`archived` — same rule the web UI's project pickers enforce.
+All fields except `name` are optional. The key owner is always assigned: if `assignee_ids` is omitted the task is assigned to the key owner, and if it lists other people the key owner is added to them (a task's creator is always one of its assignees, same as in the web UI). If `project_id` is omitted, the task goes into the key owner's inbox. `project_id` is rejected with a 422 if it's a project the key owner isn't a member of, or a project that's `done`/`archived` — same rule the web UI's project pickers enforce.
 
 **Response (201):**
 
@@ -68,7 +68,7 @@ All fields except `name` are optional. If `assignee_ids` is omitted, the task is
 
 ## GET /api/tasks/on/{date} — Tasks due on a date
 
-Returns all non-archived tasks dated `YYYY-MM-DD` visible to the key owner (created by or assigned to them), along with any not-dismissed project reminders due on or before that date for projects the key owner owns.
+Returns all non-archived tasks dated `YYYY-MM-DD` that belong on the key owner's day: tasks created by or assigned to them, plus dated tasks from projects they belong to if they've turned on "Also show dated tasks from projects I'm assigned to" under Day Preferences on their profile. Also returns any not-dismissed project reminders due on or before that date for projects the key owner owns.
 
 ```
 GET /api/tasks/on/2026-02-24
@@ -97,4 +97,4 @@ Returns tasks with `status = done` whose `updated_at` falls on `YYYY-MM-DD`.
 GET /api/tasks/completed/2026-02-24
 ```
 
-Response shape is the same as `/api/tasks/on/{date}`.
+Response shape is the same as `/api/tasks/on/{date}`, and the same Day Preferences setting decides whether project tasks that aren't assigned to the key owner are included.
