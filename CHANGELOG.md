@@ -21,6 +21,7 @@ New under Day Preferences on your profile: **Also show dated tasks from projects
 - Applies to the Day page (including its Done and Archived sections and past days), the day exports (Markdown, PDF, PNG), the morning digest and PNG emails, the day API and the date suggestions while typing a task.
 - Doesn't apply to Overdue, Undated, All Tasks or the Calendar, which still show only tasks assigned to you. A project-mate's backlog never lands on your Overdue page.
 - Tasks that are there only because of this setting carry a small **Not Assigned to You** label (an eye icon in the agenda grid), with a tooltip naming who they're assigned to, and their title, project name and tags are shown in muted gray, so they're easy to skim past.
+- Opening such a task in the side panel shows a notice above its name explaining that it isn't assigned to you directly, and linking to the setting on your profile.
 - Only dated tasks are shown. Undated tasks in your projects stay on the project page.
 - Run `php artisan migrate` after deploying; it adds one column to users.
 

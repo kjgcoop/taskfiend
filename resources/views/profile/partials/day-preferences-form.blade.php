@@ -1,4 +1,4 @@
-<section class="space-y-6">
+<section id="day-preferences" class="space-y-6">
     <header>
         <h2 class="text-lg font-medium text-gray-100">
             {{ __('Day Preferences') }}
