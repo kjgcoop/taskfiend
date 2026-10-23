@@ -62,6 +62,7 @@ class DashboardController extends Controller
     {
         return Task::query()
             ->onDayOf(Auth::user())
+            ->outsideTemplates()
             ->where('status', 'done')
             ->whereDate('completed_at', $dateStr)
             ->orderByRaw('time IS NULL, time ASC');
@@ -76,6 +77,7 @@ class DashboardController extends Controller
     {
         return Task::query()
             ->onDayOf(Auth::user())
+            ->outsideTemplates()
             ->where('status', 'archived')
             ->where(function ($q) use ($dateStr) {
                 $q->whereDate('completed_at', $dateStr)
@@ -192,6 +194,7 @@ class DashboardController extends Controller
 
         $tasksQuery = Task::query()
             ->assignedTo(Auth::id())
+            ->outsideTemplates()
             ->where('status', '!=', 'archived')
             ->where('status', '!=', 'done')
             ->whereNull('date')
@@ -213,6 +216,7 @@ class DashboardController extends Controller
 
         $tasksQuery = Task::query()
             ->assignedTo(Auth::id())
+            ->outsideTemplates()
             ->where('status', '!=', 'archived')
             ->whereHas('project', fn($pq) => $pq->whereNotIn('status', ['archived', 'done']))
             ->with(['creator', 'project', 'tags', 'assignees', 'attachments', 'comments', 'completionLog.user', 'parent.project'])
@@ -255,6 +259,7 @@ class DashboardController extends Controller
 
         $overdueCount = Task::query()
             ->assignedTo(Auth::id())
+            ->outsideTemplates()
             ->where('status', '!=', 'archived')
             ->where('status', '!=', 'done')
             ->whereNotNull('date')
@@ -264,6 +269,7 @@ class DashboardController extends Controller
 
         $undatedCount = Task::query()
             ->assignedTo(Auth::id())
+            ->outsideTemplates()
             ->where('status', '!=', 'archived')
             ->where('status', '!=', 'done')
             ->whereNull('date')
@@ -487,11 +493,8 @@ $dayWith = ['creator', 'project', 'tags', 'assignees', 'attachments', 'comments'
         $offset  = ($page - 1) * $perPage;
         $dateStr = $request->get('date', today()->format('Y-m-d'));
 
-$tasks = Task::onDayOf(Auth::user())
-            ->where('status', 'done')
-            ->whereDate('completed_at', $dateStr)
+        $tasks = $this->completedTasksForDate($dateStr)
             ->with(['creator', 'project', 'tags', 'assignees', 'attachments', 'comments', 'completionLog.user', 'parent.project'])
-            ->orderByRaw('time IS NULL, time ASC')
             ->skip($offset)->take($perPage + 1)
             ->get();
 
@@ -516,17 +519,8 @@ $tasks = Task::onDayOf(Auth::user())
         $offset  = ($page - 1) * $perPage;
         $dateStr = $request->get('date', today()->format('Y-m-d'));
 
-$tasks = Task::onDayOf(Auth::user())
-            ->where('status', 'archived')
-            ->where(function ($q) use ($dateStr) {
-                $q->whereDate('completed_at', $dateStr)
-                  ->orWhere(function ($q2) use ($dateStr) {
-                      $q2->where('date', $dateStr)
-                         ->whereHas('project', fn($pq) => $pq->whereIn('status', ['archived', 'done']));
-                  });
-            })
+        $tasks = $this->archivedTasksForDate($dateStr)
             ->with(['creator', 'project', 'tags', 'assignees', 'attachments', 'comments', 'completionLog.user', 'parent.project'])
-            ->orderByRaw('time IS NULL, time ASC')
             ->skip($offset)->take($perPage + 1)
             ->get();
 
@@ -575,6 +569,7 @@ $tasks = Task::onDayOf(Auth::user())
             $rescheduledTasks = Task::whereIn('id', $rescheduledTaskIds)
                 ->whereNotIn('id', $datedTasks->keys()->toArray())
                 ->onDayOf($user)
+                ->outsideTemplates()
                 ->with($taskWith)
                 ->get()
                 ->keyBy('id');
@@ -598,6 +593,7 @@ $tasks = Task::onDayOf(Auth::user())
             $freshIds = array_diff($newAssignmentTaskIds, $alreadyCapturedIds);
             if (!empty($freshIds)) {
                 $assignedThatDayTasks = Task::whereIn('id', $freshIds)
+                    ->outsideTemplates()
                     ->with($taskWith)
                     ->get()
                     ->keyBy('id');

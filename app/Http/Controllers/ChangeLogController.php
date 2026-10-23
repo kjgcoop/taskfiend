@@ -107,6 +107,7 @@ class ChangeLogController extends Controller
 
         $taskIds = $tag->tasks()
             ->visibleTo(Auth::id())
+            ->outsideTemplates()
             ->pluck('tasks.id');
 
         $changeLogs = ChangeLog::where(function ($q) use ($tag, $taskIds) {

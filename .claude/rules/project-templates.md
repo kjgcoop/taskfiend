@@ -56,6 +56,10 @@ Desktop: an inline expandable list under Templates in the More menu (chevron use
 
 Unlike normal projects, a template's tasks may only be nested under tasks of the *same* template, and no outside task may be nested under a template's task. `Task::parentLinkAllowed()` is the rule; it's enforced in `TaskController::update()` and `updateField()`, and the parent pickers are filtered with `Task::scopeParentCandidatesIn()`. A template task that has a parent or subtasks can't be moved out (`Task::isTiedToTemplateTree()`, checked in `update()`, `updateField()` and `bulkUpdate()`). Project moves mirror this: a template's task can only move to another of the creator's templates, and any other task can never move into one (`Project::scopeMoveTargetFor()` validates in `update()`, `updateField()` and `bulkUpdate()`; `scopePickableFor()` feeds the task page/panel/edit dropdowns).
 
+## Templates Stay Out of Work Lists
+
+`assignedTo()` and `visibleTo()` are template-agnostic on purpose (an owner must still find a template's tasks to edit them). Any list of the user's *real work* chains `Task::outsideTemplates()` after them: undated, all, calendar counts, the day's done/archived groups (and the API's completed-on-day), tag pages/counts/change log, and search. Templates also can't be the default project or hearted. New work lists must add the scope.
+
 ## In Progress
 
 "Template drafts": edit a template's contents as a live, editable project, then save back or discard. See `spec.md` / `implementation-plan.md` (both local, gitignored) as it lands.

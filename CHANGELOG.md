@@ -66,3 +66,16 @@ A task's creator is always one of its assignees and can't be removed. Several wa
 All of these now go through one shared routine, so a new way of creating tasks can't forget the creator. Tasks created before this release are fixed by the upgrade step above.
 
 **API note:** if you have an integration that creates tasks for other people through the API, those tasks now also appear on the API key owner's lists.
+
+## Templates No Longer Leak Into Your Task Lists
+
+Template tasks are blueprints, so they now stay off the pages that show your real work:
+
+- Undated, All Tasks and the Calendar's "No Date" count no longer include them.
+- Template tasks marked done or archived no longer show in a day's Done and Archived sections, the day exports or the completed-on-day API.
+- Tag pages, tag task counts and a tag's activity log no longer list them. (You can still tag a template task.)
+- A template can no longer be made your default project or hearted.
+
+## Bulk Edit Only Changes Incomplete Tasks
+
+Bulk edit now skips done and archived tasks instead of changing them, and tells you how many it skipped.

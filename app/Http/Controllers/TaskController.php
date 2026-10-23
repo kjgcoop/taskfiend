@@ -1201,6 +1201,12 @@ class TaskController extends Controller
             ->whereIn('id', $request->input('task_ids'))
             ->get();
 
+        // Done and archived tasks are closed out: skip them rather than edit
+        // them (reopen one from its own page). Mixed selections still work for
+        // the incomplete ones, e.g. when picked from the All Tasks page.
+        $skippedCount = $tasks->where('status', '!=', 'incomplete')->count();
+        $tasks = $tasks->where('status', 'incomplete')->values();
+
         // Templates and normal projects don't mix: a template's tasks move only to
         // templates, and other tasks never into one.
         if ($projectId && $tasks->contains(fn (Task $t) => (bool) $t->project?->isTemplate() !== $project->isTemplate())) {
@@ -1258,7 +1264,8 @@ class TaskController extends Controller
         return response()->json([
             'success' => true,
             'updated' => $updatedCount,
-            'message' => "Updated {$updatedCount} task(s).",
+            'skipped' => $skippedCount,
+            'message' => "Updated {$updatedCount} task(s)." . ($skippedCount ? " Skipped {$skippedCount} completed or archived." : ''),
         ]);
     }
 

@@ -19,6 +19,7 @@ class TagController extends Controller
 
         $openTaskCount = function ($query) use ($userId) {
             $query->visibleTo($userId)
+                ->outsideTemplates()
                 ->where('status', '!=', 'archived')
                 ->where('status', '!=', 'done')
                 ->whereHas('project', fn($pq) => $pq->whereNotIn('status', ['archived', 'done']));
@@ -30,7 +31,7 @@ class TagController extends Controller
             ->get();
 
         $archivedTags = Tag::archived()
-            ->withCount(['tasks' => fn ($query) => $query->visibleTo($userId)])
+            ->withCount(['tasks' => fn ($query) => $query->visibleTo($userId)->outsideTemplates()])
             ->orderByRaw('LOWER(tag_name)')
             ->get();
 
@@ -64,6 +65,7 @@ class TagController extends Controller
 
         $tasksQuery = $tag->tasks()
             ->visibleTo(Auth::id())
+            ->outsideTemplates()
             ->where('status', '!=', 'archived')
             ->where('status', '!=', 'done')
             ->whereHas('project', fn($pq) => $pq->whereNotIn('status', ['archived', 'done']))
@@ -82,11 +84,13 @@ class TagController extends Controller
 
         $completedTasksTotal = $tag->tasks()
             ->visibleTo(Auth::id())
+            ->outsideTemplates()
             ->where('status', 'done')
             ->count();
 
         $completedTasksRaw = $tag->tasks()
             ->visibleTo(Auth::id())
+            ->outsideTemplates()
             ->where('status', 'done')
             ->with(['creator', 'project', 'assignees', 'attachments', 'comments', 'completionLog.user', 'parent.project'])
             ->orderBy('datetime')
@@ -98,11 +102,13 @@ class TagController extends Controller
 
         $archivedTasksTotal = $tag->tasks()
             ->visibleTo(Auth::id())
+            ->outsideTemplates()
             ->where('status', 'archived')
             ->count();
 
         $archivedTasksRaw = $tag->tasks()
             ->visibleTo(Auth::id())
+            ->outsideTemplates()
             ->where('status', 'archived')
             ->with(['creator', 'project', 'assignees', 'attachments', 'comments', 'completionLog.user', 'parent.project'])
             ->orderBy('datetime')
@@ -163,6 +169,7 @@ class TagController extends Controller
 
         $tasks = $tag->tasks()
             ->visibleTo(Auth::id())
+            ->outsideTemplates()
             ->where('status', 'done')
             ->with(['creator', 'project', 'assignees', 'attachments', 'comments', 'completionLog.user', 'parent.project'])
             ->orderBy('datetime')
@@ -191,6 +198,7 @@ class TagController extends Controller
 
         $tasks = $tag->tasks()
             ->visibleTo(Auth::id())
+            ->outsideTemplates()
             ->where('status', 'archived')
             ->with(['creator', 'project', 'assignees', 'attachments', 'comments', 'completionLog.user', 'parent.project'])
             ->orderBy('datetime')
@@ -218,6 +226,7 @@ class TagController extends Controller
 
         $group = fn (string $status, string $order) => $tag->tasks()
             ->visibleTo(Auth::id())
+            ->outsideTemplates()
             ->where('status', $status)
             ->when($visibleIds !== null, fn ($q) => $q->whereIn('tasks.id', $visibleIds))
             ->orderByRaw($order)

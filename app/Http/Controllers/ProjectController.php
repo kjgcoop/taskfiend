@@ -521,6 +521,10 @@ class ProjectController extends Controller
             abort(403);
         }
 
+        if ($project->isTemplate()) {
+            return response()->json(['success' => false, 'message' => 'Templates cannot be hearted.'], 422);
+        }
+
         $project->update(['is_hearted' => !$project->is_hearted]);
 
         return response()->json(['success' => true, 'is_hearted' => $project->is_hearted]);
@@ -530,6 +534,10 @@ class ProjectController extends Controller
     {
         if ($project->user_id !== Auth::id()) {
             abort(403);
+        }
+
+        if ($project->isTemplate()) {
+            return response()->json(['success' => false, 'message' => 'A template cannot be the default project.'], 422);
         }
 
         if ($project->status !== 'incomplete') {

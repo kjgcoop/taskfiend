@@ -152,6 +152,7 @@ class TaskApiController extends Controller
 
         $baseQuery = function ($status) use ($user, $carbonDate) {
             return Task::onDayOf($user)
+                ->outsideTemplates()
                 ->where('status', $status)
                 ->whereDate('updated_at', $carbonDate)
                 ->with(['creator', 'project', 'tags', 'assignees', 'comments' => function ($q) {

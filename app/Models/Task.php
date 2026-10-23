@@ -287,6 +287,18 @@ class Task extends Model
     }
 
     /**
+     * Scope: tasks that don't live in a template. Templates are date-less
+     * blueprints, not work, so lists of real work (undated, all, calendar
+     * counts, day done/archived groups, tag pages, ...) apply this on top of
+     * assignedTo()/visibleTo(), which deliberately stay template-agnostic
+     * (a template's owner still needs to look its tasks up for editing).
+     */
+    public function scopeOutsideTemplates(Builder $query): Builder
+    {
+        return $query->whereDoesntHave('project', fn ($q) => $q->where('project_type', Project::TYPE_TEMPLATE));
+    }
+
+    /**
      * Whether this task is on the user's plate (they created it or are
      * assigned to it), as opposed to appearing on their day only because they
      * belong to its project (see scopeOnDayOf). Reads the loaded assignees, so
@@ -378,7 +390,7 @@ class Task extends Model
             return $query->where('project_id', $project->id);
         }
 
-        return $query->whereDoesntHave('project', fn ($q) => $q->where('project_type', Project::TYPE_TEMPLATE));
+        return $query->outsideTemplates();
     }
 
     /**
