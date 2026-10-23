@@ -134,7 +134,7 @@
                         @csrf
                         <button type="submit"
                                 class="w-full text-left px-4 py-2 text-gray-200 hover:bg-gray-700">
-                            Duplicate Project
+                            @if($project->isTemplate()) Create Project @else Duplicate Project @endif
                         </button>
                     </form>
                 </div>
