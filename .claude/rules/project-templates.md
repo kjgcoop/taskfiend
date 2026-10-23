@@ -6,6 +6,7 @@ paths:
   - "app/Http/Controllers/DataExportController.php"
   - "app/Http/Controllers/ScheduledProjectController.php"
   - "app/Models/ProjectTemplate.php"
+  - "app/Console/Commands/ConvertTemplatesToProjects.php"
   - "app/Models/ScheduledProject.php"
   - "app/Console/Commands/CreateScheduledProjects.php"
   - "tests/**/*Template*"
@@ -15,20 +16,23 @@ paths:
 
 ## Data Model
 
-- `ProjectTemplate` (table `project_templates`): `name`, `description` (nullable), `filename` (path to the stored zip on the `private` disk), `created_by`, `is_public`. Relations: `creator()`, `projects()` (via `projects.template_id`), computed `last_used_at` (max `created_at` of those projects).
-- `projects.template_id`: nullable FK, `nullOnDelete()`, set once at creation.
-- `ScheduledProject` (table `scheduled_projects`): when `createFromTemplate()` is given a future start date it creates one of these instead of a project; the `CreateScheduledProjects` command later turns due ones into real projects.
+- A template is a `Project` with `project_type = 'template'` (`Project::TYPE_TEMPLATE`, `isTemplate()`) plus `is_public`. Its tasks are ordinary tasks in that project. Templates are archived, never deleted.
+- `projects.template_id`: nullable, points at the template *project* a project was created from.
+- `Project::createFromTemplate($template, $name, $user)` is the one path behind create-from-template, the scheduled command and "create now": it calls `duplicate()` (which strips dates when copying from a template) and change-logs the result.
+- `ScheduledProject` (table `scheduled_projects`): when `createFromTemplate()` is given a future start date it creates one of these instead of a project; the `CreateScheduledProjects` command later turns due ones into real projects, copying the template's contents as they are on that day.
+- `ProjectTemplate` (table `project_templates`, old zip-backed rows) survives only for `php artisan templates:convert-to-projects`, the one-time upgrade step that turns old rows into template projects and repoints `projects.template_id` / `scheduled_projects.template_id`. It is idempotent via a `converted` change-log entry.
 
 ## Controller Actions (`ProjectTemplateController`)
 
-Routes: `templates.index`, `.create`, `.storeNew`, `.store`, `.importZip`, `.createFromTemplate`, `.destroy`.
+Routes: `templates.index`, `.create`, `.storeNew`, `.store`, `.importZip`, `.download`, `.createFromTemplate`, `.toggleVisibility`, `.destroy`. Route-bound `{template}` is a `Project`.
 
 - `index()`: own templates plus other users' public ones (the nav's `$navTemplates` uses the same set).
-- `store()`: "save project as template". Only the project's creator may. Always creates a **new** template row (no update-in-place mode).
-- `createFromTemplate()`: extracts the zip and creates the `Project` and its full task tree in one call.
-- `importZip()`: stores an uploaded zip directly as a template. The page must render `$errors` (a file over `upload_max_filesize` otherwise fails silently).
-- `create()` / `storeNew()`: start an empty template from scratch (a `Project` with `project_type = template`, creator as sole assignee), then redirect to its project page.
-- `destroy()` (archives): creator-only. Visibility can be toggled after creation. There is no rename endpoint: the template list links titles to the template's project page, where the title is click-to-edit via `projects.updateField`.
+- `create()` / `storeNew()`: start an empty template from scratch (creator as sole assignee), then redirect to its project page.
+- `store()`: "save project as template". Only the project's creator may. Always creates a **new** template project (no update-in-place mode).
+- `createFromTemplate()`: creates the project and its task tree via `Project::createFromTemplate()`, or a `ScheduledProject` for a future date.
+- `importZip()`: reads an uploaded zip into a new template project. The page must render `$errors` (a file over `upload_max_filesize` otherwise fails silently).
+- `download()`: builds a zip with `ProjectTemplateArchive::build()`.
+- `destroy()` (archives): creator-only. There is no rename endpoint: the template list links titles to the template's project page, where the title is click-to-edit via `projects.updateField`.
 
 ## `ProjectTemplateArchive` Is the Only Zip Reader/Writer
 
@@ -41,11 +45,11 @@ Routes: `templates.index`, `.create`, `.storeNew`, `.store`, `.importZip`, `.cre
 
 ## Two Separate Mechanisms: Don't Conflate
 
-`DataExportController::exportProjectTemplate()` / `importProjectTemplate()` let a user download/upload a project as a template zip with **no** `ProjectTemplate` row involved. The browser-based "Import All Data" (`DataExportController::importAll`) is disabled (`abort(503)`) and hidden from the UI; re-enabling it would need ID remapping. `php artisan todoist:import` is a separate, working CLI import.
+`DataExportController::exportProjectTemplate()` / `importProjectTemplate()` let a user download/upload a project as a template zip with no template project involved. The browser-based "Import All Data" (`DataExportController::importAll`) is disabled (`abort(503)`) and hidden from the UI; re-enabling it would need ID remapping. `php artisan todoist:import` is a separate, working CLI import.
 
 ## Files
 
-- Stored templates: `storage/app/private/project-templates/*.zip` (private disk).
+- Templates no longer live on disk; the old `storage/app/private/project-templates/*.zip` files are read only by `templates:convert-to-projects`.
 - `storage/app/temp` is scratch only (extraction dirs, export zips streamed with `deleteFileAfterSend`). `php artisan temp:prune` runs daily at 03:00 and deletes entries older than 24h. Feature tests hitting export endpoints leave zips there because the test client never calls `send()`.
 
 ## Nav Dropdown
@@ -59,7 +63,3 @@ Unlike normal projects, a template's tasks may only be nested under tasks of the
 ## Templates Stay Out of Work Lists
 
 `assignedTo()` and `visibleTo()` are template-agnostic on purpose (an owner must still find a template's tasks to edit them). Any list of the user's *real work* chains `Task::outsideTemplates()` after them: undated, all, calendar counts, the day's done/archived groups (and the API's completed-on-day), tag pages/counts/change log, and search. Templates also can't be the default project or hearted. New work lists must add the scope.
-
-## In Progress
-
-"Template drafts": edit a template's contents as a live, editable project, then save back or discard. See `spec.md` / `implementation-plan.md` (both local, gitignored) as it lands.
