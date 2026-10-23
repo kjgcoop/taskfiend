@@ -102,7 +102,7 @@ class TemplateTasksStayOffWorkListsTest extends TestCase
 
     public function test_tag_page_and_counts_omit_template_tasks(): void
     {
-        $tag = Tag::create(['tag_name' => 'shared-tag']);
+        $tag = Tag::create(['tag_name' => 'shared-tag', 'color' => '#ff0000']);
         $this->task($this->normal, 'Real Tagged Task')->tags()->attach($tag->id);
         $this->task($this->template, 'Template Tagged Task')->tags()->attach($tag->id);
 
