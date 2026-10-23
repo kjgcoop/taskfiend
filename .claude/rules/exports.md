@@ -18,11 +18,20 @@ paths:
 - `SimplePdfWriter` is a dependency-free PDF writer (no mpdf/dompdf). It supports multiple pages, positioned text in Helvetica / Helvetica-Bold (not embedded), `line()` strokes, gray fill and letter-spacing. Every call states its own color/spacing because PDF graphics state persists across `BT`/`ET` blocks. Text is transcoded to WinAnsi, so emoji and CJK are dropped (accepted). Layout uses real Helvetica glyph widths for word wrapping.
 - `DayPngExporter` / `DAY_EXPORT_PNG_WIDTH` are a separate single-column PNG export. Other lists have no PNG export (decided not worth it).
 
+## Markdown Exports Share One Implementation
+
+All five Markdown exports (day, overdue, project, tag, search) render through `TaskMarkdownExport::response()` (`app/Services/TaskMarkdownExport.php`): `# Title`, then non-empty `## Incomplete` / `## Done` / `## Archived` sections of `* name` lines, with a task's eager-loaded `children` indented under it. Don't hand-build Markdown in a controller.
+
 ## Filtering by Visible IDs, Not Re-Parsed Text
 
-The on-page filter box is client-side only. When it's active, the client sends the exact visible task ids as `ids[]` (collected by `window.collectVisibleFilterableTaskIds()`; with no active filter, no `ids[]` is sent and everything is exported). The server applies `whereIn('id', $ids)` **on top of** the already-authorized, scoped query: an id can only narrow the result, never widen it. The raw `filter` text is only a display string in the header meta line. Don't reintroduce a server-side port of the JS filter tokenizer (`TaskTextFilter` was deleted for drift risk).
+The on-page filter box and section folds are client-side only. Export buttons send the exact visible task ids as `ids[]`, built by `window.visibleIdsParams()` (`resources/js/app.js`, on top of `window.collectVisibleFilterableTaskIds()`). The server reads them with `TaskMarkdownExport::visibleIds()` (null = no `ids` param, don't narrow; empty = the page showed nothing) and applies `whereIn` **on top of** the already-authorized, scoped query: an id can only narrow the result, never widen it. The raw `filter` text is only a display string in PDF/PNG headers. Don't reintroduce a server-side port of the JS filter tokenizer (`TaskTextFilter` was deleted for drift risk).
 
-The Overdue page's Markdown export (`DashboardController::exportOverdueMarkdown()`) uses the same narrowing-only `ids[]` pattern via an `overdueExport` Alpine component.
+Two client modes, both via `Alpine.data('visibleIdsExport')` for link/button exports (`x-data="visibleIdsExport" @click.prevent="go()"`):
+
+- **Mirror the screen** (project, tag, day): always send `ids[]`, so folded Done/Archived sections and collapsed subtasks are left out.
+- **`data-only-when-filtered`** (Overdue, Search): send `ids[]` only while the on-page filter is active. Otherwise the export is the full result set, including "Load more" pages that aren't loaded yet. Overdue buttons have no `href`, so they use `data-export-url`.
+
+The day page's PDF/PNG/MD menu (`dayExport`) calls `visibleIdsParams()` directly. Day's `dayExportTaskGroups()` is shared by its MD, PDF and PNG exports.
 
 ## Notes
 

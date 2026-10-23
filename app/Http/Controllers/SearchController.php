@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Services\TaskMarkdownExport;
 use App\Models\Project;
 use App\Models\Tag;
 use App\Models\Task;
@@ -278,24 +279,26 @@ class SearchController extends Controller
         if (!$searchError && $request->input('export') === 'markdown') {
             $baseQuery = $this->buildSearchQuery($request);
 
-            $tasks          = $request->boolean('show_incomplete') ? $this->applySort((clone $baseQuery)->where('status', 'incomplete'), $sort, $reversed)->with($with)->get() : collect();
-            $completedTasks = $request->boolean('show_done')       ? $this->applySort((clone $baseQuery)->where('status', 'done'),       $sort, $reversed)->with($with)->get() : collect();
-            $archivedTasks  = $request->boolean('show_archived')   ? $this->applySort((clone $baseQuery)->where('status', 'archived'),   $sort, $reversed)->with($with)->get() : collect();
-
-            $lines = ['# Search Results'];
-            foreach ([['## Incomplete', $tasks], ['## Done', $completedTasks], ['## Archived', $archivedTasks]] as [$heading, $group]) {
-                if ($group->isNotEmpty()) {
-                    $lines[] = '';
-                    $lines[] = $heading;
-                    foreach ($group as $task) {
-                        $lines[] = '* ' . $task->name;
-                    }
-                }
+            // Only sent while the on-page filter box is active (see search/index.blade.php); until
+            // then the export is every match, including pages not yet loaded by "Load more".
+            $visibleIds = TaskMarkdownExport::visibleIds($request);
+            if ($visibleIds !== null) {
+                $baseQuery->whereIn('tasks.id', $visibleIds);
             }
-            return response(implode("\n", $lines) . "\n", 200, [
-                'Content-Type'        => 'text/markdown; charset=UTF-8',
-                'Content-Disposition' => 'attachment; filename="search_results_' . now()->format('Y-m-d') . '.md"',
-            ]);
+
+            $group = fn (string $showParam, string $status) => $request->boolean($showParam)
+                ? $this->applySort((clone $baseQuery)->where('status', $status), $sort, $reversed)->with($with)->get()
+                : collect();
+
+            return TaskMarkdownExport::response(
+                'Search Results',
+                [
+                    'Incomplete' => $group('show_incomplete', 'incomplete'),
+                    'Done'       => $group('show_done', 'done'),
+                    'Archived'   => $group('show_archived', 'archived'),
+                ],
+                'search_results_' . now()->format('Y-m-d') . '.md'
+            );
         }
 
         if ($searchError) {

@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use App\Services\SafeZipExtractor;
 use App\Services\ProjectTemplateArchive;
+use App\Services\TaskMarkdownExport;
 use App\Exceptions\InvalidTemplateException;
 use App\Models\Project;
 use App\Models\Task;
@@ -608,61 +609,29 @@ class DataExportController extends Controller
 
         $this->authorizeProjectExport($project, $user->id);
 
-        // Load all top-level tasks with their children
+        $visibleIds = TaskMarkdownExport::visibleIds($request);
+
+        // Top-level tasks with their children (subtasks are narrowed to the visible ids too)
         $tasks = Task::where('project_id', $project->id)
             ->whereNull('parent_id')
+            ->when($visibleIds !== null, fn ($q) => $q->whereIn('id', $visibleIds))
             ->orderBy('created_at')
-            ->with(['children' => function($q) {
-                $q->orderBy('created_at');
+            ->with(['children' => function ($q) use ($visibleIds) {
+                $q->when($visibleIds !== null, fn ($cq) => $cq->whereIn('id', $visibleIds))
+                    ->orderBy('created_at');
             }])
             ->get();
 
-        $incomplete = $tasks->where('status', 'incomplete');
-        $done       = $tasks->where('status', 'done');
-        $archived   = $tasks->where('status', 'archived');
-
-        $lines = [];
-        $lines[] = '# ' . $project->name;
-
-        if ($project->description) {
-            $lines[] = '';
-            $lines[] = $project->description;
-        }
-
-        $renderGroup = function($group) use (&$lines) {
-            foreach ($group as $task) {
-                $lines[] = '* ' . $task->name;
-                foreach ($task->children as $child) {
-                    $lines[] = '    * ' . $child->name;
-                }
-            }
-        };
-
-        if ($incomplete->isNotEmpty()) {
-            $lines[] = '';
-            $lines[] = '## Incomplete';
-            $renderGroup($incomplete);
-        }
-
-        if ($done->isNotEmpty()) {
-            $lines[] = '';
-            $lines[] = '## Done';
-            $renderGroup($done);
-        }
-
-        if ($archived->isNotEmpty()) {
-            $lines[] = '';
-            $lines[] = '## Archived';
-            $renderGroup($archived);
-        }
-
-        $content  = implode("\n", $lines) . "\n";
-        $filename = 'project_' . preg_replace('/[^a-z0-9]+/', '_', strtolower($project->name)) . '_' . now()->format('Y-m-d') . '.md';
-
-        return response($content, 200, [
-            'Content-Type'        => 'text/markdown; charset=UTF-8',
-            'Content-Disposition' => 'attachment; filename="' . $filename . '"',
-        ]);
+        return TaskMarkdownExport::response(
+            $project->name,
+            [
+                'Incomplete' => $tasks->where('status', 'incomplete'),
+                'Done'       => $tasks->where('status', 'done'),
+                'Archived'   => $tasks->where('status', 'archived'),
+            ],
+            'project_' . preg_replace('/[^a-z0-9]+/', '_', strtolower($project->name)) . '_' . now()->format('Y-m-d') . '.md',
+            $project->description
+        );
     }
 
     public function createFromMarkdown(Request $request)

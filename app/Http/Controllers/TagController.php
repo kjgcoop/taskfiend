@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Services\TaskMarkdownExport;
 use App\Models\Project;
 use App\Models\Tag;
 use App\Models\Task;
@@ -213,28 +214,24 @@ class TagController extends Controller
 
     public function exportMarkdown(Request $request, Tag $tag)
     {
-        $incomplete = $tag->tasks()->visibleTo(Auth::id())->where('status', 'incomplete')->orderByRaw('tasks.date IS NULL, tasks.date ASC, tasks.time IS NULL, tasks.time ASC')->get();
-        $done       = $tag->tasks()->visibleTo(Auth::id())->where('status', 'done')->orderByRaw('tasks.date IS NULL, tasks.date ASC')->get();
-        $archived   = $tag->tasks()->visibleTo(Auth::id())->where('status', 'archived')->orderByRaw('tasks.date IS NULL, tasks.date ASC')->get();
+        $visibleIds = TaskMarkdownExport::visibleIds($request);
 
-        $lines = ['# ' . $tag->tag_name];
+        $group = fn (string $status, string $order) => $tag->tasks()
+            ->visibleTo(Auth::id())
+            ->where('status', $status)
+            ->when($visibleIds !== null, fn ($q) => $q->whereIn('tasks.id', $visibleIds))
+            ->orderByRaw($order)
+            ->get();
 
-        foreach ([['## Incomplete', $incomplete], ['## Done', $done], ['## Archived', $archived]] as [$heading, $group]) {
-            if ($group->isNotEmpty()) {
-                $lines[] = '';
-                $lines[] = $heading;
-                foreach ($group as $task) {
-                    $lines[] = '* ' . $task->name;
-                }
-            }
-        }
-
-        $filename = 'tag_' . preg_replace('/[^a-z0-9]+/', '_', strtolower($tag->tag_name)) . '_' . now()->format('Y-m-d') . '.md';
-
-        return response(implode("\n", $lines) . "\n", 200, [
-            'Content-Type'        => 'text/markdown; charset=UTF-8',
-            'Content-Disposition' => 'attachment; filename="' . $filename . '"',
-        ]);
+        return TaskMarkdownExport::response(
+            $tag->tag_name,
+            [
+                'Incomplete' => $group('incomplete', 'tasks.date IS NULL, tasks.date ASC, tasks.time IS NULL, tasks.time ASC'),
+                'Done'       => $group('done', 'tasks.date IS NULL, tasks.date ASC'),
+                'Archived'   => $group('archived', 'tasks.date IS NULL, tasks.date ASC'),
+            ],
+            'tag_' . preg_replace('/[^a-z0-9]+/', '_', strtolower($tag->tag_name)) . '_' . now()->format('Y-m-d') . '.md'
+        );
     }
 
     public function updateField(Request $request, Tag $tag)

@@ -45,6 +45,41 @@ window.collectVisibleFilterableTaskIds = function () {
     });
     return ids;
 };
+// Builds the query string every export button sends: the ids of the task rows visible right now
+// (folded sections, collapsed subtasks, "Load more" pages not yet loaded and the on-page filter all
+// hide rows), so an export mirrors the screen. The server only ever narrows to this set
+// (TaskMarkdownExport::visibleIds()). 'ids' is sent even when empty, so a page showing nothing
+// doesn't fall back to "everything". `base` is a URLSearchParams to extend (it is copied, minus any
+// stale ids/filter); with `onlyWhenFiltered`, ids are sent only while the on-page filter box is
+// active, for pages whose export is otherwise the full result set (Overdue, Search). The raw filter
+// text rides along purely for display in the PDF/PNG header.
+window.visibleIdsParams = function (base, onlyWhenFiltered = false) {
+    const p = new URLSearchParams(base);
+    p.delete('ids[]');
+    p.delete('ids');
+    p.delete('filter');
+
+    const filterText = Alpine.store('taskCount').filterText;
+    if (filterText) p.set('filter', filterText);
+
+    if (!onlyWhenFiltered || filterText) {
+        const ids = window.collectVisibleFilterableTaskIds();
+        ids.forEach(id => p.append('ids[]', id));
+        if (!ids.length) p.append('ids', '');
+    }
+    return p;
+};
+// A link or button that downloads an export of what's on screen. Put x-data="visibleIdsExport" and
+// @click.prevent="go()" on an <a href> (or on a <button data-export-url>); add
+// data-only-when-filtered for the filter-only mode above. Existing query params on the URL
+// (search terms, sort) are kept.
+Alpine.data('visibleIdsExport', () => ({
+    go() {
+        const url = new URL(this.$el.dataset.exportUrl || this.$el.href, window.location.href);
+        url.search = window.visibleIdsParams(url.searchParams, 'onlyWhenFiltered' in this.$el.dataset).toString();
+        window.location.href = url.toString();
+    },
+}));
 // Quick-complete circle button on a task-list row. Same story as taskSortableList above: this
 // used to live only in task-list.blade.php's @pushOnce, which subtask-list.blade.php relied on
 // without actually including — so the quick-complete button on subtask rows silently threw

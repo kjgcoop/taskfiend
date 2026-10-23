@@ -310,25 +310,11 @@
         // going its own way (previously PDF respected the filter and MD always
         // exported everything, folded or not).
         document.addEventListener('alpine:init', () => {
-            // Shared querystring builder: keeps 'date' (if present, so exporting
-            // from a future day's page exports that day, not today — see
-            // DashboardController), replaces 'ids[]'/'filter' with a live
-            // snapshot. The server only ever narrows its own already-authorized/
-            // scoped queries to this ID set — never widens them — so there's no
-            // second implementation of the filter syntax to keep in sync with
-            // task-list.blade.php's filterTasks(). The raw filter text is sent
-            // too, but only for display (PDF's header meta line).
+            // Keeps the page's own params ('date', so exporting from a future day's page exports
+            // that day, not today, plus sort/reversed) and adds the live ids[] snapshot; see
+            // window.visibleIdsParams() in app.js.
             function exportParams() {
-                const p = new URLSearchParams(window.location.search);
-                p.delete('ids[]');
-                p.delete('filter');
-
-                const filterText = Alpine.store('taskCount').filterText;
-                if (filterText) p.set('filter', filterText);
-
-                window.collectVisibleFilterableTaskIds().forEach(id => p.append('ids[]', id));
-
-                return p;
+                return window.visibleIdsParams(window.location.search);
             }
 
             Alpine.data('dayExport', () => ({
