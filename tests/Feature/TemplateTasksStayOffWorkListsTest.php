@@ -197,4 +197,27 @@ class TemplateTasksStayOffWorkListsTest extends TestCase
         $this->assertSame(1, substr_count($html, 'title="Select task"'));
         $this->assertSame(1, substr_count($html, 'data-task-closed'));
     }
+
+    public function test_template_locations_are_not_suggested(): void
+    {
+        $this->task($this->normal, 'Real Task', ['location' => 'Garage']);
+        $this->task($this->template, 'Template Task', ['location' => 'Secret Lair']);
+
+        $this->assertSame(['Garage'], Task::locationSuggestionsFor($this->user->id)->all());
+
+        foreach (['/undated', '/all-tasks', '/search'] as $url) {
+            $this->actingAs($this->user)->get($url)
+                ->assertOk()
+                ->assertDontSee('Secret Lair');
+        }
+    }
+
+    public function test_quick_add_location_token_ignores_template_locations(): void
+    {
+        $this->task($this->template, 'Template Task', ['location' => 'Secret Lair']);
+
+        $tokens = (new \App\Services\QuickAddParser($this->user->id))->parse('Buy milk +secretlair');
+
+        $this->assertSame('secretlair', $tokens->location);
+    }
 }

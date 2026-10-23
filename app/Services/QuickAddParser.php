@@ -170,6 +170,7 @@ class QuickAddParser
         $normalized = strtolower(preg_replace('/[-_\s]/', '', $token));
 
         return Task::visibleTo($this->userId)
+            ->outsideTemplates()
             ->whereNotNull('location')
             ->where('location', '!=', '')
             ->whereRaw("LOWER(REPLACE(REPLACE(REPLACE(location, ' ', ''), '-', ''), '_', '')) = ?", [$normalized])

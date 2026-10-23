@@ -137,13 +137,7 @@ class DashboardController extends Controller
             ->orderByRaw('LOWER(name)')
             ->get(['id', 'name']);
 
-        $locations = Task::where('status', 'incomplete')
-            ->whereNotNull('location')
-            ->where('location', '!=', '')
-            ->visibleTo(Auth::id())
-            ->distinct()
-            ->orderByRaw('LOWER(location)')
-            ->pluck('location');
+        $locations = Task::locationSuggestionsFor(Auth::id());
 
         return compact('projects', 'tags', 'users', 'locations');
     }

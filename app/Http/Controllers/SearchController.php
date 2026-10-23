@@ -266,13 +266,7 @@ class SearchController extends Controller
         $tags  = Tag::active()->orderByRaw('LOWER(tag_name)')->get();
         $users = User::whereNull('email_enabled_at')->orderByRaw('LOWER(name)')->get(['id', 'name']);
 
-        $locations = Task::where('status', 'incomplete')
-            ->whereNotNull('location')
-            ->where('location', '!=', '')
-            ->visibleTo(Auth::id())
-            ->distinct()
-            ->orderByRaw('LOWER(location)')
-            ->pluck('location');
+        $locations = Task::locationSuggestionsFor(Auth::id());
 
         $with     = ['creator', 'project', 'tags', 'assignees', 'attachments', 'comments'];
         $sort     = $request->input('sort', 'date');

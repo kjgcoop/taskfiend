@@ -256,13 +256,7 @@ class ProjectController extends Controller
 
         $tags = Tag::active()->orderByRaw('LOWER(tag_name)')->get(['id', 'tag_name', 'color']);
 
-        $locations = Task::where('status', 'incomplete')
-            ->whereNotNull('location')
-            ->where('location', '!=', '')
-            ->visibleTo(Auth::id())
-            ->distinct()
-            ->orderByRaw('LOWER(location)')
-            ->pluck('location');
+        $locations = Task::locationSuggestionsFor(Auth::id());
 
         // All tasks here belong to one project, so no breakdown tooltip is needed.
         $breakdown = [];

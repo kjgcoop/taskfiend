@@ -299,6 +299,23 @@ class Task extends Model
     }
 
     /**
+     * Distinct locations on the user's visible, incomplete tasks, for the
+     * location autocomplete. Template tasks are excluded so a template's
+     * (possibly private) locations never surface as suggestions.
+     */
+    public static function locationSuggestionsFor(int $userId): \Illuminate\Support\Collection
+    {
+        return static::where('status', 'incomplete')
+            ->whereNotNull('location')
+            ->where('location', '!=', '')
+            ->visibleTo($userId)
+            ->outsideTemplates()
+            ->distinct()
+            ->orderByRaw('LOWER(location)')
+            ->pluck('location');
+    }
+
+    /**
      * Whether this task is on the user's plate (they created it or are
      * assigned to it), as opposed to appearing on their day only because they
      * belong to its project (see scopeOnDayOf). Reads the loaded assignees, so

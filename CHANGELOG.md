@@ -74,6 +74,7 @@ Template tasks are blueprints, so they now stay off the pages that show your rea
 - Undated, All Tasks and the Calendar's "No Date" count no longer include them.
 - Template tasks marked done or archived no longer show in a day's Done and Archived sections, the day exports or the completed-on-day API.
 - Tag pages, tag task counts and a tag's activity log no longer list them. (You can still tag a template task.)
+- Location suggestions (and `+location` matching in quick add) no longer draw from template tasks, so a template's locations stay private to it.
 - A template can no longer be made your default project or hearted.
 
 ## Bulk Edit Only Changes Incomplete Tasks
