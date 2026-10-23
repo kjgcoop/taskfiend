@@ -41,6 +41,7 @@ Anyone who owns a project, or is assigned to it, can now find every task in it, 
 
 ## Fixes
 
+- **Template tasks in search.** Tasks that belong to a template no longer show up in search results.
 - **Project page for members.** Opening a project you're assigned to but don't own showed a stuck-open status dialog and dozens of console errors, because the page's scripts only loaded for the project's owner. The page now works the same for every member.
 
 ## Project Exports Require Project Membership

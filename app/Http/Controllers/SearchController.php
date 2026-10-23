@@ -136,6 +136,9 @@ class SearchController extends Controller
     {
         $baseQuery = Task::visibleTo(Auth::id());
 
+        // Template tasks are blueprints, not real work: never search results.
+        $baseQuery->whereDoesntHave('project', fn ($q) => $q->where('project_type', Project::TYPE_TEMPLATE));
+
         if (!$request->boolean('show_archived_projects')) {
             $baseQuery->where(function ($q) {
                 $q->whereNull('project_id')
