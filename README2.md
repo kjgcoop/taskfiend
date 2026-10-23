@@ -72,7 +72,7 @@ php artisan serve                              # development server
 php artisan apikey:create admin@example.com    # API key (tfk_xxxxx)
 ```
 
-Other CLI commands (in `app/Console/Commands/`): `user:create`, `user:toggle`, `apikey:create`, `apikey:invalidate`, `email:task-digest`, `email:task-png`, `temp:prune`, `tasks:backfill-completed-at`, `todoist:import`.
+Other CLI commands (in `app/Console/Commands/`): `user:create`, `user:toggle`, `apikey:create`, `apikey:invalidate`, `email:task-digest`, `email:task-png`, `temp:prune`, `tasks:backfill-completed-at`, `tasks:backfill-creator-assignments`, `templates:convert-to-projects`, `todoist:import`.
 
 ## Testing
 

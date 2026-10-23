@@ -71,7 +71,7 @@ php artisan migrate
 php artisan serve                               # http://localhost:8000
 ```
 
-CLI commands live in `app/Console/Commands/`: `user:create`, `user:toggle`, `apikey:create`, `apikey:invalidate`, `email:task-digest`, `email:task-png`, `temp:prune`, `tasks:backfill-completed-at`, `tasks:backfill-creator-assignments`, `todoist:import`, and the scheduled `CreateScheduledProjects`.
+CLI commands live in `app/Console/Commands/`: `user:create`, `user:toggle`, `apikey:create`, `apikey:invalidate`, `email:task-digest`, `email:task-png`, `temp:prune`, `tasks:backfill-completed-at`, `tasks:backfill-creator-assignments`, `templates:convert-to-projects`, `todoist:import`, and the scheduled `CreateScheduledProjects`.
 
 ## File Locations
 

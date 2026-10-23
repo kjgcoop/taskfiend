@@ -12,7 +12,7 @@ title: "Features"
 
 ### Task Lists
 - **Quick-add bar** on task list views - type a task name with natural language dates and inline shortcuts (`#project`, `@tag`, `+location`, `&user`, `nodate`) to autofill fields; autocomplete suggestions appear as you type. Paste multiple lines to create multiple tasks at once, or use Shift-Enter to add them in sequence.
-- **Multi-select** - activate with the clipboard icon next to the quick-add bar to select multiple tasks and perform bulk operations including status, project (combo box), location, and duration. Only tasks on the current page are affected; if the list is paginated, navigate to each page to act on those tasks.
+- **Multi-select** - activate with the clipboard icon next to the quick-add bar to select multiple tasks and perform bulk operations including status, project (combo box), location, and duration. Only tasks on the current page are affected; if the list is paginated, navigate to each page to act on those tasks. Bulk edit changes only incomplete tasks: done and archived tasks are skipped (they don't offer a checkbox), and you're told how many were skipped.
 - **Duration in task lists** - tasks that have a duration set show it directly in list view rows so you can gauge workload at a glance
 - **Sorting** - sort task lists by date, duration, or other fields; a reverse-sort button flips the current order. Tasks without a date or time are sorted by creation date (newest last) - the bottom of an undated list stays stable. Created date is always the secondary sort.
 - **Assignee icons show only other people** - a task's assignee icons leave out you, the person viewing the list. On your own lists you're normally an assignee already, so only your collaborators' icons appear.
@@ -49,21 +49,29 @@ Link to other tasks, projects, tags, or locations from any description or commen
 
 ### Project Page
 - **Everyone on the project sees every task in it** - the owner and anyone assigned to the project at the project level can open, search for, tag-browse and bulk-edit any task in the project, whether or not it's assigned to them. Being assigned to a single task shows only that task. Exporting a project (Markdown or template) also requires project membership.
+- **Export MD** only includes what's showing: folded Done and Archived sections and collapsed subtasks are left out, just as on the Day page.
 - **Project Details modal** has a single Save button for all its fields, and the modal stays open while it saves instead of the page reloading out from under it.
 - **Reminder notes** - a project reminder can carry an optional note, to remind you why you're reminding yourself. It shows on the day view and the reminders list, and carries forward when a recurring reminder is dismissed.
 - **Background on creation** - the New Project form takes an optional background image; you no longer have to create the project and upload one as a second step.
 
 ### Templates Page
+- **Templates are projects** - a template is a project of a special kind, so you build and edit one the way you would any project: choose **Add Template** to start an empty one, or **Save as Template** on an existing project, then click the template's title in the list to open it and add, edit and reorder its tasks. Tasks in a template can only be moved between your own templates.
 - **Public or private** - a saved template's visibility can be toggled after creation.
-- **README in exports** - every template zip includes a `README.md` describing what it is and how to import it, for when you find a random zip on your hard drive in six months.
+- **Zips still work for sharing** - **Download Template** and **Import Template from Zip** move a template between instances. Every template zip includes a `README.md` describing what it is and how to import it, for when you find a random zip on your hard drive in six months.
+- **Templates stay out of your work** - a template's tasks are blueprints, so they don't appear in search, the Undated, All Tasks or Calendar views, the Done and Archived sections of a day (or its exports), tag pages and counts, or location suggestions. A template can't be made your default project or hearted. You can still tag a template's tasks.
+- **Upgrading from zip-based templates** - templates used to be stored as zip files. After upgrading, run `php artisan templates:convert-to-projects` once to move existing ones into the new form. Scheduled projects keep working.
 
 ### Scheduled Projects
 - **Live template contents** - a project scheduled from a template matches the template's contents on the day it's actually created, not the day it was scheduled. Edits you make to the template in the meantime are picked up.
 
 ### Search Page
 - There's a magnifying glass in the header that, when clicked, will provide a search input. Submitting a search takes you to the dedicated search page.
-- There's also a dedicated search page. It can, as you might expect, find tasks by title, description, comments, tags, projects, assignees, duration, and date presence; title, description, and comments can each be targeted independently via checkboxes under "Search in" (Title and Description are checked by default; Comments is not). A comment match never surfaces a task you can't otherwise see. If you enter search text but uncheck all three, the page shows a validation error and runs no search rather than silently searching everything. The quick search (magnifying glass in the header) always searches Title and Description.
+- There's also a dedicated search page. It can, as you might expect, find tasks by title, description, comments, tags, projects, assignees, duration, and date presence; title, description, and comments can each be targeted independently via checkboxes under "Search in" (Title and Description are checked by default; Comments is not). A comment match never surfaces a task you can't otherwise see. If you enter search text but uncheck all three, the page shows a validation error and runs no search rather than silently searching everything. The quick search (magnifying glass in the header) always searches Title and Description. Template tasks never appear in results.
+- **Export MD** follows the page's filter box: type in it and the export narrows to the matching rows; with no filter it exports every result.
 - The search box itself understands `#project` and `@tag` the same way the quick-add bar does, hyphenated multi-word names included (e.g. `#home-renovation` matches a project named "Home Renovation") — it's the same matching logic under the hood, not a lookalike.
+
+### Tag Page
+- **Export MD** only includes what's showing, with folded Done and Archived sections and collapsed subtasks left out.
 
 ### Overdue Page
 - Everything here is incomplete by definition, so there's no done/archived folding to think about.
