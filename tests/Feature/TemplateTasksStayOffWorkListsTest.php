@@ -195,7 +195,7 @@ class TemplateTasksStayOffWorkListsTest extends TestCase
 
         // One selector (the open task's); the done task's row is flagged closed.
         $this->assertSame(1, substr_count($html, 'title="Select task"'));
-        $this->assertSame(1, substr_count($html, 'data-task-closed'));
+        $this->assertSame(1, preg_match_all('/<div data-task-group [^>]*data-task-closed/', $html));
     }
 
     public function test_template_locations_are_not_suggested(): void
