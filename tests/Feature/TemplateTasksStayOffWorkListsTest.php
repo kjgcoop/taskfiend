@@ -185,4 +185,16 @@ class TemplateTasksStayOffWorkListsTest extends TestCase
 
         $this->assertNull($done->fresh()->location);
     }
+
+    public function test_done_tasks_get_no_bulk_select_checkbox(): void
+    {
+        $this->task($this->normal, 'Open Task');
+        $this->task($this->normal, 'Closed Task', ['status' => 'done']);
+
+        $html = $this->actingAs($this->user)->get('/all-tasks')->assertOk()->getContent();
+
+        // One selector (the open task's); the done task's row is flagged closed.
+        $this->assertSame(1, substr_count($html, 'title="Select task"'));
+        $this->assertSame(1, substr_count($html, 'data-task-closed'));
+    }
 }

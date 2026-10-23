@@ -500,7 +500,7 @@
                         const ids = [];
                         groups.forEach(group => {
                             const filterable = group.querySelector('[data-filterable]');
-                            if (filterable && filterable.style.display !== 'none' && group.offsetParent !== null) {
+                            if (filterable && !group.hasAttribute('data-task-closed') && filterable.style.display !== 'none' && group.offsetParent !== null) {
                                 ids.push(parseInt(group.dataset.taskGroupId));
                             }
                         });

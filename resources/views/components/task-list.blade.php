@@ -37,7 +37,7 @@
                 const ids = [];
                 groups.forEach(group => {
                     const filterable = group.querySelector('[data-filterable]');
-                    if (filterable && filterable.style.display !== 'none' && group.offsetParent !== null) {
+                    if (filterable && !group.hasAttribute('data-task-closed') && filterable.style.display !== 'none' && group.offsetParent !== null) {
                         ids.push(parseInt(group.dataset.taskGroupId));
                     }
                 });
@@ -963,7 +963,7 @@
 
             $marginLeft = $depth * 24; // 24px per level
         @endphp
-        <div data-task-group data-task-group-id="{{ $task->id }}" x-data="subtaskGroup">
+        <div data-task-group data-task-group-id="{{ $task->id }}" @if($task->status !== 'incomplete') data-task-closed @endif x-data="subtaskGroup">
         <div class="bg-[#202020] p-4 rounded-lg shadow hover:shadow-md transition border border-gray-700 group"
              data-filterable
              data-task-name="{{ strtolower($task->name) }}"
@@ -1029,8 +1029,8 @@
                 </div>
                 @endif
 
-                <!-- Bulk edit: square selector (shown in bulk mode for all tasks) -->
-                @if(!$readOnly)
+                <!-- Bulk edit: square selector (shown in bulk mode for incomplete tasks only; done/archived are never bulk-edited) -->
+                @if(!$readOnly && $task->status === 'incomplete')
                 <button x-show="$store.bulkEdit.active"
                         @click.stop="$store.bulkEdit.toggleTask({{ $task->id }})"
                         title="Select task"
@@ -1125,9 +1125,7 @@
                 <!-- Task Content -->
                 <div class="flex-1 min-w-0"
                      :class="$store.bulkEdit.active ? 'cursor-pointer' : 'cursor-pointer'"
-                     @click="$store.bulkEdit.active
-                         ? $store.bulkEdit.toggleTask({{ $task->id }})
-                         : (($event.ctrlKey || $event.metaKey) ? window.open('{{ route('tasks.show', $task) }}', '_blank') : $dispatch('open-task-panel', { taskId: {{ $task->id }} }))"
+                     @click="{{ $task->status === 'incomplete' ? '$store.bulkEdit.active ? $store.bulkEdit.toggleTask(' . $task->id . ') :' : '' }} (($event.ctrlKey || $event.metaKey) ? window.open('{{ route('tasks.show', $task) }}', '_blank') : $dispatch('open-task-panel', { taskId: {{ $task->id }} }))"
                      title="Click to peek · Ctrl+click or middle-click to open full page">
                     <!-- Show parent context if exists -->
                     @if($task->parent)

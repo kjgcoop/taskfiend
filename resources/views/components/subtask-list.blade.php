@@ -13,7 +13,7 @@
 @endphp
 <div class="space-y-2" @if($canSort) x-data="taskSortableList" @endif>
     @foreach($tasks as $task)
-        <div data-task-group data-task-group-id="{{ $task->id }}" x-data="subtaskGroup">
+        <div data-task-group data-task-group-id="{{ $task->id }}" @if($task->status !== 'incomplete') data-task-closed @endif x-data="subtaskGroup">
         <div class="bg-gray-700 border border-gray-600 p-3 rounded-lg hover:bg-gray-650 transition">
             <div class="flex items-start gap-3">
                 @if($canSort)
