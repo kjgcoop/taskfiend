@@ -526,6 +526,28 @@ class TaskStoreTest extends TestCase
         $this->assertCount(0, $task->tags);
     }
 
+    public function test_unrecognized_at_token_survives_alongside_a_matched_project_token(): void
+    {
+        // Regression guard: "Here is a thing @notatag #my-project" must land in the
+        // project as "Here is a thing @notatag" (only the matched #token is stripped).
+        $other = Project::create([
+            'name'    => 'Other Project',
+            'user_id' => $this->user->id,
+            'status'  => 'incomplete',
+        ]);
+
+        $this->actingAs($this->user)->post('/tasks', [
+            'name'       => 'Here is a thing @notatag #other-project',
+            'project_id' => $this->project->id,
+            'quick_add'  => true,
+        ]);
+
+        $task = Task::where('creator_id', $this->user->id)->latest()->first();
+        $this->assertSame('Here is a thing @notatag', $task->name);
+        $this->assertSame($other->id, $task->project_id);
+        $this->assertCount(0, $task->tags);
+    }
+
     public function test_bulk_add_at_tag_token_assigns_tag_and_strips_token(): void
     {
         $tag = $this->createTag('home');

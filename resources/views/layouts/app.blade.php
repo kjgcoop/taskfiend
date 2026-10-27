@@ -785,6 +785,7 @@
                 projects: null,
                 get projectTaskCount() { let n = 0; if (this.projects) { for (const p of this.projects) n += p.count; } return n; },
                 nameAC: { show: false, type: null, query: '', results: [], activeIndex: -1 },
+                nameTokens: [],
                 allTags: [],
                 allProjects: [],
                 displayProjectName: '',
@@ -914,6 +915,7 @@
                     this.editing[field] = false;
                     if (field === 'name') {
                         this.nameAC = { show: false, type: null, query: '', results: [], activeIndex: -1 };
+                        this.nameTokens = [];
                     }
                     if (field === 'date') {
                         this.dateText = this.original.dateText || '';
@@ -985,6 +987,7 @@
                     const prefix = this.nameAC.type === 'tag' ? '@' : '#';
                     const slug = slugify(item.name);
                     const newBeforeCursor = textToCursor.replace(new RegExp(prefix + '[\\w-]*$'), prefix + slug + ' ');
+                    this.nameTokens = [...this.nameTokens, prefix + slug + ' '];
                     this.fields.name = newBeforeCursor + val.substring(pos);
                     if (this.nameAC.type === 'tag') {
                         if (!this.fields.tag_ids.includes(item.id)) this.fields.tag_ids = [...this.fields.tag_ids, item.id];
@@ -1063,7 +1066,16 @@
                 },
 
                 async _saveFieldRequest(field) {
-                    if (field === 'name') this.fields.name = this.fields.name.replace(/[@#][\w-]+\s*/g, '').trim();
+                    if (field === 'name') {
+                        // Strip only the tokens inserted by autocomplete (they became real
+                        // tag/project changes). Anything else typed, e.g. an unmatched
+                        // "@notatag", is literal title text and must be left alone.
+                        this.nameTokens.forEach(token => {
+                            this.fields.name = this.fields.name.split(token).join('');
+                        });
+                        this.nameTokens = [];
+                        this.fields.name = this.fields.name.replace(/\s{2,}/g, ' ').trim();
+                    }
                     if (field === 'date') {
                         // Prefer the exact ISO value from the date-picker widget over
                         // re-parsing the human-readable display text — see pickDate().

@@ -27,6 +27,12 @@ paths:
 
 `QuickAddParser` returns a `QuickAddTokens` DTO. Matching is hyphen-insensitive, limited to **active** projects/tags, and unmatched tokens stay in the title. Location fuzzy-match is scoped to the user's *visible* tasks (`Task::visibleTo`). Matched `&user` tokens are stripped by both preview and store using the typed token, not a re-derived slug.
 
+**Unmatched tokens are literal text, everywhere.** `"Here is a thing @notatag #project"` saves to Project as `"Here is a thing @notatag"`: only tokens that matched something are removed. This has regressed more than once, so keep it true on every path:
+
+- Quick-add (single and bulk) goes through `QuickAddParser`; don't hand-roll token stripping.
+- The task side panel's inline name edit (`_saveFieldRequest()` in `layouts/app.blade.php`) strips only the tokens the user inserted via autocomplete (tracked in `nameTokens`), never a blanket `/[@#][\w-]+/` regex.
+- Tests: `TaskStoreTest::test_unrecognized_at_token_*`, `QuickAddParserTest::test_unmatched_tag_token_stays_in_name`, and the Playwright spec in `tests/e2e/task-panel.spec.js`.
+
 ## Search
 
 - The search page's `#project`/`@tag` tokens go through the same server-side parser (`SearchController::parseTokens`, `/search/parse-tokens`). The autocomplete dropdown stays client-side, and a clicked suggestion passes its known id straight through. `#inbox` is a search-only sentinel stripped before the parser runs.

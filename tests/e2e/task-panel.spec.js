@@ -101,6 +101,28 @@ test.describe('Task Side Panel', () => {
     await expect(page.locator(`[data-task-name-display]:has-text("${updatedName}")`)).toBeVisible();
   });
 
+  test('panel name edit leaves an unmatched @token in the title', async ({ page }) => {
+    // Regression guard: "@notatag" is not a tag, so it is literal title text.
+    const updatedName = `${taskName} @notatag`;
+
+    await page.locator(`[data-task-name-display]:has-text("${taskName}")`).click();
+    await page.waitForSelector('#task-panel-overlay', { state: 'visible' });
+    await page.waitForLoadState('networkidle');
+
+    await page.locator('#task-panel-content .task-title').click();
+    const nameInput = page.locator('#task-panel-content input[x-ref="nameInput"]');
+    await nameInput.waitFor({ state: 'visible' });
+    await nameInput.fill(updatedName);
+    await nameInput.press('Enter');
+    await page.waitForLoadState('networkidle');
+
+    await expect(page.locator('#task-panel-content .task-title')).toContainText(updatedName);
+
+    // And it must have been saved that way, not just displayed.
+    await page.reload();
+    await expect(page.locator(`[data-task-name-display]:has-text("${updatedName}")`)).toBeVisible();
+  });
+
   test('"Open full page" link navigates to the task detail page', async ({ page }) => {
     await page.locator(`[data-task-name-display]:has-text("${taskName}")`).click();
     await page.waitForSelector('#task-panel-overlay', { state: 'visible' });
