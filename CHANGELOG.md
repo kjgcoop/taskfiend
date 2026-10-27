@@ -80,3 +80,7 @@ Template tasks are blueprints, so they now stay off the pages that show your rea
 ## Bulk Edit Only Changes Incomplete Tasks
 
 Bulk edit now skips done and archived tasks instead of changing them, and tells you how many it skipped.
+
+## Load More for Inactive Projects
+
+The Inactive Projects section on the Projects page now shows the first 100 done and archived projects, with a **Load more** button that fetches another 100 each time it's clicked.

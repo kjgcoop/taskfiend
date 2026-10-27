@@ -47,6 +47,7 @@ Route::middleware('auth')->group(function () {
     Route::post('/tasks/{task}/duplicate', [TaskController::class, 'duplicate'])->name('tasks.duplicate');
     Route::get('/tasks/{task}/row-html', [TaskController::class, 'rowHtml'])->name('tasks.rowHtml');
 
+    Route::get('/projects/inactive', [ProjectController::class, 'inactive'])->name('projects.inactive');
     Route::resource('projects', ProjectController::class)->except(['edit', 'update']);
     Route::post('/projects/{project}/duplicate', [ProjectController::class, 'duplicate'])->name('projects.duplicate');
     Route::post('/projects/{project}/reorder-tasks', [ProjectController::class, 'reorderTasks'])->name('projects.reorderTasks');

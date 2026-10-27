@@ -38,9 +38,41 @@ class ProjectController extends Controller
         };
     }
 
+    /**
+     * One page of done/archived projects, natural-sorted by name. Names are
+     * sorted in PHP (strnatcasecmp), so sort a light id/name list first and
+     * only load the counts and relations for the requested page.
+     *
+     * @return array{0: \Illuminate\Support\Collection, 1: int} [projects, total]
+     */
+    private function inactiveProjectsPage(int $page): array
+    {
+        $perPage = max(1, (int) config('taskfiend.pagination_per_page'));
+
+        $sortedIds = Project::forMember(Auth::id())
+            ->whereIn('status', ['done', 'archived'])
+            ->get(['id', 'name'])
+            ->sort(fn ($a, $b) => strnatcasecmp($a->name, $b->name))
+            ->pluck('id');
+
+        $pageIds = $sortedIds->slice(($page - 1) * $perPage, $perPage)->values();
+
+        $projects = Project::whereIn('id', $pageIds)
+            ->withCount([
+                'tasks as open_tasks_count' => fn ($q) => $q->where('status', 'incomplete'),
+                'tasks as done_tasks_count' => fn ($q) => $q->whereIn('status', ['done', 'archived']),
+            ])
+            ->get()
+            ->sortBy(fn ($p) => $pageIds->search($p->id))
+            ->values();
+
+        return [$projects, $sortedIds->count()];
+    }
+
     public function index(Request $request)
     {
-        $all = Project::forMember(Auth::id())
+        $projects = Project::forMember(Auth::id())
+            ->where('status', 'incomplete')
             ->withCount([
                 'tasks as open_tasks_count'      => fn ($q) => $q->where('status', 'incomplete'),
                 'tasks as done_tasks_count'       => fn ($q) => $q->whereIn('status', ['done', 'archived']),
@@ -50,11 +82,12 @@ class ProjectController extends Controller
                 'assignees',
                 'latestStatusLog',
             ])
-            ->get();
+            ->get()
+            ->sort(fn ($a, $b) => strnatcasecmp($a->name, $b->name))
+            ->values();
 
-        $natSort = fn ($a, $b) => strnatcasecmp($a->name, $b->name);
-        $projects         = $all->where('status', 'incomplete')->sort($natSort)->values();
-        $inactiveProjects = $all->whereIn('status', ['done', 'archived'])->sort($natSort)->values();
+        [$inactiveProjects, $inactiveTotal] = $this->inactiveProjectsPage(1);
+        $inactiveHasMore = $inactiveTotal > $inactiveProjects->count();
 
         $scheduledCount = ScheduledProject::where('user_id', Auth::id())
             ->where('is_created', false)
@@ -66,7 +99,20 @@ class ProjectController extends Controller
             ->where('dismissed', false)
             ->count();
 
-        return view('projects.index', compact('projects', 'inactiveProjects', 'scheduledCount', 'remindersCount'));
+        return view('projects.index', compact('projects', 'inactiveProjects', 'inactiveTotal', 'inactiveHasMore', 'scheduledCount', 'remindersCount'));
+    }
+
+    public function inactive(Request $request)
+    {
+        $page = max(1, (int) $request->get('page', 1));
+        [$inactiveProjects, $total] = $this->inactiveProjectsPage($page);
+        $perPage = max(1, (int) config('taskfiend.pagination_per_page'));
+
+        return response()->json([
+            'html'     => view('projects._inactive-cards', ['projects' => $inactiveProjects])->render(),
+            'hasMore'  => $total > $page * $perPage,
+            'nextPage' => $page + 1,
+        ]);
     }
 
     public function create()
