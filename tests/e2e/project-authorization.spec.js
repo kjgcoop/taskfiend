@@ -330,6 +330,9 @@ test.describe('Project Authorization & Privacy', () => {
   });
 
   test('removing user from project hides project from their view', async ({ page }) => {
+    // Three login/logout round-trips plus the Details modal can't fit the 10s default.
+    test.slow();
+
     // User 1 creates project and assigns to User 2
     await login(page, testUsers.user1.email);
     await page.goto('/projects/create');
