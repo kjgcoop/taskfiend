@@ -536,11 +536,10 @@ class TaskStoreTest extends TestCase
             'status'  => 'incomplete',
         ]);
 
-        // No project_id is posted: a posted one (the quick-add bar's page context or an
-        // autocomplete pick) wins over a typed #token, so the token must be what resolves it.
         $this->actingAs($this->user)->post('/tasks', [
-            'name'      => 'Here is a thing @notatag #other-project',
-            'quick_add' => true,
+            'name'       => 'Here is a thing @notatag #other-project',
+            'project_id' => $this->project->id,
+            'quick_add'  => true,
         ]);
 
         $task = Task::where('creator_id', $this->user->id)->latest()->first();
