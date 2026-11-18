@@ -29,9 +29,9 @@ class QuickAddParser
     }
 
     /**
-     * @param bool $projectPreResolved The caller already has a project_id
-     *        (autocomplete or page context): the #token is stripped even if
-     *        it matches nothing, but a matching project still takes precedence.
+     * @param bool $projectPreResolved The caller already knows the project
+     *        (quick-add autocomplete set project_id): skip the lookup but
+     *        still strip the #token from the name.
      * @param bool $parseLocation  Parse +/++ location tokens.
      * @param bool $parseAssignees Parse &user tokens.
      */
@@ -66,27 +66,25 @@ class QuickAddParser
 
         $resolved = $preResolved;
 
-        // Always attempt the lookup, even when the caller already has a project_id:
-        // that value may just be page context (e.g. the quick-add bar on a project
-        // page), in which case a typed #token must override it. A match wins; with
-        // no match, a pre-resolved project_id is left to the caller.
-        $projectQuery = strtolower($match[1]);
-        // Normalize query by stripping hyphens so "#my-project" matches "My Project".
-        $queryNorm = str_replace('-', '', $projectQuery);
-        // Strip hyphens, spaces, apostrophes, and periods from the stored name —
-        // mirrors the JS slug: spaces→hyphens then /[^a-z0-9-]/g→'', then strip hyphens.
-        // e.g. "KJ's Inbox" → "kjsinbox", "My Project" → "myproject" ✓
-        $stripped = "LOWER(REPLACE(REPLACE(REPLACE(REPLACE(name, '-', ''), ' ', ''), '''', ''), '.', ''))";
-        $project = Project::where(function ($q) use ($projectQuery, $queryNorm, $stripped) {
-                $q->whereRaw('LOWER(name) = ?', [$projectQuery])
-                  ->orWhereRaw("{$stripped} = ?", [$queryNorm]);
-            })
-            ->activeForUser($this->userId)
-            ->first();
+        if (!$resolved) {
+            $projectQuery = strtolower($match[1]);
+            // Normalize query by stripping hyphens so "#my-project" matches "My Project".
+            $queryNorm = str_replace('-', '', $projectQuery);
+            // Strip hyphens, spaces, apostrophes, and periods from the stored name —
+            // mirrors the JS slug: spaces→hyphens then /[^a-z0-9-]/g→'', then strip hyphens.
+            // e.g. "KJ's Inbox" → "kjsinbox", "My Project" → "myproject" ✓
+            $stripped = "LOWER(REPLACE(REPLACE(REPLACE(REPLACE(name, '-', ''), ' ', ''), '''', ''), '.', ''))";
+            $project = Project::where(function ($q) use ($projectQuery, $queryNorm, $stripped) {
+                    $q->whereRaw('LOWER(name) = ?', [$projectQuery])
+                      ->orWhereRaw("{$stripped} = ?", [$queryNorm]);
+                })
+                ->activeForUser($this->userId)
+                ->first();
 
-        if ($project) {
-            $tokens->project = $project;
-            $resolved = true;
+            if ($project) {
+                $tokens->project = $project;
+                $resolved = true;
+            }
         }
 
         // Only remove the token from the title if it was matched or
