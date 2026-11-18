@@ -29,21 +29,17 @@ class QuickAddParser
     }
 
     /**
-     * @param bool $projectPreResolved The caller already has a project_id
-     *        (autocomplete or page context): the #token is stripped even if
-     *        it matches nothing, but a matching project still takes precedence.
      * @param bool $parseLocation  Parse +/++ location tokens.
      * @param bool $parseAssignees Parse &user tokens.
      */
     public function parse(
         string $input,
-        bool $projectPreResolved = false,
         bool $parseLocation = true,
         bool $parseAssignees = true,
     ): QuickAddTokens {
         $tokens = new QuickAddTokens();
 
-        $name = $this->parseProjectToken($input, $projectPreResolved, $tokens);
+        $name = $this->parseProjectToken($input, $tokens);
         $name = $this->parseTagTokens($name, $tokens);
         if ($parseLocation) {
             $name = $this->parseLocationToken($name, $tokens);
@@ -58,45 +54,65 @@ class QuickAddParser
         return $tokens;
     }
 
-    private function parseProjectToken(string $name, bool $preResolved, QuickAddTokens $tokens): string
+    private function parseProjectToken(string $name, QuickAddTokens $tokens): string
     {
-        if (!preg_match('/#([\w-]+)/', $name, $match)) {
+        // Only a token that matches an active project is a project token. An
+        // unmatched #word (a hashtag the user wants to keep) stays in the title.
+        // A match overrides any project_id the form posted (page context or an
+        // autocomplete pick): "#project-b" typed on Project A's page goes to B.
+        if (!preg_match_all('/#([\w-]+)/', $name, $matches)) {
             return $name;
         }
 
-        $resolved = $preResolved;
+        foreach ($matches[1] as $slug) {
+            $project = $this->findProject($slug);
+            if (!$project) {
+                continue;
+            }
 
-        // Always attempt the lookup, even when the caller already has a project_id:
-        // that value may just be page context (e.g. the quick-add bar on a project
-        // page), in which case a typed #token must override it. A match wins; with
-        // no match, a pre-resolved project_id is left to the caller.
-        $projectQuery = strtolower($match[1]);
+            $tokens->project = $project;
+            $tokens->projectResolved = true;
+
+            return trim(preg_replace('/#' . preg_quote($slug, '/') . '(?![\w-])\s*/', '', $name, 1));
+        }
+
+        return $name;
+    }
+
+    private function findProject(string $slug): ?Project
+    {
+        $query = strtolower($slug);
         // Normalize query by stripping hyphens so "#my-project" matches "My Project".
-        $queryNorm = str_replace('-', '', $projectQuery);
-        // Strip hyphens, spaces, apostrophes, and periods from the stored name —
-        // mirrors the JS slug: spaces→hyphens then /[^a-z0-9-]/g→'', then strip hyphens.
+        $queryNorm = str_replace('-', '', $query);
+        // Strip hyphens, spaces, apostrophes, and periods from the stored name.
         // e.g. "KJ's Inbox" → "kjsinbox", "My Project" → "myproject" ✓
         $stripped = "LOWER(REPLACE(REPLACE(REPLACE(REPLACE(name, '-', ''), ' ', ''), '''', ''), '.', ''))";
-        $project = Project::where(function ($q) use ($projectQuery, $queryNorm, $stripped) {
-                $q->whereRaw('LOWER(name) = ?', [$projectQuery])
+
+        $project = Project::where(function ($q) use ($query, $queryNorm, $stripped) {
+                $q->whereRaw('LOWER(name) = ?', [$query])
                   ->orWhereRaw("{$stripped} = ?", [$queryNorm]);
             })
             ->activeForUser($this->userId)
             ->first();
 
         if ($project) {
-            $tokens->project = $project;
-            $resolved = true;
+            return $project;
         }
 
-        // Only remove the token from the title if it was matched or
-        // pre-resolved. An unrecognised #word stays as plain text.
-        if ($resolved) {
-            $tokens->projectResolved = true;
-            $name = trim(preg_replace('/#[\w-]+\s*/', '', $name));
-        }
+        // Fallback: the autocomplete inserts a JS slug (lowercase, spaces→hyphens,
+        // everything outside a-z0-9- removed), which differs from the SQL match
+        // for names with other punctuation ("R&D" → "#rd"). Match that rule too so
+        // an autocompleted token is always recognized.
+        return Project::activeForUser($this->userId)->get()
+            ->first(fn (Project $p) => $this->jsSlug($p->name) === $queryNorm);
+    }
 
-        return $name;
+    /** Mirrors slugify() in layouts/app.blade.php, with hyphens removed for comparison. */
+    private function jsSlug(string $name): string
+    {
+        $slug = preg_replace('/\s+/', '-', mb_strtolower($name));
+
+        return str_replace('-', '', preg_replace('/[^a-z0-9-]/', '', $slug));
     }
 
     private function parseTagTokens(string $name, QuickAddTokens $tokens): string

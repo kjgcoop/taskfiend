@@ -92,22 +92,33 @@ class QuickAddParserTest extends TestCase
         $this->assertNull($tokens->project);
     }
 
-    public function test_pre_resolved_unmatched_token_is_stripped_without_a_project(): void
+    public function test_unmatched_hash_token_stays_in_name(): void
     {
-        $tokens = $this->parse('Buy milk #whatever', projectPreResolved: true);
+        $tokens = $this->parse('Buy milk #whatever');
 
-        $this->assertSame('Buy milk', $tokens->name);
+        $this->assertSame('Buy milk #whatever', $tokens->name);
         $this->assertNull($tokens->project);
-        $this->assertTrue($tokens->projectResolved);
+        $this->assertFalse($tokens->projectResolved);
     }
 
-    public function test_pre_resolved_still_lets_a_matching_token_win(): void
+    public function test_unmatched_hash_token_stays_alongside_a_matched_one(): void
     {
-        $tokens = $this->parse('Buy milk #myproject', projectPreResolved: true);
+        $tokens = $this->parse('Tweet about #laravel #myproject');
 
-        $this->assertSame('Buy milk', $tokens->name);
+        $this->assertSame('Tweet about #laravel', $tokens->name);
         $this->assertSame($this->project->id, $tokens->project?->id);
-        $this->assertTrue($tokens->projectResolved);
+    }
+
+    public function test_autocomplete_slug_matches_name_with_punctuation(): void
+    {
+        // The autocomplete's slugify() drops everything outside a-z0-9-, so it
+        // inserts "#rd" for "R&D"; the server must recognize that.
+        $project = Project::create(['name' => 'R&D', 'user_id' => $this->user->id, 'status' => 'incomplete']);
+
+        $tokens = $this->parse('Prototype #rd');
+
+        $this->assertSame('Prototype', $tokens->name);
+        $this->assertSame($project->id, $tokens->project?->id);
     }
 
     // ── @tag ────────────────────────────────────────────────────────────────

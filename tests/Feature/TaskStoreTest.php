@@ -514,10 +514,9 @@ class TaskStoreTest extends TestCase
         $this->assertSame($this->project->id, $task->project_id);
     }
 
-    public function test_quick_add_unmatched_hash_token_keeps_hidden_project_id(): void
+    public function test_quick_add_unmatched_hash_token_stays_in_name_and_keeps_hidden_project_id(): void
     {
-        // The posted project_id counts as resolved, so an unmatched #word is stripped
-        // (existing behavior) and the task stays in the page's project.
+        // A hashtag that isn't a project is just text, even when a project_id was posted.
         $this->actingAs($this->user)->post('/tasks', [
             'name'       => 'Fix bug #nosuchproject',
             'project_id' => $this->project->id,
@@ -525,7 +524,7 @@ class TaskStoreTest extends TestCase
         ]);
 
         $task = Task::where('creator_id', $this->user->id)->latest()->first();
-        $this->assertSame('Fix bug', $task->name);
+        $this->assertSame('Fix bug #nosuchproject', $task->name);
         $this->assertSame($this->project->id, $task->project_id);
     }
 

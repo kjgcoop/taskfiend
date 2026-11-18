@@ -209,14 +209,13 @@ class TaskController extends Controller
         $recurrenceFloating = !empty($validated['recurrence_floating']);
 
         // Parse inline tokens (#project, @tag, +location, &user) from the task name.
-        // On quick-add, project_id may already be set by autocomplete — treat that as
-        // resolved. On the full add form, project_id is always submitted from the
-        // dropdown and does NOT indicate the #token was matched, so the lookup runs.
+        // A posted project_id (page context, autocomplete, or the full form's dropdown)
+        // is only the default: a #token that matches a project overrides it, and an
+        // unmatched #word stays in the title.
         // Location and assignee tokens are quick-add-only and never override an
         // explicitly provided value.
         $tokens = (new QuickAddParser(Auth::id()))->parse(
             $taskName,
-            projectPreResolved: $isQuickAdd && isset($validated['project_id']),
             parseLocation: $isQuickAdd && empty($validated['location']),
             parseAssignees: $isQuickAdd && empty($validated['assignee_ids']),
         );

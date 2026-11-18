@@ -62,7 +62,6 @@ class SearchController extends Controller
 
         $tokens = (new QuickAddParser(Auth::id()))->parse(
             $input,
-            projectPreResolved: false,
             parseLocation: false,
             parseAssignees: false,
         );
