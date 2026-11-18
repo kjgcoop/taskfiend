@@ -102,7 +102,8 @@ class SearchController extends Controller
             'search_title'       => 'nullable|boolean',
             'search_description' => 'nullable|boolean',
             'search_comments'    => 'nullable|boolean',
-            'no_date'            => 'nullable|boolean',
+            'search_templates'   => 'nullable|boolean',
+            'no_date'           => 'nullable|boolean',
             'duration_min'       => 'nullable|integer|min:0',
             'duration_max'       => 'nullable|integer|min:0',
         ]);
@@ -135,8 +136,11 @@ class SearchController extends Controller
     {
         $baseQuery = Task::visibleTo(Auth::id());
 
-        // Template tasks are blueprints, not real work: never search results.
-        $baseQuery->outsideTemplates();
+        // Template tasks are blueprints, not real work: excluded unless the
+        // "Templates" box is checked (off by default; header quick search never sends it).
+        if (!$request->boolean('search_templates')) {
+            $baseQuery->outsideTemplates();
+        }
 
         if (!$request->boolean('show_archived_projects')) {
             $baseQuery->where(function ($q) {

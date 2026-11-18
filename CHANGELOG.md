@@ -1,5 +1,9 @@
 # Changes Since the Last Release
 
+## Search Templates
+
+The Search page's "Search in" options now include a **Templates** checkbox. It's unchecked by default; check it to include tasks that live in project templates. The search bar in the top navigation is unchanged and never searches templates.
+
 ## Project Backgrounds Fill Tall Screens
 
 A project's background image now extends to the bottom of the window, even when the task list is short (for example, on a very large monitor).
