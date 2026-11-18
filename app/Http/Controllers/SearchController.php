@@ -125,7 +125,9 @@ class SearchController extends Controller
         $inDesc     = $request->boolean('search_description');
         $inComments = $request->boolean('search_comments');
 
-        if (!$inTitle && !$inDesc && !$inComments) {
+        // "Templates" alone is a valid scope: buildSearchQuery() then matches
+        // the text against title and description.
+        if (!$inTitle && !$inDesc && !$inComments && !$request->boolean('search_templates')) {
             return 'Choose at least one field to search: Title, Description, or Comments.';
         }
 
@@ -156,6 +158,11 @@ class SearchController extends Controller
             $inTitle    = $request->boolean('search_title');
             $inDesc     = $request->boolean('search_description');
             $inComments = $request->boolean('search_comments');
+
+            // Templates-only: no field box checked, so fall back to title + description.
+            if (!$inTitle && !$inDesc && !$inComments && $request->boolean('search_templates')) {
+                $inTitle = $inDesc = true;
+            }
 
             if ($inTitle || $inDesc || $inComments) {
                 $baseQuery->where(function ($q) use ($searchText, $inTitle, $inDesc, $inComments) {
