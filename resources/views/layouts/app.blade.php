@@ -84,7 +84,7 @@
         </style>
     </head>
     <body class="font-sans antialiased bg-black text-gray-100">
-        <div class="min-h-screen bg-black flex flex-col">
+        <div class="min-h-screen bg-black">
             @if(config('app.env') !== 'production')
                 <div class="fixed top-0 left-0 right-0 z-50 bg-red-600 text-white text-center text-xs font-bold tracking-widest py-1 uppercase">
                     {{ config('app.env') }} environment
@@ -96,7 +96,7 @@
 
             <!-- Page Heading -->
             @isset($header)
-                <header class="bg-[#202020] shadow">
+                <header class="bg-[#202020] shadow relative z-10">
                     <div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8 text-gray-100">
                         {{ $header }}
                     </div>
@@ -104,8 +104,8 @@
             @endisset
 
             <!-- Page Content -->
-            <main class="flex-1">
-                <div x-data="mainPadding" class="h-full"
+            <main>
+                <div x-data="mainPadding"
                      :style="pad > 0 ? 'padding-bottom: ' + (pad + 16) + 'px' : ''"
                      @keydown.escape.window="$store.bulkEdit.exitIfActive()">
                     {{ $slot }}
