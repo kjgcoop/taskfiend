@@ -125,8 +125,8 @@ class SearchController extends Controller
         $inDesc     = $request->boolean('search_description');
         $inComments = $request->boolean('search_comments');
 
-        // "Templates" alone is a valid scope: buildSearchQuery() then matches
-        // the text against title and description.
+        // "Templates" alone is a valid scope: buildSearchQuery() then returns
+        // only template tasks.
         if (!$inTitle && !$inDesc && !$inComments && !$request->boolean('search_templates')) {
             return 'Choose at least one field to search: Title, Description, or Comments.';
         }
@@ -140,7 +140,16 @@ class SearchController extends Controller
 
         // Template tasks are blueprints, not real work: excluded unless the
         // "Templates" box is checked (off by default; header quick search never sends it).
-        if (!$request->boolean('search_templates')) {
+        $templatesChecked = $request->boolean('search_templates');
+        $fieldChecked     = $request->boolean('search_title')
+            || $request->boolean('search_description')
+            || $request->boolean('search_comments');
+        // Templates checked with no field box: search template tasks only.
+        $templatesOnly = $templatesChecked && !$fieldChecked;
+
+        if ($templatesOnly) {
+            $baseQuery->whereHas('project', fn ($q) => $q->where('project_type', Project::TYPE_TEMPLATE));
+        } elseif (!$templatesChecked) {
             $baseQuery->outsideTemplates();
         }
 
@@ -158,11 +167,6 @@ class SearchController extends Controller
             $inTitle    = $request->boolean('search_title');
             $inDesc     = $request->boolean('search_description');
             $inComments = $request->boolean('search_comments');
-
-            // Templates-only: no field box checked, so fall back to title + description.
-            if (!$inTitle && !$inDesc && !$inComments && $request->boolean('search_templates')) {
-                $inTitle = $inDesc = true;
-            }
 
             if ($inTitle || $inDesc || $inComments) {
                 $baseQuery->where(function ($q) use ($searchText, $inTitle, $inDesc, $inComments) {

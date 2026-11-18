@@ -73,7 +73,7 @@ class SearchTemplatesTest extends TestCase
             ->assertSee('name="search_templates" value="1" checked', false);
     }
 
-    public function test_templates_only_is_a_valid_scope(): void
+    public function test_templates_only_returns_only_template_tasks(): void
     {
         $this->actingAs($this->user)->get(route('search', [
             'q'                => 'Zebra',
@@ -82,6 +82,6 @@ class SearchTemplatesTest extends TestCase
         ]))->assertOk()
             ->assertDontSee('Choose at least one field')
             ->assertSee('Zebra Template Task')
-            ->assertSee('Zebra Real Task');
+            ->assertDontSee('Zebra Real Task');
     }
 }
