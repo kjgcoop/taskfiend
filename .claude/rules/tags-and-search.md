@@ -27,13 +27,13 @@ paths:
 
 `QuickAddParser` returns a `QuickAddTokens` DTO. Matching is hyphen-insensitive, limited to **active** projects/tags, and unmatched tokens stay in the title. Location fuzzy-match is scoped to the user's *visible* tasks (`Task::visibleTo`). Matched `&user` tokens are stripped by both preview and store using the typed token, not a re-derived slug.
 
-**Typed `#project` beats the posted `project_id`.** The quick-add bar posts a hidden `project_id` for the page it's on (a project page), and autocomplete adds its own. That value is only the default: a `#token` that matches an active project overrides it (typing `#project-b` on Project A's page files the task in B), and no token means the posted project. The lookup always runs, and an *unmatched* `#word` stays in the title (a hashtag is just text), with or without a posted `project_id`. Besides the SQL name match, `findProject()` accepts the autocomplete's JS slug rule (`slugify()` in `layouts/app.blade.php`), so a name like `R&D` (autocompleted as `#rd`) is still recognized; keep the two in sync.
+**Typed `#project` beats the posted `project_id`.** The quick-add bar posts a hidden `project_id` for the page it's on (a project page), and autocomplete adds its own. That value is only the default: a `#token` that matches an active project overrides it (typing `#project-b` on Project A's page files the task in B), and no token means the posted project. There is no "pre-resolved" shortcut: the lookup always runs, in single store, bulk store, preview and search alike. Besides the SQL name match, `QuickAddParser::findProject()` accepts the autocomplete's JS slug rule (`slugify()` in `layouts/app.blade.php`), so a name like `R&D` (autocompleted as `#rd`) is still recognized; keep the two in sync. If a line has several `#words`, the first one that matches a project is the project token and the rest stay in the title.
 
-**Unmatched tokens are literal text, everywhere.** `"Here is a thing @notatag #project"` saves to Project as `"Here is a thing @notatag"`: only tokens that matched something are removed. This has regressed more than once, so keep it true on every path:
+**Unmatched tokens are literal text, everywhere.** `"Here is a thing @notatag #project"` saves to Project as `"Here is a thing @notatag"`: only tokens that matched something are removed. A `#word` that matches no project (a hashtag, `"Tweet #laravel"`) stays in the title too, with or without a posted `project_id`. This has regressed more than once, so keep it true on every path:
 
 - Quick-add (single and bulk) goes through `QuickAddParser`; don't hand-roll token stripping.
 - The task side panel's inline name edit (`_saveFieldRequest()` in `layouts/app.blade.php`) strips only the tokens the user inserted via autocomplete (tracked in `nameTokens`), never a blanket `/[@#][\w-]+/` regex.
-- Tests: `TaskStoreTest::test_unrecognized_at_token_*`, `QuickAddParserTest::test_unmatched_tag_token_stays_in_name`, and the Playwright spec in `tests/e2e/task-panel.spec.js`.
+- Tests: `TaskStoreTest::test_unrecognized_at_token_*`, `TaskStoreTest::test_quick_add_*hash_token*` (override, no-token default, unmatched hashtag), `QuickAddParserTest::test_unmatched_tag_token_stays_in_name` and `test_unmatched_hash_token_*`, and the Playwright spec in `tests/e2e/task-panel.spec.js`.
 
 ## Search
 
