@@ -27,6 +27,8 @@ paths:
 
 `QuickAddParser` returns a `QuickAddTokens` DTO. Matching is hyphen-insensitive, limited to **active** projects/tags, and unmatched tokens stay in the title. Location fuzzy-match is scoped to the user's *visible* tasks (`Task::visibleTo`). Matched `&user` tokens are stripped by both preview and store using the typed token, not a re-derived slug.
 
+**Typed `#project` beats the posted `project_id`.** The quick-add bar posts a hidden `project_id` for the page it's on (a project page), and autocomplete adds its own. That value is only the default: a `#token` that matches an active project overrides it (typing `#project-b` on Project A's page files the task in B), and no token means the posted project. `projectPreResolved` only controls stripping an *unmatched* `#word` when a `project_id` was posted; the lookup always runs.
+
 **Unmatched tokens are literal text, everywhere.** `"Here is a thing @notatag #project"` saves to Project as `"Here is a thing @notatag"`: only tokens that matched something are removed. This has regressed more than once, so keep it true on every path:
 
 - Quick-add (single and bulk) goes through `QuickAddParser`; don't hand-roll token stripping.

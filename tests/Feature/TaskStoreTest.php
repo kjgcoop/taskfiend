@@ -472,11 +472,11 @@ class TaskStoreTest extends TestCase
 
     /**
      * Quick-adding from a project's page (the x-task-input-bar's hidden project_id
-     * field) always creates the task in that project — an inline #token in the typed
-     * text is stripped like normal but must not resolve to and override the project
-     * already fixed by the page the quick-add bar is on.
+     * field) defaults the task to that project, but a matching inline #token in the
+     * typed text overrides it: "Do a thing #project-b" typed on Project A's page
+     * goes to Project B.
      */
-    public function test_quick_add_hidden_project_id_wins_over_hash_token_in_name(): void
+    public function test_quick_add_hash_token_overrides_hidden_project_id(): void
     {
         $otherProject = Project::create([
             'name'    => 'work',
@@ -492,8 +492,41 @@ class TaskStoreTest extends TestCase
 
         $response->assertRedirect();
         $task = Task::where('creator_id', $this->user->id)->latest()->first();
+        $this->assertSame('Fix bug', $task->name);
+        $this->assertSame($otherProject->id, $task->project_id);
+    }
+
+    public function test_quick_add_without_hash_token_uses_hidden_project_id(): void
+    {
+        Project::create([
+            'name'    => 'work',
+            'user_id' => $this->user->id,
+            'status'  => 'incomplete',
+        ]);
+
+        $this->actingAs($this->user)->post('/tasks', [
+            'name'       => 'Fix bug',
+            'project_id' => $this->project->id,
+            'quick_add'  => true,
+        ]);
+
+        $task = Task::where('creator_id', $this->user->id)->latest()->first();
         $this->assertSame($this->project->id, $task->project_id);
-        $this->assertNotSame($otherProject->id, $task->project_id);
+    }
+
+    public function test_quick_add_unmatched_hash_token_keeps_hidden_project_id(): void
+    {
+        // The posted project_id counts as resolved, so an unmatched #word is stripped
+        // (existing behavior) and the task stays in the page's project.
+        $this->actingAs($this->user)->post('/tasks', [
+            'name'       => 'Fix bug #nosuchproject',
+            'project_id' => $this->project->id,
+            'quick_add'  => true,
+        ]);
+
+        $task = Task::where('creator_id', $this->user->id)->latest()->first();
+        $this->assertSame('Fix bug', $task->name);
+        $this->assertSame($this->project->id, $task->project_id);
     }
 
     public function test_at_tag_token_assigns_tag_and_strips_token(): void

@@ -92,12 +92,21 @@ class QuickAddParserTest extends TestCase
         $this->assertNull($tokens->project);
     }
 
-    public function test_pre_resolved_project_skips_lookup_but_strips_token(): void
+    public function test_pre_resolved_unmatched_token_is_stripped_without_a_project(): void
     {
         $tokens = $this->parse('Buy milk #whatever', projectPreResolved: true);
 
         $this->assertSame('Buy milk', $tokens->name);
         $this->assertNull($tokens->project);
+        $this->assertTrue($tokens->projectResolved);
+    }
+
+    public function test_pre_resolved_still_lets_a_matching_token_win(): void
+    {
+        $tokens = $this->parse('Buy milk #myproject', projectPreResolved: true);
+
+        $this->assertSame('Buy milk', $tokens->name);
+        $this->assertSame($this->project->id, $tokens->project?->id);
         $this->assertTrue($tokens->projectResolved);
     }
 
