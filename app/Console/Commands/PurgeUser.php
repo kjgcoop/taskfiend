@@ -4,6 +4,7 @@ namespace App\Console\Commands;
 
 use App\Models\ChangeLog;
 use App\Models\Comment;
+use App\Models\CommentAttachment;
 use App\Models\Project;
 use App\Models\Task;
 use App\Models\TaskAttachment;
@@ -104,9 +105,10 @@ class PurgeUser extends Command
         }
 
         // Delete comment attachment files
-        $commentPaths = Comment::whereIn('task_id', $taskIds)
-            ->whereNotNull('file_path')
-            ->pluck('file_path');
+        $commentPaths = CommentAttachment::whereIn(
+            'comment_id',
+            Comment::whereIn('task_id', $taskIds)->select('id')
+        )->pluck('file_path');
 
         foreach ($commentPaths as $path) {
             Storage::disk('private')->delete($path);

@@ -1,5 +1,9 @@
 # Changes Since the Last Release
 
+## Multiple Attachments on Comments
+
+A comment can now carry several files instead of just one: pick as many as you like with **Choose files**, on both the task page and the side panel. Existing comment attachments are carried over automatically when you run `php artisan migrate`.
+
 ## Typed #Project Tokens Win Over the Current Page's Project
 
 Typing `#project` in the quick-add bar while on a project page (or any page that pre-fills a project) now files the task in the project you typed, instead of silently keeping the page's project.

@@ -572,6 +572,8 @@ class TodoistImport extends Command
                 'created_at' => $todoistComment['posted_at'] ?? now(),
             ];
 
+            $attachmentData = null;
+
             // Handle attachment if present
             if (!empty($todoistComment['attachment'])) {
                 $attachment = $todoistComment['attachment'];
@@ -588,11 +590,13 @@ class TodoistImport extends Command
                             $path = 'comment_attachments/' . uniqid() . '_' . $filename;
                             Storage::disk('private')->put($path, $fileContents);
 
-                            // Add attachment fields to comment
-                            $commentData['file_path'] = $path;
-                            $commentData['original_filename'] = $filename;
-                            $commentData['mime_type'] = $attachment['file_type'] ?? mime_content_type($path);
-                            $commentData['file_size'] = strlen($fileContents);
+                            // Remember the file; it's attached once the comment exists
+                            $attachmentData = [
+                                'file_path' => $path,
+                                'original_filename' => $filename,
+                                'mime_type' => $attachment['file_type'] ?? mime_content_type($path),
+                                'file_size' => strlen($fileContents),
+                            ];
 
                             $this->attachmentsImported++;
                         }
@@ -607,7 +611,10 @@ class TodoistImport extends Command
                 }
             }
 
-            Comment::create($commentData);
+            $comment = Comment::create($commentData);
+            if ($attachmentData) {
+                $comment->attachments()->create($attachmentData);
+            }
             $this->commentsImported++;
         } catch (\Exception $e) {
             $this->error('Failed to import comment: ' . $e->getMessage());

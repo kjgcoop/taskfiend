@@ -76,8 +76,8 @@ Route::middleware('auth')->group(function () {
 
     Route::post('/tasks/{task}/comments', [CommentController::class, 'store'])->name('comments.store');
     Route::delete('/tasks/{task}/comments/{comment}', [CommentController::class, 'destroy'])->name('comments.destroy');
-    Route::get('/tasks/{task}/comments/{comment}/download', [CommentController::class, 'download'])->name('comments.download');
-    Route::get('/tasks/{task}/comments/{comment}/view', [CommentController::class, 'view'])->name('comments.view');
+    Route::get('/tasks/{task}/comments/{comment}/attachments/{attachment}/download', [CommentController::class, 'download'])->name('comments.download');
+    Route::get('/tasks/{task}/comments/{comment}/attachments/{attachment}/view', [CommentController::class, 'view'])->name('comments.view');
 
     Route::post('/tasks/{task}/attachments', [TaskAttachmentController::class, 'store'])->name('attachments.store');
     Route::delete('/tasks/{task}/attachments/{attachment}', [TaskAttachmentController::class, 'destroy'])->name('attachments.destroy');

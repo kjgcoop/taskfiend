@@ -364,7 +364,7 @@ class TaskController extends Controller
         $this->authorizeTaskAccess($task);
 
         $task->load(['creator', 'project', 'tags', 'assignees', 'assignments.assignedBy',
-                     'attachments', 'comments.user', 'changeLogs.user', 'children', 'parent']);
+                     'attachments', 'comments.user', 'comments.attachments', 'changeLogs.user', 'children', 'parent']);
 
         $projects = Project::pickableFor(Auth::id(), $task->project)->get()->sort(fn ($a, $b) => strnatcasecmp($a->name, $b->name))->values();
 
@@ -419,7 +419,7 @@ class TaskController extends Controller
         $this->authorizeTaskAccess($task);
 
         $task->load(['creator', 'project', 'tags', 'assignees', 'assignments.assignedBy',
-                     'attachments', 'comments.user', 'changeLogs.user', 'children', 'parent']);
+                     'attachments', 'comments.user', 'comments.attachments', 'changeLogs.user', 'children', 'parent']);
 
         $projects = Project::pickableFor(Auth::id(), $task->project)->get()->sort(fn ($a, $b) => strnatcasecmp($a->name, $b->name))->values();
 

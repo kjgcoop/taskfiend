@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Controllers\Concerns\StoresAttachments;
 use App\Models\Comment;
+use App\Models\CommentAttachment;
 use App\Models\Task;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -29,17 +30,21 @@ class CommentController extends Controller
         // PHP silently rejects files that exceed upload_max_filesize and sets an
         // error code on the upload rather than passing the file to Laravel.
         // Catch that here so the user gets a readable message instead of
-        // a confusing "field is required" validation error.
-        if (isset($_FILES['attachment']) && in_array($_FILES['attachment']['error'], [UPLOAD_ERR_INI_SIZE, UPLOAD_ERR_FORM_SIZE])) {
-            $message = 'The uploaded file is too large. The maximum file size is ' . ini_get('upload_max_filesize') . '.';
+        // a confusing validation error.
+        if (isset($_FILES['attachments'])) {
+            foreach ((array) $_FILES['attachments']['error'] as $err) {
+                if (in_array($err, [UPLOAD_ERR_INI_SIZE, UPLOAD_ERR_FORM_SIZE])) {
+                    $message = 'One or more files are too large. The maximum file size is ' . ini_get('upload_max_filesize') . '.';
 
-            if ($request->expectsJson()) {
-                return response()->json(['message' => $message, 'errors' => ['attachment' => [$message]]], 422);
+                    if ($request->expectsJson()) {
+                        return response()->json(['message' => $message, 'errors' => ['attachments' => [$message]]], 422);
+                    }
+
+                    return redirect()->back()
+                        ->withErrors(['attachments' => $message])
+                        ->withInput($request->except('attachments'));
+                }
             }
-
-            return redirect()->back()
-                ->withErrors(['attachment' => $message])
-                ->withInput($request->except('attachment'));
         }
 
         $maxFileSizeLabel = config('taskfiend.max_file_size');
@@ -48,33 +53,32 @@ class CommentController extends Controller
         $longTextMax = (int) config('taskfiend.long_text_max_chars');
         $validated = $request->validate([
             'comment' => "required|string|max:{$longTextMax}",
-            'attachment' => [
-                'nullable',
+            'attachments' => ['nullable', 'array'],
+            'attachments.*' => [
                 'file',
                 "max:{$maxFileSizeKb}",
                 'mimetypes:' . self::allowedMimetypes(),
             ],
         ], [
-            'attachment.max' => "File size must not exceed {$maxFileSizeLabel}.",
-            'attachment.mimetypes' => self::allowedMimetypesMessage(),
+            'attachments.*.max' => "File size must not exceed {$maxFileSizeLabel}.",
+            'attachments.*.mimetypes' => self::allowedMimetypesMessage(),
         ]);
 
-        $commentData = [
+        $comment = $task->comments()->create([
             'user_id' => Auth::id(),
             'comment' => $validated['comment'],
-        ];
+        ]);
 
-        if ($request->hasFile('attachment')) {
-            $file = $request->file('attachment');
+        foreach ($request->file('attachments', []) as $file) {
             [$path, $fileSize, $mimeType] = $this->storeScaled($file, 'comment_attachments');
 
-            $commentData['file_path'] = $path;
-            $commentData['original_filename'] = basename($file->getClientOriginalName());
-            $commentData['mime_type'] = $mimeType;
-            $commentData['file_size'] = $fileSize;
+            $comment->attachments()->create([
+                'file_path' => $path,
+                'original_filename' => basename($file->getClientOriginalName()),
+                'mime_type' => $mimeType,
+                'file_size' => $fileSize,
+            ]);
         }
-
-        $comment = $task->comments()->create($commentData);
 
         $task->changeLogs()->create([
             'date' => now(),
@@ -107,8 +111,8 @@ class CommentController extends Controller
             abort(403, 'Tasks in inactive projects cannot be modified.');
         }
 
-        if ($comment->file_path) {
-            Storage::disk('private')->delete($comment->file_path);
+        foreach ($comment->attachments as $attachment) {
+            Storage::disk('private')->delete($attachment->file_path);
         }
 
         $comment->delete();
@@ -125,32 +129,28 @@ class CommentController extends Controller
             ->with('success', 'Comment deleted successfully.');
     }
 
-    public function download(Task $task, Comment $comment)
+    public function download(Task $task, Comment $comment, CommentAttachment $attachment)
     {
-        if ($comment->task_id !== $task->id) {
-            abort(404);
-        }
-
-        $isCreator = $task->creator_id === Auth::id();
-        $isAssignee = $task->assignees->contains('id', Auth::id());
-
-        if (!$isCreator && !$isAssignee) {
-            abort(403, 'You do not have access to this comment attachment.');
-        }
-
-        if (!$comment->file_path || !Storage::disk('private')->exists($comment->file_path)) {
-            abort(404, 'Attachment not found.');
-        }
+        $this->authorizeAttachmentAccess($task, $comment, $attachment);
 
         return Storage::disk('private')->download(
-            $comment->file_path,
-            $comment->original_filename
+            $attachment->file_path,
+            $attachment->original_filename
         );
     }
 
-    public function view(Task $task, Comment $comment)
+    public function view(Task $task, Comment $comment, CommentAttachment $attachment)
     {
-        if ($comment->task_id !== $task->id) {
+        $this->authorizeAttachmentAccess($task, $comment, $attachment);
+
+        return response(Storage::disk('private')->get($attachment->file_path), 200)
+            ->header('Content-Type', $attachment->mime_type)
+            ->header('Content-Disposition', 'inline; filename="' . addslashes($attachment->original_filename) . '"');
+    }
+
+    private function authorizeAttachmentAccess(Task $task, Comment $comment, CommentAttachment $attachment): void
+    {
+        if ($comment->task_id !== $task->id || $attachment->comment_id !== $comment->id) {
             abort(404);
         }
 
@@ -161,13 +161,8 @@ class CommentController extends Controller
             abort(403, 'You do not have access to this comment attachment.');
         }
 
-        if (!$comment->file_path || !Storage::disk('private')->exists($comment->file_path)) {
+        if (!Storage::disk('private')->exists($attachment->file_path)) {
             abort(404, 'Attachment not found.');
         }
-
-        return response(Storage::disk('private')->get($comment->file_path), 200)
-            ->header('Content-Type', $comment->mime_type)
-            ->header('Content-Disposition', 'inline; filename="' . addslashes($comment->original_filename) . '"');
     }
-
 }

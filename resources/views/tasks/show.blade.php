@@ -730,31 +730,31 @@
                                         </div>
                                     </div>
                                     <div class="markdown-body mt-1 text-sm">{!! render_body($comment->comment) !!}</div>
-                                    @if($comment->file_path)
-                                        @if(str_starts_with($comment->mime_type, 'image/'))
+                                    @foreach($comment->attachments as $commentAttachment)
+                                        @if($commentAttachment->isImage())
                                             <div class="mt-2">
-                                                <a href="{{ route('comments.view', [$task, $comment]) }}" target="_blank" rel="noopener">
-                                                    <img src="{{ route('comments.view', [$task, $comment]) }}"
-                                                         alt="{{ $comment->original_filename }}"
+                                                <a href="{{ route('comments.view', [$task, $comment, $commentAttachment]) }}" target="_blank" rel="noopener">
+                                                    <img src="{{ route('comments.view', [$task, $comment, $commentAttachment]) }}"
+                                                         alt="{{ $commentAttachment->original_filename }}"
                                                          class="max-h-48 max-w-xs rounded border border-gray-600 cursor-pointer hover:opacity-90 transition-opacity">
                                                 </a>
                                                 <p class="mt-1 text-xs">
-                                                    <a href="{{ route('comments.download', [$task, $comment]) }}" class="text-blue-400 hover:text-blue-300 hover:underline">
+                                                    <a href="{{ route('comments.download', [$task, $comment, $commentAttachment]) }}" class="text-blue-400 hover:text-blue-300 hover:underline">
                                                         ⬇ Download
                                                     </a>
-                                                    <span class="text-gray-500 ml-2" title="{{ $comment->original_filename }}">{{ strlen($comment->original_filename) > 25 ? substr($comment->original_filename, 0, 22) . '...' : $comment->original_filename }}</span>
-                                                    <span class="text-gray-500 ml-1">({{ number_format($comment->file_size / 1024, 1) }} KB)</span>
+                                                    <span class="text-gray-500 ml-2" title="{{ $commentAttachment->original_filename }}">{{ strlen($commentAttachment->original_filename) > 25 ? substr($commentAttachment->original_filename, 0, 22) . '...' : $commentAttachment->original_filename }}</span>
+                                                    <span class="text-gray-500 ml-1">({{ number_format($commentAttachment->file_size / 1024, 1) }} KB)</span>
                                                 </p>
                                             </div>
                                         @else
                                             <p class="mt-1 text-xs">
-                                                <a href="{{ route('comments.download', [$task, $comment]) }}" class="text-blue-400 hover:text-blue-300 hover:underline">
-                                                    📎 <span title="{{ $comment->original_filename }}">{{ strlen($comment->original_filename) > 15 ? substr($comment->original_filename, 0, 12) . '...' : $comment->original_filename }}</span>
+                                                <a href="{{ route('comments.download', [$task, $comment, $commentAttachment]) }}" class="text-blue-400 hover:text-blue-300 hover:underline">
+                                                    📎 <span title="{{ $commentAttachment->original_filename }}">{{ strlen($commentAttachment->original_filename) > 15 ? substr($commentAttachment->original_filename, 0, 12) . '...' : $commentAttachment->original_filename }}</span>
                                                 </a>
-                                                <span class="text-gray-500 ml-2">({{ number_format($comment->file_size / 1024, 1) }} KB)</span>
+                                                <span class="text-gray-500 ml-2">({{ number_format($commentAttachment->file_size / 1024, 1) }} KB)</span>
                                             </p>
                                         @endif
-                                    @endif
+                                    @endforeach
                                 </div>
                             @empty
                                 <p class="text-sm text-gray-500">No comments yet.</p>
@@ -764,19 +764,22 @@
                         @if(!$isInactive)
                         <form method="POST" action="{{ route('comments.store', $task) }}" enctype="multipart/form-data">
                             @csrf
-                            @error('attachment')
+                            @error('attachments')
+                                <p class="text-sm text-red-400 mb-2">{{ $message }}</p>
+                            @enderror
+                            @error('attachments.*')
                                 <p class="text-sm text-red-400 mb-2">{{ $message }}</p>
                             @enderror
                             <textarea name="comment" rows="3" required
                                       class="w-full rounded-md bg-gray-700 border-gray-600 text-gray-100 placeholder-gray-500 shadow-sm focus:border-blue-500 focus:ring-blue-500 mb-2"
                                       placeholder="Add a comment..."></textarea>
-                            <div class="flex items-center gap-4 min-w-0" x-data="fileInput">
+                            <div class="flex items-center gap-4 min-w-0" x-data="multiFileInput">
                                 <label class="flex items-center gap-2 cursor-pointer min-w-0">
-                                    <span class="px-3 py-1.5 bg-gray-700 border border-gray-600 text-gray-300 text-sm rounded hover:bg-gray-600 flex-shrink-0">Choose file</span>
-                                    <span class="text-sm text-gray-400 truncate" x-text="fileName || 'No file chosen'"></span>
-                                    <input type="file" name="attachment" class="hidden"
+                                    <span class="px-3 py-1.5 bg-gray-700 border border-gray-600 text-gray-300 text-sm rounded hover:bg-gray-600 flex-shrink-0">Choose files</span>
+                                    <span class="text-sm text-gray-400 truncate" x-text="fileName || 'No files chosen'"></span>
+                                    <input type="file" name="attachments[]" multiple class="hidden"
                                            accept=".jpg,.jpeg,.png,.webp,.gif,.avif,.heic,.heif,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.odt,.ods,.odp,.csv,.txt,.md,.xml,.yaml,.yml,.json,.zip"
-                                           @change="fileName = $event.target.files[0] ? ($event.target.files[0].name.length > 20 ? $event.target.files[0].name.slice(0, 20) + '…' : $event.target.files[0].name) : ''">
+                                           @change="updateLabel($event.target.files)">
                                 </label>
                                 <button type="submit" class="px-4 py-2 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 flex-shrink-0">
                                     Post Comment
