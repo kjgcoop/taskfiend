@@ -168,6 +168,12 @@ class SearchController extends Controller
             $inDesc     = $request->boolean('search_description');
             $inComments = $request->boolean('search_comments');
 
+            // Templates-only: no field box checked, so match the text against
+            // the template tasks' title and description.
+            if ($templatesOnly) {
+                $inTitle = $inDesc = true;
+            }
+
             if ($inTitle || $inDesc || $inComments) {
                 $baseQuery->where(function ($q) use ($searchText, $inTitle, $inDesc, $inComments) {
                     if ($inTitle) {

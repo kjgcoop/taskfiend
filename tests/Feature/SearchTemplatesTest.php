@@ -84,4 +84,13 @@ class SearchTemplatesTest extends TestCase
             ->assertSee('Zebra Template Task')
             ->assertDontSee('Zebra Real Task');
     }
+
+    public function test_templates_only_applies_the_search_text_to_template_tasks(): void
+    {
+        $this->actingAs($this->user)->get(route('search', [
+            'q'                => 'Nomatch',
+            'search_templates' => '1',
+            'show_incomplete'  => '1',
+        ]))->assertOk()->assertDontSee('Zebra Template Task');
+    }
 }
