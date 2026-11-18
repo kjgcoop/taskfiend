@@ -1,5 +1,9 @@
 # Changes Since the Last Release
 
+## Project Backgrounds Fill Tall Screens
+
+A project's background image now extends to the bottom of the window, even when the task list is short (for example, on a very large monitor).
+
 ## Multiple Attachments on Comments
 
 A comment can now carry several files instead of just one: pick as many as you like with **Choose files**, on both the task page and the side panel. Existing comment attachments are carried over automatically when you run `php artisan migrate`.

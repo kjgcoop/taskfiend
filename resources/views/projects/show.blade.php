@@ -366,7 +366,7 @@
     </x-slot>
 
     @php $isInactive = in_array($project->status, ['done', 'archived']); @endphp
-    <div class="py-12 relative" @if($project->user_id === Auth::id()) x-data="projectEditor" data-project-id="{{ $project->id }}" @endif
+    <div class="py-12 relative min-h-full" @if($project->user_id === Auth::id()) x-data="projectEditor" data-project-id="{{ $project->id }}" @endif
          @if($project->user_id === Auth::id()) @open-project-details.window="openDetails()" @endif>
         @if($project->background_image)
             <div class="absolute inset-0" style="background-image: url('{{ route('projects.background', $project) }}'); background-attachment: fixed; background-position: center; background-size: cover; background-repeat: no-repeat;"></div>
