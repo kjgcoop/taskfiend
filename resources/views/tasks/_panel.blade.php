@@ -107,7 +107,7 @@ $_panelTaskJson = json_encode([
     {{-- Inactive warning --}}
     @if($isInactive)
     <div class="p-3 bg-yellow-900 bg-opacity-20 border border-yellow-600 rounded-lg">
-        <p class="text-sm text-yellow-300">
+        <p class="text-sm text-yellow-800">
             @if(in_array($task->status, ['done', 'archived']))
                 <span class="font-semibold">Task is {{ $task->status }}.</span>
                 This task is read-only.
