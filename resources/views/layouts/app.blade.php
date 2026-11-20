@@ -6,6 +6,9 @@
         <meta name="csrf-token" content="{{ csrf_token() }}">
         <meta name="session-check-interval" content="{{ config('session.check_interval', 60) }}">
 
+        <!-- Apply saved light/dark preference before first paint (default: dark). Stored in the browser only. -->
+        <script nonce="{{ csp_nonce() }}">try{if(localStorage.getItem('theme')==='light')document.documentElement.classList.add('light');}catch(e){}</script>
+
         <!-- Restore saved sort preference before page renders (avoids visible re-sort) -->
         <script nonce="{{ csp_nonce() }}">(function(){var p=new URLSearchParams(window.location.search);if(!p.has('sort')){var s=localStorage.getItem('task_sort_'+window.location.pathname);if(s){p.set('sort',s);location.replace(location.pathname+'?'+p.toString());}}}());</script>
 

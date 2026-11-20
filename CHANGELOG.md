@@ -1,5 +1,9 @@
 # Changes Since the Last Release
 
+## Light Mode
+
+The profile menu now has a **Switch to Light Mode** / **Switch to Dark Mode** option between "Profile" and "Log Out". Light mode gives pages a white background and black text; tag, status and other meaningful colors are unchanged. The choice is remembered in your browser only (not your account), and dark mode remains the default.
+
 ## Search Templates
 
 The Search page's "Search in" options now include a **Templates** checkbox. It's unchecked by default; check it to include tasks that live in project templates. The search bar in the top navigation is unchanged and never searches templates.

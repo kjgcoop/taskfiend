@@ -329,6 +329,8 @@
                             {{ __('Profile') }}
                         </x-dropdown-link>
 
+                        <button type="button" data-testid="theme-toggle" @click="$store.theme.toggle()" class="block w-full px-4 py-2 text-start text-sm leading-5 text-gray-300 hover:bg-gray-700 focus:outline-none focus:bg-gray-700 transition duration-150 ease-in-out" x-text="$store.theme.label()">{{ __('Switch to Light Mode') }}</button>
+
                         <!-- Authentication -->
                         <form method="POST" action="{{ route('logout') }}" id="logout-form-desktop">
                             @csrf
@@ -618,6 +620,8 @@
                     {{ __('Profile') }}
                 </x-responsive-nav-link>
 
+                <button type="button" data-testid="theme-toggle" @click="$store.theme.toggle()" class="block w-full px-4 py-2 text-start text-base font-medium text-gray-300 hover:bg-gray-700 focus:outline-none focus:bg-gray-700 transition duration-150 ease-in-out" x-text="$store.theme.label()">{{ __('Switch to Light Mode') }}</button>
+
                 <!-- Authentication -->
                 <form method="POST" action="{{ route('logout') }}" id="logout-form-mobile">
                     @csrf
@@ -631,6 +635,19 @@
     </div>
 <script nonce="{{ csp_nonce() }}">
 document.addEventListener('alpine:init', () => {
+    // Light/dark preference: browser-only (localStorage), default dark.
+    Alpine.store('theme', {
+        light: document.documentElement.classList.contains('light'),
+        toggle() {
+            this.light = !this.light;
+            document.documentElement.classList.toggle('light', this.light);
+            try { localStorage.setItem('theme', this.light ? 'light' : 'dark'); } catch (e) {}
+        },
+        label() {
+            return this.light ? 'Switch to Dark Mode' : 'Switch to Light Mode';
+        },
+    });
+
     Alpine.data('navSearch', () => ({
         open: false,
         query: '',

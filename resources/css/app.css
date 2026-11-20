@@ -51,3 +51,71 @@ main {
     border-radius: 3px;
     padding: 0.1em 0.35em;
 }
+
+/*
+ * Light Mode
+ * The app is styled dark-first with Tailwind gray utilities. When <html> has
+ * the `light` class (set from localStorage by an inline script in the layout),
+ * the neutral surface, text and border utilities are remapped here. Colors that
+ * carry meaning (tags, statuses, blue/red/green buttons, text-white) are untouched.
+ */
+html.light { color-scheme: light; background-color: #fff; }
+html.light main { background-color: #fff; }
+
+/* Page and container surfaces */
+html.light .bg-black,
+html.light .bg-gray-800,
+html.light .bg-gray-900,
+html.light .bg-\[\#202020\],
+html.light .bg-\[\#101010\],
+html.light .bg-\[\#161616\],
+html.light .bg-\[\#181818\],
+html.light .bg-\[\#0a0a0a\] { background-color: #fff; }
+
+/* Inputs, chips and hover surfaces need to stay distinguishable from the page */
+html.light .bg-gray-700 { background-color: #f3f4f6; }
+html.light .bg-gray-600 { background-color: #e5e7eb; }
+html.light .bg-gray-600.text-white { background-color: #4b5563; }
+html.light .hover\:bg-gray-700:hover,
+html.light .focus\:bg-gray-700:focus { background-color: #f3f4f6; }
+html.light .hover\:bg-gray-600:hover { background-color: #e5e7eb; }
+
+/* Text: black for primary text, softer grays keep their hierarchy */
+html.light body,
+html.light .text-gray-100,
+html.light .text-gray-200,
+html.light .text-gray-300,
+html.light .text-gray-400 { color: #000; }
+html.light .text-gray-500 { color: #4b5563; }
+html.light .text-gray-600 { color: #6b7280; }
+html.light .hover\:text-gray-100:hover,
+html.light .hover\:text-gray-200:hover,
+html.light .hover\:text-gray-300:hover { color: #000; }
+
+/* Borders and dividers */
+html.light .border-gray-700,
+html.light .border-\[\#202020\] { border-color: #e5e7eb; }
+html.light .border-gray-600 { border-color: #d1d5db; }
+html.light .border-gray-500 { border-color: #9ca3af; }
+html.light .divide-gray-700 > :not([hidden]) ~ :not([hidden]) { border-color: #e5e7eb; }
+html.light .ring-\[\#202020\] { --tw-ring-color: #fff; }
+
+/* Inline code in task titles */
+html.light .task-title code {
+    background-color: rgba(0, 0, 0, 0.06);
+    border-color: rgba(0, 0, 0, 0.15);
+}
+
+/* Markdown bodies (their base styles live in layouts/app.blade.php) */
+html.light .markdown-body,
+html.light .markdown-body h1, html.light .markdown-body h2, html.light .markdown-body h3,
+html.light .markdown-body h4, html.light .markdown-body h5, html.light .markdown-body h6,
+html.light .markdown-body strong { color: #000; }
+html.light .markdown-body code { background-color: #f3f4f6; color: #000; }
+html.light .markdown-body pre { background-color: #f3f4f6; border-color: #d1d5db; }
+html.light .markdown-body blockquote { border-left-color: #9ca3af; color: #4b5563; }
+html.light .markdown-body a { color: #2563eb; }
+html.light .markdown-body a:hover { color: #1d4ed8; }
+html.light .markdown-body hr,
+html.light .markdown-body th, html.light .markdown-body td { border-color: #d1d5db; }
+html.light .markdown-body th { background-color: #f3f4f6; color: #000; }
